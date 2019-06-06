@@ -4,8 +4,7 @@
 @model DroHub.Areas.DHub.Models.Device
 @{
     ViewData["Title"] = "Gallery";
-    List<FileMetadata> deviceRepositoryItems = ViewData["DeviceGalleryItems"] as List<FileMetadata>;
-    List<IDownloadResponse<FileMetadata>> deviceGalleryThumbnails = ViewData["DeviceGalleryThumbnails"] as List<IDownloadResponse<FileMetadata>>;
+    List<Tuple<string, FileMetadata>> deviceRepositoryItems = ViewData["DeviceGalleryItems"] as List<Tuple<string, FileMetadata>>;
 }
 <!-- Content Header (Page header) -->
 <section class="content-header">
@@ -44,17 +43,10 @@
                     </div>
                 </div>
                 <div class="box-body">
-                    @*@foreach (var thumbnail in deviceGalleryThumbnails)
-                        {
-                            <tr>
-                                <td>
-                                    <img src="@thumbnail.Response.PathLower" />
-                                </td>
-                            </tr>
-                        }*@
                     <table class="table table-bordered table-hover">
                         <thead>
                             <tr>
+                                <th>Thumbnail</th>
                                 <th>DateTime</th>
                                 <th>File</th>
                                 <th>Size (bytes)</th>
@@ -66,22 +58,25 @@
                             {
                                 <tr>
                                     <td>
-                                        @file.MediaInfo.AsMetadata.Value.TimeTaken
+                                        <img src="data:image/jpg;charset=utf-8;base64, @file.Item1" />
                                     </td>
                                     <td>
-                                        @file.Name
+                                        @file.Item2.MediaInfo.AsMetadata.Value.TimeTaken
                                     </td>
                                     <td>
-                                        @file.Size
+                                        @file.Item2.Name
+                                    </td>
+                                    <td>
+                                        @file.Item2.Size
                                     </td>
                                     <td>
                                         @{
                                             var parms = new Dictionary<string, string> {
                                                 { "id", Model.Id.ToString() },
-                                                { "DropboxFolderPath", file.AsFile.PathDisplay },
-                                                { "DropboxFileName", file.Name},
+                                                { "DropboxFolderPath", file.Item2.AsFile.PathDisplay },
+                                                { "DropboxFileName", file.Item2.Name},
                                                 { "DownloadFolderPath", "C:\\Users\\fsamu\\Downloads"},
-                                                { "DownloadFileName", file.Name}
+                                                { "DownloadFileName", file.Item2.Name}
                                             };
                                         }
                                         <a asp-area="DHub" asp-controller="DeviceRepository" asp-action="DownloadFile"

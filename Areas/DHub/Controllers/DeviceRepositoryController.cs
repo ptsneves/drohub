@@ -157,8 +157,7 @@ namespace DroHub.Areas.DHub.Controllers
             }
             // else
             ListFolderResult list = null;
-            var galleryItems = new List<FileMetadata>();
-            //var galleryThumbnails = new List<IDownloadResponse<FileMetadata>>();
+            var galleryItems = new List<Tuple<string, FileMetadata>>();
             // ---- TEST SECTION ------
             // Try catch added to validate dropboxclient (e.g.: The user may have revoked the access token)
             // This results on a exception when the dropbox client calls the ListFolderAsync() method
@@ -177,9 +176,9 @@ namespace DroHub.Areas.DHub.Controllers
                             if (fileMetadata.MediaInfo.AsMetadata.Value.IsPhoto) // The file is a photo
                             {
 
-                                //var itemThumbnail = await dropBoxClient.Files.GetThumbnailAsync(fileMetadata.PathLower);
-                                //galleryThumbnails.Add(itemThumbnail.Response.);
-                                galleryItems.Add(fileMetadata);
+                                var itemThumbnail = await dropBoxClient.Files.GetThumbnailAsync(fileMetadata.PathLower);
+                                var thumbnail_base64 = Convert.ToBase64String(await itemThumbnail.GetContentAsByteArrayAsync(), 0);
+                                galleryItems.Add(new Tuple<string, FileMetadata>(thumbnail_base64, fileMetadata));
                             }
                             else if (fileMetadata.MediaInfo.AsMetadata.Value.IsVideo) // The file is a video
                             {
@@ -202,7 +201,6 @@ namespace DroHub.Areas.DHub.Controllers
 
             ViewData["Title"] = "My DroHub Repository";
             ViewData["DeviceGalleryItems"] = galleryItems;
-            //ViewData["DeviceGalleryThumbnails"] = galleryThumbnails;
 
             return View("~/Areas/DHub/Views/Devices/Gallery.cshtml", currentDevice);
 
