@@ -1,0 +1,27 @@
+@{
+    Layout = "~/Areas/DHub/Views/Shared/_Main.cshtml";
+}
+<!-- Content Header (Page header) -->
+<section class="content-header">
+    <h1>
+        Account
+        <small>Manage</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-user"></i> Account</a></li>
+        <li class="active">Manage</li>
+    </ol>
+</section>
+<!-- /Content Header (Page header) -->
+<!-- Main content -->
+<section class="content">
+    <div class="col-md-3">
+        <partial name="_ManageNav" />
+    </div>
+    <div class="col-md-9">
+        @RenderBody()
+    </div>
+</section>
+@section Scripts {
+    @RenderSection("Scripts", required: false)
+}

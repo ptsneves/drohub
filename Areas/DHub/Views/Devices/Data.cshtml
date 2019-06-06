@@ -1,0 +1,87 @@
+@model DroHub.Areas.DHub.Models.Device
+@{
+    ViewData["Title"] = "Data";
+}
+<!-- Content Header (Page header) -->
+<section class="content-header">
+    <h1>
+        Device
+        <small>Data</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a asp-area="DHub" asp-controller="Devices" asp-action="" title="Back to devices list"><i class="fa fa-camera"></i> Devices</a></li>
+        <li class="active">Data</li>
+    </ol>
+</section>
+<!-- /Content Header (Page header) -->
+<!-- Main content -->
+<section class="content">
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="box">
+                <div class="box-header">
+                    <div class="nav-tabs-custom">
+                        <ul class="nav nav-tabs">
+                            <li role="presentation">
+                                <a asp-area="DHub" asp-controller="Devices" asp-route-id="@Model.Id" asp-action="Camera" title="View device camera">Camera</a>
+                            </li>
+                            <li role="presentation">
+                                <a asp-area="DHub" asp-controller="Devices" asp-route-id="@Model.Id" asp-action="Gallery" title="View device gallery">Gallery</a>
+                            </li>
+                            <li role="presentation" class="active">
+                                <a href="#">Data</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <dl class="dl-horizontal">
+                        <dt>
+                            @Html.DisplayNameFor(model => model.Name)
+                        </dt>
+                        <dd>
+                            @Html.DisplayFor(model => model.Name)
+                        </dd>
+                        <dt>
+                            @Html.DisplayNameFor(model => model.SerialNumber)
+                        </dt>
+                        <dd>
+                            @Html.DisplayFor(model => model.SerialNumber)
+                        </dd>
+                        <dt>
+                            @Html.DisplayNameFor(model => model.CreationDate)
+                        </dt>
+                        <dd>
+                            @Html.DisplayFor(model => model.CreationDate)
+                        </dd>
+                    </dl>
+                    <dl class="dl-horizontal">
+                        <dt>
+                            @Html.DisplayNameFor(model => model.ISO)
+                        </dt>
+                        <dd>
+                            @Html.DisplayFor(model => model.ISO)
+                        </dd>
+                        <dt>
+                            @Html.DisplayNameFor(model => model.Apperture)
+                        </dt>
+                        <dd>
+                            @Html.DisplayFor(model => model.Apperture)
+                        </dd>
+                        <dt>
+                            @Html.DisplayNameFor(model => model.FocusMode)
+                        </dt>
+                        <dd>
+                            @Html.DisplayFor(model => model.FocusMode)
+                        </dd>
+                    </dl>
+                </div>
+                <div class="box-footer">
+                    <a asp-area="DHub" asp-controller="Devices" asp-action="" class="btn btn-primary" title="Back to devices list">Back to list</a>
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-success" title="Edit this device">Edit</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- /Main content -->

@@ -1,0 +1,104 @@
+@model DroHub.Areas.DHub.Models.Device
+@{
+    ViewData["Title"] = "Camera";
+}
+<!-- Content Header (Page header) -->
+<section class="content-header">
+    <h1>
+        Device
+        <small>Camera</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a asp-area="DHub" asp-controller="Devices" asp-action="" title="Back to devices list"><i class="fa fa-camera"></i> Devices</a></li>
+        <li class="active">Camera</li>
+    </ol>
+</section>
+<!-- /Content Header (Page header) -->
+<!-- Main content -->
+<section class="content">
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="box">
+                <div class="box-header">
+                    <div class="nav-tabs-custom">
+                        <ul class="nav nav-tabs">
+                            <li role="presentation" class="active">
+                                <a href="#">Camera</a>
+                            </li>
+                            <li role="presentation">
+                                <a asp-area="DHub" asp-controller="Devices" asp-route-id="@Model.Id" asp-action="Gallery" title="View device gallery">Gallery</a>
+                            </li>
+                            <li role="presentation">
+                                <a asp-area="DHub" asp-controller="Devices" asp-route-id="@Model.Id" asp-action="Data" title="View device data">Data</a>
+                            </li>
+                            <li class="pull-right header">
+                                <button class="btn btn-danger" title="Turn off the device">
+                                    <i class="fa fa-power-off"></i>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <div class="col-xs-2">
+
+                    </div>
+                    <div class="col-xs-8">
+                        <div align="center" class="embed-responsive embed-responsive-16by9">
+                            <video id="droneVideo" autoplay loop class="embed-responsive-item">
+                                <source src="~/DemoContents/DJI Mavic Air live stream test.avi" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <div class="col-xs-2">
+                        <form asp-action="Edit">
+                            <label asp-for="ISO" class="control-label"></label>
+                            <select asp-for="ISO" class="form-control select2" style="width: 100%;"
+                                    asp-items="@(new SelectList((IEnumerable<SelectListItem>)@ViewData["Isos"], "Value" , "Text" ))"></select>
+                            <span asp-validation-for="ISO" class="text-danger"></span>
+                            <label asp-for="Apperture" class="control-label"></label>
+                            <select asp-for="Apperture" class="form-control select2" style="width: 100%;"
+                                    asp-items="@(new SelectList((IEnumerable<SelectListItem>)@ViewData["Appertures"], "Value", "Text"))"></select>
+                            <span asp-validation-for="Apperture" class="text-danger"></span>
+                            <label asp-for="FocusMode" class="control-label"></label>
+                            <select asp-for="FocusMode" class="form-control select2" style="width: 100%;"
+                                    asp-items="@(new SelectList((IEnumerable<SelectListItem>)@ViewData["FocusModes"], "Value", "Text"))"></select>
+                            <span asp-validation-for="FocusMode" class="text-danger"></span>
+                        </form>
+                        <br />
+                        <div class="text-center">
+                            <a class="btn btn-app" onclick="playPause()">
+                                <i id="iconPlayPause" class="fa fa-pause"></i>
+                            </a>
+                        </div>
+                        <br />
+                        <a class="btn btn-app btn-block">
+                            <i class="fa fa-camera"></i> Take photo
+                        </a>
+                    </div>
+                </div>
+                <div class="box-footer">
+                    <a asp-area="DHub" asp-controller="Devices" asp-action="" class="btn btn-primary" title="Back to devices list">Back to list</a>
+                    <span class="pull-right">Telemetry info</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- /Main content -->
+<script>
+    function playPause() {
+        var video = $('#droneVideo')[0];
+        var iconPlayPause = $('#iconPlayPause');
+
+        if (video.paused) {
+            video.play();
+        } else {
+            video.pause();
+        }
+
+        iconPlayPause.toggleClass("fa-play");
+        iconPlayPause.toggleClass("fa-pause");
+
+    }
+</script>

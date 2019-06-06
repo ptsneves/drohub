@@ -1,0 +1,53 @@
+@using Dropbox.Api.Files;
+@using Dropbox.Api.Stone;
+
+@model List<FileMetadata>
+
+<section class="content">
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="box">
+                <div class="box-header">
+                    <input type="submit" class="pull-right btn btn-sm btn-warning" value="Disconnect"
+                           form="disconnect-form" />
+                    <h3>Device Repository!</h3>
+                </div>
+                <div class="box-body">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Media Info</th>
+                                <th>Size (bytes)</th>
+                                <th>Path Display</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var file in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        @file.Name
+                                    </td>
+                                    <td>
+                                        @file.MediaInfo
+                                    </td>
+                                    <td>
+                                        @file.Size
+                                    </td>
+                                    <td>
+                                        @file.PathDisplay
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@using (Html.BeginForm("Disconnect", "Repository", FormMethod.Post, new { id = "disconnect-form" }))
+{
+    @Html.AntiForgeryToken();
+}

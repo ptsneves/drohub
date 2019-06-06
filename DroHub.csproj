@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <UserSecretsId>aspnet-DroHub-293BF6FC-2BAD-4AAF-93BC-3302800CA5D2</UserSecretsId>
+    <TypeScriptToolsVersion>2.8</TypeScriptToolsVersion>
+    <ApplicationIcon></ApplicationIcon>
+    <NoWin32Manifest>true</NoWin32Manifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="wwwroot\AdminLTE\bower_components\**" />
+    <Content Remove="wwwroot\AdminLTE\bower_components\**" />
+    <EmbeddedResource Remove="wwwroot\AdminLTE\bower_components\**" />
+    <None Remove="wwwroot\AdminLTE\bower_components\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Migrations\20180629232933_DeviceSettingsAdded.cs" />
+    <Compile Remove="Migrations\20180629232933_DeviceSettingsAdded.Designer.cs" />
+    <Compile Remove="Migrations\20180630011225_DeviceForeignKeyAdded.cs" />
+    <Compile Remove="Migrations\20180630011225_DeviceForeignKeyAdded.Designer.cs" />
+    <Compile Remove="Migrations\20180630011911_DeviceSettingsAdded.cs" />
+    <Compile Remove="Migrations\20180630011911_DeviceSettingsAdded.Designer.cs" />
+    <Compile Remove="Migrations\20180630121249_DeviceSettingsAdded.cs" />
+    <Compile Remove="Migrations\20181004120921_DropboxCredentialsOnDevices.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dropbox.Api" Version="4.9.2" />
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel.Https" Version="2.1.3" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Areas\DHub\Data\" />
+    <Folder Include="Areas\Identity\Services\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Areas\DHub\Views\Devices\Gallery.cshtml">
+      <Pack>$(IncludeRazorContentInPack)</Pack>
+    </Content>
+    <Content Update="Areas\Identity\Pages\Account\_Layout.cshtml">
+      <Pack>$(IncludeRazorContentInPack)</Pack>
+    </Content>
+  </ItemGroup>
+
+</Project>
