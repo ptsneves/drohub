@@ -43,7 +43,7 @@
                     </div>
                 </div>
                 <div class="box-body">
-                    <table class="table table-bordered table-hover">
+                    <table class="table table-bordered table-hover ui-helper-center">
                         <thead>
                             <tr>
                                 <th>Thumbnail</th>
@@ -57,19 +57,19 @@
                             @foreach (var file in deviceRepositoryItems)
                             {
                                 <tr>
-                                    <td>
+                                    <td class="ui-helper-center">
                                         <img src="data:image/jpg;charset=utf-8;base64, @file.Item1" />
                                     </td>
-                                    <td>
+                                    <td class="ui-helper-center">
                                         @file.Item2.MediaInfo.AsMetadata.Value.TimeTaken
                                     </td>
-                                    <td>
+                                    <td class="ui-helper-center">
                                         @file.Item2.Name
                                     </td>
-                                    <td>
+                                    <td class="ui-helper-center">
                                         @file.Item2.Size
                                     </td>
-                                    <td>
+                                    <td class="ui-helper-center">
                                         @{
                                             var parms = new Dictionary<string, string> {
                                                 { "id", Model.Id.ToString() },

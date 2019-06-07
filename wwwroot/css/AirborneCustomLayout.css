@@ -8,3 +8,8 @@
     border-bottom: 3px solid transparent;
     margin-top: -2px;
 }
+
+.ui-helper-center {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
