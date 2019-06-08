@@ -150,103 +150,25 @@ namespace DroHub.Areas.DHub.Controllers
             if (currentDevice == null) return NotFound();
 
             var dropBoxClient = GetDropboxClient(currentDevice);
-
-            if (dropBoxClient == null)
-            {
+            if (dropBoxClient == null){
                 return RedirectToAction(nameof(Index), new { id = id });
             }
-            // else
-            ListFolderResult list = null;
-            var galleryItems = new List<Tuple<string, FileMetadata>>();
-            // ---- TEST SECTION ------
-            // Try catch added to validate dropboxclient (e.g.: The user may have revoked the access token)
-            // This results on a exception when the dropbox client calls the ListFolderAsync() method
-            try
-            {
-                list = await dropBoxClient.Files.ListFolderAsync(string.Empty, true, true); // true to set recursive mode
 
-                foreach (var item in list.Entries)
-                {
-                    if (item.IsFile && !item.IsDeleted) // With this, only show files (ignoring folders) that are not deleted
-                    {
-                        var fileMetadata = item.AsFile; // Get file instance as FileMetadata
-
-                        if (fileMetadata.MediaInfo != null) // The file is a photo or video
-                        {
-                            if (fileMetadata.MediaInfo.AsMetadata.Value.IsPhoto) // The file is a photo
-                            {
-
-                                var itemThumbnail = await dropBoxClient.Files.GetThumbnailAsync(fileMetadata.PathLower);
-                                var thumbnail_base64 = Convert.ToBase64String(await itemThumbnail.GetContentAsByteArrayAsync(), 0);
-                                galleryItems.Add(new Tuple<string, FileMetadata>(thumbnail_base64, fileMetadata));
-                            }
-                            else if (fileMetadata.MediaInfo.AsMetadata.Value.IsVideo) // The file is a video
-                            {
-                                // galleryItems.Add(fileMetadata); Work only with images at this time
-                            }
-                        }
-
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                // Delete current saved token to force user authorize the app again
-                currentDevice.DropboxToken = string.Empty;
-                await _context.SaveChangesAsync();
-
-                return RedirectToAction("Index", "Devices", new { area = "DHub" });
-            }
 
             ViewData["Title"] = "My DroHub Repository";
-            ViewData["DeviceGalleryItems"] = galleryItems;
+            ViewData["UserToken"] = currentDevice.DropboxToken;
 
             return View("~/Areas/DHub/Views/Devices/Gallery.cshtml", currentDevice);
-
-            //-------------------------
-            /*
-            var articles = new List<ArticleMetadata>(await dropBoxClient.GetArticleList());
-            bool isEditable = WebSecurity.IsAuthenticated && WebSecurity.CurrentUserId == user.ID;
-
-            Article article = null;
-
-            if (!string.IsNullOrWhiteSpace(id))
-            {
-                var filtered = from a in articles
-                               where a.DisplayName == id
-                               select a;
-                var selected = filtered.FirstOrDefault();
-                if (selected != null)
-                {
-                    article = await dropBoxClient.GetArticle(blogname, selected);
-                }
-            }
-
-            if (article == null)
-            {
-                return View("Index", Tuple.Create(articles, blogname, isEditable));
-            }
-            else
-            {
-                return View("Display", Tuple.Create(article, articles, blogname, isEditable));
-            }
-
-            ViewData["Title"] = "My DroHub Repository";
-
-            return View(articles);
-            */
-            //-------------------------
         }
 
-        /// <summary>  
-        /// Method to Download files from Dropbox  
-        /// </summary>  
-        /// <param name="DropboxFolderPath">Dropbox folder path which we want to download</param>  
-        /// <param name="DropboxFileName"> Dropbox File name availalbe in DropboxFolderPath to download</param>  
-        /// <param name="DownloadFolderPath"> Local folder path where we want to download file</param>  
-        /// <param name="DownloadFileName">File name to download Dropbox files in local drive</param>  
-        /// <returns></returns>  
+        /// <summary>
+        /// Method to Download files from Dropbox
+        /// </summary>
+        /// <param name="DropboxFolderPath">Dropbox folder path which we want to download</param>
+        /// <param name="DropboxFileName"> Dropbox File name availalbe in DropboxFolderPath to download</param>
+        /// <param name="DownloadFolderPath"> Local folder path where we want to download file</param>
+        /// <param name="DownloadFileName">File name to download Dropbox files in local drive</param>
+        /// <returns></returns>
         public async Task<ActionResult> DownloadFile(int? id, string DropboxFolderPath, string DropboxFileName, string DownloadFolderPath, string DownloadFileName)
         {
             if (id == null) NotFound();

@@ -1,10 +1,9 @@
 @using Dropbox.Api.Files
-@using Dropbox.Api.Stone
 
 @model DroHub.Areas.DHub.Models.Device
 @{
     ViewData["Title"] = "Gallery";
-    List<Tuple<string, FileMetadata>> deviceRepositoryItems = ViewData["DeviceGalleryItems"] as List<Tuple<string, FileMetadata>>;
+    string dropbox_device_token = ViewData["UserToken"] as string;
 }
 <!-- Content Header (Page header) -->
 <section class="content-header">
@@ -20,6 +19,52 @@
 <!-- /Content Header (Page header) -->
 <!-- Main content -->
 <section class="content">
+    @if (!String.IsNullOrEmpty(dropbox_device_token)) {
+        <script src="/lib/dropbox-sdk/Dropbox-sdk.min.js"></script>
+        <script>
+            var dbx = new Dropbox.Dropbox({ accessToken: '@dropbox_device_token', fetch: fetch});
+            console.log('dbx', dbx)
+            dbx.filesListFolder({path: '', include_media_info : true})
+            .then(function(response) {
+                populatePicturesTable(response.entries);
+            })
+            .catch(function(error) {
+                console.error(error);
+            });
+
+            function getCoordinateCell(file, coord_type) {
+                    if (typeof(file.media_info.metadata.location) != 'undefined')
+                        return "<td>"+ eval("file.media_info.metadata.location." + coord_type) + "</td>"
+                    else
+                        return "<td class='text-red'><i>"+ "Picture does not have Geographical information" + "</i></td>"
+            }
+            function populatePicturesTable(files) {
+                for (var i = 0; i < files.length; i++) {
+                    if (files[i].tag != "file" && typeof(files[i].media_info) === 'undefined' &&
+                            files[i].media_info[".tag"] != 'metadata' && files[i].media_info.metadata[".tag"] != 'photo')
+                        continue;
+                    var row = ""
+                    var thumbnail = ""
+                    row += "<td id=thumbnail-" + files[i].id+ "></td>"
+                    row += getCoordinateCell(files[i], "latitude")
+                    row += getCoordinateCell(files[i], "longitude")
+                    row += "<td>"+ files[i].media_info.metadata.time_taken + "</td>"
+                    row += "<td>"+ files[i].name + "</td>"
+                    row += "<td>"+ files[i].size + "</td>"
+                    $('#dropbox-data-table > tbody:last-child').append("<tr>" + row + "</tr>")
+                    dbx.filesGetThumbnail({path: files[i].path_lower}).then(function(response) {
+                        var img = document.createElement('img');
+                        img.src=window.URL.createObjectURL(response.fileBlob);
+                        document.getElementById("thumbnail-" + response.id).appendChild(img)
+                    })
+                    .catch(function(error) {
+                        console.log("When trying to get the thumbnail got error:");
+                        console.log(error);
+                    });
+                }
+            }
+        </script>
+    }
     <div class="row">
         <div class="col-xs-12">
             <div class="box">
@@ -47,6 +92,8 @@
                         <thead>
                             <tr>
                                 <th>Thumbnail</th>
+                                <th>Latitude</th>
+                                <th>Longiture</th>
                                 <th>DateTime</th>
                                 <th>File</th>
                                 <th>Size (bytes)</th>
@@ -54,38 +101,6 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var file in deviceRepositoryItems)
-                            {
-                                <tr>
-                                    <td class="ui-helper-center">
-                                        <img src="data:image/jpg;charset=utf-8;base64, @file.Item1" />
-                                    </td>
-                                    <td class="ui-helper-center">
-                                        @file.Item2.MediaInfo.AsMetadata.Value.TimeTaken
-                                    </td>
-                                    <td class="ui-helper-center">
-                                        @file.Item2.Name
-                                    </td>
-                                    <td class="ui-helper-center">
-                                        @file.Item2.Size
-                                    </td>
-                                    <td class="ui-helper-center">
-                                        @{
-                                            var parms = new Dictionary<string, string> {
-                                                { "id", Model.Id.ToString() },
-                                                { "DropboxFolderPath", file.Item2.AsFile.PathDisplay },
-                                                { "DropboxFileName", file.Item2.Name},
-                                                { "DownloadFolderPath", "C:\\Users\\fsamu\\Downloads"},
-                                                { "DownloadFileName", file.Item2.Name}
-                                            };
-                                        }
-                                        <a asp-area="DHub" asp-controller="DeviceRepository" asp-action="DownloadFile"
-                                           asp-all-route-data="@parms" class="btn btn-info btn-xs" title="Download File"><i class="fa fa-download"></i></a>
-                                        @*<a asp-area="DHub" asp-controller="DeviceRepository" asp-action="DeleteFile"
-                                            asp-all-route-data="@parms" class="btn btn-danger btn-xs" title="Delete File"><i class="fa fa-trash"></i></a>*@
-                                    </td>
-                                </tr>
-                            }
                         </tbody>
                     </table>
                 </div>
