@@ -21,7 +21,6 @@ namespace DroHub.Areas.DHub.Controllers
         private const string DefaultApperture = "f/4"; // TODO Get value directly from above lists
         private const string DefaultFocusMode = "Auto"; // TODO Get values directly from above lists
         private const string DefaultIso = "200"; // TODO Get value directly from above lists
-
         public DevicesController(DroHubContext context, UserManager<DroHubUser> userManager)
         {
             _context = context;
@@ -150,7 +149,7 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         // POST: DroHub/Devices/Create
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
+        // To protect from overposting attacks, please enable the specific properties you want to bind to, for
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -197,7 +196,7 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         // POST: DroHub/Devices/Edit/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
+        // To protect from overposting attacks, please enable the specific properties you want to bind to, for
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]

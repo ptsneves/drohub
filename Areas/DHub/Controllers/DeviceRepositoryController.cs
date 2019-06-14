@@ -21,8 +21,6 @@ namespace DroHub.Areas.DHub.Controllers
         private readonly DroHubContext _context;
         private readonly UserManager<DroHubUser> _userManager;
         private readonly DropboxRepositorySettings _dropboxRepositorySettings;
-
-        //private static DropBoxBase dBoxBase = new DropBoxBase(_dropboxRepositorySettings.APIKey, _dropboxRepositorySettings.APISecret, _dropboxRepositorySettings.AppName, _dropboxRepositorySettings.AuthRedirectUri);
         #endregion
 
         #region Constructor
@@ -63,14 +61,16 @@ namespace DroHub.Areas.DHub.Controllers
             // else
             currentDevice.DropboxConnectState = Guid.NewGuid().ToString("N"); // Set new dropbox connect state to this device
             _context.SaveChanges();
+            if (_dropboxRepositorySettings.APIKey == null)
+                throw new System.InvalidOperationException("API Key is not available. Please set it");
 
             var redirect = DropboxOAuth2Helper.GetAuthorizeUri(
                 OAuthResponseType.Code,
                 _dropboxRepositorySettings.APIKey,
                 _dropboxRepositorySettings.AuthRedirectUri,
                 currentDevice.DropboxConnectState,
-                true); // force_reapprove Whether or not to force the user to approve the app again if they've already done so. 
-                       // If false (default), a user who has already approved the application may be automatically redirected to the URI specified by redirect_uri. 
+                true); // force_reapprove Whether or not to force the user to approve the app again if they've already done so.
+                       // If false (default), a user who has already approved the application may be automatically redirected to the URI specified by redirect_uri.
                        // If true, the user will not be automatically redirected and will have to approve the app again.
 
             return Redirect(redirect.ToString());
@@ -137,7 +137,6 @@ namespace DroHub.Areas.DHub.Controllers
             // this.Flash("This account has been disconnected from Dropbox.", FlashLevel.Success);
             return RedirectToAction(nameof(Data), "Devices", new { area = "DHub", id = id });
         }
-
 
         // GET: /<controller>/Gallery
         public async Task<IActionResult> Gallery(int? id)

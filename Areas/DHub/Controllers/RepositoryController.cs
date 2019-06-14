@@ -16,62 +16,6 @@ namespace DroHub.Areas.DHub.Controllers
     public static class BlogHelpers
     {
         private static Dictionary<string, Article> ArticleCache = new Dictionary<string, Article>();
-
-        //public static async Task<Article> GetArticle(this DropboxClient client, string blogName, ArticleMetadata metadata, bool bypassCache = false)
-        //{
-        //    if (metadata == null || string.IsNullOrEmpty(blogName))
-        //    {
-        //        return null;
-        //    }
-
-        //    var key = string.Format(CultureInfo.InvariantCulture, "{0}:{1}", blogName, metadata.Name);
-
-        //    Article article;
-        //    if (!bypassCache)
-        //    {
-        //        lock (ArticleCache)
-        //        {
-        //            if (ArticleCache.TryGetValue(key, out article))
-        //            {
-        //                if (article.Metadata.Rev == metadata.Rev)
-        //                {
-        //                    return article;
-        //                }
-        //            }
-        //        }
-        //    }
-
-        //    try
-        //    {
-        //        using (var download = await client.Files.DownloadAsync("/" + metadata.Filename))
-        //        {
-        //            var content = await download.GetContentAsStringAsync();
-
-        //            var html = content.ParseMarkdown();
-
-        //            article = Article.FromMetadata(download.Response, html);
-        //        }
-        //    }
-        //    catch (ApiException<DownloadError> e)
-        //    {
-        //        var pathError = e.ErrorResponse.AsPath;
-
-        //        if (pathError != null && pathError.Value.IsNotFile)
-        //        {
-        //            return null;
-        //        }
-
-        //        throw;
-        //    }
-
-        //    lock (ArticleCache)
-        //    {
-        //        ArticleCache[key] = article;
-        //    }
-
-        //    return article;
-        //}
-
         public static void FlushCache(this ControllerBase controller, string blogName)
         {
             var prefix = blogName + ":";
@@ -225,7 +169,7 @@ namespace DroHub.Areas.DHub.Controllers
         private static readonly string dBoxAPIKey = "";
         private static readonly string dBoxAPISecret = "";
         private static readonly string dBoxAppName = "DroHub";
-        // TODO set URI in runtime, accordingly if you're on localhost, on dev server, or on production server 
+        // TODO set URI in runtime, accordingly if you're on localhost, on dev server, or on production server
         // (see: https://github.com/dropbox/dropbox-sdk-dotnet/blob/91f3f9ff1a6142c35efa9a7b0156cab264439169/dropbox-sdk-dotnet/Examples/SimpleBlogDemo/Controllers/HomeController.cs#L25)
         private static readonly string dBoxAuthRedirectUri = "https://localhost:44379/DHub/Repository/Auth";
 
@@ -270,8 +214,8 @@ namespace DroHub.Areas.DHub.Controllers
                 dBoxAPIKey,
                 dBoxAuthRedirectUri,
                 currentUser.ConnectState,
-                true); // force_reapprove Whether or not to force the user to approve the app again if they've already done so. 
-                       // If false (default), a user who has already approved the application may be automatically redirected to the URI specified by redirect_uri. 
+                true); // force_reapprove Whether or not to force the user to approve the app again if they've already done so.
+                       // If false (default), a user who has already approved the application may be automatically redirected to the URI specified by redirect_uri.
                        // If true, the user will not be automatically redirected and will have to approve the app again.
 
             return Redirect(redirect.ToString());
