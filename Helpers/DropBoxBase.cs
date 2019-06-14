@@ -10,9 +10,7 @@ namespace DropBoxIntegration
 {
     public class DropBoxBase
     {
-        #region Variables  
-        private DropboxClient DBClient;
-        private ListFolderArg DBFolders;
+        #region Variables
         private string oauth2State;
         private string DBAuthenticationURL = string.Empty;
         private string RedirectUri = string.Empty;
