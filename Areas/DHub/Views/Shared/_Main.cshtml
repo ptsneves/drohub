@@ -339,7 +339,7 @@
                     </form>*@
                 <!-- /.search form -->
                 <!-- sidebar menu: : style can be found in sidebar.less -->
-                <ul class="sidebar-menu" data-widget="tree">
+                <ul class="sidebar-menu tree" data-widget="tree">
                     @*<li class="header">MAIN NAVIGATION</li>*@
                     <li>
                         <a href="#">
@@ -350,6 +350,8 @@
                         <a asp-area="DHub" asp-controller="Devices" asp-action="">
                             <i class="fa fa-camera"></i> <span>Devices</span>
                         </a>
+                        <ul class="treeview-menu" style="display: block;">
+                        </ul>
                     </li>
                     @*<li>
                         <a asp-area="DHub" asp-controller="Repository" asp-action="">
