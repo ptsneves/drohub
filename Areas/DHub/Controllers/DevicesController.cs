@@ -110,13 +110,6 @@ namespace DroHub.Areas.DHub.Controllers
             return Json(device_list, serializer_settings);
         }
 
-        // GET: DroHub/Devices
-        public async Task<IActionResult> Index()
-        {
-            var currentUser = await _userManager.GetUserAsync(User);
-            return View(await _context.Devices.Where(d => d.User == currentUser).ToListAsync());
-        }
-
         // GET: DroHub/Devices/Data/5
         public async Task<IActionResult> Data(int? id)
         {
@@ -186,7 +179,7 @@ namespace DroHub.Areas.DHub.Controllers
             _context.Add(device);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Data));
         }
 
         // GET: DroHub/Devices/Edit/5
@@ -239,7 +232,7 @@ namespace DroHub.Areas.DHub.Controllers
                 throw;
             }
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Data));
 
         }
 
@@ -277,7 +270,7 @@ namespace DroHub.Areas.DHub.Controllers
             _context.Devices.Remove(device);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Data));
         }
 
         private bool DeviceExists(int id)
