@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace DroHub.Areas.DHub.Controllers
 {
@@ -92,6 +93,21 @@ namespace DroHub.Areas.DHub.Controllers
                 });
 
             return selectList;
+        }
+
+        // GET: DroHub/GetDevicesList
+        public async Task<IActionResult> GetDevicesList() {
+            var currentUser = await _userManager.GetUserAsync(User);
+            var devices = await _context.Devices.Where(d => d.User == currentUser).ToListAsync();
+            List<Device> device_list = new List<Device>();
+            foreach(var device in devices) {
+                device_list.Add(device);
+            }
+            var serializer_settings = new JsonSerializerSettings
+            {
+                PreserveReferencesHandling = PreserveReferencesHandling.Objects
+            };
+            return Json(device_list, serializer_settings);
         }
 
         // GET: DroHub/Devices

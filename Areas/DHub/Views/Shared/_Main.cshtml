@@ -61,7 +61,7 @@
                 <div class="navbar-custom-menu">
                     <ul class="nav navbar-nav">
                         <!-- Messages: style can be found in dropdown.less-->
-                        @*<li class="dropdown messages-menu">
+                        <li class="dropdown messages-menu">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                     <i class="fa fa-envelope-o"></i>
                                     <span class="label label-success">4</span>
@@ -591,6 +591,13 @@
     <script src="~/AdminLTE/bower_components/fastclick/lib/fastclick.js"></script>
     <!-- Add dynamically li active class on AdminLTE sidemenu -->
     <script src="~/js/activeSideMenus.js"></script>
+    <!--side menu population -->
+    <script src="~/js/sidemenu-drohub.js"></script>
+    <script>
+        var url = '@Url.Action("GetDevicesList", "Devices")'
+        var gallery_url = '@Url.Action("Gallery", "Devices")'
+        populateDevices(url, gallery_url)
+    </script>
     <!-- AdminLTE App -->
     <script src="~/AdminLTE/dist/js/adminlte.min.js"></script>
     <!-- Socket.io -->
