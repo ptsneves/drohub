@@ -59,6 +59,7 @@
                     if (folders[i][".tag"] != "folder") {
                         continue;
                     }
+                    var files = {}
                     if (first_pic_response == null && folders[i]["path_lower"] != null) {
                         subdir_resp = await dbx.filesListFolder({path : folders[i]["path_lower"], include_media_info : true})
                         files = subdir_resp.entries
@@ -80,6 +81,19 @@
 
                     folder_ui_thumbnail.attr("id", `folder-widget-${i}`)
                     folder_ui_thumbnail.attr("style",  `background: url(${thumbnail_url}) center center;`)
+
+                    var session_name = folder_ui.find('#session-name')
+                    session_name.attr("id", `session-name-${i}`)
+                    session_name.text(first_pic_response.name)
+
+                    var session_date = folder_ui.find('#session-date')
+                    session_date.attr("id", `session-date-${i}`)
+                    session_date.text(first_pic_response.media_info.metadata.time_taken)
+
+                    var folder_pic_count = folder_ui.find('#folder-pic-count')
+                    folder_pic_count.attr("id", `folder-pic-count-${i}`)
+                    folder_pic_count.text(files.length)
+
                     folder_ui.appendTo('#dropbox-widget-container')
                 }
             }
@@ -156,8 +170,8 @@
                         <div class="box-footer no-padding">
                         <ul class="nav nav-stacked">
                             <li><a href="#" onclick="displayFileGallery()"><h3>Projects</h3></a></li>
-                            <li><a href="#">Pictures Available <span class="pull-right badge bg-aqua">5</span></a></li>
-                            <li><a href="#">Session date</a></li>
+                            <li><a href="#">Pictures Available <span class="pull-right badge bg-aqua" id="folder-pic-count">N</span></a></li>
+                            <li><a href="#" id="session-date">Session date</a></li>
                         </ul>
                         </div>
                     </div>
