@@ -53,8 +53,9 @@
             }
 
             async function populateFoldersGrid(folders) {
-                var first_pic_response = null
+
                 for (var i = 0; i < folders.length; i++) {
+                    var first_pic_response = null
                     if (folders[i][".tag"] != "folder") {
                         continue;
                     }
