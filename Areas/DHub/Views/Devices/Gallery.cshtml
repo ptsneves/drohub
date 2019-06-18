@@ -109,29 +109,46 @@
                         return "<td class='text-red'><i>"+ "Picture does not have Geographical information" + "</i></td>"
             }
             function populatePicturesTable(files) {
+                var has_at_list_one_valid_picture = false
+                var gallery_table = $('#dropbox-data-table').clone()
                 for (var i = 0; i < files.length; i++) {
                     if (!isPictureFile(files[i]))
                         continue;
-                    $('#dropbox-data-table').attr("style", "display=inherit")
-                    var dropbox_data_table = $('#dropbox-data-table > tbody:last-child')
+
+                    gallery_table.attr("style", "display=inherit")
+                    gallery_table.attr("id", "dropbox-data-table-real")
+
                     var row = ""
                     var thumbnail = ""
-                    row += "<td id=thumbnail-" + files[i].id+ "></td>"
+                    row += `<td id="thumbnail-${files[i].id}"></td>`
                     row += getCoordinateCell(files[i], "latitude")
                     row += getCoordinateCell(files[i], "longitude")
-                    row += "<td>"+ files[i].media_info.metadata.time_taken + "</td>"
+                    row += `<td>${files[i].media_info.metadata.time_taken}</td>`
                     row += "<td>"+ files[i].name + "</td>"
                     row += "<td>"+ files[i].size + "</td>"
-                    dropbox_data_table.append("<tr>" + row + "</tr>")
-                    dbx.filesGetThumbnail({path: files[i].path_lower}).then(function(response) {
-                        var img = document.createElement('img');
-                        img.src=window.URL.createObjectURL(response.fileBlob);
-                        document.getElementById("thumbnail-" + response.id).appendChild(img)
-                    })
-                    .catch(function(error) {
-                        console.log("When trying to get the thumbnail got error:");
-                        console.log(error);
-                    });
+                    row = "<tr>" + row + "</tr>"
+
+                    var dropbox_data_table = gallery_table.find('#gallery-table-body')
+                    dropbox_data_table.append(row)
+                    has_at_list_one_valid_picture = true
+                }
+
+                if (has_at_list_one_valid_picture) {
+                    gallery_table_container = $("#gallery-table-container")
+                    $('#dropbox-data-table-real').remove()
+                    gallery_table_container.append(gallery_table)
+
+                    for (var i = 0; i < files.length; i++) {
+                        dbx.filesGetThumbnail({path: files[i].path_lower}).then(function(response) {
+                            var img = document.createElement('img');
+                            img.src=window.URL.createObjectURL(response.fileBlob);
+                            document.getElementById("thumbnail-" + response.id).appendChild(img)
+                        })
+                        .catch(function(error) {
+                            console.log("When trying to get the thumbnail got error:");
+                            console.log(error);
+                        })
+                    }
                 }
             }
         </script>
@@ -180,7 +197,7 @@
                         </div>
                     </div>
                 </div>
-                            <div class="box-body">
+                <div class="box-body" id="gallery-table-container">
                     <table class="table table-bordered table-hover ui-helper-center" style="display: none;" id="dropbox-data-table">
                         <thead>
                             <tr>
@@ -193,7 +210,8 @@
                                 <th></th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="gallery-table-body">
+                            <!-- tr -->
                         </tbody>
                     </table>
                 </div>
