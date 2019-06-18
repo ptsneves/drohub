@@ -22,6 +22,12 @@
     @if (!String.IsNullOrEmpty(dropbox_device_token)) {
         <script src="/lib/dropbox-sdk/Dropbox-sdk.min.js"></script>
         <script>
+            function isPictureFile(file_response) {
+                return !(file_response[".tag"] != "file" || typeof(file_response.media_info) === 'undefined' ||
+                            file_response.media_info[".tag"] != 'metadata' ||
+                            file_response.media_info.metadata[".tag"] != 'photo')
+            }
+
             var dbx = new Dropbox.Dropbox({ accessToken: '@dropbox_device_token', fetch: fetch});
             console.log('dbx', dbx)
             dbx.filesListFolder({path: '', include_media_info : true})
@@ -40,8 +46,7 @@
             }
             function populatePicturesTable(files) {
                 for (var i = 0; i < files.length; i++) {
-                    if (files[i].tag != "file" && typeof(files[i].media_info) === 'undefined' &&
-                            files[i].media_info[".tag"] != 'metadata' && files[i].media_info.metadata[".tag"] != 'photo')
+                    if (!isPictureFile(files[i]))
                         continue;
                     var row = ""
                     var thumbnail = ""
