@@ -42,8 +42,8 @@
                 });
             }
 
-            function displayFileGallery() {
-                dbx.filesListFolder({path: '', include_media_info : true})
+            function displayFileGallery(path) {
+                dbx.filesListFolder({"path": path, include_media_info : true})
                 .then(function(response) {
                     populatePicturesTable(response.entries);
                 })
@@ -93,6 +93,10 @@
                     var folder_pic_count = folder_ui.find('#folder-pic-count')
                     folder_pic_count.attr("id", `folder-pic-count-${i}`)
                     folder_pic_count.text(files.length)
+
+                    var folder_gallery_link = folder_ui.find('#folder-gallery-link')
+                    folder_gallery_link.attr("id", `folder-gallery-link-${i}`)
+                    folder_gallery_link.attr("onclick", `displayFileGallery('${folders[i]["path_lower"]}')`)
 
                     folder_ui.appendTo('#dropbox-widget-container')
                 }
@@ -169,7 +173,7 @@
                         </div>
                         <div class="box-footer no-padding">
                         <ul class="nav nav-stacked">
-                            <li><a href="#" onclick="displayFileGallery()"><h3>Projects</h3></a></li>
+                            <li><a href="#" id="folder-gallery-link"><h3 id="session-name">Session 1</h3></a></li>
                             <li><a href="#">Pictures Available <span class="pull-right badge bg-aqua" id="folder-pic-count">N</span></a></li>
                             <li><a href="#" id="session-date">Session date</a></li>
                         </ul>
