@@ -93,6 +93,7 @@
 }
 @section Scripts {
     @if (!String.IsNullOrEmpty(dropbox_device_token)) {
+        <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxT5qlKhJ9UZL_oiHW6XI5zuDEvST5ujk&callback=initMap"></script>
         <script src="/lib/dropbox-sdk/Dropbox-sdk.min.js"></script>
         <script>
             function getCoordinate(file, coord_type) {
@@ -100,6 +101,22 @@
                         return eval("file.media_info.metadata.location." + coord_type)
             }
 
+            function setLocationFromReverseGeocode(id, file) {
+                var geocoder = new google.maps.Geocoder;
+                var latlng = {lat: getCoordinate(file, 'latitude') , lng: getCoordinate(file, 'longitude')};
+                geocoder.geocode({'location': latlng}, function(results, status) {
+                    if (status === 'OK') {
+                        if (results[0]) {
+                            $(`#${id}`).text(results[0].formatted_address);
+                        }
+                        else {
+                            window.alert('No results found');
+                        }
+                    } else {
+                        window.alert('Geocoder failed due to: ' + status);
+                    }
+                });
+            }
 
             function isPictureFile(file_response) {
                 return !(file_response[".tag"] != "file" || typeof(file_response.media_info) === 'undefined' ||
@@ -162,8 +179,9 @@
                     folder_ui_thumbnail.attr("style",  `background: url(${thumbnail_url}) center center;`)
 
                     var session_name = folder_ui.find('#session-name')
-                    session_name.attr("id", `session-name-${i}`)
-                    session_name.text(first_pic_response.name)
+                    session_name_id = `session-name-${i}`
+                    session_name.attr("id", session_name_id)
+
 
                     var session_date = folder_ui.find('#session-date')
                     session_date.attr("id", `session-date-${i}`)
@@ -178,6 +196,7 @@
                     folder_gallery_link.attr("onclick", `displayFileGallery('${folders[i]["path_lower"]}')`)
 
                     folder_ui.appendTo('#dropbox-widget-container')
+                    setLocationFromReverseGeocode(session_name_id, first_pic_response)
                 }
             }
 
