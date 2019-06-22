@@ -1,0 +1,132 @@
+@{
+    ViewData["Title"] = "MapDashboard";
+}
+<!-- Content Header (Page header) -->
+<section class="content-header">
+    <h1>
+        Device
+        <small>Edit</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a asp-area="DHub" asp-controller="Devices" asp-action="" title="Back to devices list"><i class="fa fa-camera"></i> Devices</a></li>
+        <li class="active">Edit</li>
+    </ol>
+
+</section>
+<!-- /Content Header (Page header) -->
+<!-- Main content -->
+
+<section class="content">
+    <style>
+        .container-fluid {
+            width:100%;
+            height: 100%;
+            position:absolute;
+            top:0;
+            padding:0;
+        }
+
+        #map {
+            width:100%;
+            height: 100%;
+            position:absolute;
+            top:0;
+            padding:0;
+        }
+        .gm-style .gm-style-iw {
+            color: #FFFFFF;
+            background-color: #3C61AD !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 60% !important;
+            min-height: 50px !important;
+            height: 100% !important;
+            padding-top: 10px;
+            display: block !important;
+        }
+
+        .gm-style .gm-style-iw #google-popup p{
+            padding: 10px;
+        }
+        /*style the link*/
+        .gm-style div div div div div div div div a {
+            color: #f1f1f1;
+            font-weight: bold;
+        }
+
+    </style>
+    <div class="container-fluid">
+        <div id="map" ></div>
+        <script src="/lib/dropbox-sdk/Dropbox-sdk.min.js"></script>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+            function getCoordinateCell(file, coord_type) {
+                    if (typeof(file.media_info.metadata.location) != 'undefined')
+                        return eval("file.media_info.metadata.location." + coord_type)
+            }
+
+            function isPictureFile(file_response) {
+                return !(file_response[".tag"] != "file" || typeof(file_response.media_info) === 'undefined' ||
+                            file_response.media_info[".tag"] != 'metadata' ||
+                            file_response.media_info.metadata[".tag"] != 'photo' ||
+                            file_response.media_info.metadata["location"] === undefined)
+            }
+
+            function populateMarkers(map, infowindow, files) {
+                for (var i = 0; i < files.length; i++) {
+                    if (!isPictureFile(files[i]))
+                        continue;
+
+                    let contentString = `<div id="google-popup-${i}">
+                        <p>Pic ${files[i].name} </p>
+                        </div>`;
+
+                    let beachMarker = new google.maps.Marker({
+                            position: {lat: getCoordinateCell(files[i], 'latitude'), lng: getCoordinateCell(files[i], 'longitude')},
+                            map: map
+                            });
+
+                    google.maps.event.addListener(beachMarker, 'click', function() {
+                        infowindow.close()
+                        infowindow.setContent(contentString)
+                        infowindow.open(map, beachMarker);
+                    });
+                }
+            }
+
+            function initMap() {
+                var infowindow = new google.maps.InfoWindow();
+
+                var map = new google.maps.Map(document.getElementById('map'), {
+                    zoom: 10,
+                    center: {lat: 40.5, lng: -7}
+                    });
+
+                var url = '@Url.Action("GetDevicesList", "Devices", new {Area = "DHub"})'
+
+                $.getJSON(url)
+                .done(function (device_list) {
+                    $.each(device_list, function (i, device) {
+                        if (device.dropboxToken === undefined)
+                            return;
+
+                        var dbx = new Dropbox.Dropbox({ accessToken: device.dropboxToken, fetch: fetch})
+                        dbx.filesListFolder({"path": '', include_media_info : true})
+                        .then(function(response) {
+                            populateMarkers(map, infowindow, response.entries);
+                        })
+                        .catch(function(error) {
+                            console.error(error);
+                        });
+                    })
+                })
+                .fail(function () {
+                    console.log("Received bad json")
+                })
+        }
+        </script>
+        <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxT5qlKhJ9UZL_oiHW6XI5zuDEvST5ujk&callback=initMap"></script>
+}
