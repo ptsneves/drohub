@@ -107,6 +107,9 @@ namespace DroHub.Areas.DHub.Controllers
             {
                 PreserveReferencesHandling = PreserveReferencesHandling.Objects
             };
+            if (device_list.Any() == false)
+                return NoContent();
+
             return Json(device_list, serializer_settings);
         }
 
