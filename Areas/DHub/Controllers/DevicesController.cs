@@ -277,7 +277,7 @@ namespace DroHub.Areas.DHub.Controllers
             _context.Devices.Remove(device);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Data));
+            return RedirectToAction(nameof(Create));
         }
 
         private bool DeviceExists(int id)
