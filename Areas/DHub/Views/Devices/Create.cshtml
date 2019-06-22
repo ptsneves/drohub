@@ -48,7 +48,7 @@
 <!-- /Main content -->
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-    <script>
+    <!-- <script>
         var socket = io('http://procme.ddns.net:3002/drotag');
         socket.on('connect', function () {
             console.log('Connected!');
@@ -57,5 +57,5 @@
                 console.log('Received: ', msg);
             });
         });
-    </script>
+    </script> -->
 }
