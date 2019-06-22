@@ -594,8 +594,8 @@
     <!--side menu population -->
     <script src="~/js/sidemenu-drohub.js"></script>
     <script>
-        var url = '@Url.Action("GetDevicesList", "Devices")'
-        var gallery_url = '@Url.Action("Gallery", "Devices")'
+        var url = '@Url.Action("GetDevicesList", "Devices", new {Area = "DHub"})'
+        var gallery_url = '@Url.Action("Gallery", "Devices", new {Area = "DHub"})'
         populateDevices(url, gallery_url)
     </script>
     <!-- AdminLTE App -->
