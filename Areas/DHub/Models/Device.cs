@@ -1,6 +1,7 @@
 using DroHub.Areas.Identity.Data;
 using System;
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 
 namespace DroHub.Areas.DHub.Models
 {
@@ -19,7 +20,7 @@ namespace DroHub.Areas.DHub.Models
         public string FocusMode { get; set; }
         [Display(Name = "Registration Date")]
         public DateTime CreationDate { get; set; }
-
+        [JsonIgnore]
         public DroHubUser User { get; set; }
     }
 }

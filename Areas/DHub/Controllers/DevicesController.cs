@@ -103,14 +103,11 @@ namespace DroHub.Areas.DHub.Controllers
             foreach(var device in devices) {
                 device_list.Add(device);
             }
-            var serializer_settings = new JsonSerializerSettings
-            {
-                PreserveReferencesHandling = PreserveReferencesHandling.Objects
-            };
+
             if (device_list.Any() == false)
                 return NoContent();
 
-            return Json(device_list, serializer_settings);
+            return Json(device_list);
         }
 
         // GET: DroHub/Devices/Data/5
