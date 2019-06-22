@@ -63,7 +63,7 @@
 
 @section Scripts {
     <script>
-            function getCoordinateCell(file, coord_type) {
+            function getCoordinate(file, coord_type) {
                     if (typeof(file.media_info.metadata.location) != 'undefined')
                         return eval("file.media_info.metadata.location." + coord_type)
             }
@@ -85,7 +85,7 @@
                         </div>`;
 
                     let beachMarker = new google.maps.Marker({
-                            position: {lat: getCoordinateCell(files[i], 'latitude'), lng: getCoordinateCell(files[i], 'longitude')},
+                            position: {lat: getCoordinate(files[i], 'latitude'), lng: getCoordinate(files[i], 'longitude')},
                             map: map
                             });
 

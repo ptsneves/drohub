@@ -94,9 +94,13 @@
 @section Scripts {
     @if (!String.IsNullOrEmpty(dropbox_device_token)) {
         <script src="/lib/dropbox-sdk/Dropbox-sdk.min.js"></script>
-
-
         <script>
+            function getCoordinate(file, coord_type) {
+                    if (typeof(file.media_info.metadata.location) != 'undefined')
+                        return eval("file.media_info.metadata.location." + coord_type)
+            }
+
+
             function isPictureFile(file_response) {
                 return !(file_response[".tag"] != "file" || typeof(file_response.media_info) === 'undefined' ||
                             file_response.media_info[".tag"] != 'metadata' ||
