@@ -1,6 +1,7 @@
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
 using DroHub.Data;
+using System.Data.SqlClient;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -177,7 +178,13 @@ namespace DroHub.Areas.DHub.Controllers
             }
 
             _context.Add(device);
-            await _context.SaveChangesAsync();
+            try {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException e) {
+                //TODO
+                return RedirectToAction(nameof(Create), "Devices");
+            }
 
             return RedirectToAction(nameof(Data), new {id = device.Id});
         }
