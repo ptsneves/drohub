@@ -182,7 +182,7 @@ namespace DroHub.Areas.DHub.Controllers
             _context.Add(device);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Data));
+            return RedirectToAction(nameof(Data), new {id = device.Id});
         }
 
         // GET: DroHub/Devices/Edit/5
