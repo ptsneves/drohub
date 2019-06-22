@@ -19,8 +19,83 @@
 <!-- /Content Header (Page header) -->
 <!-- Main content -->
 <section class="content">
+      <div class="row">
+        <div class="col-xs-12">
+            <div class="box">
+                <div class="box-header">
+                    <div class="nav-tabs-custom">
+                        <ul class="nav nav-tabs">
+                            <li role="presentation">
+                                <a asp-area="DHub" asp-controller="Devices" asp-route-id="@Model.Id" asp-action="Camera" title="View device camera">Camera</a>
+                            </li>
+                            <li role="presentation" class="active">
+                                <a href="#">Gallery</a>
+                            </li>
+                            <li role="presentation">
+                                <a asp-area="DHub" asp-controller="Devices" asp-route-id="@Model.Id" asp-action="Data" title="View device data">Data</a>
+                            </li>
+                            <li class="pull-right header">
+                                <input type="submit" class="pull-right btn btn-sm btn-danger" value="Disconnect repository"
+                                       form="disconnect-form" />
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-4" id="dropbox-widget-container">
+                    <div class="box box-widget widget-user-2" style="display: none;" id="dropbox-widget-folder">
+                        <!-- Add the bg color to the header using any of the bg-* classes -->
+                        <div class="widget-user-header lightlue" id="sdad">
+                        <div class="widget-user-image">
+                            <img class="img-circle" src="../dist/img/user7-128x128.jpg">
+                        </div>
+                        <!-- /.widget-user-image -->
+                        <h3 class="widget-user-username">l</h3>
+                        <h5 class="widget-user-desc"></h5>
+                        </div>
+                        <div class="box-footer no-padding">
+                        <ul class="nav nav-stacked">
+                            <li><a href="#" id="folder-gallery-link"><h3 id="session-name">Session 1</h3></a></li>
+                            <li><a href="#">Pictures Available <span class="pull-right badge bg-aqua" id="folder-pic-count">N</span></a></li>
+                            <li><a href="#" id="session-date">Session date</a></li>
+                        </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="box-body" id="gallery-table-container">
+                    <table class="table table-bordered table-hover ui-helper-center" style="display: none;" id="dropbox-data-table">
+                        <thead>
+                            <tr>
+                                <th>Thumbnail</th>
+                                <th>Latitude</th>
+                                <th>Longiture</th>
+                                <th>DateTime</th>
+                                <th>File</th>
+                                <th>Size (bytes)</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="gallery-table-body">
+                            <!-- tr -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="box-footer">
+                    <a asp-area="DHub" asp-controller="Devices" asp-action="" class="btn btn-primary" title="Back to devices list">Back to list</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- /Main content -->
+@using (Html.BeginForm("Disconnect", "DeviceRepository", new { id = @Model.Id }, FormMethod.Post, true, new { id = "disconnect-form" }))
+{
+    @Html.AntiForgeryToken();
+}
+@section Scripts {
     @if (!String.IsNullOrEmpty(dropbox_device_token)) {
         <script src="/lib/dropbox-sdk/Dropbox-sdk.min.js"></script>
+
+
         <script>
             function isPictureFile(file_response) {
                 return !(file_response[".tag"] != "file" || typeof(file_response.media_info) === 'undefined' ||
@@ -170,78 +245,4 @@
             }
         </script>
     }
-
-
-      <div class="row">
-        <div class="col-xs-12">
-            <div class="box">
-                <div class="box-header">
-                    <div class="nav-tabs-custom">
-                        <ul class="nav nav-tabs">
-                            <li role="presentation">
-                                <a asp-area="DHub" asp-controller="Devices" asp-route-id="@Model.Id" asp-action="Camera" title="View device camera">Camera</a>
-                            </li>
-                            <li role="presentation" class="active">
-                                <a href="#">Gallery</a>
-                            </li>
-                            <li role="presentation">
-                                <a asp-area="DHub" asp-controller="Devices" asp-route-id="@Model.Id" asp-action="Data" title="View device data">Data</a>
-                            </li>
-                            <li class="pull-right header">
-                                <input type="submit" class="pull-right btn btn-sm btn-danger" value="Disconnect repository"
-                                       form="disconnect-form" />
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-md-4" id="dropbox-widget-container">
-                    <div class="box box-widget widget-user-2" style="display: none;" id="dropbox-widget-folder">
-                        <!-- Add the bg color to the header using any of the bg-* classes -->
-                        <div class="widget-user-header lightlue" id="sdad">
-                        <div class="widget-user-image">
-                            <img class="img-circle" src="../dist/img/user7-128x128.jpg">
-                        </div>
-                        <!-- /.widget-user-image -->
-                        <h3 class="widget-user-username">l</h3>
-                        <h5 class="widget-user-desc"></h5>
-                        </div>
-                        <div class="box-footer no-padding">
-                        <ul class="nav nav-stacked">
-                            <li><a href="#" id="folder-gallery-link"><h3 id="session-name">Session 1</h3></a></li>
-                            <li><a href="#">Pictures Available <span class="pull-right badge bg-aqua" id="folder-pic-count">N</span></a></li>
-                            <li><a href="#" id="session-date">Session date</a></li>
-                        </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="box-body" id="gallery-table-container">
-                    <table class="table table-bordered table-hover ui-helper-center" style="display: none;" id="dropbox-data-table">
-                        <thead>
-                            <tr>
-                                <th>Thumbnail</th>
-                                <th>Latitude</th>
-                                <th>Longiture</th>
-                                <th>DateTime</th>
-                                <th>File</th>
-                                <th>Size (bytes)</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody id="gallery-table-body">
-                            <!-- tr -->
-                        </tbody>
-                    </table>
-                </div>
-                <div class="box-footer">
-                    <a asp-area="DHub" asp-controller="Devices" asp-action="" class="btn btn-primary" title="Back to devices list">Back to list</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-<!-- /Main content -->
-@using (Html.BeginForm("Disconnect", "DeviceRepository", new { id = @Model.Id }, FormMethod.Post, true, new { id = "disconnect-form" }))
-{
-    @Html.AntiForgeryToken();
 }
-
