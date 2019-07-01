@@ -122,7 +122,13 @@
             function displayFoldersGallery() {
                  dbx.filesListFolder({path: '/@device_serial' })
                 .then(function(response) {
-                    populateFoldersGrid(response.entries);
+
+                    for (var i = 0; i < response.entries.length; i++) {
+                        console.log(response.entries[i])
+                        if (response.entries[i][".tag"] == "folder") {
+                            populateFoldersGrid(response.entries[i]);
+                        }
+                    }
                 })
                 .catch(function(error) {
                     console.error(error);
@@ -139,56 +145,51 @@
                 });
             }
 
-            async function populateFoldersGrid(folders) {
-
-                for (var i = 0; i < folders.length; i++) {
-                    var first_pic_response = null
-                    if (folders[i][".tag"] != "folder") {
-                        continue;
-                    }
-                    var files = {}
-                    if (first_pic_response == null && folders[i]["path_lower"] != null) {
-                        subdir_resp = await dbx.filesListFolder({path : folders[i]["path_lower"], include_media_info : true})
-                        files = subdir_resp.entries
-                        for(var j = 0; j < files.length; j++) {
-                            if (isPictureFile(files[j])) {
-                                first_pic_response = files[j]
-                                break
-                            }
+            async function populateFoldersGrid(folder) {
+                console.log("Hello")
+                var first_pic_response = null
+                var files = {}
+                if (first_pic_response == null && folder["path_lower"] != null) {
+                    subdir_resp = await dbx.filesListFolder({path : folder["path_lower"], include_media_info : true})
+                    files = subdir_resp.entries
+                    for(var j = 0; j < files.length; j++) {
+                        if (isPictureFile(files[j])) {
+                            first_pic_response = files[j]
+                            break
                         }
-
                     }
-                    var folder_ui = $('#dropbox-widget-folder').clone()
-                    folder_ui = folder_ui.attr("style", "display=initial")
-                    folder_ui = folder_ui.attr("id", `dropbox-widget-folder_ui-${i}`)
-
-                    var folder_ui_thumbnail = folder_ui.children('.widget-user-header')
-                    var thumbnail_response = await dbx.filesGetThumbnail({path: first_pic_response.path_lower, size : {".tag": 'w480h320'}})
-                    thumbnail_url = window.URL.createObjectURL(thumbnail_response.fileBlob)
-
-                    folder_ui_thumbnail.attr("id", `folder-widget-${i}`)
-                    folder_ui_thumbnail.attr("style",  `background: url(${thumbnail_url}) center center;`)
-
-                    var session_name = folder_ui.find('#session-name')
-                    session_name_id = `session-name-${i}`
-                    session_name.attr("id", session_name_id)
-
-
-                    var session_date = folder_ui.find('#session-date')
-                    session_date.attr("id", `session-date-${i}`)
-                    session_date.text(first_pic_response.media_info.metadata.time_taken)
-
-                    var folder_pic_count = folder_ui.find('#folder-pic-count')
-                    folder_pic_count.attr("id", `folder-pic-count-${i}`)
-                    folder_pic_count.text(files.length)
-
-                    var folder_gallery_link = folder_ui.find('#folder-gallery-link')
-                    folder_gallery_link.attr("id", `folder-gallery-link-${i}`)
-                    folder_gallery_link.attr("onclick", `displayFileGallery('${folders[i]["path_lower"]}')`)
-
-                    folder_ui.appendTo('#dropbox-widget-container')
-                    setLocationFromReverseGeocode(session_name_id, first_pic_response)
                 }
+
+                var folder_ui = $('#dropbox-widget-folder').clone()
+                folder_ui = folder_ui.attr("style", "display=initial")
+                folder_ui = folder_ui.attr("id", `dropbox-widget-folder_ui-${folder.id}`)
+
+                var folder_ui_thumbnail = folder_ui.children('.widget-user-header')
+                var thumbnail_response = await dbx.filesGetThumbnail({path: first_pic_response.path_lower, size : {".tag": 'w480h320'}})
+                thumbnail_url = window.URL.createObjectURL(thumbnail_response.fileBlob)
+
+                folder_ui_thumbnail.attr("id", `folder-widget-${folder.id}`)
+                folder_ui_thumbnail.attr("style",  `background: url(${thumbnail_url}) center center;`)
+
+                var session_name = folder_ui.find('#session-name')
+                session_name_id = `session-name-${folder.id}`
+                session_name.attr("id", session_name_id)
+
+
+                var session_date = folder_ui.find('#session-date')
+                session_date.attr("id", `session-date-${folder.id}`)
+                session_date.text(first_pic_response.media_info.metadata.time_taken)
+
+                var folder_pic_count = folder_ui.find('#folder-pic-count')
+                folder_pic_count.attr("id", `folder-pic-count-${folder.id}`)
+                folder_pic_count.text(files.length)
+
+                var folder_gallery_link = folder_ui.find('#folder-gallery-link')
+                folder_gallery_link.attr("id", `folder-gallery-link-${folder.id}`)
+                folder_gallery_link.attr("onclick", `displayFileGallery('${folder["path_lower"]}')`)
+
+                folder_ui.appendTo('#dropbox-widget-container')
+                setLocationFromReverseGeocode(session_name_id, first_pic_response)
             }
 
             function getCoordinateCell(file, coord_type) {
