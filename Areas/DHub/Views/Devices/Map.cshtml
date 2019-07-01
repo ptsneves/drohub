@@ -62,6 +62,8 @@
 </section>
 
 @section Scripts {
+    <script src="/lib/dropbox-sdk/Dropbox-sdk.min.js"></script>
+    <script src="/js/common-dropbox.js"></script>
     <script>
             function getCoordinate(file, coord_type) {
                     if (typeof(file.media_info.metadata.location) != 'undefined')
@@ -75,31 +77,26 @@
                             file_response.media_info.metadata["location"] === undefined)
             }
 
-            function populateMarkers(map, infowindow, files) {
-                for (var i = 0; i < files.length; i++) {
-                    if (!isPictureFile(files[i]))
-                        continue;
+            function populateMarkers(map, file) {
+                console.log(file.name)
+                var infowindow = new google.maps.InfoWindow();
+                let contentString = `<div id="google-popup-${file.id}">
+                    <p>Pic ${file.name} </p>
+                    </div>`;
 
-                    let contentString = `<div id="google-popup-${i}">
-                        <p>Pic ${files[i].name} </p>
-                        </div>`;
+                let marker = new google.maps.Marker({
+                        position: {lat: getCoordinate(file, 'latitude'), lng: getCoordinate(file, 'longitude')},
+                        map : map
+                });
 
-                    let beachMarker = new google.maps.Marker({
-                            position: {lat: getCoordinate(files[i], 'latitude'), lng: getCoordinate(files[i], 'longitude')},
-                            map: map
-                            });
-
-                    google.maps.event.addListener(beachMarker, 'click', function() {
-                        infowindow.close()
-                        infowindow.setContent(contentString)
-                        infowindow.open(map, beachMarker);
-                    });
-                }
+                google.maps.event.addListener(marker, 'click', function() {
+                    infowindow.close()
+                    infowindow.setContent(contentString)
+                    infowindow.open(map, marker);
+                });
             }
 
             function initMap() {
-                var infowindow = new google.maps.InfoWindow();
-
                 var map = new google.maps.Map(document.getElementById('map'), {
                     zoom: 10,
                     center: {lat: 40.5, lng: -7}
@@ -114,13 +111,13 @@
                             return;
 
                         var dbx = new Dropbox.Dropbox({ accessToken: device.dropboxToken, fetch: fetch})
-                        dbx.filesListFolder({"path": '', include_media_info : true})
-                        .then(function(response) {
-                            populateMarkers(map, infowindow, response.entries);
+                        getFolders(dbx, `/${device.serialNumber}`, (folder_entry) => {
+                            console.log( folder_entry["path_lower"])
+                            getFile(dbx, folder_entry["path_lower"], (file) => {
+                                    populateMarkers(map, file)
+                                 }
+                             )
                         })
-                        .catch(function(error) {
-                            console.error(error);
-                        });
                     })
                 })
                 .fail(function () {
