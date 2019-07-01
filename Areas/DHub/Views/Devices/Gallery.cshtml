@@ -4,6 +4,7 @@
 @{
     ViewData["Title"] = "Gallery";
     string dropbox_device_token = ViewData["UserToken"] as string;
+    string device_serial = ViewData["DeviceSerial"] as string;
 }
 <!-- Content Header (Page header) -->
 <section class="content-header">
@@ -129,7 +130,7 @@
             displayFoldersGallery()
 
             function displayFoldersGallery() {
-                 dbx.filesListFolder({path: ''})
+                 dbx.filesListFolder({path: '/@device_serial' })
                 .then(function(response) {
                     populateFoldersGrid(response.entries);
                 })

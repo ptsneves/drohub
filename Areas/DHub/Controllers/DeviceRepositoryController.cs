@@ -156,6 +156,7 @@ namespace DroHub.Areas.DHub.Controllers
 
             ViewData["Title"] = "My DroHub Repository";
             ViewData["UserToken"] = currentDevice.DropboxToken;
+            ViewData["DeviceSerial"] = currentDevice.SerialNumber;
 
             return View("~/Areas/DHub/Views/Devices/Gallery.cshtml", currentDevice);
         }
