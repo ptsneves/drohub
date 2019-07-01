@@ -44,3 +44,16 @@ async function appendThumbnailsToElement(dbx, thumbnail_path_list, element_id_pr
         console.log(error);
     })
 }
+
+async function getFile(dbx, path, callback_function) {
+    dbx.filesListFolder({ "path": path, include_media_info: true })
+        .then(function (response) {
+            for (let i = 0; i < response.entries.length; i++) {
+                if (isPictureFile(response.entries[i]))
+                    callback_function(response.entries[i]);
+            }
+        })
+        .catch(function (error) {
+            console.error(error);
+        });
+}
