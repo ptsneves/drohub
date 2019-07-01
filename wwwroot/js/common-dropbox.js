@@ -25,3 +25,22 @@ async function getFolders(dbx, folder_path, folder_callback) {
             console.error(error);
         });
 }
+
+async function appendThumbnailsToElement(dbx, thumbnail_path_list, element_id_prefix) {
+    dbx.filesGetThumbnailBatch({ "entries": thumbnail_path_list }).then(function (response) {
+        entries = response["entries"]
+        for (var key in entries) {
+            current_entry = entries[key]
+
+            if (current_entry[".tag"] == "success") {
+                var img = document.createElement('img');
+                img.src = `data:image/jpeg;base64, ${current_entry["thumbnail"]}`;
+                document.getElementById(element_id_prefix + current_entry["metadata"]["id"]).appendChild(img)
+            }
+        }
+    })
+    .catch(function (error) {
+        console.log("When trying to get the thumbnail got error:");
+        console.log(error);
+    })
+}

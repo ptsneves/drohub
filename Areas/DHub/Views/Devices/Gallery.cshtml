@@ -130,7 +130,6 @@
             }
 
             async function populateFoldersGrid(folder) {
-                console.log("Hello")
                 var first_pic_response = null
                 var files = {}
                 if (first_pic_response == null && folder["path_lower"] != null) {
@@ -182,7 +181,9 @@
                     else
                         return "<td class='text-red'><i>"+ "Picture does not have Geographical information" + "</i></td>"
             }
+
             function populatePicturesTable(files) {
+                var THUMBNAIL_ELEMENT_ID_PREFIX = "thumbnail-"
                 var has_at_list_one_valid_picture = false
                 var gallery_table = $('#dropbox-data-table').clone()
                 thumbnail_path_list = []
@@ -196,12 +197,13 @@
 
                     var row = ""
                     var thumbnail = ""
-                    row += `<td id="thumbnail-${files[i].id}"></td>`
+
+                    row += `<td id="${THUMBNAIL_ELEMENT_ID_PREFIX}-${files[i].id}"></td>`
                     row += getCoordinateCell(files[i], "latitude")
                     row += getCoordinateCell(files[i], "longitude")
                     row += `<td>${files[i].media_info.metadata.time_taken}</td>`
-                    row += "<td>"+ files[i].name + "</td>"
-                    row += "<td>"+ files[i].size + "</td>"
+                    row += `<td>${files[i].name}</td>`
+                    row += `<td>${files[i].size}</td>`
                     row = "<tr>" + row + "</tr>"
 
                     var dropbox_data_table = gallery_table.find('#gallery-table-body')
@@ -215,31 +217,7 @@
                     $('#dropbox-data-table-real').remove()
                     gallery_table_container.append(gallery_table)
 
-                    for (var i = 0; i < files.length; i++) {
-
-                    }
-                    dbx.filesGetThumbnailBatch({"entries": thumbnail_path_list}).then(function(response) {
-                            entries = response["entries"]
-                            for (var key in entries) {
-
-                                if (!entries.hasOwnProperty(key))
-                                    continue;
-
-                                current_entry = entries[key]
-
-                                if (current_entry[".tag"] == "success") {
-                                    var img = document.createElement('img');
-
-                                    img.src = `data:image/jpeg;base64, ${current_entry["thumbnail"]}`;
-
-                                    document.getElementById("thumbnail-" + current_entry["metadata"]["id"]).appendChild(img)
-                                }
-                            }
-                        })
-                        .catch(function(error) {
-                            console.log("When trying to get the thumbnail got error:");
-                            console.log(error);
-                        })
+                    appendThumbnailsToElement(dbx, thumbnail_path_list, THUMBNAIL_ELEMENT_ID_PREFIX)
                 }
             }
         </script>
