@@ -10,3 +10,18 @@ function isPictureFile(file_response) {
         file_response.media_info[".tag"] != 'metadata' ||
         file_response.media_info.metadata[".tag"] != 'photo')
 }
+
+function getFolders(folder_path, folder_callback) {
+    dbx.filesListFolder({ path: folder_path })
+        .then(function (response) {
+
+            for (var i = 0; i < response.entries.length; i++) {
+                if (response.entries[i][".tag"] == "folder") {
+                    folder_callback(response.entries[i]);
+                }
+            }
+        })
+        .catch(function (error) {
+            console.error(error);
+        });
+}

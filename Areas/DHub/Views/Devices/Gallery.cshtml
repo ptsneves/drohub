@@ -117,23 +117,8 @@
 
             var dbx = new Dropbox.Dropbox({ accessToken: '@dropbox_device_token', fetch: fetch});
             console.log('dbx', dbx)
-            displayFoldersGallery()
+            getFolders('/@device_serial', populateFoldersGrid)
 
-            function displayFoldersGallery() {
-                 dbx.filesListFolder({path: '/@device_serial' })
-                .then(function(response) {
-
-                    for (var i = 0; i < response.entries.length; i++) {
-                        console.log(response.entries[i])
-                        if (response.entries[i][".tag"] == "folder") {
-                            populateFoldersGrid(response.entries[i]);
-                        }
-                    }
-                })
-                .catch(function(error) {
-                    console.error(error);
-                });
-            }
 
             function displayFileGallery(path) {
                 dbx.filesListFolder({"path": path, include_media_info : true})
