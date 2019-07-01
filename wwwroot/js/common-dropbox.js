@@ -11,7 +11,7 @@ function isPictureFile(file_response) {
         file_response.media_info.metadata[".tag"] != 'photo')
 }
 
-function getFolders(folder_path, folder_callback) {
+async function getFolders(dbx, folder_path, folder_callback) {
     dbx.filesListFolder({ path: folder_path })
         .then(function (response) {
 

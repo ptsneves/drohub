@@ -116,8 +116,7 @@
             }
 
             var dbx = new Dropbox.Dropbox({ accessToken: '@dropbox_device_token', fetch: fetch});
-            console.log('dbx', dbx)
-            getFolders('/@device_serial', populateFoldersGrid)
+            getFolders(dbx, '/@device_serial', populateFoldersGrid)
 
 
             function displayFileGallery(path) {
