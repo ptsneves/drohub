@@ -76,22 +76,42 @@
                             file_response.media_info.metadata["location"] === undefined)
             }
 
-            function populateMarkers(map, file) {
-                console.log(file.name)
-                var infowindow = new google.maps.InfoWindow();
+            async function populateMarkerContent(dbx, file, marker, infowindow) {
+
+                infowindow.close()
+                console.log(`marker-id = marker-${file.id}`)
                 let contentString = `<div id="google-popup-${file.id}">
-                    <p>Pic ${file.name} </p>
+                    <p>Pic ${file.name}</p>
+                    <p>Lat:${getCoordinate(file, 'latitude')} Long ${getCoordinate(file, 'longitude')}</p>
                     </div>`;
+
+
+                infowindow.setContent(contentString)
+                infowindow.open(map, marker);
+                dbx.filesGetThumbnail({path: file.path_lower, size : {".tag": 'w480h320'}}).then(function (thumbnail_response) {
+                        thumbnail_url = window.URL.createObjectURL(thumbnail_response.fileBlob)
+                        //infowindow.close()
+                        let contentString = `<div id="google-popup-${file.id}">
+                            <p>Pic ${file.name}</p>
+                            <p>Lat:${getCoordinate(file, 'latitude')} Long ${getCoordinate(file, 'longitude')}</p>
+                            <img src="${thumbnail_url}">
+                            </div>`;
+                        infowindow.setContent(contentString)
+                        //infowindow.open(map, marker);
+                    }
+                )
+            }
+
+            function populateMarkers(dbx, map, infowindow, file) {
+                console.log(file.name)
 
                 let marker = new google.maps.Marker({
                         position: {lat: getCoordinate(file, 'latitude'), lng: getCoordinate(file, 'longitude')},
                         map : map
                 });
 
-                google.maps.event.addListener(marker, 'click', function() {
-                    infowindow.close()
-                    infowindow.setContent(contentString)
-                    infowindow.open(map, marker);
+                google.maps.event.addListener(marker, 'click', () => {
+                    populateMarkerContent(dbx, file, marker, infowindow)
                 });
             }
 
@@ -103,6 +123,7 @@
 
                 var url = '@Url.Action("GetDevicesList", "Devices", new {Area = "DHub"})'
 
+                var infowindow = new google.maps.InfoWindow();
                 $.getJSON(url)
                 .done(function (device_list) {
                     $.each(device_list, function (i, device) {
@@ -113,7 +134,7 @@
                         getFolders(dbx, `/${device.serialNumber}`, (folder_entry) => {
                             console.log( folder_entry["path_lower"])
                             getFile(dbx, folder_entry["path_lower"], (file) => {
-                                    populateMarkers(map, file)
+                                    populateMarkers(dbx, map, infowindow, file)
                                  }
                              )
                         })
