@@ -119,7 +119,13 @@ namespace DroHub.Areas.DHub.Controllers
                 return RedirectToAction(nameof(Index), "Devices", new { area = "DHub" });
             }
         }
-        public IActionResult Map() {
+        public async Task<IActionResult> Map() {
+            DroHubUser currentUser = await _userManager.GetUserAsync(User);
+            Device currentDevice = await _context.Devices.FirstOrDefaultAsync(device => device.User == currentUser);
+
+            if (string.IsNullOrWhiteSpace(currentDevice.DropboxToken)) {
+                return RedirectToAction(nameof(Index), new { id = currentDevice.Id});
+            }
             return View();
         }
 
