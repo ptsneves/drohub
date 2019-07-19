@@ -119,6 +119,9 @@ namespace DroHub.Areas.DHub.Controllers
                 return RedirectToAction(nameof(Index), "Devices", new { area = "DHub" });
             }
         }
+        public IActionResult Map() {
+            return View();
+        }
 
         // POST : /Home/Disconnect
         [HttpPost, ValidateAntiForgeryToken]

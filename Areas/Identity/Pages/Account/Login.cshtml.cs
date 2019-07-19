@@ -68,7 +68,7 @@ namespace DroHub.Areas.Identity.Pages.Account
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            returnUrl = returnUrl ?? Url.Content("~/DHub/Devices/Map");
+            returnUrl = returnUrl ?? Url.Content("~/DHub/DeviceRepository/Map");
 
             if (ModelState.IsValid)
             {
