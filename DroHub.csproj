@@ -9,6 +9,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.6.1" />
+    <PackageReference Include="Grpc" Version="1.17.0" />
+    <PackageReference Include="Grpc.Tools" Version="1.17.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="./DrohubGRPCProto/drohub.proto" Link="drohub.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="wwwroot\AdminLTE\bower_components\**" />
     <Content Remove="wwwroot\AdminLTE\bower_components\**" />
     <EmbeddedResource Remove="wwwroot\AdminLTE\bower_components\**" />
