@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Grpc.Core;
 
 namespace DroHub.Areas.DHub.Controllers
 {
@@ -145,6 +146,30 @@ namespace DroHub.Areas.DHub.Controllers
 
             return View(device);
         }
+
+        public async Task<IActionResult> TakeOff(int? id) {
+            // if (id == null) {
+            //     return NotFound();
+            // }
+            Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
+            var client = new Drone.DroneClient(channel);
+            var reply = client.doTakeoff(new DroneRequest{});
+            channel.ShutdownAsync().Wait();
+
+            return Json(reply);
+        }
+        public async Task<IActionResult> Land(int? id) {
+            // if (id == null) {
+            //     return NotFound();
+            // }
+            Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
+            var client = new Drone.DroneClient(channel);
+            var reply = client.doLanding(new DroneRequest{});
+            channel.ShutdownAsync().Wait();
+
+            return Json(reply);
+        }
+
 
         // GET: DroHub/Devices/Gallery/5
         public IActionResult Gallery(int? id)
