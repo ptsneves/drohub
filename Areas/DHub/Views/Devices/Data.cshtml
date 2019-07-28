@@ -80,6 +80,8 @@
                     <a asp-area="DHub" asp-controller="Devices" asp-action="" class="btn btn-primary" title="Back to devices list">Back to list</a>
                     <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-success" title="Edit this device">Edit</a>
                     <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger" title="Delete this device">Delete</a>
+                    <a onclick='followActionAndDoNothing("@(Url.Action("TakeOff", "Devices", new {id = Model.Id}))")' class="btn btn-danger" title="Take off this device">TakeOff</a>
+                    <a onclick='followActionAndDoNothing("@(Url.Action("Land", "Devices", new {id = Model.Id}))")' class="btn btn-danger" title="Land this device">Land</a>
                 </div>
             </div>
         </div>
