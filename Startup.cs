@@ -1,4 +1,5 @@
 using DroHub.Areas.DHub.Models;
+using DroHub.Areas.DHub.SignalRHubs;
 using DroHub.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -35,6 +36,7 @@ namespace DroHub
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
+            services.AddSignalR();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }
 
@@ -68,6 +70,11 @@ namespace DroHub
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
-        }
+
+            app.UseSignalR(route =>
+            {
+                route.MapHub<NotificationsHub>("/notificationshub");
+            });
+    }
     }
 }
