@@ -1,5 +1,7 @@
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
+using Microsoft.AspNetCore.SignalR;
+using DroHub.Areas.DHub.SignalRHubs;
 using DroHub.Data;
 using System.Data.SqlClient;
 using Microsoft.AspNetCore.Identity;
@@ -24,10 +26,14 @@ namespace DroHub.Areas.DHub.Controllers
         private const string DefaultApperture = "f/4"; // TODO Get value directly from above lists
         private const string DefaultFocusMode = "Auto"; // TODO Get values directly from above lists
         private const string DefaultIso = "200"; // TODO Get value directly from above lists
-        public DevicesController(DroHubContext context, UserManager<DroHubUser> userManager)
+
+        private readonly IHubContext<NotificationsHub> _notifications_hubContext;
+        public DevicesController(DroHubContext context, UserManager<DroHubUser> userManager,
+            IHubContext<NotificationsHub> hubContext)
         {
             _context = context;
             _userManager = userManager;
+            _notifications_hubContext = hubContext;
         }
 
         // --- SETTINGS SELECT LISTS
@@ -160,9 +166,14 @@ namespace DroHub.Areas.DHub.Controllers
             Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
             var client = new Drone.DroneClient(channel);
             var reply = client.doTakeoff(new DroneRequest{});
-            channel.ShutdownAsync().Wait();
 
-            return Json(reply);
+
+            channel.ShutdownAsync().Wait();
+            if (reply.Message)
+                await _notifications_hubContext.Clients.All.SendAsync("notification", $"Device {device.Name} has taken off");
+            else
+                await _notifications_hubContext.Clients.All.SendAsync("notification", $"Device {device.Name} cannot takeoff");
+            return Ok();
         }
         public async Task<IActionResult> Land(int? id) {
             if (id == null) {
@@ -178,8 +189,11 @@ namespace DroHub.Areas.DHub.Controllers
             var client = new Drone.DroneClient(channel);
             var reply = client.doLanding(new DroneRequest{});
             channel.ShutdownAsync().Wait();
-
-            return Json(reply);
+            if (reply.Message)
+                await _notifications_hubContext.Clients.All.SendAsync("notification", $"Device {device.Name} has landed");
+            else
+                await _notifications_hubContext.Clients.All.SendAsync("notification", $"Device {device.Name} cannot land");
+            return Ok();
         }
 
 
