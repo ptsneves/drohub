@@ -148,9 +148,15 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         public async Task<IActionResult> TakeOff(int? id) {
-            // if (id == null) {
-            //     return NotFound();
-            // }
+            if (id == null) {
+                return NotFound();
+            }
+
+            var currentUser = await _userManager.GetUserAsync(User);
+            var device = await _context.Devices.FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
+
+            if (device == null) return NotFound();
+
             Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
             var client = new Drone.DroneClient(channel);
             var reply = client.doTakeoff(new DroneRequest{});
@@ -159,9 +165,15 @@ namespace DroHub.Areas.DHub.Controllers
             return Json(reply);
         }
         public async Task<IActionResult> Land(int? id) {
-            // if (id == null) {
-            //     return NotFound();
-            // }
+            if (id == null) {
+                return NotFound();
+            }
+
+            var currentUser = await _userManager.GetUserAsync(User);
+            var device = await _context.Devices.FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
+
+            if (device == null) return NotFound();
+
             Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
             var client = new Drone.DroneClient(channel);
             var reply = client.doLanding(new DroneRequest{});
