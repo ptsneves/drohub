@@ -45,59 +45,9 @@
 <body class="hold-transition skin-blue-light sidebar-mini">
     <div class="wrapper">
         @await Component.InvokeAsync("Notifications")
+        @await Component.InvokeAsync("Sidebar")
         <!-- Left side column. contains the logo and sidebar -->
-        <aside class="main-sidebar">
-            <!-- sidebar: style can be found in sidebar.less -->
-            <section class="sidebar">
-                <!-- search form -->
-                <form action="#" method="get" class="sidebar-form">
-                        <div class="input-group">
-                            <input type="text" name="q" class="form-control" placeholder="Search...">
-                            <span class="input-group-btn">
-                                <button type="submit" name="search" id="search-btn" class="btn btn-flat">
-                                    <i class="fa fa-search"></i>
-                                </button>
-                            </span>
-                        </div>
-                </form>
-                <!-- /.search form -->
-                <!-- sidebar menu: : style can be found in sidebar.less -->
-                <ul class="sidebar-menu tree" data-widget="tree">
-                    <li class="header">MAIN NAVIGATION</li>
-
-                    <li class="treeview">
-                            <a href="#">
-                                <i class="fa fa-camera"></i>
-                                <span>Devices</span>
-                                <span class="pull-right-container">
-                                    <i class="fa fa-angle-left pull-right"></i>
-                                </span>
-                            </a>
-                            <ul class="treeview-menu" id="devices-list">
-                                <li>
-                                    <a asp-action="Create" asp-area="DHub" asp-controller="Devices">
-                                        <i class="fa fa-plus"></i>
-                                        Associate Device
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-
-
-                    <li>
-                        <a asp-action="Map" asp-area="DHub" asp-controller="DeviceRepository">
-                            <i class="fa fa-map"></i> <span>Map Dashboard</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-area="" asp-controller="Home" asp-action="Contact">
-                            <i class="fa fa-phone"></i> <span>Contact</span>
-                        </a>
-                    </li>
-                </ul>
-            </section>
-            <!-- /.sidebar -->
-        </aside>
+        <!-- /.sidebar -->
         <!-- Content Wrapper. Contains page content -->
         <div class="content-wrapper">
             <!-- Cookie Consent -->
