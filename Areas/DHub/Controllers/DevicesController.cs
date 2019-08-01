@@ -153,49 +153,45 @@ namespace DroHub.Areas.DHub.Controllers
             return View(device);
         }
 
-        public async Task<IActionResult> TakeOff(int? id) {
-            if (id == null) {
-                return NotFound();
-            }
-
-            var currentUser = await _userManager.GetUserAsync(User);
-            var device = await _context.Devices.FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
-
-            if (device == null) return NotFound();
-
-            Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
-            var client = new Drone.DroneClient(channel);
-            var reply = client.doTakeoff(new DroneRequest{});
-
-
-            channel.ShutdownAsync().Wait();
-            if (reply.Message)
-                await _notifications_hubContext.Clients.All.SendAsync("notification", $"Device {device.Name} has taken off");
-            else
-                await _notifications_hubContext.Clients.All.SendAsync("notification", $"Device {device.Name} cannot takeoff");
-            return Ok();
-        }
-        public async Task<IActionResult> Land(int? id) {
-            if (id == null) {
-                return NotFound();
-            }
-
-            var currentUser = await _userManager.GetUserAsync(User);
-            var device = await _context.Devices.FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
-
-            if (device == null) return NotFound();
-
-            Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
-            var client = new Drone.DroneClient(channel);
-            var reply = client.doLanding(new DroneRequest{});
-            channel.ShutdownAsync().Wait();
-            if (reply.Message)
-                await _notifications_hubContext.Clients.All.SendAsync("notification", $"Device {device.Name} has landed");
-            else
-                await _notifications_hubContext.Clients.All.SendAsync("notification", $"Device {device.Name} cannot land");
-            return Ok();
+        private enum DeviceActions {
+            TakeOff = 1000,
+            Land = 1001
         }
 
+        private async Task<Device> GetDevice(int id) {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+                throw new System.InvalidOperationException("Could not find what user are we, so we cannot query associated devices");
+
+            return await _context.Devices.FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
+        }
+        private async Task<bool> DoDeviceAction(int id, DeviceActions action) {
+            var device = await GetDevice(id);
+            Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
+            var client = new Drone.DroneClient(channel);
+            DroneReply reply;
+            if (action == DeviceActions.TakeOff)
+                reply = client.doTakeoff(new DroneRequest{});
+            else if (action == DeviceActions.Land)
+                reply = client.doLanding(new DroneRequest{});
+            else
+                throw new System.InvalidProgramException("Unreachable situation. An action exists which is not implemented");
+
+            channel.ShutdownAsync().Wait();
+            var result = reply.Message ? true : false;
+
+            await _notifications_hubContext.Clients.All.SendAsync("notification", $"Device {device.Name} has taken off");
+            return result;
+        }
+
+        public async Task<IActionResult> TakeOff(int id) {
+            await DoDeviceAction(id, DeviceActions.TakeOff);
+            return Ok();
+        }
+        public async Task<IActionResult> Land(int id) {
+            await DoDeviceAction(id, DeviceActions.Land);
+            return Ok();
+        }
 
         // GET: DroHub/Devices/Gallery/5
         public IActionResult Gallery(int? id)
