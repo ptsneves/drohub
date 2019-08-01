@@ -14,6 +14,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Grpc.Core;
+using Microsoft.Extensions.Logging;
 
 namespace DroHub.Areas.DHub.Controllers
 {
@@ -28,12 +29,15 @@ namespace DroHub.Areas.DHub.Controllers
         private const string DefaultIso = "200"; // TODO Get value directly from above lists
 
         private readonly IHubContext<NotificationsHub> _notifications_hubContext;
+
+        private readonly ILogger<DevicesController> _logger;
         public DevicesController(DroHubContext context, UserManager<DroHubUser> userManager,
-            IHubContext<NotificationsHub> hubContext)
+            IHubContext<NotificationsHub> hubContext, ILogger<DevicesController> logger)
         {
             _context = context;
             _userManager = userManager;
             _notifications_hubContext = hubContext;
+            _logger = logger;
         }
 
         // --- SETTINGS SELECT LISTS
@@ -181,6 +185,8 @@ namespace DroHub.Areas.DHub.Controllers
             var result = reply.Message ? true : false;
 
             await _notifications_hubContext.Clients.All.SendAsync("notification", $"Device {device.Name} has taken off");
+            _logger.LogWarning((int)DeviceActions.TakeOff, "${@action} attemped on {@device}. Result was {@result}", device, result,
+                device);
             return result;
         }
 
