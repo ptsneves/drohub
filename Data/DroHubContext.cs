@@ -14,6 +14,7 @@ namespace DroHub.Data
 
         public DbSet<DroHubUser> DroHubUsers { get; set; }
         public DbSet<Device> Devices { get; set; }
+        public DbSet<LogEntry> Logs { get; set; }
         //public DbSet<DeviceSettings> DeviceSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -30,6 +31,10 @@ namespace DroHub.Data
 
             builder.Entity<Device>()
                 .HasKey(d => d.Id);
+
+            builder.Entity<LogEntry>()
+                .HasKey(d => d.Id);
+
 
             // ----- REQUIRED ATTRIBUTES ----------------------------
             builder.Entity<Device>()

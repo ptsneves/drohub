@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using DroHub.Areas.Identity.Data;
 using DroHub.Data;
 using DroHub.Areas.DHub.Models;
+using System.Linq;
 
 namespace DroHub.Areas.DHub.ViewComponents
 {
@@ -22,12 +23,7 @@ namespace DroHub.Areas.DHub.ViewComponents
         }
 
         public async Task<IViewComponentResult> InvokeAsync() {
-            Notification[] notifications = new Notification[4] {
-                new Notification(Notification.Error, "An error", 1),
-                new Notification(Notification.Warning, "A warning", 2),
-                new Notification(Notification.Warning, "A warning", 2),
-                new Notification(Notification.Information, "An info", 3)
-            };
+            var notifications = _context.Logs.Select(l => l).ToArray();
             return View("Notifications", notifications);
         }
     }
