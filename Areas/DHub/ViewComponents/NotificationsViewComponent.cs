@@ -23,7 +23,7 @@ namespace DroHub.Areas.DHub.ViewComponents
         }
 
         public async Task<IViewComponentResult> InvokeAsync() {
-            var notifications = _context.Logs.Select(l => l).ToArray();
+            var notifications = _context.Logs.OrderByDescending(l => l.Id).Take(10).ToArray();
             return View("Notifications", notifications);
         }
     }
