@@ -1,5 +1,7 @@
+@using Newtonsoft.Json;
 @model IEnumerable<DroHub.Areas.DHub.Models.LogEntry>
 <header class="main-header">
+
     <!-- Logo -->
     <a href="#" class="logo">
         <!-- mini logo for sidebar mini 50x50 pixels -->
@@ -20,36 +22,19 @@
                 <li class="dropdown notifications-menu">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="fa fa-bell-o"></i>
-                        <span class="label label-warning">@Model.Count()</span>
+                        <span class="label label-warning" id="notification-count">0</span>
                     </a>
                     <ul class="dropdown-menu">
-                        <li class="header">You have @Model.Count() notifications</li>
                         <li>
                             <!-- inner menu: contains the actual data -->
-                            <ul class="menu">
-                                @foreach (var notification in Model)
-                                {
-                                    var fa_color = "";
-                                    switch(notification.Level) {
-                                    case "Information":
-                                        fa_color = "text-primary";
-                                        break;
-                                    case "Warning":
-                                        fa_color = "text-warning";
-                                        break;
-                                    case "Error":
-                                        fa_color = "text-danger";
-                                        break;
-                                    }
-                                    <li>
-                                        <a href="#">
-                                            <i class="fa fa-space-shuttle @fa_color"></i>
-                                            @notification.Id
-                                            @notification.Message
+                            <ol class="menu">
+                                    <li id="${notification_list}" style="display: none">
+                                        <a href="${href}">
+                                            <i class="fa fa-space-shuttle ${fa_color}"></i>
+                                            ${inner_text}
                                         </a>
                                     </li>
-                                }
-                            </ul>
+                            </ol>
                         </li>
                         @*<li class="footer"><a href="#">View all</a></li>*@
                     </ul>
@@ -100,3 +85,86 @@
         </div>
     </nav>
 </header>
+<script type="application/json" id="initialdata_notifications">
+@Html.Raw(JsonConvert.SerializeObject(@Model))
+</script>
+<script>
+        "use strict";
+
+        String.prototype.interpolate = function(params) {
+            const names = Object.keys(params);
+            const vals = Object.values(params);
+            return new Function(...names, `return \`${this}\`;`)(...vals);
+        }
+
+        function convertLogLevelToIconColor(log_level) {
+            var fa_color = "";
+            switch(log_level) {
+            case "Information":
+                fa_color = "text-primary";
+                break;
+            case "Warning":
+                fa_color = "text-warning";
+                break;
+            case "Error":
+                fa_color = "text-danger";
+                break;
+            }
+            return fa_color;
+        }
+
+        function elementFinalize(inner_text) {
+            return inner_text.replace('style="display: none"', "") + "\n";
+        }
+
+        function getNotificationCount() {
+            return document.getElementById("notification-count").innerHTML;
+        }
+
+        async function initNotifications(initial_data) {
+            function populateNotifications(data) {
+                let parsed_json = JSON.parse(data);
+                let entry_template = document.getElementById('${notification_list}').outerHTML;
+                let new_notifications = entry_template;
+                let notifications_count = getNotificationCount();
+                for (var key in parsed_json) {
+                    if (parsed_json.hasOwnProperty(key)) {
+                        let current_log = parsed_json[key];
+                        let new_notification = entry_template.interpolate({
+                            notification_list: `notification-${current_log.Id}`,
+                            href: '#',
+                            fa_color: convertLogLevelToIconColor(current_log.Level),
+                            inner_text: current_log.Message
+                        }) + "\n"
+                        new_notifications += elementFinalize(new_notification);
+                        notifications_count++;
+                    }
+                }
+                document.getElementById("notification-count").innerHTML = notifications_count;
+                document.getElementById('${notification_list}').outerHTML = new_notifications;
+            }
+            populateNotifications(initial_data);
+
+            let signalr_script_url = "/lib/signalr/dist/browser/signalr.js";
+            let signalr_script = document.createElement("script");
+
+            signalr_script.src = signalr_script_url;
+            signalr_script.onload = function () {
+                var connection = new signalR.HubConnectionBuilder().withUrl("/notificationsHub").
+                    configureLogging(signalR.LogLevel.Information).build();
+
+                connection.on("notification", function (message) {
+                    populateNotifications(message);
+                });
+
+                connection.start().then(function () {
+                    console.log("Notifications started SIGNALR");
+                }).catch(function (err) {
+                    return console.error(err.toString());
+                });
+            };
+
+            document.head.appendChild(signalr_script);
+        }
+        initNotifications(document.getElementById('initialdata_notifications').innerHTML);
+</script>

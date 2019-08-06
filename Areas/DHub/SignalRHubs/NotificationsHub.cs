@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
 using DroHub.Areas.DHub.Models;
+using Newtonsoft.Json;
 
 using DroHub.Data;
 namespace DroHub.Areas.DHub.SignalRHubs
@@ -49,7 +50,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
                 if (notifications.Length != 0)
                 {
                     _last_log_entry = notifications.Last();
-                    await _hub.Clients.All.SendAsync("notification", notifications);
+                    await _hub.Clients.All.SendAsync("notification", JsonConvert.SerializeObject(notifications) );
                 }
             }
         }
