@@ -29,7 +29,7 @@
                             <!-- inner menu: contains the actual data -->
                             <ol class="menu">
                                     <li id="${notification_list}" style="display: none">
-                                        <a href="${href}">
+                                        <a href="${href}" title=${tooltip_text}>
                                             <i class="fa fa-space-shuttle ${fa_color}"></i>
                                             ${inner_text}
                                         </a>
@@ -91,6 +91,18 @@
 <script>
         "use strict";
 
+
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+
         String.prototype.interpolate = function(params) {
             const names = Object.keys(params);
             const vals = Object.values(params);
@@ -130,11 +142,16 @@
                 for (var key in parsed_json) {
                     if (parsed_json.hasOwnProperty(key)) {
                         let current_log = parsed_json[key];
+                        let tooltip_text = escapeHtml(current_log.Message);
+                        if (current_log.Exception)
+                            tooltip_text = escapeHtml(current_log.Exception);
+
                         let new_notification = entry_template.interpolate({
                             notification_list: `notification-${current_log.Id}`,
                             href: '#',
+                            tooltip_text: escapeHtml(tooltip_text),
                             fa_color: convertLogLevelToIconColor(current_log.Level),
-                            inner_text: current_log.Message
+                            inner_text: escapeHtml(current_log.Message)
                         }) + "\n"
                         new_notifications += elementFinalize(new_notification);
                         notifications_count++;
