@@ -149,7 +149,7 @@
                         let new_notification = entry_template.interpolate({
                             notification_list: `notification-${current_log.Id}`,
                             href: '#',
-                            tooltip_text: escapeHtml(tooltip_text),
+                            tooltip_text: tooltip_text,
                             fa_color: convertLogLevelToIconColor(current_log.Level),
                             inner_text: escapeHtml(current_log.Message)
                         }) + "\n"
