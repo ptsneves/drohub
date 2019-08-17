@@ -38,7 +38,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
             using (var scope = _services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
-                _last_log_entry = context.Logs.OrderByDescending(l => l.Id).First();
+                _last_log_entry = context.Logs.OrderByDescending(l => l.Id).DefaultIfEmpty().First();
             }
         }
 
@@ -46,7 +46,16 @@ namespace DroHub.Areas.DHub.SignalRHubs
             using (var scope = _services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
-                var notifications = context.Logs.OrderByDescending(l => l.Id).Where(l => l.Id > _last_log_entry.Id).ToArray();
+
+                int last_log_entry_id;
+                if (_last_log_entry == null)
+                    last_log_entry_id = 0;
+                else
+                    last_log_entry_id = _last_log_entry.Id;
+
+                var notifications = context.Logs.OrderByDescending(l => l.Id).Where(l => l.Id > last_log_entry_id).
+                    DefaultIfEmpty().ToArray();
+
                 if (notifications.Length != 0)
                 {
                     _last_log_entry = notifications.First();
