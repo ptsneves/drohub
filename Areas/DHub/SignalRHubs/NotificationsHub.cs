@@ -49,7 +49,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
                 var notifications = context.Logs.OrderByDescending(l => l.Id).Where(l => l.Id > _last_log_entry.Id).ToArray();
                 if (notifications.Length != 0)
                 {
-                    _last_log_entry = notifications.Last();
+                    _last_log_entry = notifications.First();
                     await _hub.Clients.All.SendAsync("notification", JsonConvert.SerializeObject(notifications) );
                 }
             }
