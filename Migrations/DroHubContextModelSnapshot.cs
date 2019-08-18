@@ -61,7 +61,7 @@ namespace DroHub.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<int>("EventType");
+                    b.Property<string>("EventId");
 
                     b.Property<string>("Exception");
 
@@ -72,7 +72,8 @@ namespace DroHub.Data.Migrations
                         .IsRequired();
 
                     b.Property<string>("SourceContext")
-                        .IsRequired();
+                        .IsRequired()
+                        .HasMaxLength(100);
 
                     b.Property<DateTime>("Timestamp");
 
