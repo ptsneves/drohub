@@ -38,6 +38,7 @@ namespace DroHub
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
             services.AddHostedService<NotificationsHubPoller>();
+            services.AddHostedService<TelemetryListener>();
             services.AddSignalR();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }
@@ -84,6 +85,7 @@ namespace DroHub
             app.UseSignalR(route =>
             {
                 route.MapHub<NotificationsHub>("/notificationshub");
+                route.MapHub<TelemetryHub>("/telemetryhub");
             });
     }
     }
