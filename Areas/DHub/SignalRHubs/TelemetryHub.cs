@@ -30,16 +30,25 @@ namespace DroHub.Areas.DHub.SignalRHubs
         private Channel _channel;
         private Drone.DroneClient _client;
         private readonly IHubContext<TelemetryHub> _hub;
+        private readonly IServiceProvider _services;
 
-        public TelemetryListener(ILogger<TelemetryListener> logger, IHubContext<TelemetryHub> hub) {
+        public TelemetryListener(IServiceProvider services, ILogger<TelemetryListener> logger, IHubContext<TelemetryHub> hub) {
             _logger = logger;
             _logger.LogInformation(LoggingEvents.Telemetry, "Started TelemetryListener");
 
             _channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
             _client = new Drone.DroneClient(_channel);
             _hub = hub;
+            _services = services;
         }
-
+        protected async Task RecordPosition(DronePosition position) {
+            using (var scope = _services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
+                context.Add(position);
+                await context.SaveChangesAsync();
+            }
+        }
         protected override async Task ExecuteAsync(CancellationToken stopping_token) {
             stopping_token.Register(() =>
                     _logger.LogWarning(LoggingEvents.Telemetry, "TelemetryListener tasks are stopping."));
@@ -53,8 +62,8 @@ namespace DroHub.Areas.DHub.SignalRHubs
                         {
                             if (await call.ResponseStream.MoveNext(stopping_token)) {
                                 DronePosition position = call.ResponseStream.Current;
-                                _logger.LogInformation(LoggingEvents.PositionTelemetry, "Received " + position.ToString());
                                 await _hub.Clients.All.SendAsync("telemetry", JsonConvert.SerializeObject(position) );
+                                await RecordPosition(position);
                             }
                             else {
                                 _logger.LogInformation(LoggingEvents.PositionTelemetry, "Nothing received.Waiting");

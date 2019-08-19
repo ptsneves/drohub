@@ -1,7 +1,9 @@
 using DroHub.Areas.Identity.Data;
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 using Newtonsoft.Json;
+
 
 namespace DroHub.Areas.DHub.Models
 {
@@ -22,5 +24,8 @@ namespace DroHub.Areas.DHub.Models
         public DateTime CreationDate { get; set; }
         [JsonIgnore]
         public DroHubUser User { get; set; }
+
+        public ICollection<DronePosition> positions { get; set; }
+
     }
 }

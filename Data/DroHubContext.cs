@@ -3,6 +3,7 @@ using DroHub.Areas.DHub.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace DroHub.Data
 {
     public class DroHubContext : IdentityDbContext<DroHubUser>
@@ -15,6 +16,8 @@ namespace DroHub.Data
         public DbSet<DroHubUser> DroHubUsers { get; set; }
         public DbSet<Device> Devices { get; set; }
         public DbSet<LogEntry> Logs { get; set; }
+
+        public DbSet<DronePosition> Positions { get; set; }
         //public DbSet<DeviceSettings> DeviceSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -32,9 +35,14 @@ namespace DroHub.Data
             builder.Entity<Device>()
                 .HasKey(d => d.Id);
 
-            builder.Entity<LogEntry>()
+            builder.Entity<DronePosition>()
                 .HasKey(d => d.Id);
 
+            builder.Entity<DronePosition>()
+                .HasIndex(d => d.Serial);
+
+            builder.Entity<LogEntry>()
+                .HasKey(d => d.Id);
 
             // ----- REQUIRED ATTRIBUTES ----------------------------
             builder.Entity<Device>()
@@ -46,6 +54,18 @@ namespace DroHub.Data
             builder.Entity<DroHubUser>()
                 .HasMany(d => d.Devices)
                 .WithOne(u => u.User);
+
+            builder.Entity<DronePosition>()
+                .HasOne(p => p.Device)
+                .WithMany(d => d.positions)
+                .HasForeignKey(p => p.Serial)
+                .HasPrincipalKey(d => d.SerialNumber);
+
+            builder.Entity<Device>()
+                .HasMany(d => d.positions)
+                .WithOne(p => p.Device)
+                .IsRequired();
+
         }
     }
 }
