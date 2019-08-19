@@ -36,12 +36,22 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         self.cv_positions_consumer = threading.Condition(self.lk_positions)
         self.drone = olympe.Drone("10.202.0.1", callbacks = [self.cb1])
 
+    def dispatchPosition(self, message):
+        new_drone_position = drohub_pb2.DronePosition(
+                        latitude = message.state()['latitude'],
+                        longitude = message.state()['longitude'],
+                        altitude = message.state()['altitude'],
+                        serial = "d34174f4-285b-46e8-b615-89ce6959b49c",
+                        timestamp = int(time.time()))
+
+
+        self.positions.append(new_drone_position)
+        with self.cv_positions_consumer:
+            self.cv_positions_consumer.notify_all()
+
     def cb1(self, message):
         if message.Full_Name == "Ardrone3_PilotingState_PositionChanged":
-            self.positions.append(message.copy())
-            with self.cv_positions_consumer:
-                self.cv_positions_consumer.notify_all()
-
+            self.dispatchPosition(message)
 
     @check_drone_connected
     def getPosition(self, request, context):
@@ -50,9 +60,7 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
                 self.cv_positions_consumer.wait()
                 positions_copy = self.positions
                 while len((positions_copy)) > 0:
-                    position = positions_copy.popleft()
-                    yield drohub_pb2.DronePosition(latitude=position.state()['latitude'], longitude=position.state()['longitude'],
-                        altitude=position.state()['altitude'])
+                    yield positions_copy.popleft()
 
     @check_drone_connected
     def doTakeoff(self, request, context):
