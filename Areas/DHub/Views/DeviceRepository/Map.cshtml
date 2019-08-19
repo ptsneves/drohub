@@ -127,9 +127,10 @@
                 populateThumbnail(file, dbx, infowindow, populateExifInfo)
             }
 
-            function populateMarkers(map, latitude, longitude, marker_content_func) {
+            function populateMarkers(map, latitude, longitude, marker_icon, marker_content_func) {
                 let marker = new google.maps.Marker({
                         position: {lat: latitude, lng: longitude},
+                        icon : marker_icon,
                         map : map
                 });
                 if (marker_content_func) {
@@ -162,7 +163,15 @@
                                     let latitude = getCoordinate(file, 'latitude')
                                     let longitude = getCoordinate(file, 'longitude')
                                     let content_cb = populateMarkerContentDropbox.bind(null, dbx, file, infowindow);
-                                    let populate_cb = populateMarkers.bind(null, map, latitude, longitude, content_cb);
+                                    let icon_url =  `${window.location.origin}/images/map-hand-drawn-paper-svgrepo-com.svg`
+                                    let marker_icon = {
+                                        url: icon_url, // url
+                                        scaledSize: new google.maps.Size(50, 50), // scaled size
+                                        origin: new google.maps.Point(0,0), // origin
+                                        anchor: new google.maps.Point(0, 0) // anchorscaledSize: new google.maps.Size(50, 50), // scaled size
+                                            }
+                                    console.log(marker_icon)
+                                    let populate_cb = populateMarkers.bind(null, map, latitude, longitude, marker_icon, content_cb);
                                     populate_cb()
                                 }
                              )
