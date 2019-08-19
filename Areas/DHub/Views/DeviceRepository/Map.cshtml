@@ -127,15 +127,16 @@
                 populateThumbnail(file, dbx, infowindow, populateExifInfo)
             }
 
-            function populateMarkers(dbx, map, infowindow, file, marker_content_func) {
+            function populateMarkers(map, latitude, longitude, marker_content_func) {
                 let marker = new google.maps.Marker({
-                        position: {lat: getCoordinate(file, 'latitude'), lng: getCoordinate(file, 'longitude')},
+                        position: {lat: latitude, lng: longitude},
                         map : map
                 });
-
-                google.maps.event.addListener(marker, 'click', () => {
-                    marker_content_func.bind(null, marker)();
-                });
+                if (marker_content_func) {
+                    google.maps.event.addListener(marker, 'click', () => {
+                        marker_content_func.bind(null, marker)();
+                    });
+                }
             }
 
             function initMap() {
@@ -146,7 +147,8 @@
 
                 var url = '@Url.Action("GetDevicesList", "Devices", new {Area = "DHub"})'
 
-                var infowindow = new google.maps.InfoWindow();
+
+                let infowindow = new google.maps.InfoWindow();
                 $.getJSON(url)
                 .done(function (device_list) {
                     $.each(device_list, function (i, device) {
@@ -157,7 +159,11 @@
                         getFolders(dbx, `/${device.serialNumber}`, (folder_entry) => {
                             console.log( folder_entry["path_lower"])
                             getFile(dbx, folder_entry["path_lower"], (file) => {
-                                    populateMarkers(dbx, map, infowindow, file, populateMarkerContentDropbox.bind(null, dbx, file, infowindow));
+                                    let latitude = getCoordinate(file, 'latitude')
+                                    let longitude = getCoordinate(file, 'longitude')
+                                    let content_cb = populateMarkerContentDropbox.bind(null, dbx, file, infowindow);
+                                    let populate_cb = populateMarkers.bind(null, map, latitude, longitude, content_cb);
+                                    populate_cb()
                                 }
                              )
                         })
