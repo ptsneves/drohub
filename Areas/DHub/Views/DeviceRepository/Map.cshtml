@@ -119,8 +119,7 @@
                 })
             }
 
-            async function populateMarkerContentDropbox(dbx, file, marker, infowindow) {
-
+            async function populateMarkerContentDropbox(dbx, file, infowindow, marker) {
                 infowindow.close()
                 console.log(`marker-id = marker-${file.id}`)
                 infowindow.setContent(generateInfoWindowContent(file, null, null))
@@ -128,14 +127,14 @@
                 populateThumbnail(file, dbx, infowindow, populateExifInfo)
             }
 
-            function populateMarkers(dbx, map, infowindow, file) {
+            function populateMarkers(dbx, map, infowindow, file, marker_content_func) {
                 let marker = new google.maps.Marker({
                         position: {lat: getCoordinate(file, 'latitude'), lng: getCoordinate(file, 'longitude')},
                         map : map
                 });
 
                 google.maps.event.addListener(marker, 'click', () => {
-                    populateMarkerContentDropbox(dbx, file, marker, infowindow)
+                    marker_content_func.bind(null, marker)();
                 });
             }
 
@@ -158,8 +157,8 @@
                         getFolders(dbx, `/${device.serialNumber}`, (folder_entry) => {
                             console.log( folder_entry["path_lower"])
                             getFile(dbx, folder_entry["path_lower"], (file) => {
-                                    populateMarkers(dbx, map, infowindow, file)
-                                 }
+                                    populateMarkers(dbx, map, infowindow, file, populateMarkerContentDropbox.bind(null, dbx, file, infowindow));
+                                }
                              )
                         })
                     })
