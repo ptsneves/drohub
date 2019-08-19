@@ -23,7 +23,9 @@ def check_drone_connected(f):
         if state.OK:
             return f(*args)
         else:
-            raise Exception("Drone is not connected")
+            print("Trying to connect")
+            if not args[0].drone.connection():
+                raise Exception("Drone is not connected")
     return wrapper
 
 class DroneRPC(drohub_pb2_grpc.DroneServicer):
@@ -32,10 +34,7 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         self.positions = deque(maxlen=3)
         self.lk_positions = threading.Lock()
         self.cv_positions_consumer = threading.Condition(self.lk_positions)
-        while True:
-            self.drone = olympe.Drone("10.202.0.1", callbacks = [self.cb1])
-            if self.drone.connection() == True:
-                break
+        self.drone = olympe.Drone("10.202.0.1", callbacks = [self.cb1])
 
     def cb1(self, message):
         if message.Full_Name == "Ardrone3_PilotingState_PositionChanged":
