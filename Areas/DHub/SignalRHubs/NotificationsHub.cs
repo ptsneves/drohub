@@ -29,7 +29,8 @@ namespace DroHub.Areas.DHub.SignalRHubs
         private readonly IHubContext<NotificationsHub> _hub;
 
         private readonly IServiceProvider _services;
-        private LogEntry _last_log_entry;
+        private int _last_log_entry_id;
+
         public NotificationsHubPoller(IServiceProvider services, ILogger<NotificationsHubPoller> logger,
             IHubContext<NotificationsHub> hub) {
             _logger = logger;
@@ -38,7 +39,12 @@ namespace DroHub.Areas.DHub.SignalRHubs
             using (var scope = _services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
-                _last_log_entry = context.Logs.OrderByDescending(l => l.Id).DefaultIfEmpty().First();
+                var result = context.Logs.OrderByDescending(l => l.Id).FirstOrDefault();
+                if (result == null)
+                    _last_log_entry_id = -1;
+                else
+                    _last_log_entry_id = result.Id;
+
             }
         }
 
@@ -47,18 +53,14 @@ namespace DroHub.Areas.DHub.SignalRHubs
             {
                 var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
 
-                int last_log_entry_id;
-                if (_last_log_entry == null)
-                    last_log_entry_id = 0;
-                else
-                    last_log_entry_id = _last_log_entry.Id;
-
-                var notifications = context.Logs.OrderByDescending(l => l.Id).Where(l => l.Id > last_log_entry_id).
-                    DefaultIfEmpty().ToArray();
+                var notifications = context.Logs
+                    .Where(l => l.Id > _last_log_entry_id)
+                    .OrderByDescending(l => l.Id)
+                    .ToArray();
 
                 if (notifications.Length != 0)
                 {
-                    _last_log_entry = notifications.First();
+                    _last_log_entry_id = notifications.First().Id;
                     await _hub.Clients.All.SendAsync("notification", JsonConvert.SerializeObject(notifications) );
                 }
             }
