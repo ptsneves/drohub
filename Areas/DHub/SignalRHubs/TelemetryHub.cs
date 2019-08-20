@@ -34,7 +34,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
 
         public TelemetryListener(IServiceProvider services, ILogger<TelemetryListener> logger, IHubContext<TelemetryHub> hub) {
             _logger = logger;
-            _logger.LogInformation(LoggingEvents.Telemetry, "Started TelemetryListener");
+            _logger.LogDebug(LoggingEvents.Telemetry, "Started TelemetryListener");
 
             _channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
             _client = new Drone.DroneClient(_channel);
@@ -66,7 +66,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
                                 await RecordPosition(position);
                             }
                             else {
-                                _logger.LogInformation(LoggingEvents.PositionTelemetry, "Nothing received.Waiting");
+                                _logger.LogDebug(LoggingEvents.PositionTelemetry, "Nothing received.Waiting");
                                 await Task.Delay(1000);
                             }
                         }
@@ -76,7 +76,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
                 {
                     _logger.LogWarning(LoggingEvents.PositionTelemetry, e.ToString() + "\nWaiting 1 second before retrying");
                     await Task.Delay(1000);
-                    _logger.LogWarning(LoggingEvents.PositionTelemetry, "Calling again");
+                    _logger.LogDebug(LoggingEvents.PositionTelemetry, "Calling again");
                 }
             }
         }
