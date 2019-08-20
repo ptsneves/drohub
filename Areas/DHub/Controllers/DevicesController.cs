@@ -125,14 +125,8 @@ namespace DroHub.Areas.DHub.Controllers
         // GET: DroHub/Devices/Data/5
         public async Task<IActionResult> Data(int? id)
         {
-            if (id == null) return NotFound();
-
-            var currentUser = await _userManager.GetUserAsync(User);
-
-            var device = await _context.Devices.FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
-            if (device == null) return NotFound();
-
-            return View(device);
+            var device = await getDeviceById(id);
+            return (device == null ? (IActionResult) NotFound() : View(device));
         }
 
         // GET: DroHub/Devices/Camera/5
@@ -162,15 +156,26 @@ namespace DroHub.Areas.DHub.Controllers
             Land = 1001
         }
 
-        private async Task<Device> GetDevice(int id) {
+        private async Task<Device> getDeviceById(int? id, bool include_positions = false) {
+            if (id == null) return null;
+
             var currentUser = await _userManager.GetUserAsync(User);
             if (currentUser == null)
                 throw new System.InvalidOperationException("Could not find what user are we, so we cannot query associated devices");
 
-            return await _context.Devices.FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
+            if (include_positions)
+            {
+                return await _context.Devices
+                    .Include(d => d.positions)
+                    .FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
+            }
+            else
+                return await _context.Devices
+                    .FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
         }
+
         private async Task<bool> DoDeviceAction(int id, DeviceActions action) {
-            var device = await GetDevice(id);
+            var device = await getDeviceById(id);
             Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
             var client = new Drone.DroneClient(channel);
             DroneReply reply;
