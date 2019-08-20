@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using DroHub.Helpers;
 
 namespace DroHub.Areas.DHub.Controllers
 {
@@ -185,19 +186,25 @@ namespace DroHub.Areas.DHub.Controllers
             Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
             var client = new Drone.DroneClient(channel);
             DroneReply reply;
+            int logging_action = 0;
             if (action == DeviceActions.TakeOff)
-                reply = client.doTakeoff(new DroneRequest{});
+            {
+                reply = client.doTakeoff(new DroneRequest { });
+                logging_action = LoggingEvents.TakeOffAction;
+            }
             else if (action == DeviceActions.Land)
-                reply = client.doLanding(new DroneRequest{});
+            {
+                reply = client.doLanding(new DroneRequest { });
+                logging_action = LoggingEvents.LandAction;
+            }
             else
                 throw new System.InvalidProgramException("Unreachable situation. An action exists which is not implemented");
 
             channel.ShutdownAsync().Wait();
             var result = reply.Message ? true : false;
 
-            await _notifications_hubContext.Clients.All.SendAsync("notification", $"Device {device.Name} has taken off");
-            _logger.LogWarning((int)DeviceActions.TakeOff, "${@action} attemped on {@device}. Result was {@result}", device, result,
-                device);
+            _logger.LogWarning(logging_action, "{action} attemped on {device}. Result was {result}",
+                action, device.Name, result, JsonConvert.SerializeObject(device));
             return result;
         }
 
