@@ -129,6 +129,12 @@ namespace DroHub.Areas.DHub.Controllers
             return (device == null ? (IActionResult) NotFound() : View(device));
         }
 
+        public async Task<IActionResult> getDevicePositions(int? id) {
+            var device = await getDeviceById(id, true);
+
+            return (device == null ? (IActionResult) NotFound() : Json(device.positions));
+        }
+
         // GET: DroHub/Devices/Camera/5
         public async Task<IActionResult> Camera(int? id)
         {
