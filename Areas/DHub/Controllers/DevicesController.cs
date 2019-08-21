@@ -181,24 +181,14 @@ namespace DroHub.Areas.DHub.Controllers
                     .FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
         }
 
-        private async Task<bool> DoDeviceAction(int id, DeviceActions action) {
+        private delegate DroneReply DroneActionDelegate(Drone.DroneClient my_client);
+        private async Task<bool> DoDeviceAction(int id, DroneActionDelegate action, string action_name_for_logging) {
             var device = await getDeviceById(id);
             Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
             var client = new Drone.DroneClient(channel);
             DroneReply reply;
             int logging_action = 0;
-            if (action == DeviceActions.TakeOff)
-            {
-                reply = client.doTakeoff(new DroneRequest { });
-                logging_action = LoggingEvents.TakeOffAction;
-            }
-            else if (action == DeviceActions.Land)
-            {
-                reply = client.doLanding(new DroneRequest { });
-                logging_action = LoggingEvents.LandAction;
-            }
-            else
-                throw new System.InvalidProgramException("Unreachable situation. An action exists which is not implemented");
+            reply = action(client);
 
             channel.ShutdownAsync().Wait();
             var result = reply.Message ? true : false;
@@ -209,11 +199,14 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         public async Task<IActionResult> TakeOff(int id) {
-            await DoDeviceAction(id, DeviceActions.TakeOff);
+            DroneActionDelegate takeoff_delegate = (_client =>  { return _client.doTakeoff( new DroneRequest{}); });
+
+            await DoDeviceAction(id, takeoff_delegate, "Takeoff");
             return Ok();
         }
         public async Task<IActionResult> Land(int id) {
-            await DoDeviceAction(id, DeviceActions.Land);
+            DroneActionDelegate landing_delegate = (_client =>  { return _client.doLanding( new DroneRequest{}); });
+            await DoDeviceAction(id, landing_delegate, "Landing");
             return Ok();
         }
 
