@@ -125,7 +125,10 @@
                 console.log(`marker-id = marker-${file.id}`)
                 let content_html = generateInfoWindowContent(file, null, null)
                 setControlSideBarContent(content_html, true);
-                populateThumbnail(file, dbx, populateExifInfo)
+                let populate_exif_info_cb = populateExifInfo.bind(null, dbx, file);
+                let populate_thumbnail_cb = populateThumbnail.bind(null, file, dbx, populate_exif_info_cb);
+
+                populate_thumbnail_cb()
             }
 
             function populateMarkers(map, latitude, longitude, marker_icon, marker_content_func) {
