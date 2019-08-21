@@ -85,12 +85,15 @@
                     })
                 }
                 contentString +=  "</div>";
-                $('#content-sidebar').html(contentString);
-                $('#content-sidebar').addClass("control-sidebar-open")
                 return contentString;
             }
 
-            function populateExifInfo(dbx, file, infowindow) {
+            function setControlSideBarContent(html, open_sidebar) {
+                $('#content-sidebar').html(html);
+                $('#content-sidebar').addClass("control-sidebar-open")
+            }
+
+            function populateExifInfo(dbx, file) {
                 json_file = file.path_lower.substr(0, file.path_lower.lastIndexOf(".")) + ".json"
                 dbx.filesDownload({path: json_file}).then(
                     function (json_response) {
@@ -99,27 +102,28 @@
                         reader.addEventListener("loadend", function() {
                             let photo_exif = JSON.parse(reader.result, JSONMarkerPrettyPrint);
                             stringified_exif = ""
-                            infowindow.setContent(generateInfoWindowContent(file, thumbnail_url, reader.result));
+                            let content_html = generateInfoWindowContent(file, thumbnail_url, reader.result);
+                            setControlSideBarContent(content_html, true);
                         })
                         reader.readAsText(blob);
                     }
                 )
             }
 
-            function populateThumbnail(file, dbx, infowindow, after_thumbnail_callback) {
+            function populateThumbnail(file, dbx, after_thumbnail_callback) {
                 dbx.filesGetThumbnail({path: file.path_lower, size : {".tag": 'w480h320'}}).then(function (thumbnail_response) {
                     thumbnail_url = window.URL.createObjectURL(thumbnail_response.fileBlob)
-                    infowindow.setContent(generateInfoWindowContent(file, thumbnail_url, null))
-                    after_thumbnail_callback(dbx, file, infowindow)
+                    let content_html = generateInfoWindowContent(file, thumbnail_url, null);
+                    setControlSideBarContent(content_html, true);
+                    after_thumbnail_callback(dbx, file)
                 })
             }
 
-            async function populateMarkerContentDropbox(dbx, file, infowindow, marker) {
-                infowindow.close()
+            async function populateMarkerContentDropbox(dbx, file) {
                 console.log(`marker-id = marker-${file.id}`)
-                infowindow.setContent(generateInfoWindowContent(file, null, null))
-                infowindow.open(map, marker);
-                populateThumbnail(file, dbx, infowindow, populateExifInfo)
+                let content_html = generateInfoWindowContent(file, null, null)
+                setControlSideBarContent(content_html, true);
+                populateThumbnail(file, dbx, populateExifInfo)
             }
 
             function populateMarkers(map, latitude, longitude, marker_icon, marker_content_func) {
