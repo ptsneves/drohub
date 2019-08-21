@@ -57,6 +57,11 @@
     <script src="/lib/signalr/dist/browser/signalr.js"></script>
     <script src="/js/common-dropbox.js"></script>
     <script>
+
+            $('#map').click(function(e){
+                $('#content-sidebar').removeClass('control-sidebar-open');
+            });
+
             function getCoordinate(file, coord_type) {
                     if (typeof(file.media_info.metadata.location) != 'undefined')
                         return eval("file.media_info.metadata.location." + coord_type)
