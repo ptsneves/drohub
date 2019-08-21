@@ -21,7 +21,9 @@
 
         .control-sidebar {
             height: 100%;
+            overflow-y: scroll;
         }
+
         .gm-style .gm-style-iw {
             color: #FFFFFF;
             background-color: #3C61AD !important;
@@ -186,7 +188,7 @@
                             getFile(dbx, folder_entry["path_lower"], (file) => {
                                     let latitude = getCoordinate(file, 'latitude')
                                     let longitude = getCoordinate(file, 'longitude')
-                                    let content_cb = populateMarkerContentDropbox.bind(null, dbx, file, infowindow);
+                                    let content_cb = populateMarkerContentDropbox.bind(null, dbx, file);
                                     let icon_url =  `${window.location.origin}/images/map-hand-drawn-paper-svgrepo-com.svg`
                                     let marker_icon = {
                                         url: icon_url, // url
