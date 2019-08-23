@@ -13,6 +13,7 @@ import DrohubGRPCProto.python.drohub_pb2 as drohub_pb2
 import olympe
 from olympe.messages.ardrone3.Piloting import TakeOff, moveBy, Landing, moveTo
 from olympe.messages.ardrone3.PilotingState import FlyingStateChanged
+from olympe.messages.common.SettingsState import ProductSerialHighChanged, ProductSerialLowChanged
 from olympe.enums.drone_manager import connection_state
 from olympe.enums.ardrone3.Piloting import MoveTo_Orientation_mode
 from olympe.messages.ardrone3.PilotingSettingsState import MaxTiltChanged
@@ -29,10 +30,57 @@ def check_drone_connected(f):
                 raise Exception("Drone is not connected")
     return wrapper
 
+
+class ParrotSerialNumber():
+    SERIAL_MAXIMUM_NUMBER = 0xFFFFFFFFFFFFFFFFFF
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.serial = 0x0
+        self._MSB = 0x0
+        self._MSB_set = False
+        self._LSB = 0x0
+        self._LSB_set = False
+
+    def _useLock(function):
+        def wrapper(*args):
+            with args[0].lock:
+                return function(*args)
+        return wrapper
+
+    @_useLock
+    def setMSB(self, msb):
+        if self._MSB_set:
+            if msb == self._MSB:
+                return
+            raise Exception("MSB is already set cannot set it again to a different value.")
+
+        self.serial = self.serial | (msb <<ParrotSerialNumber.SERIAL_MAXIMUM_NUMBER)
+        self._MSB = msb
+        self._MSB_set = True
+
+    @_useLock
+    def setLSB(self, lsb):
+        if self._LSB_set:
+            if lsb == self._LSB:
+                return
+            raise Exception("LSB is already set cannot set it again to a different value.")
+
+        self.serial = self.serial | lsb
+        self._LSB = lsb
+        self._LSB_set = True
+
+    @_useLock
+    def Get(self):
+        if self._MSB_set and self._LSB_set:
+            return self.serial
+        raise Exception("Cannot get serial until we have received all the serial message parts.")
+
+
 class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def __init__(self):
         super().__init__()
         self.positions = deque(maxlen=3)
+        self.serial = ParrotSerialNumber()
         self.lk_positions = threading.Lock()
         self.cv_positions_consumer = threading.Condition(self.lk_positions)
         self.drone = olympe.Drone("10.202.0.1", callbacks = [self.cb1])
@@ -54,6 +102,10 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def cb1(self, message):
         if message.Full_Name == "Ardrone3_PilotingState_PositionChanged":
             self.dispatchPosition(message)
+        elif message.Full_Name == "Common_SettingsState_ProductSerialHighChanged":
+            self.serial.setMSB(int(message.state()['high']))
+        elif message.Full_Name == "Common_SettingsState_ProductSerialLowChanged":
+            self.serial.setLSB(int(message.state()['low']))
 
     @check_drone_connected
     def getPosition(self, request, context):
