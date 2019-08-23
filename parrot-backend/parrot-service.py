@@ -11,9 +11,10 @@ import DrohubGRPCProto.python.drohub_pb2_grpc as drohub_pb2_grpc
 import DrohubGRPCProto.python.drohub_pb2 as drohub_pb2
 
 import olympe
-from olympe.messages.ardrone3.Piloting import TakeOff, moveBy, Landing
+from olympe.messages.ardrone3.Piloting import TakeOff, moveBy, Landing, moveTo
 from olympe.messages.ardrone3.PilotingState import FlyingStateChanged
 from olympe.enums.drone_manager import connection_state
+from olympe.enums.ardrone3.Piloting import MoveTo_Orientation_mode
 from olympe.messages.ardrone3.PilotingSettingsState import MaxTiltChanged
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -75,6 +76,14 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def doLanding(self, request, context):
         landing = self.drone(Landing()).wait()
         return drohub_pb2.DroneReply(message=landing.success())
+
+    @check_drone_connected
+    def moveToPosition(self, request, context):
+        print(str(request))
+        go_to_position = self.drone(moveTo(
+            request.latitude, request.longitude, request.altitude,  MoveTo_Orientation_mode.HEADING_DURING, request.heading)
+        ).wait()
+        return drohub_pb2.DroneReply(message=go_to_position.success())
 
     def __del__(self):
         self.drone.disconnection()
