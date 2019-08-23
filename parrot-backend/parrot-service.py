@@ -74,7 +74,7 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         self.drone = olympe.Drone("10.202.0.1", callbacks = [self.cb1])
         self.drone.connection()
 
-    def check_drone_connected(f):
+    def _checkDroneConnected(f):
         def wrapper(*args):
             state = args[0].drone.connection_state()
             if state.OK:
@@ -106,7 +106,7 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         elif message.Full_Name == "Common_SettingsState_ProductSerialLowChanged":
             self.serial.setLSB(int(message.state()['low']))
 
-    @check_drone_connected
+    @_checkDroneConnected
     def getPosition(self, request, context):
         while True:
             with self.cv_positions_consumer:
@@ -115,7 +115,7 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
                 while len((positions_copy)) > 0:
                     yield positions_copy.popleft()
 
-    @check_drone_connected
+    @_checkDroneConnected
     def doTakeoff(self, request, context):
         print("Taking off")
         takeoff = self.drone(
@@ -124,12 +124,12 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         ).wait()
         return drohub_pb2.DroneReply(message=takeoff.success())
 
-    @check_drone_connected
+    @_checkDroneConnected
     def doLanding(self, request, context):
         landing = self.drone(Landing()).wait()
         return drohub_pb2.DroneReply(message=landing.success())
 
-    @check_drone_connected
+    @_checkDroneConnected
     def moveToPosition(self, request, context):
         print(str(request))
         go_to_position = self.drone(moveTo(
