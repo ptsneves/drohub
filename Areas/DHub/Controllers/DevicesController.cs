@@ -210,6 +210,21 @@ namespace DroHub.Areas.DHub.Controllers
             return Ok();
         }
 
+        public async Task<IActionResult> MoveToPosition(int id, float latitude, float longitude, float altitude, double heading)
+        {
+            var new_position = new DroneRequestPosition
+            {
+                Latitude = latitude,
+                Longitude = longitude,
+                Altitude = altitude,
+                Heading = heading
+            };
+            _logger.LogDebug("Called move to position with position {latitude} {longitude} {altitude} {heading}", latitude, longitude, altitude, heading);
+            DroneActionDelegate movetoposition = (_client => { return _client.moveToPosition(new_position); });
+            await DoDeviceAction(id, movetoposition, "Move to Position");
+            return Ok();
+        }
+
         // GET: DroHub/Devices/Gallery/5
         public IActionResult Gallery(int? id)
         {
