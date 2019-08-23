@@ -36,6 +36,7 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         self.lk_positions = threading.Lock()
         self.cv_positions_consumer = threading.Condition(self.lk_positions)
         self.drone = olympe.Drone("10.202.0.1", callbacks = [self.cb1])
+        self.drone.connection()
 
     def dispatchPosition(self, message):
         new_drone_position = drohub_pb2.DronePosition(
