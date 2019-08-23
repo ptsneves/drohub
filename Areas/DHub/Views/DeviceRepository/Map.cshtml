@@ -6,18 +6,6 @@
 
 <section class="content">
     <style>
-        .container-fluid {
-            width:100%;
-            height: 100%;
-            position:absolute;
-            top:0;
-            padding:0;
-        }
-        #map {
-            width:100%;
-            height: 100%;
-        }
-
         .control-sidebar-open {
             width: 30%;
             height: 100%;
@@ -46,8 +34,8 @@
 
     <aside class="control-sidebar control-sidebar-dark" id="content-sidebar"></aside>
 
-    <div class='container-fluid'>
-        <div id="map"></div>
+    <div class="embed-responsive embed-responsive-16by9">
+        <div id="map" class="embed-responsive-item" style="border: 1px solid black"></div>
     </div>
     <script src="/lib/dropbox-sdk/Dropbox-sdk.min.js"></script>
 </section>
