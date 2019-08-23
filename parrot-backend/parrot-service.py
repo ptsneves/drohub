@@ -66,13 +66,17 @@ class ParrotSerialNumber():
 
 class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def __init__(self):
-        super().__init__()
         self.positions = deque(maxlen=3)
         self.serial = ParrotSerialNumber()
         self.lk_positions = threading.Lock()
         self.cv_positions_consumer = threading.Condition(self.lk_positions)
+
         self.drone = olympe.Drone("10.202.0.1", callbacks = [self.cb1])
-        self.drone.connection()
+        try:
+            self.drone.connection()
+        except:
+            pass
+        super().__init__()
 
     def _checkDroneConnected(f):
         def wrapper(*args):
