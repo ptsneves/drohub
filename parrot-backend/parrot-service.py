@@ -19,18 +19,6 @@ from olympe.enums.ardrone3.Piloting import MoveTo_Orientation_mode
 from olympe.messages.ardrone3.PilotingSettingsState import MaxTiltChanged
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
-def check_drone_connected(f):
-    def wrapper(*args):
-        state = args[0].drone.connection_state()
-        if state.OK:
-            return f(*args)
-        else:
-            print("Trying to connect")
-            if not args[0].drone.connection():
-                raise Exception("Drone is not connected")
-    return wrapper
-
-
 class ParrotSerialNumber():
     SERIAL_MAXIMUM_NUMBER = 0xFFFFFFFFFFFFFFFFFF
     def __init__(self):
@@ -85,6 +73,17 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         self.cv_positions_consumer = threading.Condition(self.lk_positions)
         self.drone = olympe.Drone("10.202.0.1", callbacks = [self.cb1])
         self.drone.connection()
+
+    def check_drone_connected(f):
+        def wrapper(*args):
+            state = args[0].drone.connection_state()
+            if state.OK:
+                return f(*args)
+            else:
+                print("Trying to connect")
+                if not args[0].drone.connection():
+                    raise Exception("Drone is not connected")
+        return wrapper
 
     def dispatchPosition(self, message):
         new_drone_position = drohub_pb2.DronePosition(
