@@ -140,6 +140,7 @@
                             let photo_exif = JSON.parse(reader.result, JSONMarkerPrettyPrint);
                             stringified_exif = ""
                             let content_html = generateInfoWindowContent(file, thumbnail_url, reader.result);
+                            populatePictureStack(dbx, file, content_html)
                         })
                         reader.readAsText(blob);
                     }
@@ -161,6 +162,22 @@
                 let populate_thumbnail_cb = populateThumbnail.bind(null, file, dbx, populate_exif_info_cb);
 
                 populate_thumbnail_cb()
+            }
+
+            function populatePictureStack(dbx, file, content_html) {
+                function basename(path) {
+                    return path.split('/').reverse()[0];
+                }
+                console.log(file.path_lower)
+                let new_picture = $('#picture-box-template').clone();
+                new_picture = new_picture.attr("style", "display: initial");
+                new_picture = new_picture.attr("id", `picture-box-${file.path_lower}`);
+                new_picture.find('.box-title').text(basename(file.path_lower));
+                new_picture.find('.box-body').html(content_html);
+
+                new_picture.find('.box-body').html(content_html);
+                console.log(content_html)
+                new_picture.appendTo("#picture-stack-container");
             }
 
             function populateMarkers(map, latitude, longitude, marker_icon, marker_content_func) {
