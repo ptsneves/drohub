@@ -31,10 +31,65 @@
         }
     </style>
 
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2" id="sidebar-collumn">
+                <div class="box">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Devices</h3>
+                        <div class="box-tools pull-right">
+                            <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i>
+                        </div>
+                    </div>
+                    <div class="box-body">
+                        sdas
+                    </div>
+                </div>
+                <div class="box">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Missions</h3>
+                        <div class="box-tools pull-right">
+                            <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i>
+                        </div>
+                    </div>
+                    <div class="box-body">
+                        sdas
+                    </div>
+                </div>
+                <div class="box collapsed-box">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Picture Stack</h3>
+                        <div class="box-tools pull-right">
+                            <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i>
+                        </div>
+                    </div>
+                    <div class="box-body" id="picture-stack-container">
+                        <div class="box" id="picture-box-template" style="display: none">
+                            <div class="box-header with-border">
+                                <h3 class="box-title">P1</h3>
+                                <div class="box-tools pull-right">
+                                    <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i>
+                                </div>
+                            </div>
+                            <div class="box-body">
+                                sdas
+                            </div>
+                        </div>
+                    </div>
+                </div>
+           </div>
 
-    <div class="embed-responsive embed-responsive-16by9">
-        <div id="map" class="embed-responsive-item" style="border: 1px solid black"></div>
+            <div class="col-md-10" id="map-collumn">
+                <div class="box">
+                    <div class="embed-responsive embed-responsive-16by9">
+                        <div id="map" class="embed-responsive-item" style="border: 1px solid black"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
+
     <script src="/lib/dropbox-sdk/Dropbox-sdk.min.js"></script>
 </section>
 
