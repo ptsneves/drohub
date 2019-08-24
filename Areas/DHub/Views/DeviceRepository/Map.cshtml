@@ -115,7 +115,7 @@
             }
 
             function generateInfoWindowContent(file, thumbnail_url, exif_json) {
-                let contentString = `<div id="google-popup-${file.id}">
+                let contentString = `
                     <p>Pic ${file.name}</p>
                     <p>Lat:${getCoordinate(file, 'latitude')} Long ${getCoordinate(file, 'longitude')}</p>`
 
@@ -127,7 +127,6 @@
                         contentString += JSONMarkerPrettyPrint(k, v)
                     })
                 }
-                contentString +=  "</div>";
                 return contentString;
             }
 
