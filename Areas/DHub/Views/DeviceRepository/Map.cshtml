@@ -29,10 +29,8 @@
             color: #f1f1f1;
             font-weight: bold;
         }
-
     </style>
 
-    <aside class="control-sidebar control-sidebar-dark" id="content-sidebar"></aside>
 
     <div class="embed-responsive embed-responsive-16by9">
         <div id="map" class="embed-responsive-item" style="border: 1px solid black"></div>
@@ -45,11 +43,6 @@
     <script src="/lib/signalr/dist/browser/signalr.js"></script>
     <script src="/js/common-dropbox.js"></script>
     <script>
-
-            $('#map').click(function(e){
-                $('#content-sidebar').removeClass('control-sidebar-open');
-            });
-
             function getCoordinate(file, coord_type) {
                     if (typeof(file.media_info.metadata.location) != 'undefined')
                         return eval("file.media_info.metadata.location." + coord_type)
@@ -83,11 +76,6 @@
                 return contentString;
             }
 
-            function setControlSideBarContent(html, open_sidebar) {
-                $('#content-sidebar').html(html);
-                $('#content-sidebar').addClass("control-sidebar-open")
-            }
-
             function populateExifInfo(dbx, file) {
                 json_file = file.path_lower.substr(0, file.path_lower.lastIndexOf(".")) + ".json"
                 dbx.filesDownload({path: json_file}).then(
@@ -98,7 +86,6 @@
                             let photo_exif = JSON.parse(reader.result, JSONMarkerPrettyPrint);
                             stringified_exif = ""
                             let content_html = generateInfoWindowContent(file, thumbnail_url, reader.result);
-                            setControlSideBarContent(content_html, true);
                         })
                         reader.readAsText(blob);
                     }
@@ -109,7 +96,6 @@
                 dbx.filesGetThumbnail({path: file.path_lower, size : {".tag": 'w480h320'}}).then(function (thumbnail_response) {
                     thumbnail_url = window.URL.createObjectURL(thumbnail_response.fileBlob)
                     let content_html = generateInfoWindowContent(file, thumbnail_url, null);
-                    setControlSideBarContent(content_html, true);
                     after_thumbnail_callback(dbx, file)
                 })
             }
@@ -117,7 +103,6 @@
             async function populateMarkerContentDropbox(dbx, file) {
                 console.log(`marker-id = marker-${file.id}`)
                 let content_html = generateInfoWindowContent(file, null, null)
-                setControlSideBarContent(content_html, true);
                 let populate_exif_info_cb = populateExifInfo.bind(null, dbx, file);
                 let populate_thumbnail_cb = populateThumbnail.bind(null, file, dbx, populate_exif_info_cb);
 
