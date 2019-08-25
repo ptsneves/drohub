@@ -137,8 +137,7 @@ namespace DroHub.Areas.DHub.Controllers
             if (string.IsNullOrWhiteSpace(currentDevice.DropboxToken)) {
                 return RedirectToAction(nameof(Index), new { id = currentDevice.Id});
             }
-            ViewBag.DeviceList = await GetDeviceListInternal();
-            return View();
+            return View(await GetDeviceListInternal());
         }
 
         // POST : /Home/Disconnect

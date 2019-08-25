@@ -1,6 +1,7 @@
 @{
     ViewData["Title"] = "MapDashboard";
 }
+@model IEnumerable<DroHub.Areas.DHub.Models.Device>
 <!-- Content Header (Page header) -->
 <!-- Main content -->
 
@@ -42,7 +43,7 @@
                         </div>
                     </div>
                     <div class="box-body">
-                        @foreach(var device in ViewBag.DeviceList) {
+                        @foreach(var device in @Model) {
                             <input type="text" name="drone_search" class="form-control" placeholder="Search device by name or serial...">
                             <div class="box" id="devices-box-@device.Name">
                                 <div class="box-header with-border">
