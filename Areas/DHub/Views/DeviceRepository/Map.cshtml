@@ -51,6 +51,7 @@
                                 <div class="box-header with-border">
                                     <h3 class="box-title">@device.Name</h3>
                                     <div class="box-tools pull-right">
+                                        <button type="button" class="btn btn-box-tool" onclick="centerMapOnDevice('@device.SerialNumber')"><i class="fa fa-map"></i>
                                         <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i>
                                     </div>
                                 </div>
@@ -195,6 +196,17 @@
     <script src="/lib/signalr/dist/browser/signalr.js"></script>
     <script src="/js/common-dropbox.js"></script>
     <script>
+            var marker_dict = {};
+            function centerMapOnDevice(device_serial_number) {
+                let device_marker = marker_dict[`@drone_marker_id_prefix${device_serial_number}`];
+                centerMapOnMarker(device_marker);
+            }
+
+            function centerMapOnMarker(marker) {
+                marker.map.panTo(marker.position);
+                marker.map.setZoom(20);
+            }
+
             function onGoToPositionDeviceSelected() {
                 let selected_device_serial = $('#move-to-position-device-select').val();
                 let device_box = $(`#@move_to_position_box_id_prefix${selected_device_serial}`)
@@ -295,6 +307,9 @@
                         serial : serial,
                         id : id
                 });
+
+                marker_dict[id] = marker;
+
                 if (marker_content_func) {
                     google.maps.event.addListener(marker, 'click', () => {
                         marker_content_func.bind(null, marker)();
