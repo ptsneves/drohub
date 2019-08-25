@@ -1,5 +1,6 @@
 @{
     ViewData["Title"] = "MapDashboard";
+    var go_to_position_box_id_prefix = "go-to-position-box-id-";
 }
 @model IEnumerable<DroHub.Areas.DHub.Models.Device>
 <!-- Content Header (Page header) -->
@@ -54,9 +55,9 @@
                                 </div>
                                 <div class="box-body">
                                     @{
-                                    var takeoff_action_url = Url.Action("TakeOff", "Devices", new {id = device.Id});
-                                    var landing_action_url = Url.Action("Land", "Devices", new {id = device.Id});
-                                    var go_to_position_box_id = "go-to-position-box-id-" + device.Id;
+                                        var takeoff_action_url = Url.Action("TakeOff", "Devices", new {id = device.Id});
+                                        var landing_action_url = Url.Action("Land", "Devices", new {id = device.Id});
+                                        var go_to_position_box_id = go_to_position_box_id_prefix + device.Id;
                                     }
 
                                     <a onclick='followActionAndDoNothing("@takeoff_action_url")' class="btn btn-danger"
