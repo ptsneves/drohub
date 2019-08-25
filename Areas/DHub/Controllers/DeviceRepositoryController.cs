@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Mime;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace DroHub.Areas.DHub.Controllers
 {
@@ -118,6 +119,16 @@ namespace DroHub.Areas.DHub.Controllers
                 //this.Flash(message, FlashLevel.Danger);
                 return RedirectToAction(nameof(Index), "Devices", new { area = "DHub" });
             }
+        }
+        private async Task<List<Device>> GetDeviceListInternal() {
+            var currentUser = await _userManager.GetUserAsync(User);
+            var devices = await _context.Devices.Where(d => d.User == currentUser).ToListAsync();
+            List<Device> device_list = new List<Device>();
+            foreach (var device in devices)
+            {
+                device_list.Add(device);
+            }
+            return device_list;
         }
         public async Task<IActionResult> Map() {
             DroHubUser currentUser = await _userManager.GetUserAsync(User);
