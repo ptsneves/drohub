@@ -57,6 +57,7 @@
                                     @{
                                         var takeoff_action_url = Url.Action("TakeOff", "Devices", new {id = device.Id});
                                         var landing_action_url = Url.Action("Land", "Devices", new {id = device.Id});
+                                        var move_to_position_action_url = Url.Action("MoveToPosition", "Devices", new {id = device.Id});
                                         var move_to_position_box_id = move_to_position_box_id_prefix + device.Id;
                                     }
 
@@ -75,7 +76,7 @@
                                             </div>
                                         </div>
                                         <div class="box-body">
-                                            <form action="get">
+                                            <form method="get" action="@move_to_position_action_url">
                                                 <input type="text" name="Longitude" class="form-control" placeholder="Longitude in decimal">
                                                 <input type="text" name="Latitude" class="form-control" placeholder="Longitude in decimal">
                                                 <input type="text" name="Altitude" class="form-control" placeholder="Altitude in decimal">
@@ -132,6 +133,58 @@
         </div>
 
     </div>
+    <div class="modal fade" id="modal-move-to-position">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title">Go to Position</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <div class="row">
+                             <div class="col-md-4">
+                                Latitude
+                            </div>
+                            <div class="col-md-4" id="modal-latitude-value">
+                                Value
+                            </div>
+                        </div>
+                        <div class="row">
+                             <div class="col-md-4">
+                                Longitude
+                            </div>
+                            <div class="col-md-4" id="modal-longitude-value">
+                                Value
+                            </div>
+                        </div>
+                        <div class="row">
+                            @{
+                                var devices_select_list = new SelectList(Model, "Id", "Name");
+                            }
+                            <div class="col-md-4">
+                                Select which device should go to Position.
+                            </div>
+                            <div class="col-md-4">
+                                <select asp-items="devices_select_list" id="move-to-position-device-select"></select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="onGoToPositionDeviceSelected()" data-dismiss="modal" >
+                    Select
+                    </button>
+                </div>
+                </div>
+                <!-- /.modal-content -->
+            </div>
+            <!-- /.modal-dialog -->
+        </div>
+        <!-- /.modal -->
 
     <script src="/lib/dropbox-sdk/Dropbox-sdk.min.js"></script>
 </section>
@@ -141,6 +194,17 @@
     <script src="/lib/signalr/dist/browser/signalr.js"></script>
     <script src="/js/common-dropbox.js"></script>
     <script>
+            function onGoToPositionDeviceSelected() {
+                let selected_device_serial = $('#move-to-position-device-select').val();
+                let device_box = $(`#@move_to_position_box_id_prefix${selected_device_serial}`)
+                let lat = $('#modal-longitude-value').text();
+                let lng = $('#modal-latitude-value').text();
+                device_box.attr('style', 'display:initial')
+                device_box.find("input[name='Longitude']").val(lng);
+                device_box.find("input[name='Latitude']").val(lat);
+                device_box.find("input[name='Altitude']").focus();
+            }
+
             function getCoordinate(file, coord_type) {
                     if (typeof(file.media_info.metadata.location) != 'undefined')
                         return eval("file.media_info.metadata.location." + coord_type)
@@ -261,12 +325,25 @@
             }
             function initMap() {
                 var map = new google.maps.Map(document.getElementById('map'), {
-                    zoom: 10,
+                    zoom: 8,
                     center: {lat: 40.5, lng: -7}
                     });
 
                 var url = '@Url.Action("GetDevicesList", "Devices", new {Area = "DHub"})'
 
+                map.addListener("rightclick", function(event) {
+                    var lat = event.latLng.lat();
+                    var lng = event.latLng.lng();
+                    // populate yor box/field with lat, lng
+                    console.log("Lat=" + lat + "; Lng=" + lng);
+                    $('#modal-longitude-value').text(lng);
+                    $('#modal-latitude-value').text(lat);
+                    $('#modal-move-to-position').modal({focus: true, show: true, keyboard: true});
+                    /*$.ajax({
+                        url : '@(Url.Action("MoveToPosition", "Devices"))',
+                        data : {id : 25, latitude : lat, longitude : lng, altitude : 10, heading : 0}
+                    });*/
+                });
 
                 let infowindow = new google.maps.InfoWindow();
                 initLiveTelemetry(map);
