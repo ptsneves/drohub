@@ -261,7 +261,7 @@ namespace DroHub.Areas.DHub.Controllers
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateException e) {
-                //TODO
+                _logger.LogWarning(e.ToString());
                 return RedirectToAction(nameof(Create), "Devices");
             }
 
