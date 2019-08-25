@@ -1,6 +1,6 @@
 @{
     ViewData["Title"] = "MapDashboard";
-    var go_to_position_box_id_prefix = "go-to-position-box-id-";
+    var move_to_position_box_id_prefix = "go-to-position-box-id-";
 }
 @model IEnumerable<DroHub.Areas.DHub.Models.Device>
 <!-- Content Header (Page header) -->
@@ -57,17 +57,17 @@
                                     @{
                                         var takeoff_action_url = Url.Action("TakeOff", "Devices", new {id = device.Id});
                                         var landing_action_url = Url.Action("Land", "Devices", new {id = device.Id});
-                                        var go_to_position_box_id = go_to_position_box_id_prefix + device.Id;
+                                        var move_to_position_box_id = move_to_position_box_id_prefix + device.Id;
                                     }
 
                                     <a onclick='followActionAndDoNothing("@takeoff_action_url")' class="btn btn-danger"
                                         title="Take off this device">TakeOff</a>
                                     <a onclick='followActionAndDoNothing("@landing_action_url")'
                                         class="btn btn-danger" title="Land this device">Land</a>
-                                    <button type='button btn btn-danger' onclick="$('#@go_to_position_box_id').attr('style', 'display:initial')"
+                                    <button type='button btn btn-danger' onclick="$('#@move_to_position_box_id').attr('style', 'display:initial')"
                                         class="btn btn-danger">Move to Position</button>
 
-                                    <div class="box" id="@go_to_position_box_id" style="display: none">
+                                    <div class="box" id="@move_to_position_box_id" style="display: none">
                                         <div class="box-header with-border">
                                             <h3 class="box-title">Go To Position</h3>
                                             <div class="box-tools pull-right">
