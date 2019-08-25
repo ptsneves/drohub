@@ -1,6 +1,7 @@
 @{
     ViewData["Title"] = "MapDashboard";
     var move_to_position_box_id_prefix = "go-to-position-box-id-";
+    var drone_marker_id_prefix = "device-";
 }
 @model IEnumerable<DroHub.Areas.DHub.Models.Device>
 <!-- Content Header (Page header) -->
@@ -315,7 +316,7 @@
                     }
 
                     populate_marker_cb = populateMarkers.bind(null, map, drone_coords.Serial,
-                        drone_coords.Serial, drone_coords.Latitude, drone_coords.Longitude, marker_icon)
+                        `@drone_marker_id_prefix${drone_coords.Serial}`, drone_coords.Latitude, drone_coords.Longitude, marker_icon)
                     populate_marker_cb()
                 });
 
