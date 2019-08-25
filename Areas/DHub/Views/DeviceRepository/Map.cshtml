@@ -43,8 +43,8 @@
                         </div>
                     </div>
                     <div class="box-body">
+                        <input type="text" name="drone_search" class="form-control" placeholder="Search device by name or serial...">
                         @foreach(var device in @Model) {
-                            <input type="text" name="drone_search" class="form-control" placeholder="Search device by name or serial...">
                             <div class="box" id="devices-box-@device.Name">
                                 <div class="box-header with-border">
                                     <h3 class="box-title">@device.Name</h3>
