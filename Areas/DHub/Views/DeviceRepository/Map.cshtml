@@ -286,11 +286,13 @@
                 new_picture.appendTo("#picture-stack-container");
             }
 
-            function populateMarkers(map, latitude, longitude, marker_icon, marker_content_func) {
+            function populateMarkers(map, serial, id, latitude, longitude, marker_icon, marker_content_func) {
                 let marker = new google.maps.Marker({
                         position: {lat: latitude, lng: longitude},
                         icon : marker_icon,
-                        map : map
+                        map : map,
+                        serial : serial,
+                        id : id
                 });
                 if (marker_content_func) {
                     google.maps.event.addListener(marker, 'click', () => {
@@ -312,7 +314,8 @@
                         anchor: new google.maps.Point(0, 0) // anchorscaledSize: new google.maps.Size(50, 50), // scaled size
                     }
 
-                    populate_marker_cb = populateMarkers.bind(null, map, drone_coords.Latitude, drone_coords.Longitude, marker_icon)
+                    populate_marker_cb = populateMarkers.bind(null, map, drone_coords.Serial,
+                        drone_coords.Serial, drone_coords.Latitude, drone_coords.Longitude, marker_icon)
                     populate_marker_cb()
                 });
 
@@ -367,8 +370,8 @@
                                         origin: new google.maps.Point(0,0), // origin
                                         anchor: new google.maps.Point(0, 0) // anchorscaledSize: new google.maps.Size(50, 50), // scaled size
                                             }
-                                    console.log(marker_icon)
-                                    let populate_cb = populateMarkers.bind(null, map, latitude, longitude, marker_icon, content_cb);
+                                    let populate_cb = populateMarkers.bind(null, map, device.serialNumber, file.id,
+                                        latitude, longitude, marker_icon, content_cb);
                                     populate_cb()
                                 }
                              )
