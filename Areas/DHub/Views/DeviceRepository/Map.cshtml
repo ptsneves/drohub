@@ -42,8 +42,48 @@
                         </div>
                     </div>
                     <div class="box-body">
-                        <input type="text" name="drone_search" class="form-control" placeholder="Search device by name or serial...">
-                        sdas
+                        @foreach(var device in ViewBag.DeviceList) {
+                            <input type="text" name="drone_search" class="form-control" placeholder="Search device by name or serial...">
+                            <div class="box" id="devices-box-@device.Name">
+                                <div class="box-header with-border">
+                                    <h3 class="box-title">@device.Name</h3>
+                                    <div class="box-tools pull-right">
+                                        <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i>
+                                    </div>
+                                </div>
+                                <div class="box-body">
+                                    @{
+                                    var takeoff_action_url = Url.Action("TakeOff", "Devices", new {id = device.Id});
+                                    var landing_action_url = Url.Action("Land", "Devices", new {id = device.Id});
+                                    var go_to_position_box_id = "go-to-position-box-id-" + device.Id;
+                                    }
+
+                                    <a onclick='followActionAndDoNothing("@takeoff_action_url")' class="btn btn-danger"
+                                        title="Take off this device">TakeOff</a>
+                                    <a onclick='followActionAndDoNothing("@landing_action_url")'
+                                        class="btn btn-danger" title="Land this device">Land</a>
+                                    <button type='button btn btn-danger' onclick="$('#@go_to_position_box_id').attr('style', 'display:initial')"
+                                        class="btn btn-danger">Move to Position</button>
+
+                                    <div class="box" id="@go_to_position_box_id" style="display: none">
+                                        <div class="box-header with-border">
+                                            <h3 class="box-title">Go To Position</h3>
+                                            <div class="box-tools pull-right">
+                                                <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
+                                            </div>
+                                        </div>
+                                        <div class="box-body">
+                                            <form action="get">
+                                                <input type="text" name="Longitude" class="form-control" placeholder="Longitude in decimal">
+                                                <input type="text" name="Latitude" class="form-control" placeholder="Longitude in decimal">
+                                                <input type="text" name="Latitude" class="form-control" placeholder="Altitude in decimal">
+                                                <button type="submit" name="goto-position" class="btn pull-right">Go!</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
                 <div class="box">
