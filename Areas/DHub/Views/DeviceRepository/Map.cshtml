@@ -213,8 +213,8 @@
             function onGoToPositionDeviceSelected() {
                 let selected_device_serial = $('#move-to-position-device-select').val();
                 let device_box = $(`#@move_to_position_box_id_prefix${selected_device_serial}`)
-                let lat = $('#modal-longitude-value').text();
-                let lng = $('#modal-latitude-value').text();
+                let lat = $('#modal-latitude-value').text();
+                let lng = $('#modal-longitude-value').text();
                 device_box.attr('style', 'display:initial')
                 device_box.find("input[name='Longitude']").val(lng);
                 device_box.find("input[name='Latitude']").val(lat);
