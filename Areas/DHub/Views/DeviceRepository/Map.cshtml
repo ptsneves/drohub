@@ -263,6 +263,8 @@
                             let photo_exif = JSON.parse(reader.result, JSONMarkerPrettyPrint);
                             stringified_exif = ""
                             let content_html = generateInfoWindowContent(file, thumbnail_url, reader.result);
+                            //setControlSideBarContent(content_html, true);
+
                             populatePictureStack(dbx, file, content_html)
                         })
                         reader.readAsText(blob);
@@ -361,10 +363,6 @@
                     $('#modal-longitude-value').text(lng);
                     $('#modal-latitude-value').text(lat);
                     $('#modal-move-to-position').modal({focus: true, show: true, keyboard: true});
-                    /*$.ajax({
-                        url : '@(Url.Action("MoveToPosition", "Devices"))',
-                        data : {id : 25, latitude : lat, longitude : lng, altitude : 10, heading : 0}
-                    });*/
                 });
 
                 let infowindow = new google.maps.InfoWindow();
