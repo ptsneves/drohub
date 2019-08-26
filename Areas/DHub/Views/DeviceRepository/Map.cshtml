@@ -80,9 +80,11 @@
                                         <div class="box-body">
                                             <iframe name="fake-submit" style="display:none;"></iframe>
                                             <form method="get" action="@move_to_position_action_url" target="fake-submit">
+                                                <input type="hidden" name="Id" class="form-control" value="@device.Id">
                                                 <input type="text" name="Longitude" class="form-control" placeholder="Longitude in decimal">
-                                                <input type="text" name="Latitude" class="form-control" placeholder="Longitude in decimal">
+                                                <input type="text" name="Latitude" class="form-control" placeholder="Latitude in decimal">
                                                 <input type="text" name="Altitude" class="form-control" placeholder="Altitude in decimal">
+                                                <input type="text" name="Heading" class="form-control" placeholder="Heading in degrees" value="0">
                                                 <button type="submit" name="goto-position" class="btn pull-right">Go!</button>
                                             </form>
                                         </div>
