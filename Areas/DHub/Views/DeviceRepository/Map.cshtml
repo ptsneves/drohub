@@ -78,7 +78,8 @@
                                             </div>
                                         </div>
                                         <div class="box-body">
-                                            <form method="get" action="@move_to_position_action_url">
+                                            <iframe name="fake-submit" style="display:none;"></iframe>
+                                            <form method="get" action="@move_to_position_action_url" target="fake-submit">
                                                 <input type="text" name="Longitude" class="form-control" placeholder="Longitude in decimal">
                                                 <input type="text" name="Latitude" class="form-control" placeholder="Longitude in decimal">
                                                 <input type="text" name="Altitude" class="form-control" placeholder="Altitude in decimal">
