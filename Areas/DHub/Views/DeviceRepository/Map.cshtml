@@ -349,7 +349,7 @@
 
             function populateMarkers(map, serial, id, latitude, longitude, marker_icon, marker_content_func) {
                 if (marker_dict.hasOwnProperty(id)) {
-                    marker_dict[id].setPosition(new google.maps.LatLng(latitude, longitude));
+                    marker_dict[id].setPosition({lat: latitude, lng: longitude});
                     return;
                 }
 
