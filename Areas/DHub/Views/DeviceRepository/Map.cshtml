@@ -76,6 +76,35 @@
                                         var move_to_position_action_url = Url.Action("MoveToPosition", "Devices", new {id = device.Id});
                                         var move_to_position_box_id = move_to_position_box_id_prefix + device.Id;
                                     }
+                                    <div class="box box-solid">
+                                        <ul class="nav nav-pills nav-stacked">
+                                            <li>
+                                                    <i class="fa fa-info"></i>
+                                                    Device State
+                                                    <span class="label label-primary pull-right">12</span>
+                                            </li>
+                                            <li>
+                                                    <i class="fa fa-signal"></i>
+                                                    Telemetry Signal
+                                                    <span class="label label-primary pull-right">12</span>
+                                            </li>
+                                            <li>
+                                                    <i class="fa fa-battery"></i>
+                                                    Battery
+                                                    <span class="label label-primary pull-right">12</span>
+                                            </li>
+                                            <li>
+                                                    <i class="fa fa-arrows-alt"></i>
+                                                    GPS Signal
+                                                    <span class="label label-primary pull-right">12</span>
+                                            </li>
+                                            <li>
+                                                    <i class="fa fa-map-marker"></i>
+                                                    Last Position
+                                                    <span class="label label-primary pull-right">12</span>
+                                            </li>
+                                        </ul>
+                                    </div>
 
                                     <a onclick='followActionAndDoNothing("@takeoff_action_url")' class="btn btn-danger"
                                         title="Take off this device">TakeOff</a>
