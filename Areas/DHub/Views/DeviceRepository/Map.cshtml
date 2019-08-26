@@ -32,7 +32,19 @@
             color: #f1f1f1;
             font-weight: bold;
         }
-    </style>
+
+        .blinking{
+            animation:blinkingText 1.5s infinite;
+        }
+
+        @@keyframes blinkingText{
+            0%{     color: #000;    }
+            30%{    color: transparent; }
+            70%{    color: transparent;  }
+            100%{   color: #000;    }
+        }
+
+        </style>
 
     <div class="container-fluid">
         <div class="row">
