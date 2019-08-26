@@ -305,6 +305,11 @@
             }
 
             function populateMarkers(map, serial, id, latitude, longitude, marker_icon, marker_content_func) {
+                if (marker_dict.hasOwnProperty(id)) {
+                    marker_dict[id].setPosition(new google.maps.LatLng(latitude, longitude));
+                    return;
+                }
+
                 let marker = new google.maps.Marker({
                         position: {lat: latitude, lng: longitude},
                         icon : marker_icon,
