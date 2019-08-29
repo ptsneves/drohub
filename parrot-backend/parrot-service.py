@@ -17,6 +17,8 @@ from olympe.messages.common.SettingsState import ProductSerialHighChanged, Produ
 from olympe.enums.drone_manager import connection_state
 from olympe.enums.ardrone3.Piloting import MoveTo_Orientation_mode
 from olympe.messages.ardrone3.PilotingSettingsState import MaxTiltChanged
+
+from olympe.tools.logger import TraceLogger, DroneLogger, ErrorCodeDrone
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 class ParrotSerialNumber():
@@ -63,6 +65,73 @@ class ParrotSerialNumber():
             return self.serial
         raise Exception("Cannot get serial until we have received all the serial message parts.")
 
+class DroneRAII(object):
+    def __init__(self, ip, callback_list = []):
+        self._drone = olympe.Drone(ip, loglevel=TraceLogger.level.warning, callbacks=callback_list)
+        self._drone.connection()
+
+    #Because of the del we need have it this way
+    def __getattribute__(self, name):
+        if name == "_drone":
+            return object.__getattribute__(self, name)
+    
+        return self._drone.__getattribute__(name)
+
+    def __call__(self, *args):
+        self._drone(*args)
+
+    def __del__(self):
+        try:
+            #For the case the class is even not constructed
+            self._drone.disconnection()
+        except AttributeError:
+            pass
+
+class DroneThreadSafe():
+    def __init__(self, *args):
+        self._lock = threading.Lock()
+        self._drone = DroneRAII(*args)
+
+    def __getattr__(self, name):
+        with self._lock:
+            return self._drone.__getattribute__(name)
+
+    def __call__(self, *args):
+        self._drone(*args)
+
+
+class DronePersistentConnection():
+    def __init__(self, *args):
+        self.stop_keep_alive = True
+        self._drone = DroneThreadSafe(*args)
+        threading.Thread(target = self._keepConnectionAlive).start()
+
+    def _checkDroneConnected(self):
+        state = self._drone.connection_state()
+        if state.OK:
+            return True
+        else:
+            return False
+
+    def _reconnectDrone(self):
+        print("Trying to connect")
+        if not self._drone.connection():
+            raise Exception("Drone is not connected")
+
+    def _keepConnectionAlive(self):
+        self.stop_keep_alive = False
+        while (self.stop_keep_alive == False):
+            if self._checkDroneConnected() == False:
+                try:
+                   self._reconnectDrone()
+                except Exception:
+                    print("Reconnection failed. Trying again")
+
+    def __call__(self, *args):
+        self._drone(*args)
+
+    def __getattr__(self, name):
+        return self._drone.__getattribute__(name)
 
 class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def __init__(self):
@@ -70,33 +139,17 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         self.serial = ParrotSerialNumber()
         self.lk_positions = threading.Lock()
         self.cv_positions_consumer = threading.Condition(self.lk_positions)
-
-        self.drone = olympe.Drone("10.202.0.1", callbacks = [self.cb1])
-        try:
-            self.drone.connection()
-        except:
-            pass
+        self.drone = DronePersistentConnection("10.202.0.1", [self.cb1])
         super().__init__()
 
-    def _checkDroneConnected(f):
-        def wrapper(*args):
-            state = args[0].drone.connection_state()
-            if state.OK:
-                return f(*args)
-            else:
-                print("Trying to connect")
-                if not args[0].drone.connection():
-                    raise Exception("Drone is not connected")
-        return wrapper
-
     def dispatchPosition(self, message):
+        print("New Position")
         new_drone_position = drohub_pb2.DronePosition(
                         latitude = message.state()['latitude'],
                         longitude = message.state()['longitude'],
                         altitude = message.state()['altitude'],
                         serial = "d34174f4-285b-46e8-b615-89ce6959b49c",
                         timestamp = int(time.time()))
-
 
         self.positions.append(new_drone_position)
         with self.cv_positions_consumer:
@@ -110,16 +163,15 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         elif message.Full_Name == "Common_SettingsState_ProductSerialLowChanged":
             self.serial.setLSB(int(message.state()['low']))
 
-    @_checkDroneConnected
     def getPosition(self, request, context):
         while True:
+            print("Sent position")
             with self.cv_positions_consumer:
                 self.cv_positions_consumer.wait()
                 positions_copy = self.positions
                 while len((positions_copy)) > 0:
                     yield positions_copy.popleft()
 
-    @_checkDroneConnected
     def doTakeoff(self, request, context):
         print("Taking off")
         takeoff = self.drone(
@@ -128,12 +180,10 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         ).wait()
         return drohub_pb2.DroneReply(message=takeoff.success())
 
-    @_checkDroneConnected
     def doLanding(self, request, context):
         landing = self.drone(Landing()).wait()
         return drohub_pb2.DroneReply(message=landing.success())
 
-    @_checkDroneConnected
     def moveToPosition(self, request, context):
         print(str(request))
         go_to_position = self.drone(moveTo(
@@ -141,8 +191,7 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         ).wait()
         return drohub_pb2.DroneReply(message=go_to_position.success())
 
-    def __del__(self):
-        self.drone.disconnection()
+
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     drohub_pb2_grpc.add_DroneServicer_to_server(DroneRPC(), server)
