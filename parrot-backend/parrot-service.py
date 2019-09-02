@@ -69,6 +69,14 @@ class ParrotSerialNumber():
             return self.serial
         raise Exception("Cannot get serial until we have received all the serial message parts.")
 
+class DroneBase():
+    def __getattr__(self, name):
+        with self._lock:
+            return self._drone.__getattribute__(name)
+
+    def __call__(self, *args):
+        self._drone(*args)
+
 class DroneRAII(object):
     def __init__(self, ip, callback_list = []):
         self._drone = olympe.Drone(ip, mpp=True, drone_type=olympe_deps.ARSDK_DEVICE_TYPE_ANAFI4K, loglevel=TraceLogger.level.warning, callbacks=callback_list)
@@ -92,20 +100,12 @@ class DroneRAII(object):
         except AttributeError:
             pass
 
-class DroneThreadSafe():
+class DroneThreadSafe(DroneBase):
     def __init__(self, *args):
         self._lock = threading.Lock()
         self._drone = DroneRAII(*args)
 
-    def __getattr__(self, name):
-        with self._lock:
-            return self._drone.__getattribute__(name)
-
-    def __call__(self, *args):
-        self._drone(*args)
-
-
-class DronePersistentConnection():
+class DronePersistentConnection(DroneBase):
     def __init__(self, *args):
         self.stop_keep_alive = True
         self._drone = DroneThreadSafe(*args)
@@ -132,13 +132,7 @@ class DronePersistentConnection():
                 except Exception:
                     print("Reconnection failed. Trying again")
 
-    def __call__(self, *args):
-        self._drone(*args)
-
-    def __getattr__(self, name):
-        return self._drone.__getattribute__(name)
-
-class DroneChooser():
+class DroneChooser(DroneBase):
     def __init__(self, drone_type, * args):
         if drone_type == "simulator":
             self._ip = '10.202.0.1'
@@ -147,9 +141,6 @@ class DroneChooser():
         else:
             raise Exception("Unknown drone type {} passed.".format(drone_type))
         self.drone = DronePersistentConnection(self._ip, *args)
-
-    def __call__(self, *args):
-        self._drone(*args)
 
 class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def __init__(self, drone_type):
