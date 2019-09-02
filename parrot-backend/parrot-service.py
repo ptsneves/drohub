@@ -5,6 +5,7 @@ from collections import deque
 import logging
 import time
 import threading
+import argparse
 
 import grpc
 import DrohubGRPCProto.python.drohub_pb2_grpc as drohub_pb2_grpc
@@ -137,13 +138,26 @@ class DronePersistentConnection():
     def __getattr__(self, name):
         return self._drone.__getattribute__(name)
 
+class DroneChooser():
+    def __init__(self, drone_type, * args):
+        if drone_type == "simulator":
+            self._ip = '10.202.0.1'
+        elif drone_type == "anafi":
+            self._ip = '192.168.53.1'
+        else:
+            raise Exception("Unknown drone type {} passed.".format(drone_type))
+        self.drone = DronePersistentConnection(self._ip, *args)
+
+    def __call__(self, *args):
+        self._drone(*args)
+
 class DroneRPC(drohub_pb2_grpc.DroneServicer):
-    def __init__(self):
+    def __init__(self, drone_type):
         self.positions = deque(maxlen=3)
         self.serial = ParrotSerialNumber()
         self.lk_positions = threading.Lock()
         self.cv_positions_consumer = threading.Condition(self.lk_positions)
-        self.drone = DronePersistentConnection("10.202.0.1", [self.cb1])
+        self.drone = DroneChooser(drone_type, [self.cb1])
         super().__init__()
 
     def dispatchPosition(self, message):
@@ -196,9 +210,9 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         return drohub_pb2.DroneReply(message=go_to_position.success())
 
 
-def serve():
+def serve(drone_type):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    drohub_pb2_grpc.add_DroneServicer_to_server(DroneRPC(), server)
+    drohub_pb2_grpc.add_DroneServicer_to_server(DroneRPC(drone_type), server)
     server.add_insecure_port('[::]:50051')
     server.start()
     try:
@@ -209,6 +223,13 @@ def serve():
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Parrot ANAFI service.')
+
+    parser.add_argument('--simulator', dest='drone_type', action='store_const',
+                        const='simulator', default='anafi',
+                        help='Connect to a simulator. (Default connect to real ANAFI')
+
+    args = parser.parse_args()
     #logging.basicConfig()
 
-    serve()
+    serve(args.drone_type)
