@@ -26,13 +26,12 @@ from olympe.tools.logger import TraceLogger, DroneLogger, ErrorCodeDrone
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 class ParrotSerialNumber():
-    SERIAL_MAXIMUM_NUMBER = 0xFFFFFFFFFFFFFFFFFF
     def __init__(self):
         self.lock = threading.Lock()
-        self.serial = 0x0
-        self._MSB = 0x0
+        self.serial = ""
+        self._MSB = ""
         self._MSB_set = False
-        self._LSB = 0x0
+        self._LSB = ""
         self._LSB_set = False
 
     def _useLock(function):
@@ -47,10 +46,11 @@ class ParrotSerialNumber():
             if msb == self._MSB:
                 return
             raise Exception("MSB is already set cannot set it again to a different value.")
-
-        self.serial = self.serial | (msb <<ParrotSerialNumber.SERIAL_MAXIMUM_NUMBER)
         self._MSB = msb
         self._MSB_set = True
+        if self._LSB_set:
+            self.serial = msb + self._LSB
+
 
     @_useLock
     def setLSB(self, lsb):
@@ -59,9 +59,10 @@ class ParrotSerialNumber():
                 return
             raise Exception("LSB is already set cannot set it again to a different value.")
 
-        self.serial = self.serial | lsb
         self._LSB = lsb
         self._LSB_set = True
+        if self._MSB_set:
+            self.serial = self._MSB + lsb
 
     @_useLock
     def Get(self):
@@ -168,9 +169,9 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         if message.Full_Name == "Ardrone3_PilotingState_PositionChanged":
             self.dispatchPosition(message)
         elif message.Full_Name == "Common_SettingsState_ProductSerialHighChanged":
-            self.serial.setMSB(int(message.state()['high']))
+            self.serial.setMSB(message.state()['high'])
         elif message.Full_Name == "Common_SettingsState_ProductSerialLowChanged":
-            self.serial.setLSB(int(message.state()['low']))
+            self.serial.setLSB(message.state()['low'])
 
     def getPosition(self, request, context):
         while True:
