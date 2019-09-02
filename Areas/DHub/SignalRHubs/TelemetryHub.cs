@@ -49,9 +49,8 @@ namespace DroHub.Areas.DHub.SignalRHubs
                 await context.SaveChangesAsync();
             }
         }
-        protected override async Task ExecuteAsync(CancellationToken stopping_token) {
-            stopping_token.Register(() =>
-                    _logger.LogWarning(LoggingEvents.Telemetry, "TelemetryListener tasks are stopping."));
+
+        protected async Task GatherPosition(CancellationToken stopping_token) {
             while (!stopping_token.IsCancellationRequested)
             {
                 try
@@ -80,6 +79,14 @@ namespace DroHub.Areas.DHub.SignalRHubs
                     _logger.LogDebug(LoggingEvents.PositionTelemetry, "Calling again");
                 }
             }
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken stopping_token) {
+            stopping_token.Register(() =>
+                    _logger.LogWarning(LoggingEvents.Telemetry, "TelemetryListener tasks are stopping."));
+
+            Task.Run(() => GatherPosition(stopping_token));
+
         }
     }
 }
