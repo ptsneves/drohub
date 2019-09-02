@@ -11,12 +11,15 @@ import DrohubGRPCProto.python.drohub_pb2_grpc as drohub_pb2_grpc
 import DrohubGRPCProto.python.drohub_pb2 as drohub_pb2
 
 import olympe
+import olympe_deps
+
 from olympe.messages.ardrone3.Piloting import TakeOff, moveBy, Landing, moveTo
 from olympe.messages.ardrone3.PilotingState import FlyingStateChanged
 from olympe.messages.common.SettingsState import ProductSerialHighChanged, ProductSerialLowChanged
 from olympe.enums.drone_manager import connection_state
 from olympe.enums.ardrone3.Piloting import MoveTo_Orientation_mode
 from olympe.messages.ardrone3.PilotingSettingsState import MaxTiltChanged
+from olympe.messages.skyctrl.CoPiloting import setPilotingSource
 
 from olympe.tools.logger import TraceLogger, DroneLogger, ErrorCodeDrone
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -67,8 +70,9 @@ class ParrotSerialNumber():
 
 class DroneRAII(object):
     def __init__(self, ip, callback_list = []):
-        self._drone = olympe.Drone(ip, loglevel=TraceLogger.level.warning, callbacks=callback_list)
+        self._drone = olympe.Drone(ip, mpp=True, drone_type=olympe_deps.ARSDK_DEVICE_TYPE_ANAFI4K, loglevel=TraceLogger.level.warning, callbacks=callback_list)
         self._drone.connection()
+        self._drone(setPilotingSource(source="SkyController")).wait()
 
     #Because of the del we need have it this way
     def __getattribute__(self, name):
