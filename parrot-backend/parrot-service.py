@@ -70,6 +70,32 @@ class ParrotSerialNumber():
             return self.serial
         raise Exception("Cannot get serial until we have received all the serial message parts.")
 
+class PositionContainer():
+    def __init__(self):
+        self.positions = deque(maxlen=3)
+        self.lk_positions = threading.Lock()
+        self.cv_positions_consumer = threading.Condition(self.lk_positions)
+
+    def dispatchPosition(self, message):
+        print("New Position")
+        new_drone_position = drohub_pb2.DronePosition(
+                        latitude = message.state()['latitude'],
+                        longitude = message.state()['longitude'],
+                        altitude = message.state()['altitude'],
+                        serial = "d34174f4-285b-46e8-b615-89ce6959b49c",
+                        timestamp = int(time.time()))
+
+        self.positions.append(new_drone_position)
+        with self.cv_positions_consumer:
+            self.cv_positions_consumer.notify_all()
+
+    def getLastPosition(self):
+            with self.cv_positions_consumer:
+                self.cv_positions_consumer.wait()
+                positions_copy = self.positions
+                while len((positions_copy)) > 0:
+                    return positions_copy.popleft()
+
 class DroneBase():
     def __getattr__(self, name):
         with self._lock:
@@ -145,29 +171,14 @@ class DroneChooser(DroneBase):
 
 class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def __init__(self, drone_type):
-        self.positions = deque(maxlen=3)
         self.serial = ParrotSerialNumber()
-        self.lk_positions = threading.Lock()
-        self.cv_positions_consumer = threading.Condition(self.lk_positions)
+        self.position_container = PositionContainer()
         self.drone = DroneChooser(drone_type, [self.cb1])
         super().__init__()
 
-    def dispatchPosition(self, message):
-        print("New Position")
-        new_drone_position = drohub_pb2.DronePosition(
-                        latitude = message.state()['latitude'],
-                        longitude = message.state()['longitude'],
-                        altitude = message.state()['altitude'],
-                        serial = "d34174f4-285b-46e8-b615-89ce6959b49c",
-                        timestamp = int(time.time()))
-
-        self.positions.append(new_drone_position)
-        with self.cv_positions_consumer:
-            self.cv_positions_consumer.notify_all()
-
     def cb1(self, message):
         if message.Full_Name == "Ardrone3_PilotingState_PositionChanged":
-            self.dispatchPosition(message)
+            self.position_container.dispatchPosition(message)
         elif message.Full_Name == "Common_SettingsState_ProductSerialHighChanged":
             self.serial.setMSB(message.state()['high'])
         elif message.Full_Name == "Common_SettingsState_ProductSerialLowChanged":
@@ -176,11 +187,7 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def getPosition(self, request, context):
         while True:
             print("Sent position")
-            with self.cv_positions_consumer:
-                self.cv_positions_consumer.wait()
-                positions_copy = self.positions
-                while len((positions_copy)) > 0:
-                    yield positions_copy.popleft()
+            yield self.position_container.getLastPosition()
 
     def doTakeoff(self, request, context):
         print("Taking off")
