@@ -70,11 +70,21 @@ class ParrotSerialNumber():
             return self.serial
         raise Exception("Cannot get serial until we have received all the serial message parts.")
 
-class PositionContainer():
+
+class DroneMessageContainerBase():
     def __init__(self):
-        self.positions = deque(maxlen=3)
-        self.lk_positions = threading.Lock()
-        self.cv_positions_consumer = threading.Condition(self.lk_positions)
+        self.container = deque(maxlen=3)
+        self.lk = threading.Lock()
+        self.cv_consumer = threading.Condition(self.lk)
+
+    def append(self, new_drone_position):
+        self.container.append(new_drone_position)
+        with self.cv_consumer:
+            self.cv_consumer.notify_all()
+
+class PositionContainer(DroneMessageContainerBase):
+    def __init__(self):
+        super().__init__()
 
     def dispatchPosition(self, message):
         print("New Position")
@@ -85,14 +95,12 @@ class PositionContainer():
                         serial = "d34174f4-285b-46e8-b615-89ce6959b49c",
                         timestamp = int(time.time()))
 
-        self.positions.append(new_drone_position)
-        with self.cv_positions_consumer:
-            self.cv_positions_consumer.notify_all()
+        super().append(new_drone_position)
 
     def getLastPosition(self):
-            with self.cv_positions_consumer:
-                self.cv_positions_consumer.wait()
-                positions_copy = self.positions
+            with self.cv_consumer:
+                self.cv_consumer.wait()
+                positions_copy = self.container
                 while len((positions_copy)) > 0:
                     return positions_copy.popleft()
 
