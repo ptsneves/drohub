@@ -70,7 +70,6 @@ class ParrotSerialNumber():
             return self.serial
         raise Exception("Cannot get serial until we have received all the serial message parts.")
 
-
 class DroneMessageContainerBase():
     def __init__(self):
         self.container = deque(maxlen=3)
@@ -114,19 +113,10 @@ class DroneBase():
 
 class DroneRAII(object):
     def __init__(self, ip, callback_list = []):
+        super().__init__()
         self._drone = olympe.Drone(ip, mpp=True, drone_type=olympe_deps.ARSDK_DEVICE_TYPE_ANAFI4K, loglevel=TraceLogger.level.warning, callbacks=callback_list)
         self._drone.connection()
         self._drone(setPilotingSource(source="SkyController")).wait()
-
-    #Because of the del we need have it this way
-    def __getattribute__(self, name):
-        if name == "_drone":
-            return object.__getattribute__(self, name)
-    
-        return self._drone.__getattribute__(name)
-
-    def __call__(self, *args):
-        self._drone(*args)
 
     def __del__(self):
         try:
@@ -135,19 +125,23 @@ class DroneRAII(object):
         except AttributeError:
             pass
 
-class DroneThreadSafe(DroneBase):
+class DroneThreadSafe(DroneRAII):
     def __init__(self, *args):
+        super().__init__(*args)
         self._lock = threading.Lock()
-        self._drone = DroneRAII(*args)
 
-class DronePersistentConnection(DroneBase):
+    def getDrone(self):
+        with self._lock:
+            return self._drone
+
+class DronePersistentConnection(DroneThreadSafe):
     def __init__(self, *args):
+        super().__init__(*args)
         self.stop_keep_alive = True
-        self._drone = DroneThreadSafe(*args)
         threading.Thread(target = self._keepConnectionAlive).start()
 
     def _checkDroneConnected(self):
-        state = self._drone.connection_state()
+        state = self.getDrone().connection_state()
         if state.OK:
             return True
         else:
@@ -155,7 +149,7 @@ class DronePersistentConnection(DroneBase):
 
     def _reconnectDrone(self):
         print("Trying to connect")
-        if not self._drone.connection():
+        if not self.getDrone().connection():
             raise Exception("Drone is not connected")
 
     def _keepConnectionAlive(self):
@@ -167,15 +161,15 @@ class DronePersistentConnection(DroneBase):
                 except Exception:
                     print("Reconnection failed. Trying again")
 
-class DroneChooser(DroneBase):
-    def __init__(self, drone_type, * args):
+class DroneChooser(DronePersistentConnection):
+    def __init__(self, drone_type, *args):
         if drone_type == "simulator":
             self._ip = '10.202.0.1'
         elif drone_type == "anafi":
             self._ip = '192.168.53.1'
         else:
             raise Exception("Unknown drone type {} passed.".format(drone_type))
-        self.drone = DronePersistentConnection(self._ip, *args)
+        super().__init__(self._ip, *args)
 
 class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def __init__(self, drone_type):
@@ -198,24 +192,22 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
             yield self.position_container.getLastPosition()
 
     def doTakeoff(self, request, context):
-        print("Taking off")
-        takeoff = self.drone(
+        logging.warning("Taking off")
+        takeoff = self.drone.getDrone()(
             TakeOff()
             >> FlyingStateChanged(state="hovering", _timeout=5)
         ).wait()
         return drohub_pb2.DroneReply(message=takeoff.success())
 
     def doLanding(self, request, context):
-        landing = self.drone(Landing()).wait()
+        landing = self.drone.getDrone()(Landing()).wait()
         return drohub_pb2.DroneReply(message=landing.success())
 
     def moveToPosition(self, request, context):
-        print(str(request))
-        go_to_position = self.drone(moveTo(
+        go_to_position = self.drone.getDrone()(moveTo(
             request.latitude, request.longitude, request.altitude,  MoveTo_Orientation_mode.HEADING_DURING, request.heading)
         ).wait()
         return drohub_pb2.DroneReply(message=go_to_position.success())
-
 
 def serve(drone_type):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
