@@ -81,6 +81,13 @@ class DroneMessageContainerBase():
         with self.cv_consumer:
             self.cv_consumer.notify_all()
 
+    def getLastElement(self):
+        with self.cv_consumer:
+            self.cv_consumer.wait()
+            container_copy = self.container
+            while len((container_copy)) > 0:
+                return container_copy.popleft()
+
 class PositionContainer(DroneMessageContainerBase):
     def __init__(self):
         super().__init__()
@@ -97,19 +104,20 @@ class PositionContainer(DroneMessageContainerBase):
         super().append(new_drone_position)
 
     def getLastPosition(self):
-            with self.cv_consumer:
-                self.cv_consumer.wait()
-                positions_copy = self.container
-                while len((positions_copy)) > 0:
-                    return positions_copy.popleft()
+        return super().getLastElement()
 
-class DroneBase():
-    def __getattr__(self, name):
-        with self._lock:
-            return self._drone.__getattribute__(name)
+class BatteryLevelContainer(DroneMessageContainerBase):
+    def __init__(self):
+        super().__init__()
 
-    def __call__(self, *args):
-        self._drone(*args)
+    def dispatchBatteryLevel(self, message):
+        new_battery_level = drohub_pb2.DroneBatteryLevel(
+            battery_level_percent=message.state()['percent'],
+            serial = "d34174f4-285b-46e8-b615-89ce6959b49c",
+            timestamp=int(time.time()))
+
+        logging.debug(new_battery_level)
+        super().append(new_battery_level)
 
 class DroneRAII(object):
     def __init__(self, ip, callback_list = []):
@@ -175,6 +183,7 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def __init__(self, drone_type):
         self.serial = ParrotSerialNumber()
         self.position_container = PositionContainer()
+        self.battery_level_container = BatteryLevelContainer()
         self.drone = DroneChooser(drone_type, [self.cb1])
         super().__init__()
 
@@ -185,10 +194,16 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
             self.serial.setMSB(message.state()['high'])
         elif message.Full_Name == "Common_SettingsState_ProductSerialLowChanged":
             self.serial.setLSB(message.state()['low'])
+        elif message.Full_Name == "Common_CommonState_BatteryStateChanged" or message.Full_Name == "Battery_Alert":
+            self.battery_level_container.dispatchBatteryLevel(message)
 
     def getPosition(self, request, context):
         while True:
             yield self.position_container.getLastPosition()
+
+    def getBatteryLevel(self, request, context):
+        while True:
+            yield self.battery_level_container.getLastElement()
 
     def doTakeoff(self, request, context):
         logging.warning("Taking off")
