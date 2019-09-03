@@ -62,7 +62,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
                             if (await call.ResponseStream.MoveNext(stopping_token)) {
                                 DronePosition position = call.ResponseStream.Current;
                                 _logger.LogDebug("received position {position}", position);
-                                await _hub.Clients.All.SendAsync("telemetry", JsonConvert.SerializeObject(position) );
+                                await _hub.Clients.All.SendAsync("position", JsonConvert.SerializeObject(position) );
                                 await RecordPosition(position);
                             }
                             else {

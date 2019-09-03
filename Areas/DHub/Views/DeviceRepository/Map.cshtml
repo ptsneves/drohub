@@ -375,7 +375,7 @@
                 var connection = new signalR.HubConnectionBuilder().withUrl("/telemetryHub").
                     configureLogging(signalR.LogLevel.Information).build();
 
-                connection.on("telemetry", function (message) {
+                connection.on("position", function (message) {
                     drone_coords = JSON.parse(message)
                     let icon_url =  `${window.location.origin}/images/drone-svgrepo-com.svg`
                     let marker_icon = {
