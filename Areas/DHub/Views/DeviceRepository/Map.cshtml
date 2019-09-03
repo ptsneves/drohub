@@ -390,6 +390,15 @@
                     populate_marker_cb()
                 });
 
+                connection.on("battery_level", function (message) {
+                    battery_level = JSON.parse(message)
+                    $(`.battery-level-value-${battery_level.Serial}`).each(
+                        function(index, element) {
+                            $(this).text(battery_level.BatteryLevelPercent);
+                        }
+                    );
+                });
+
                 connection.start().then(function () {
                     console.log("Notifications started SIGNALR");
                 }).catch(function (err) {

@@ -81,11 +81,42 @@ namespace DroHub.Areas.DHub.SignalRHubs
             }
         }
 
+        protected async Task GatherBatteryLevel(CancellationToken stopping_token) {
+            while (!stopping_token.IsCancellationRequested)
+            {
+                try
+                {
+                    using (var call = _client.getBatteryLevel(new DroneRequest { }, cancellationToken: stopping_token))
+                    {
+                        while (!stopping_token.IsCancellationRequested)
+                        {
+                            if (await call.ResponseStream.MoveNext(stopping_token)) {
+                                DroneBatteryLevel battery_level = call.ResponseStream.Current;
+                                _logger.LogDebug("received battery_level {battery_level}", battery_level);
+                                await _hub.Clients.All.SendAsync("battery_level", JsonConvert.SerializeObject(battery_level) );
+                            }
+                            else {
+                                _logger.LogDebug(LoggingEvents.BatteryLevelTelemetry, "Nothing received.Waiting");
+                                await Task.Delay(1000);
+                            }
+                        }
+                    }
+                }
+                catch (RpcException e)
+                {
+                    _logger.LogWarning(LoggingEvents.BatteryLevelTelemetry, e.ToString() + "\nWaiting 1 second before retrying");
+                    await Task.Delay(1000);
+                    _logger.LogDebug(LoggingEvents.BatteryLevelTelemetry, "Calling again");
+                }
+            }
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stopping_token) {
             stopping_token.Register(() =>
                     _logger.LogWarning(LoggingEvents.Telemetry, "TelemetryListener tasks are stopping."));
 
             Task.Run(() => GatherPosition(stopping_token));
+            Task.Run(() => GatherBatteryLevel(stopping_token));
 
         }
     }

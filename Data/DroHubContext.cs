@@ -18,6 +18,7 @@ namespace DroHub.Data
         public DbSet<LogEntry> Logs { get; set; }
 
         public DbSet<DronePosition> Positions { get; set; }
+        public DbSet<DroneBatteryLevel> BatteryLevels { get; set; }
         //public DbSet<DeviceSettings> DeviceSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -41,6 +42,12 @@ namespace DroHub.Data
             builder.Entity<DronePosition>()
                 .HasIndex(d => d.Serial);
 
+            builder.Entity<DroneBatteryLevel>()
+                .HasKey(d => d.Id);
+
+            builder.Entity<DroneBatteryLevel>()
+                .HasIndex(d => d.Serial);
+
             builder.Entity<LogEntry>()
                 .HasKey(d => d.Id);
 
@@ -61,10 +68,23 @@ namespace DroHub.Data
                 .HasForeignKey(p => p.Serial)
                 .HasPrincipalKey(d => d.SerialNumber);
 
+            builder.Entity<DroneBatteryLevel>()
+                .HasOne(p => p.Device)
+                .WithMany(d => d.battery_levels)
+                .HasForeignKey(p => p.Serial)
+                .HasPrincipalKey(d => d.SerialNumber);
+
             builder.Entity<Device>()
                 .HasMany(d => d.positions)
                 .WithOne(p => p.Device)
                 .IsRequired();
+
+            builder.Entity<Device>()
+                .HasMany(d => d.battery_levels)
+                .WithOne(p => p.Device)
+                .IsRequired();
+
+
 
         }
     }

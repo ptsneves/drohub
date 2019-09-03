@@ -26,6 +26,7 @@ namespace DroHub.Areas.DHub.Models
         public DroHubUser User { get; set; }
 
         public ICollection<DronePosition> positions { get; set; }
+        public ICollection<DroneBatteryLevel> battery_levels { get; set; }
 
     }
 }
