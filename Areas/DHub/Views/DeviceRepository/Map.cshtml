@@ -1,4 +1,5 @@
 @{
+    @using Newtonsoft.Json;
     ViewData["Title"] = "MapDashboard";
     var move_to_position_box_id_prefix = "go-to-position-box-id-";
     var drone_marker_id_prefix = "device-";
@@ -236,10 +237,17 @@
         </div>
         <!-- /.modal -->
 
+
     <script src="/lib/dropbox-sdk/Dropbox-sdk.min.js"></script>
 </section>
-
 @section Scripts {
+    @foreach (var device in Model) {
+        <script type="application/json" class="initial-position" serial="@device.SerialNumber">
+            @Html.Raw(JsonConvert.SerializeObject(
+                @device.positions.OrderByDescending(l => l.Id).FirstOrDefault())
+                )
+        </script>
+    }
     <script src="/lib/dropbox-sdk/Dropbox-sdk.min.js"></script>
     <script src="/lib/signalr/dist/browser/signalr.js"></script>
     <script src="/js/common-dropbox.js"></script>
@@ -376,18 +384,7 @@
                     configureLogging(signalR.LogLevel.Information).build();
 
                 connection.on("position", function (message) {
-                    drone_coords = JSON.parse(message)
-                    let icon_url =  `${window.location.origin}/images/drone-svgrepo-com.svg`
-                    let marker_icon = {
-                        url: icon_url, // url
-                        scaledSize: new google.maps.Size(50, 50), // scaled size
-                        origin: new google.maps.Point(0,0), // origin
-                        anchor: new google.maps.Point(0, 0) // anchorscaledSize: new google.maps.Size(50, 50), // scaled size
-                    }
-
-                    populate_marker_cb = populateMarkers.bind(null, map, drone_coords.Serial,
-                        `@drone_marker_id_prefix${drone_coords.Serial}`, drone_coords.Latitude, drone_coords.Longitude, marker_icon)
-                    populate_marker_cb()
+                    updatePositionData(message)
                 });
 
                 connection.on("battery_level", function (message) {
@@ -406,6 +403,24 @@
                 });
 
             }
+            function updatePositionData(message, map) {
+                drone_coords = JSON.parse(message)
+                if (drone_coords == null)
+                    return;
+
+                let icon_url =  `${window.location.origin}/images/drone-svgrepo-com.svg`
+                let marker_icon = {
+                    url: icon_url, // url
+                    scaledSize: new google.maps.Size(50, 50), // scaled size
+                    origin: new google.maps.Point(0,0), // origin
+                    anchor: new google.maps.Point(0, 0) // anchorscaledSize: new google.maps.Size(50, 50), // scaled size
+                }
+
+                populate_marker_cb = populateMarkers.bind(null, map, drone_coords.Serial,
+                    `@drone_marker_id_prefix${drone_coords.Serial}`, drone_coords.Latitude, drone_coords.Longitude, marker_icon)
+                populate_marker_cb()
+            }
+
             function initMap() {
                 var map = new google.maps.Map(document.getElementById('map'), {
                     zoom: 8,
@@ -427,6 +442,13 @@
 
                 let infowindow = new google.maps.InfoWindow();
                 initLiveTelemetry(map);
+
+                $('.initial-position').each(
+                function() {
+                        updatePositionData($(this).html(), map);
+                    }
+                )
+
                 $.getJSON(url)
                 .done(function (device_list) {
                     $.each(device_list, function (i, device) {

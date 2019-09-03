@@ -122,7 +122,9 @@ namespace DroHub.Areas.DHub.Controllers
         }
         private async Task<List<Device>> GetDeviceListInternal() {
             var currentUser = await _userManager.GetUserAsync(User);
-            var devices = await _context.Devices.Where(d => d.User == currentUser).ToListAsync();
+            var devices = await _context.Devices.Where(d => d.User == currentUser).
+                Include(d => d.positions).
+                ToListAsync();
             List<Device> device_list = new List<Device>();
             foreach (var device in devices)
             {
