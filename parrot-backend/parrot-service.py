@@ -86,7 +86,6 @@ class PositionContainer(DroneMessageContainerBase):
         super().__init__()
 
     def dispatchPosition(self, message):
-        print("New Position")
         new_drone_position = drohub_pb2.DronePosition(
                         latitude = message.state()['latitude'],
                         longitude = message.state()['longitude'],
@@ -94,6 +93,7 @@ class PositionContainer(DroneMessageContainerBase):
                         serial = "d34174f4-285b-46e8-b615-89ce6959b49c",
                         timestamp = int(time.time()))
 
+        logging.debug(new_drone_position)
         super().append(new_drone_position)
 
     def getLastPosition(self):
@@ -148,7 +148,7 @@ class DronePersistentConnection(DroneThreadSafe):
             return False
 
     def _reconnectDrone(self):
-        print("Trying to connect")
+        logging.info("Trying to connect")
         if not self.getDrone().connection():
             raise Exception("Drone is not connected")
 
@@ -159,7 +159,7 @@ class DronePersistentConnection(DroneThreadSafe):
                 try:
                    self._reconnectDrone()
                 except Exception:
-                    print("Reconnection failed. Trying again")
+                    logging.warning("Reconnection failed. Trying again")
 
 class DroneChooser(DronePersistentConnection):
     def __init__(self, drone_type, *args):
@@ -188,7 +188,6 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
 
     def getPosition(self, request, context):
         while True:
-            print("Sent position")
             yield self.position_container.getLastPosition()
 
     def doTakeoff(self, request, context):
@@ -227,8 +226,10 @@ if __name__ == '__main__':
     parser.add_argument('--simulator', dest='drone_type', action='store_const',
                         const='simulator', default='anafi',
                         help='Connect to a simulator. (Default connect to real ANAFI')
-
+    parser.add_argument('--verbose', dest="verbosity", action="store_const",
+                        const=logging.DEBUG, default = logging.INFO,
+                        help="Whether to print debugging information")
     args = parser.parse_args()
-    #logging.basicConfig()
+    logging.basicConfig(level=args.verbosity, format='%(relativeCreated)6d %(threadName)s %(message)s')
 
     serve(args.drone_type)
