@@ -61,11 +61,11 @@ namespace DroHub
             }
             else
             {
+                app.UseHttpsRedirection();
                 app.UseExceptionHandler("/Home/Error");
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseCookiePolicy();
 
