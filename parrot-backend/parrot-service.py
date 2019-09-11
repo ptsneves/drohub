@@ -120,9 +120,9 @@ class BatteryLevelContainer(DroneMessageContainerBase):
         super().append(new_battery_level)
 
 class DroneRAII(object):
-    def __init__(self, ip, callback_list = []):
+    def __init__(self, ip, **kwargs):
         super().__init__()
-        self._drone = olympe.Drone(ip, mpp=True, drone_type=olympe_deps.ARSDK_DEVICE_TYPE_ANAFI4K, loglevel=TraceLogger.level.warning, callbacks=callback_list)
+        self._drone = olympe.Drone(ip, **kwargs)
         self._drone.connection()
         self._drone(setPilotingSource(source="SkyController")).wait()
 
@@ -171,10 +171,14 @@ class DronePersistentConnection(DroneThreadSafe):
 
 class DroneChooser(DronePersistentConnection):
     def __init__(self, drone_type, *args, **kwargs):
+
+        kwargs["loglevel"] = TraceLogger.level.warning
         if drone_type == "simulator":
             self._ip = '10.202.0.1'
         elif drone_type == "anafi":
             self._ip = '192.168.53.1'
+            kwargs["mpp"] = True
+            kwargs["drone_type"] = olympe_deps.ARSDK_DEVICE_TYPE_ANAFI4K
         else:
             raise Exception("Unknown drone type {} passed.".format(drone_type))
         super().__init__(self._ip, *args, **kwargs)
@@ -184,7 +188,7 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         self.serial = ParrotSerialNumber()
         self.position_container = PositionContainer()
         self.battery_level_container = BatteryLevelContainer()
-        self.drone = DroneChooser(drone_type, [self.cb1])
+        self.drone = DroneChooser(drone_type, callbacks = [self.cb1])
         super().__init__()
 
     def cb1(self, message):
