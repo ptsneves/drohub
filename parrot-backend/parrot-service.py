@@ -35,9 +35,9 @@ class ParrotSerialNumber():
         self._LSB_set = False
 
     def _useLock(function):
-        def wrapper(*args):
+        def wrapper(*args, **kwargs):
             with args[0].lock:
-                return function(*args)
+                return function(*args, **kwargs)
         return wrapper
 
     @_useLock
@@ -134,8 +134,8 @@ class DroneRAII(object):
             pass
 
 class DroneThreadSafe(DroneRAII):
-    def __init__(self, *args):
-        super().__init__(*args)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._lock = threading.Lock()
 
     def getDrone(self):
@@ -143,8 +143,8 @@ class DroneThreadSafe(DroneRAII):
             return self._drone
 
 class DronePersistentConnection(DroneThreadSafe):
-    def __init__(self, *args):
-        super().__init__(*args)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.stop_keep_alive = True
         threading.Thread(target = self._keepConnectionAlive).start()
 
@@ -170,14 +170,14 @@ class DronePersistentConnection(DroneThreadSafe):
                     logging.warning("Reconnection failed. Trying again")
 
 class DroneChooser(DronePersistentConnection):
-    def __init__(self, drone_type, *args):
+    def __init__(self, drone_type, *args, **kwargs):
         if drone_type == "simulator":
             self._ip = '10.202.0.1'
         elif drone_type == "anafi":
             self._ip = '192.168.53.1'
         else:
             raise Exception("Unknown drone type {} passed.".format(drone_type))
-        super().__init__(self._ip, *args)
+        super().__init__(self._ip, *args, **kwargs)
 
 class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def __init__(self, drone_type):
