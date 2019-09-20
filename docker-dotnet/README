@@ -1,0 +1,5 @@
+This docker should be built from the root of the repository not
+from the docker-dotnet directory.
+
+This docker machine takes the whole development source code and generates
+a release server, ready to be deployed with the expected infrastructure.
