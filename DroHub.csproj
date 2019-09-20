@@ -21,12 +21,16 @@
   <ItemGroup>
     <Protobuf Include="./DrohubGRPCProto/drohub.proto" Link="drohub.proto" />
   </ItemGroup>
-
+  <!--
   <ItemGroup>
     <Compile Remove="wwwroot\AdminLTE\bower_components\**" />
     <Content Remove="wwwroot\AdminLTE\bower_components\**" />
     <EmbeddedResource Remove="wwwroot\AdminLTE\bower_components\**" />
     <None Remove="wwwroot\AdminLTE\bower_components\**" />
+  </ItemGroup>
+  -->
+  <ItemGroup>
+    <None Update="wwwroot\AdminLTE\bower_components\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
