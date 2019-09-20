@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using DroHub.Data;
 using Grpc.Core;
 using DroHub.Helpers;
+using Microsoft.Extensions.Options;
 
 namespace DroHub.Areas.DHub.SignalRHubs
 {
@@ -31,12 +32,15 @@ namespace DroHub.Areas.DHub.SignalRHubs
         private Drone.DroneClient _client;
         private readonly IHubContext<TelemetryHub> _hub;
         private readonly IServiceProvider _services;
+        private readonly DeviceMicroServiceOptions _device_options;
+        public TelemetryListener(IServiceProvider services, ILogger<TelemetryListener> logger, IHubContext<TelemetryHub> hub,
+            IOptionsMonitor<DeviceMicroServiceOptions> device_options) {
 
-        public TelemetryListener(IServiceProvider services, ILogger<TelemetryListener> logger, IHubContext<TelemetryHub> hub) {
+            _device_options = device_options.CurrentValue;
             _logger = logger;
-            _logger.LogDebug(LoggingEvents.Telemetry, "Started TelemetryListener");
+            _logger.LogDebug( $"Started TelemetryListener{_device_options.Address}:{_device_options.Port}");
 
-            _channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
+            _channel = new Channel($"{_device_options.Address}:{_device_options.Port}", ChannelCredentials.Insecure);
             _client = new Drone.DroneClient(_channel);
             _hub = hub;
             _services = services;

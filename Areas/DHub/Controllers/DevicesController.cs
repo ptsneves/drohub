@@ -16,6 +16,7 @@ using Newtonsoft.Json;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using DroHub.Helpers;
+using Microsoft.Extensions.Options;
 
 namespace DroHub.Areas.DHub.Controllers
 {
@@ -30,15 +31,17 @@ namespace DroHub.Areas.DHub.Controllers
         private const string DefaultIso = "200"; // TODO Get value directly from above lists
 
         private readonly IHubContext<NotificationsHub> _notifications_hubContext;
-
+        private readonly DeviceMicroServiceOptions _device_micro_service_options;
         private readonly ILogger<DevicesController> _logger;
         public DevicesController(DroHubContext context, UserManager<DroHubUser> userManager,
-            IHubContext<NotificationsHub> hubContext, ILogger<DevicesController> logger)
+            IHubContext<NotificationsHub> hubContext, ILogger<DevicesController> logger,
+            IOptionsMonitor<DeviceMicroServiceOptions> device_micro_service_options)
         {
             _context = context;
             _userManager = userManager;
             _notifications_hubContext = hubContext;
             _logger = logger;
+            _device_micro_service_options = device_micro_service_options.CurrentValue;
         }
 
         // --- SETTINGS SELECT LISTS
@@ -184,7 +187,8 @@ namespace DroHub.Areas.DHub.Controllers
         private delegate DroneReply DroneActionDelegate(Drone.DroneClient my_client);
         private async Task<bool> DoDeviceAction(int id, DroneActionDelegate action, string action_name_for_logging) {
             var device = await getDeviceById(id);
-            Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
+            Channel channel = new Channel($"{_device_micro_service_options.Address}:{_device_micro_service_options.Port}",
+                ChannelCredentials.Insecure);
             var client = new Drone.DroneClient(channel);
             DroneReply reply;
             int logging_action = 0;
