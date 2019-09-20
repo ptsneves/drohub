@@ -1,0 +1,41 @@
+version: "3"
+services:
+    janus:
+        deploy:
+          mode: "global"
+        image: "janus:latest"
+        ports:
+            - "8088:8088"
+            - "6004:6004/udp"
+        depends_on:
+            - "web"
+    web:
+        deploy:
+          mode: "global"
+        image: "drohub:latest"
+        ports:
+            - "5000:5000"
+        depends_on:
+            - "db"
+        command: ["./wait-for-it.sh", "db:1433", "--", "./docker-dotnet-run-entrypoint.sh"]
+        entrypoint: ["./wait-for-it.sh", "db:1433", "--", "./docker-dotnet-run-entrypoint.sh"]
+    # db-migrations:
+    #     image: "db-migrations:latest"
+    #     deploy:
+    #       mode: "global"
+    #     depends_on:
+    #           - "db"
+    #     environment:
+    #         SA_PASSWORD: "#ABc123456789"
+    #         ACCEPT_EULA: "Y"
+    db:
+        ports:
+            - "1433:1433"
+        deploy:
+          mode: "global"
+        image: "mcr.microsoft.com/mssql/server:2017-latest"
+        volumes:
+            - "/opt/aux-container-data/:/opt/aux-container-data/"
+        environment:
+            SA_PASSWORD: "#ABc123456789"
+            ACCEPT_EULA: "Y"
