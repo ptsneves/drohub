@@ -10,6 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using System;
+using System.Net;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace DroHub
 {
@@ -28,6 +30,14 @@ namespace DroHub
             services.AddDbContext<DroHubContext>(options =>
             {
                 options.UseSqlServer(Configuration.GetConnectionString("DroHubConnection"));
+            });
+
+
+            services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                foreach (var addr in Dns.GetHostEntry("server").AddressList) {
+                    options.KnownProxies.Add(addr);
+                }
             });
 
             services.Configure<DropboxRepositorySettings>(Configuration.GetSection("RepositoriesConfiguration").GetSection("Dropbox"));
@@ -62,10 +72,13 @@ namespace DroHub
             }
             else
             {
-                app.UseHttpsRedirection();
                 app.UseExceptionHandler("/Home/Error");
-                app.UseHsts();
             }
+
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
 
             app.UseStaticFiles();
             app.UseCookiePolicy();
