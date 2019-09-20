@@ -135,6 +135,34 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="box" id="streams">
+                                        <div class="box-header with-border">
+                                            <h3 class="box-title">Streams <i id="update-streams" class="fa fa-refresh" title="Update list of streams" style="cursor: pointer;"></i></h3>
+                                            <div class="box-tools pull-right">
+                                                <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
+                                            </div>
+                                        </div>
+                                        <div class="box-body" id="list">
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-primary" autocomplete="off" id="watch">Watch or Listen</button>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button autocomplete="off" id="streamset" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                                        Streams list<span class="caret"></span>
+                                                    </button>
+                                                    <ul id="streamslist" class="dropdown-menu" role="menu">
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title">Stream
+                                                    <span class="label label-info hide" id="status"></span>
+                                                    <span class="label label-primary hide" id="curres"></span>
+                                                    <span class="label label-info hide" id="curbitrate"></span>
+                                                </h3>
+                                            </div>
+                                            <div class="embed-responsive embed-responsive-16by9" id="stream"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         }
