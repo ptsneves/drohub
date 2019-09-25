@@ -6,6 +6,9 @@ import logging
 import time
 import threading
 import argparse
+import subprocess
+import io
+import shutil
 
 import grpc
 import DrohubGRPCProto.python.drohub_pb2_grpc as drohub_pb2_grpc
@@ -119,10 +122,64 @@ class BatteryLevelContainer(DroneMessageContainerBase):
         logging.debug(new_battery_level)
         super().append(new_battery_level)
 
-class DroneRAII(object):
-    def __init__(self, ip, **kwargs):
-        super().__init__()
-        self._drone = olympe.Drone(ip, **kwargs)
+class DroneChooser(object):
+    def __init__(self, drone_type):
+        self._drone_args_dict = {}
+        self._drone_args_dict["loglevel"] = TraceLogger.level.warning
+        if drone_type == "simulator":
+            self._ip = '10.202.0.1'
+        elif drone_type == "anafi":
+            self._ip = '192.168.53.1'
+            self._drone_args_dict["mpp"] = True
+            self._drone_args_dict["drone_type"] = olympe_deps.ARSDK_DEVICE_TYPE_ANAFI4K
+        else:
+            raise Exception("Unknown drone type {} passed.".format(drone_type))
+
+class DroneVideoEncoder(DroneChooser):
+    Vp8_Command = "/usr/bin/ffmpeg -hwaccel vaapi -i rtsp://{source_url}/live -r 10 -c:v libvpx \
+            -deadline realtime -threads 4 -speed -5 -skip_threshold 60 -vp8flags error_resilient -f rtp rtp://docker:6004"
+
+    H264_Command = '/usr/bin/ffmpeg -r 10 -threads 4 -hwaccel vaapi -i rtsp://{source_url}/live -vf format=yuv420p \
+            -vaapi_device /dev/dri/renderD128 -c:v h264_vaapi -profile:v constrained_baseline -level 3.0 -bf 0 -bsf: v \
+            "dump_extra=freq=keyframe" -vf "format=nv12,hwupload" -f rtp rtp://docker:5004?pkt_size=1300"'
+
+    def __init__(self, drone_type, destination_rtp_ip):
+        super().__init__(drone_type)
+        self._destination_rtp_ip = destination_rtp_ip
+        self._rtsp_source_url = self._ip
+        if not self._doesCommandExist("ffmpeg"):
+            raise Exception("ffmpeg does not exist. And we need it to relay the video")
+
+
+        if not self.runProcess(DroneVideoEncoder.Vp8_Command.format(source_url=self._ip,
+            dest_ip = self._destination_rtp_ip)):
+
+            raise Exception("Could not spawn Vp8 video relayer.")
+
+        if not self.runProcess(DroneVideoEncoder.H264_Command.format(source_url=self._ip,
+            dest_ip = self._destination_rtp_ip)):
+
+            raise Exception("Could not spawn H264 video relayer.")
+
+
+    def _doesCommandExist(self, command):
+        return shutil.which(command)
+
+    def runProcess(self, command):
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #process.wait()
+        logging.info(command)
+
+        return True
+        return {"ret": 0,
+            "command": command,
+            "stdout": io.TextIOWrapper(process.stdout, encoding='utf-8').readlines(),
+            "stderr" : io.TextIOWrapper(process.stderr, encoding='utf-8').readlines()}
+
+class DroneRAII(DroneVideoEncoder):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args)
+        self._drone = olympe.Drone(self._ip, **{**self._drone_args_dict, **kwargs})
         self._drone.connection()
         self._drone(setPilotingSource(source="SkyController")).wait()
 
@@ -169,26 +226,13 @@ class DronePersistentConnection(DroneThreadSafe):
                 except Exception:
                     logging.warning("Reconnection failed. Trying again")
 
-class DroneChooser(DronePersistentConnection):
-    def __init__(self, drone_type, *args, **kwargs):
-
-        kwargs["loglevel"] = TraceLogger.level.warning
-        if drone_type == "simulator":
-            self._ip = '10.202.0.1'
-        elif drone_type == "anafi":
-            self._ip = '192.168.53.1'
-            kwargs["mpp"] = True
-            kwargs["drone_type"] = olympe_deps.ARSDK_DEVICE_TYPE_ANAFI4K
-        else:
-            raise Exception("Unknown drone type {} passed.".format(drone_type))
-        super().__init__(self._ip, *args, **kwargs)
 
 class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def __init__(self, drone_type):
         self.serial = ParrotSerialNumber()
         self.position_container = PositionContainer()
         self.battery_level_container = BatteryLevelContainer()
-        self.drone = DroneChooser(drone_type, callbacks = [self.cb1])
+        self.drone = DronePersistentConnection(drone_type, "127.0.0.1", callbacks = [self.cb1])
         super().__init__()
 
     def cb1(self, message):
