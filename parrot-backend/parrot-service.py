@@ -20,6 +20,7 @@ import olympe_deps
 from olympe.messages.ardrone3.Piloting import TakeOff, moveBy, Landing, moveTo
 from olympe.messages.ardrone3.PilotingState import FlyingStateChanged
 from olympe.messages.common.SettingsState import ProductSerialHighChanged, ProductSerialLowChanged
+from olympe.messages.common.CommonState import LinkSignalQuality
 from olympe.enums.drone_manager import connection_state
 from olympe.enums.ardrone3.Piloting import MoveTo_Orientation_mode
 from olympe.messages.ardrone3.PilotingSettingsState import MaxTiltChanged
@@ -244,6 +245,10 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
             self.serial.setLSB(message.state()['low'])
         elif message.Full_Name == "Common_CommonState_BatteryStateChanged" or message.Full_Name == "Battery_Alert":
             self.battery_level_container.dispatchBatteryLevel(message)
+        elif message.Full_Name == "Common_CommonState_LinkSignalQuality":
+            print(message.Full_Name, message.state())
+        elif "Wifi" in message.Full_Name:
+            print(message.Full_Name, message.state())
 
     def getPosition(self, request, context):
         while True:
