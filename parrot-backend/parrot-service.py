@@ -99,6 +99,12 @@ class PositionContainer(DroneMessageContainerBase):
         super().__init__()
 
     def dispatchPosition(self, message):
+        if message.state()['latitude'] == 500.0 or message.state()['longitude'] == 500.0:
+            logging.debug("Received invalid position due to lack of position lock (GPS etc)")
+            #This means that we do not have a position lock. Lets not send this
+            #as this parrot specific.
+            return
+
         new_drone_position = drohub_pb2.DronePosition(
                         latitude = message.state()['latitude'],
                         longitude = message.state()['longitude'],
