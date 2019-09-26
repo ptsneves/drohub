@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
+import sys
+sys.path.append('../')
 from concurrent import futures
 from collections import deque
 import logging
