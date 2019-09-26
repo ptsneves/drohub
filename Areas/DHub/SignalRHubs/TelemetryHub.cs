@@ -85,6 +85,36 @@ namespace DroHub.Areas.DHub.SignalRHubs
             }
         }
 
+        protected async Task GatherRadioSignal(CancellationToken stopping_token) {
+            while (!stopping_token.IsCancellationRequested)
+            {
+                try
+                {
+                    using (var call = _client.getRadioSignal(new DroneRequest { }, cancellationToken: stopping_token))
+                    {
+                        while (!stopping_token.IsCancellationRequested)
+                        {
+                            if (await call.ResponseStream.MoveNext(stopping_token)) {
+                                DroneRadioSignal radio_signal = call.ResponseStream.Current;
+                                _logger.LogDebug("received radio_signal {radio_signal}", radio_signal);
+                                await _hub.Clients.All.SendAsync("radio_signal", JsonConvert.SerializeObject(radio_signal) );
+                            }
+                            else {
+                                _logger.LogDebug(LoggingEvents.RadioSignalTelemetry, "Nothing received. Waiting");
+                                await Task.Delay(1000);
+                            }
+                        }
+                    }
+                }
+                catch (RpcException e)
+                {
+                    _logger.LogWarning(LoggingEvents.RadioSignalTelemetry, e.ToString() + "\nWaiting 1 second before retrying");
+                    await Task.Delay(1000);
+                    _logger.LogDebug(LoggingEvents.RadioSignalTelemetry, "Calling again");
+                }
+            }
+        }
+
         protected async Task GatherBatteryLevel(CancellationToken stopping_token) {
             while (!stopping_token.IsCancellationRequested)
             {
@@ -121,7 +151,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
 
             Task.Run(() => GatherPosition(stopping_token));
             Task.Run(() => GatherBatteryLevel(stopping_token));
-
+            Task.Run(() => GatherRadioSignal(stopping_token));
         }
     }
 }

@@ -131,6 +131,30 @@ class BatteryLevelContainer(DroneMessageContainerBase):
         logging.debug(new_battery_level)
         super().append(new_battery_level)
 
+class RadioSignalContainer(DroneMessageContainerBase):
+    def __init__(self):
+        super().__init__()
+
+    def dispatchRadioRSSILevel(self, message):
+        new_rssi_level = drohub_pb2.DroneRadioSignal(
+            serial="d34174f4-285b-46e8-b615-89ce6959b49c",
+            timestamp=int(time.time()),
+            rssi = message.state()['rssi']
+        )
+        logging.debug(new_rssi_level)
+        super().append(new_rssi_level)
+
+    def dispatchRadioSignalQuality(self, message):
+        print(message.state())
+        new_signal_quality = drohub_pb2.DroneRadioSignal(
+            serial="d34174f4-285b-46e8-b615-89ce6959b49c",
+            timestamp=int(time.time()),
+            signal_quality = message.state()['value']
+        )
+        logging.debug(new_signal_quality)
+        super().append(new_signal_quality)
+
+
 class DroneChooser(object):
     def __init__(self, drone_type):
         self._drone_args_dict = {}
@@ -241,6 +265,7 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         self.serial = ParrotSerialNumber()
         self.position_container = PositionContainer()
         self.battery_level_container = BatteryLevelContainer()
+        self.radio_signal_container = RadioSignalContainer()
         self.drone = DronePersistentConnection(drone_type, "127.0.0.1", callbacks = [self.cb1])
         super().__init__()
 
@@ -254,9 +279,9 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         elif message.Full_Name == "Common_CommonState_BatteryStateChanged" or message.Full_Name == "Battery_Alert":
             self.battery_level_container.dispatchBatteryLevel(message)
         elif message.Full_Name == "Common_CommonState_LinkSignalQuality":
-            print(message.Full_Name, message.state())
-        elif "Wifi" in message.Full_Name:
-            print(message.Full_Name, message.state())
+            self.radio_signal_container.dispatchRadioSignalQuality(message)
+        elif message.Full_Name == "Wifi_Rssi_changed":
+            self.radio_signal_container.dispatchRadioRSSILevel(message)
 
     def getPosition(self, request, context):
         while True:
@@ -265,6 +290,10 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def getBatteryLevel(self, request, context):
         while True:
             yield self.battery_level_container.getLastElement()
+
+    def getRadioSignal(self, request, context):
+        while True:
+            yield self.radio_signal_container.getLastElement()
 
     def doTakeoff(self, request, context):
         logging.warning("Taking off")

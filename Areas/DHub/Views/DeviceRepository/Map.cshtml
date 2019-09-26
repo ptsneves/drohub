@@ -87,7 +87,7 @@
                                             <li>
                                                     <i class="fa fa-signal"></i>
                                                     Telemetry Signal
-                                                    <span class="label label-primary pull-right telemetry-signal-value-@device.SerialNumber">12</span>
+                                                    <span class="label label-primary pull-right radio-signal-value-@device.SerialNumber">12</span>
                                             </li>
                                             <li>
                                                     <i class="fa fa-battery"></i>
@@ -423,6 +423,20 @@
                         }
                     );
                 });
+
+                connection.on("radio_signal", function (message) {
+                    radio_signal = JSON.parse(message);
+                    $(`.radio-signal-value-${radio_signal.Serial}`).each(
+                        function(index, element) {
+                            if (radio_signal.RadioOptionCase == 2)
+                                $(this).text(radio_signal.Rssi + " dbm");
+                            else
+                                $(this).text(radio_signal.SignalQuality + " Level");
+                                console.log('Received signal ')
+                        }
+                    );
+                });
+
 
                 connection.start().then(function () {
                     console.log("Notifications started SIGNALR");
