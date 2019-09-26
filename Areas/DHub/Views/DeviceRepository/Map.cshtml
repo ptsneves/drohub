@@ -82,22 +82,22 @@
                                             <li>
                                                     <i class="fa fa-info"></i>
                                                     Device State
-                                                    <span class="label label-primary pull-right device-state-value-@device.SerialNumber">12</span>
+                                                    <span class="label label-default pull-right device-state-value-@device.SerialNumber">12</span>
                                             </li>
                                             <li>
                                                     <i class="fa fa-signal"></i>
                                                     Telemetry Signal
-                                                    <span class="label label-primary pull-right radio-signal-value-@device.SerialNumber">12</span>
+                                                    <span class="label label-default pull-right radio-signal-value-@device.SerialNumber">12</span>
                                             </li>
                                             <li>
                                                     <i class="fa fa-battery"></i>
                                                     Battery
-                                                    <span class="label label-primary pull-right battery-level-value-@device.SerialNumber">12</span>
+                                                    <span class="label label-default pull-right battery-level-value-@device.SerialNumber">12</span>
                                             </li>
                                             <li>
                                                     <i class="fa fa-arrows-alt"></i>
                                                     GPS Signal
-                                                    <span class="label label-primary pull-right gps-signal-value-@device.SerialNumber">12</span>
+                                                    <span class="label label-default pull-right gps-signal-value-@device.SerialNumber">12</span>
                                             </li>
                                             <li>
                                                     <i class="fa fa-map-marker last-position-value-@device.SerialNumber"></i>
@@ -419,6 +419,8 @@
                     battery_level = JSON.parse(message)
                     $(`.battery-level-value-${battery_level.Serial}`).each(
                         function(index, element) {
+                            $(this).removeClass('label-default');
+                            $(this).addClass('label-primary');
                             $(this).text(battery_level.BatteryLevelPercent);
                         }
                     );
@@ -428,8 +430,12 @@
                     radio_signal = JSON.parse(message);
                     $(`.radio-signal-value-${radio_signal.Serial}`).each(
                         function(index, element) {
-                            if (radio_signal.RadioOptionCase == 2)
+                            if (radio_signal.RadioOptionCase == 2) {
+                                $(this).removeClass('label-default');
+                                $(this).addClass('label-primary');
+
                                 $(this).text(radio_signal.Rssi + " dbm");
+                            }
                             else
                                 $(this).text(radio_signal.SignalQuality + " Level");
                                 console.log('Received signal ')
