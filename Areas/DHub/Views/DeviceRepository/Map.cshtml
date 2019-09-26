@@ -420,7 +420,13 @@
                     $(`.battery-level-value-${battery_level.Serial}`).each(
                         function(index, element) {
                             $(this).removeClass('label-default');
-                            $(this).addClass('label-primary');
+                            if (battery_level.BatteryLevelPercent > 75) {
+                                $(this).addClass('label-success');
+                            }
+                            else if (battery_level.BatteryLevelPercent > 35 && battery_level.BatteryLevelPercent <= 75)
+                                $(this).addClass('label-warning');
+                            else
+                                $(this).addClass('label-danger');
                             $(this).text(battery_level.BatteryLevelPercent);
                         }
                     );
@@ -436,9 +442,20 @@
 
                                 $(this).text(radio_signal.Rssi + " dbm");
                             }
-                            else
+                            else {
+                                $(this).removeClass('label-default');
+                                if (radio_signal.SignalQuality > 3) {
+                                    $(this).addClass('label-success');
+                                }
+                                else if (radio_signal.SignalQuality >= 2 && radio_signal.SignalQuality <= 3)
+                                    $(this).addClass('label-warning');
+                                else
+                                    $(this).addClass('label-danger');
+
                                 $(this).text(radio_signal.SignalQuality + " Level");
+
                                 console.log('Received signal ')
+                            }
                         }
                     );
                 });
