@@ -45,27 +45,12 @@ namespace DroHub.Areas.DHub.SignalRHubs
             _hub = hub;
             _services = services;
         }
-        protected async Task RecordPosition(DronePosition position) {
+
+        protected async Task RecordTelemetry<T>(T telemetry_data) {
             using (var scope = _services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
-                context.Add(position);
-                await context.SaveChangesAsync();
-            }
-        }
-        protected async Task RecordBatteryLevel(DroneBatteryLevel battery_level) {
-            using (var scope = _services.CreateScope())
-            {
-                var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
-                context.Add(battery_level);
-                await context.SaveChangesAsync();
-            }
-        }
-        protected async Task RecordRadioSignal(DroneRadioSignal radio_signal) {
-            using (var scope = _services.CreateScope())
-            {
-                var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
-                context.Add(radio_signal);
+                context.Add(telemetry_data);
                 await context.SaveChangesAsync();
             }
         }
@@ -83,7 +68,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
                                 DronePosition position = call.ResponseStream.Current;
                                 _logger.LogDebug("received position {position}", position);
                                 await _hub.Clients.All.SendAsync("position", JsonConvert.SerializeObject(position) );
-                                await RecordPosition(position);
+                                await RecordTelemetry<DronePosition>(position);
                             }
                             else {
                                 _logger.LogDebug(LoggingEvents.PositionTelemetry, "Nothing received.Waiting");
@@ -114,7 +99,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
                                 DroneRadioSignal radio_signal = call.ResponseStream.Current;
                                 _logger.LogDebug("received radio_signal {radio_signal}", radio_signal);
                                 await _hub.Clients.All.SendAsync("radio_signal", JsonConvert.SerializeObject(radio_signal) );
-                                await RecordRadioSignal(radio_signal);
+                                await RecordTelemetry<DroneRadioSignal>(radio_signal);
                             }
                             else {
                                 _logger.LogDebug(LoggingEvents.RadioSignalTelemetry, "Nothing received. Waiting");
@@ -145,7 +130,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
                                 DroneBatteryLevel battery_level = call.ResponseStream.Current;
                                 _logger.LogDebug("received battery_level {battery_level}", battery_level);
                                 await _hub.Clients.All.SendAsync("battery_level", JsonConvert.SerializeObject(battery_level) );
-                                await RecordBatteryLevel(battery_level);
+                                await RecordTelemetry<DroneBatteryLevel>(battery_level);
                             }
                             else {
                                 _logger.LogDebug(LoggingEvents.BatteryLevelTelemetry, "Nothing received.Waiting");
