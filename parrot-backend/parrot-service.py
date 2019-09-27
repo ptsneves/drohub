@@ -77,10 +77,11 @@ class ParrotSerialNumber():
         raise Exception("Cannot get serial until we have received all the serial message parts.")
 
 class DroneMessageContainerBase():
-    def __init__(self):
+    def __init__(self, drone_serial):
         self.container = deque(maxlen=3)
         self.lk = threading.Lock()
         self.cv_consumer = threading.Condition(self.lk)
+        self.drone_serial = drone_serial
 
     def append(self, new_drone_position):
         self.container.append(new_drone_position)
@@ -95,10 +96,11 @@ class DroneMessageContainerBase():
                 return container_copy.popleft()
 
 class PositionContainer(DroneMessageContainerBase):
-    def __init__(self):
-        super().__init__()
+    def __init__(selfi, drone_serial):
+        super().__init__(drone_serial)
 
     def dispatchPosition(self, message):
+
         if message.state()['latitude'] == 500.0 or message.state()['longitude'] == 500.0:
             logging.debug("Received invalid position due to lack of position lock (GPS etc)")
             #This means that we do not have a position lock. Lets not send this
@@ -109,7 +111,7 @@ class PositionContainer(DroneMessageContainerBase):
                         latitude = message.state()['latitude'],
                         longitude = message.state()['longitude'],
                         altitude = message.state()['altitude'],
-                        serial = "d34174f4-285b-46e8-b615-89ce6959b49c",
+                        serial = self.drone_serial.Get(),
                         timestamp = int(time.time()))
 
         logging.debug(new_drone_position)
@@ -119,25 +121,25 @@ class PositionContainer(DroneMessageContainerBase):
         return super().getLastElement()
 
 class BatteryLevelContainer(DroneMessageContainerBase):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, drone_serial):
+        super().__init__(drone_serial)
 
     def dispatchBatteryLevel(self, message):
         new_battery_level = drohub_pb2.DroneBatteryLevel(
             battery_level_percent=message.state()['percent'],
-            serial = "d34174f4-285b-46e8-b615-89ce6959b49c",
+            serial = self.drone_serial.Get(),
             timestamp=int(time.time()))
 
         logging.debug(new_battery_level)
         super().append(new_battery_level)
 
 class RadioSignalContainer(DroneMessageContainerBase):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, drone_serial):
+        super().__init__(drone_serial)
 
     def dispatchRadioRSSILevel(self, message):
         new_rssi_level = drohub_pb2.DroneRadioSignal(
-            serial="d34174f4-285b-46e8-b615-89ce6959b49c",
+            serial = self.drone_serial.Get(),
             timestamp=int(time.time()),
             rssi = message.state()['rssi']
         )
@@ -145,9 +147,8 @@ class RadioSignalContainer(DroneMessageContainerBase):
         super().append(new_rssi_level)
 
     def dispatchRadioSignalQuality(self, message):
-        print(message.state())
         new_signal_quality = drohub_pb2.DroneRadioSignal(
-            serial="d34174f4-285b-46e8-b615-89ce6959b49c",
+            serial = self.drone_serial.Get(),
             timestamp=int(time.time()),
             signal_quality = message.state()['value']
         )
@@ -263,9 +264,9 @@ class DronePersistentConnection(DroneThreadSafe):
 class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def __init__(self, drone_type):
         self.serial = ParrotSerialNumber()
-        self.position_container = PositionContainer()
-        self.battery_level_container = BatteryLevelContainer()
-        self.radio_signal_container = RadioSignalContainer()
+        self.position_container = PositionContainer(self.serial)
+        self.battery_level_container = BatteryLevelContainer(self.serial)
+        self.radio_signal_container = RadioSignalContainer(self.serial)
         self.drone = DronePersistentConnection(drone_type, "127.0.0.1", callbacks = [self.cb1])
         super().__init__()
 
