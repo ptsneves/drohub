@@ -18,7 +18,7 @@ namespace DroHub.Data
         public DbSet<LogEntry> Logs { get; set; }
 
         public DbSet<DronePosition> Positions { get; set; }
-        public DbSet<DroneBatteryLevel> BatteryLevels { get; set; }
+        public DbSet<DroneBatteryLevel> DroneBatteryLevels { get; set; }
         //public DbSet<DeviceSettings> DeviceSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)

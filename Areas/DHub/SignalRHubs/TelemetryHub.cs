@@ -53,6 +53,14 @@ namespace DroHub.Areas.DHub.SignalRHubs
                 await context.SaveChangesAsync();
             }
         }
+        protected async Task RecordBatteryLevel(DroneBatteryLevel battery_level) {
+            using (var scope = _services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
+                context.Add(battery_level);
+                await context.SaveChangesAsync();
+            }
+        }
 
         protected async Task GatherPosition(CancellationToken stopping_token) {
             while (!stopping_token.IsCancellationRequested)
@@ -128,6 +136,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
                                 DroneBatteryLevel battery_level = call.ResponseStream.Current;
                                 _logger.LogDebug("received battery_level {battery_level}", battery_level);
                                 await _hub.Clients.All.SendAsync("battery_level", JsonConvert.SerializeObject(battery_level) );
+                                await RecordBatteryLevel(battery_level);
                             }
                             else {
                                 _logger.LogDebug(LoggingEvents.BatteryLevelTelemetry, "Nothing received.Waiting");
