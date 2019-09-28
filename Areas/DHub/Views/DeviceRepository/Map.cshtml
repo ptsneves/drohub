@@ -63,7 +63,7 @@
                             <div class="box" id="devices-box-@device.Name">
                                 <div class="box-header with-border">
                                     <h3 class="box-title">
-                                        <i class="fa fa-paper-plane text-muted blinking"></i>
+                                        <i class="fa fa-paper-plane text-muted blinking plane-icon-@device.SerialNumber"></i>
                                         @device.Name</h3>
                                     <div class="box-tools pull-right">
                                         <button type="button" class="btn btn-box-tool" title="Center map in device" onclick="centerMapOnDevice('@device.SerialNumber')"><i class="fa fa-map"></i>
@@ -460,9 +460,78 @@
                     );
                 });
 
+                connection.on("flying_state", function (message) {
+
+                    function makeClassActive(element, class_to_activate, AvailableClasses) {
+                        let classes_to_delete = new Set(AvailableClasses);
+                        classes_to_delete.delete(class_to_activate)
+                        classes_to_delete.forEach(function(item) {
+                            console.log("Removed "+item)
+                            element.removeClass(item);
+                        });
+                        console.log("Added "+class_to_activate)
+                        element.addClass(class_to_activate);
+                    }
+
+                    flying_state = JSON.parse(message);
+                    $(`.device-state-value-${flying_state.Serial}`).each(
+                        function(index, element) {
+                            $(this).removeClass('label-default');
+                            $(this).addClass('label-primary');
+                            console.log(flying_state);
+                            switch(flying_state.State) {
+                                case 0:
+                                    $(this).text("Landed");
+                                    break;
+                                case 1:
+                                    $(this).text("Taking Off");
+                                    break;
+                                case 2:
+                                    $(this).text("Hovering");
+                                    break;
+                                case 3:
+                                    $(this).text("Flying");
+                                    break;
+                                case 4:
+                                    $(this).text("Landing");
+                                    break;
+                                case 5:
+                                    $(this).text("Emergency");
+                                    break;
+                                case 6:
+                                    $(this).text("User Takeoff");
+                                    break;
+                                case 7:
+                                    $(this).text("Motor Ramping");
+                                    break;
+                                case 8:
+                                    $(this).text("Emergency Landing");
+                                    break;
+                                default:
+                                    console.log("")
+                            }
+                        }
+                    );
+                    console.log(`plane-icon-${flying_state.Serial}`)
+                    $(`.plane-icon-${flying_state.Serial}`).each(
+                       function(index, element) {
+                           console.log(`Current icon ${flying_state.State}`);
+                            const AvailableClasses = new Set(["text-muted", 'text-warning', "text-success", "blinking"]);
+                            if (flying_state.State == 0) {
+                                makeClassActive($(this), 'text-success', AvailableClasses);
+                            }
+                            else {
+                                makeClassActive($(this), 'text-warning', AvailableClasses);
+                                $(this).addClass('blinking');
+                            }
+
+                       } 
+                    );
+                });
 
                 connection.start().then(function () {
                     console.log("Notifications started SIGNALR");
+
                 }).catch(function (err) {
                     return console.error(err.toString());
                 });
@@ -481,6 +550,7 @@
                     anchor: new google.maps.Point(0, 0) // anchorscaledSize: new google.maps.Size(50, 50), // scaled size
                 }
 
+                console.log(`Populated marker for ${drone_coords.Serial}`);
                 populate_marker_cb = populateMarkers.bind(null, map, drone_coords.Serial,
                     `@drone_marker_id_prefix${drone_coords.Serial}`, drone_coords.Latitude, drone_coords.Longitude, marker_icon)
                 populate_marker_cb()
