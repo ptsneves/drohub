@@ -2,6 +2,7 @@ using DroHub.Areas.Identity.Data;
 using DroHub.Areas.DHub.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace DroHub.Data
@@ -27,6 +28,16 @@ namespace DroHub.Data
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
+
+
+            // foreach (var property in builder.Model.GetEntityTypes()
+            //     .SelectMany(t => t.GetProperties())
+            //     .Where(p => p.ClrType == typeof(string)))
+            // {
+            //     if (property.GetMaxLength() == null)
+            //         property.SetMaxLength(450);
+            // }
+
             base.OnModelCreating(builder);
             // Customize the ASP.NET Identity model and override the defaults if needed.
             // For example, you can rename the ASP.NET Identity table names and more.
