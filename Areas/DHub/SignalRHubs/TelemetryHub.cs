@@ -117,6 +117,37 @@ namespace DroHub.Areas.DHub.SignalRHubs
             }
         }
 
+        protected async Task GatherFlyingState(CancellationToken stopping_token) {
+            while (!stopping_token.IsCancellationRequested)
+            {
+                try
+                {
+                    using (var call = _client.getFlyingState(new DroneRequest { }, cancellationToken: stopping_token))
+                    {
+                        while (!stopping_token.IsCancellationRequested)
+                        {
+                            if (await call.ResponseStream.MoveNext(stopping_token)) {
+                                DroneFlyingState flying_state = call.ResponseStream.Current;
+                                _logger.LogDebug("received flying_state {flying_state}", flying_state);
+                                await _hub.Clients.All.SendAsync("flying_state", JsonConvert.SerializeObject(flying_state) );
+                                await RecordTelemetry<DroneFlyingState>(flying_state);
+                            }
+                            else {
+                                _logger.LogDebug(LoggingEvents.FlyingStateTelemetry, "Nothing received. Waiting");
+                                await Task.Delay(1000);
+                            }
+                        }
+                    }
+                }
+                catch (RpcException e)
+                {
+                    _logger.LogWarning(LoggingEvents.FlyingStateTelemetry, e.ToString() + "\nWaiting 1 second before retrying");
+                    await Task.Delay(1000);
+                    _logger.LogDebug(LoggingEvents.FlyingStateTelemetry, "Calling again");
+                }
+            }
+        }
+
         protected async Task GatherBatteryLevel(CancellationToken stopping_token) {
             while (!stopping_token.IsCancellationRequested)
             {
@@ -155,6 +186,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
             Task.Run(() => GatherPosition(stopping_token));
             Task.Run(() => GatherBatteryLevel(stopping_token));
             Task.Run(() => GatherRadioSignal(stopping_token));
+            Task.Run(() => GatherFlyingState(stopping_token));
         }
     }
 }

@@ -466,10 +466,8 @@
                         let classes_to_delete = new Set(AvailableClasses);
                         classes_to_delete.delete(class_to_activate)
                         classes_to_delete.forEach(function(item) {
-                            console.log("Removed "+item)
                             element.removeClass(item);
                         });
-                        console.log("Added "+class_to_activate)
                         element.addClass(class_to_activate);
                     }
 
@@ -512,10 +510,8 @@
                             }
                         }
                     );
-                    console.log(`plane-icon-${flying_state.Serial}`)
                     $(`.plane-icon-${flying_state.Serial}`).each(
                        function(index, element) {
-                           console.log(`Current icon ${flying_state.State}`);
                             const AvailableClasses = new Set(["text-muted", 'text-warning', "text-success", "blinking"]);
                             if (flying_state.State == 0) {
                                 makeClassActive($(this), 'text-success', AvailableClasses);

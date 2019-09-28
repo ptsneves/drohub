@@ -126,6 +126,7 @@ namespace DroHub.Areas.DHub.Controllers
                 Include(d => d.positions).
                 Include(d => d.battery_levels).
                 Include(d => d.radio_signals).
+                Include(d => d.flying_states).
                 ToListAsync();
             List<Device> device_list = new List<Device>();
             foreach (var device in devices)

@@ -28,6 +28,7 @@ namespace DroHub.Areas.DHub.Models
         public ICollection<DronePosition> positions { get; set; }
         public ICollection<DroneBatteryLevel> battery_levels { get; set; }
         public ICollection<DroneRadioSignal> radio_signals { get; set; }
+        public ICollection<DroneFlyingState> flying_states { get; set; }
 
     }
 }

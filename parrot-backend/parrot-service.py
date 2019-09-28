@@ -120,6 +120,47 @@ class PositionContainer(DroneMessageContainerBase):
     def getLastPosition(self):
         return super().getLastElement()
 
+class FlyingStateContainer(DroneMessageContainerBase):
+    def __init__(selfi, drone_serial):
+        super().__init__(drone_serial)
+
+    def mapStateToEnum(self, state):
+        flying_state_enum = -1
+        if str(state) == "FlyingStateChanged_State.landed":
+            flying_state_enum = 0
+        elif str(state) == "FlyingStateChanged_State.takingoff":
+            flying_state_enum = 1
+        elif str(state) == "FlyingStateChanged_State.hovering":
+            flying_state_enum = 2
+        elif str(state) == "FlyingStateChanged_State.flying":
+            flying_state_enum = 3
+        elif str(state) == "FlyingStateChanged_State.landing":
+            flying_state_enum = 4
+        elif str(state) == "FlyingStateChanged_State.emergency":
+            flying_state_enum = 5
+        elif str(state) == "FlyingStateChanged_State.usertakeoff":
+            flying_state_enum = 6
+        elif str(state) == "FlyingStateChanged_State.motor_ramping":
+            flying_state_enum = 7
+        elif str(state) == "FlyingStateChanged_State.emergency_landing":
+            flying_state_enum = 8
+        else:
+            raise Exception("Unexpected state {} received".format(state))
+
+        return flying_state_enum
+
+    def dispatchFlyingState(self, message):
+        new_drone_flying_state = drohub_pb2.DroneFlyingState(
+                        state = self.mapStateToEnum(message.state()['state']),
+                        serial = self.drone_serial.Get(),
+                        timestamp = int(time.time()))
+
+        logging.debug(new_drone_flying_state)
+        super().append(new_drone_flying_state)
+
+    def getLastFlyingState(self):
+        return super().getLastElement()
+
 class BatteryLevelContainer(DroneMessageContainerBase):
     def __init__(self, drone_serial):
         super().__init__(drone_serial)
@@ -267,6 +308,7 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         self.position_container = PositionContainer(self.serial)
         self.battery_level_container = BatteryLevelContainer(self.serial)
         self.radio_signal_container = RadioSignalContainer(self.serial)
+        self.flying_state_container = FlyingStateContainer(self.serial)
         self.drone = DronePersistentConnection(drone_type, "127.0.0.1", callbacks = [self.cb1])
         super().__init__()
 
@@ -283,6 +325,8 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
             self.radio_signal_container.dispatchRadioSignalQuality(message)
         elif message.Full_Name == "Wifi_Rssi_changed":
             self.radio_signal_container.dispatchRadioRSSILevel(message)
+        elif message.Full_Name == "Ardrone3_PilotingState_FlyingStateChanged":
+            self.flying_state_container.dispatchFlyingState(message)
 
     def getPosition(self, request, context):
         while True:
@@ -295,6 +339,10 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def getRadioSignal(self, request, context):
         while True:
             yield self.radio_signal_container.getLastElement()
+
+    def getFlyingState(self, request, context):
+        while True:
+            yield self.flying_state_container.getLastElement()
 
     def doTakeoff(self, request, context):
         logging.warning("Taking off")
