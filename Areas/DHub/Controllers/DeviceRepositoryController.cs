@@ -125,6 +125,7 @@ namespace DroHub.Areas.DHub.Controllers
             var devices = await _context.Devices.Where(d => d.User == currentUser).
                 Include(d => d.positions).
                 Include(d => d.battery_levels).
+                Include(d => d.radio_signals).
                 ToListAsync();
             List<Device> device_list = new List<Device>();
             foreach (var device in devices)

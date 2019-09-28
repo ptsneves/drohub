@@ -61,6 +61,14 @@ namespace DroHub.Areas.DHub.SignalRHubs
                 await context.SaveChangesAsync();
             }
         }
+        protected async Task RecordRadioSignal(DroneRadioSignal radio_signal) {
+            using (var scope = _services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
+                context.Add(radio_signal);
+                await context.SaveChangesAsync();
+            }
+        }
 
         protected async Task GatherPosition(CancellationToken stopping_token) {
             while (!stopping_token.IsCancellationRequested)
@@ -106,6 +114,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
                                 DroneRadioSignal radio_signal = call.ResponseStream.Current;
                                 _logger.LogDebug("received radio_signal {radio_signal}", radio_signal);
                                 await _hub.Clients.All.SendAsync("radio_signal", JsonConvert.SerializeObject(radio_signal) );
+                                await RecordRadioSignal(radio_signal);
                             }
                             else {
                                 _logger.LogDebug(LoggingEvents.RadioSignalTelemetry, "Nothing received. Waiting");
