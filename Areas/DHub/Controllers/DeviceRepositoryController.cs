@@ -139,6 +139,8 @@ namespace DroHub.Areas.DHub.Controllers
             DroHubUser currentUser = await _userManager.GetUserAsync(User);
             Device currentDevice = await _context.Devices.FirstOrDefaultAsync(device => device.User == currentUser);
 
+            if (currentDevice == null) return RedirectToAction("Manage", "Account", new { area = "Identity" });
+
             if (string.IsNullOrWhiteSpace(currentDevice.DropboxToken)) {
                 return RedirectToAction(nameof(Index), new { id = currentDevice.Id});
             }
