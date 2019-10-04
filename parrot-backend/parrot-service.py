@@ -358,7 +358,10 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         return drohub_pb2.DroneReply(message=takeoff.success())
 
     def doLanding(self, request, context):
-        landing = self.drone.getDrone()(Landing()).wait()
+        logging.warning("Landing")
+        landing = self.drone.getDrone()(Landing()
+            >> FlyingStateChanged(state="landed")
+        ).wait()
         return drohub_pb2.DroneReply(message=landing.success())
 
     def moveToPosition(self, request, context):
