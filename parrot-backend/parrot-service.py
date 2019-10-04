@@ -11,6 +11,8 @@ import argparse
 import subprocess
 import io
 import shutil
+import urllib.request
+import json
 
 import grpc
 import DrohubGRPCProto.python.drohub_pb2_grpc as drohub_pb2_grpc
@@ -364,6 +366,35 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
             request.latitude, request.longitude, request.altitude,  MoveTo_Orientation_mode.HEADING_DURING, request.heading)
         ).wait()
         return drohub_pb2.DroneReply(message=go_to_position.success())
+
+    def getFileList(self, request, context):
+        resource_list_url = "http://{}:180/api/v1/media/medias".format(self.drone.getIP())
+        logging.debug("Trying to access API at {}".format(resource_list_url))
+        with urllib.request.urlopen(resource_list_url) as http_request:
+            drone_file_list = drohub_pb2.DroneFileList()
+            drone_file_list.serial = self.serial.Get()
+            drone_file_list.timestamp = int(time.time())
+
+
+            query_result = json.loads(http_request.read().decode('utf-8'))
+            for high_level_resource in query_result:
+                for resource in high_level_resource["resources"]:
+                    media_type = None
+                    if resource["type"] == "VIDEO":
+                        media_type = drohub_pb2.FileEntry.ResourceType.VIDEO
+                    elif resource["type"] == "IMAGE":
+                        media_type = drohub_pb2.FileEntry.ResourceType.IMAGE
+                    else:
+                        media_type = drohub_pb2.FileEntry.ResourceType.OTHER
+
+                    new_entry = drone_file_list.file_entries.add()
+                    new_entry.resource_id = resource["url"]
+                    new_entry.resource_type = media_type
+                    if "thumbnail" in resource:
+                        new_entry.thumbnail_id = resource["thumbnail"]
+
+            return drone_file_list
+
 
 def serve(drone_type):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

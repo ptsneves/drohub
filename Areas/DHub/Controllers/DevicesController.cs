@@ -202,6 +202,12 @@ namespace DroHub.Areas.DHub.Controllers
             return reply;
         }
 
+        public async Task<IActionResult> GetFileList(int id) {
+            DroneActionDelegate<DroneFileList> get_file_list_delegate = (_client => { return _client.getFileList(new DroneRequest { }); });
+            return Json(
+                await DoDeviceAction<DroneFileList>(id, get_file_list_delegate, "GetFileList"));
+        }
+
         public async Task<IActionResult> TakeOff(int id) {
             DroneActionDelegate<DroneReply> takeoff_delegate = (_client =>  { return _client.doTakeoff( new DroneRequest{}); });
 
