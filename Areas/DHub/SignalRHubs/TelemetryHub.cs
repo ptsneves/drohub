@@ -46,9 +46,11 @@ namespace DroHub.Areas.DHub.SignalRHubs
             _services = services;
         }
 
-        protected async Task RecordTelemetry<T>(T telemetry_data) {
+        protected async Task RecordTelemetry(IDroneTelemetry telemetry_data)
+        {
             using (var scope = _services.CreateScope())
             {
+                //check if the device exists before we add it to the db
                 var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
                 context.Add(telemetry_data);
                 await context.SaveChangesAsync();
@@ -67,8 +69,8 @@ namespace DroHub.Areas.DHub.SignalRHubs
                             if (await call.ResponseStream.MoveNext(stopping_token)) {
                                 DronePosition position = call.ResponseStream.Current;
                                 _logger.LogDebug("received position {position}", position);
-                                await _hub.Clients.All.SendAsync("position", JsonConvert.SerializeObject(position) );
-                                await RecordTelemetry<DronePosition>(position);
+                                await _hub.Clients.All.SendAsync("position", JsonConvert.SerializeObject(position));
+                                await RecordTelemetry(position);
                             }
                             else {
                                 _logger.LogDebug(LoggingEvents.PositionTelemetry, "Nothing received.Waiting");
@@ -98,8 +100,8 @@ namespace DroHub.Areas.DHub.SignalRHubs
                             if (await call.ResponseStream.MoveNext(stopping_token)) {
                                 DroneRadioSignal radio_signal = call.ResponseStream.Current;
                                 _logger.LogDebug("received radio_signal {radio_signal}", radio_signal);
-                                await _hub.Clients.All.SendAsync("radio_signal", JsonConvert.SerializeObject(radio_signal) );
-                                await RecordTelemetry<DroneRadioSignal>(radio_signal);
+                                await _hub.Clients.All.SendAsync("radio_signal", JsonConvert.SerializeObject(radio_signal));
+                                await RecordTelemetry(radio_signal);
                             }
                             else {
                                 _logger.LogDebug(LoggingEvents.RadioSignalTelemetry, "Nothing received. Waiting");
@@ -129,8 +131,8 @@ namespace DroHub.Areas.DHub.SignalRHubs
                             if (await call.ResponseStream.MoveNext(stopping_token)) {
                                 DroneFlyingState flying_state = call.ResponseStream.Current;
                                 _logger.LogDebug("received flying_state {flying_state}", flying_state);
-                                await _hub.Clients.All.SendAsync("flying_state", JsonConvert.SerializeObject(flying_state) );
-                                await RecordTelemetry<DroneFlyingState>(flying_state);
+                                await _hub.Clients.All.SendAsync("flying_state", JsonConvert.SerializeObject(flying_state));
+                                await RecordTelemetry(flying_state);
                             }
                             else {
                                 _logger.LogDebug(LoggingEvents.FlyingStateTelemetry, "Nothing received. Waiting");
@@ -160,8 +162,8 @@ namespace DroHub.Areas.DHub.SignalRHubs
                             if (await call.ResponseStream.MoveNext(stopping_token)) {
                                 DroneBatteryLevel battery_level = call.ResponseStream.Current;
                                 _logger.LogDebug("received battery_level {battery_level}", battery_level);
-                                await _hub.Clients.All.SendAsync("battery_level", JsonConvert.SerializeObject(battery_level) );
-                                await RecordTelemetry<DroneBatteryLevel>(battery_level);
+                                await _hub.Clients.All.SendAsync("battery_level", JsonConvert.SerializeObject(battery_level));
+                                await RecordTelemetry(battery_level);
                             }
                             else {
                                 _logger.LogDebug(LoggingEvents.BatteryLevelTelemetry, "Nothing received.Waiting");

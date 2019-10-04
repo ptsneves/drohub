@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Newtonsoft.Json;
 using Grpc.Core;
 using DroHub.Areas.DHub.Models;
-public sealed partial class DroneRadioSignal {
+public sealed partial class DroneRadioSignal : IDroneTelemetry {
         public int Id { get; set; }
         [JsonIgnore]
         public Device Device { get; set; }
