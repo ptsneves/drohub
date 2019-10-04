@@ -125,18 +125,33 @@ namespace DroHub.Areas.DHub.Controllers
                 return RedirectToAction(nameof(Index), "Devices", new { area = "DHub" });
             }
         }
-        private async Task<List<Device>> GetDeviceListInternal() {
+        private async Task<List<Device>> GetDeviceListInternal()
+        {
             var currentUser = await _userManager.GetUserAsync(User);
-            var devices = await _context.Devices.Where(d => d.User == currentUser).
-                Include(d => d.positions).
-                Include(d => d.battery_levels).
-                Include(d => d.radio_signals).
-                Include(d => d.flying_states).
+            List<Device> device_list = await _context.Devices.
+                Where(d => d.User == currentUser).
                 ToListAsync();
-            List<Device> device_list = new List<Device>();
-            foreach (var device in devices)
+            foreach (var device in device_list)
             {
-                device_list.Add(device);
+                var battery_level = await _context.DroneBatteryLevels.OrderByDescending(l => l.Id).Where(b => b.Serial == device.SerialNumber).FirstOrDefaultAsync();
+                if (battery_level != null)
+                    device.battery_levels.Add(battery_level);
+
+                var radio_signal = await _context.DroneRadioSignals.OrderByDescending(l => l.Id).Where(b => b.Serial == device.SerialNumber).FirstOrDefaultAsync();
+                if (radio_signal != null)
+                    device.radio_signals.Add(radio_signal);
+
+                var flying_state = await _context.DroneFlyingStates.OrderByDescending(l => l.Id).Where(b => b.Serial == device.SerialNumber).FirstOrDefaultAsync();
+                if (flying_state != null)
+                    device.flying_states.Add(flying_state);
+
+                var position = await _context.Positions.OrderByDescending(l => l.Id).Where(b => b.Serial == device.SerialNumber).FirstOrDefaultAsync();
+                if (position != null)
+                {
+                    // _logger.LogDebug("Have positions");
+                    device.positions.Add(position);
+                }
+
             }
             return device_list;
         }
