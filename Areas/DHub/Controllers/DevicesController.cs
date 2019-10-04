@@ -322,7 +322,7 @@ namespace DroHub.Areas.DHub.Controllers
                 throw;
             }
 
-            return RedirectToAction(nameof(Data));
+            return RedirectToAction(nameof(Data), new { id = id });
 
         }
 
