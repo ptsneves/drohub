@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Net.Mime;
 using System.Threading.Tasks;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace DroHub.Areas.DHub.Controllers
 {
@@ -22,14 +23,18 @@ namespace DroHub.Areas.DHub.Controllers
         private readonly DroHubContext _context;
         private readonly UserManager<DroHubUser> _userManager;
         private readonly DropboxRepositorySettings _dropboxRepositorySettings;
+        private readonly ILogger<DeviceRepositoryController> _logger;
         #endregion
 
         #region Constructor
-        public DeviceRepositoryController(DroHubContext context, UserManager<DroHubUser> userManager, IOptions<DropboxRepositorySettings> dropboxRepositorySettings)
+        public DeviceRepositoryController(DroHubContext context, UserManager<DroHubUser> userManager,
+            IOptions<DropboxRepositorySettings> dropboxRepositorySettings,
+            ILogger<DeviceRepositoryController> logger)
         {
             _context = context;
             _userManager = userManager;
             _dropboxRepositorySettings = dropboxRepositorySettings.Value;
+            _logger = logger;
         }
         #endregion
 
