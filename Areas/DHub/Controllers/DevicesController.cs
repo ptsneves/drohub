@@ -184,35 +184,33 @@ namespace DroHub.Areas.DHub.Controllers
                     .FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
         }
 
-        private delegate DroneReply DroneActionDelegate(Drone.DroneClient my_client);
-        private async Task<bool> DoDeviceAction(int id, DroneActionDelegate action, string action_name_for_logging) {
+        private delegate T DroneActionDelegate<T>(Drone.DroneClient my_client);
+        private async Task<T> DoDeviceAction<T>(int id, DroneActionDelegate<T> action, string action_name_for_logging) {
             var device = await getDeviceById(id);
 
             _logger.LogDebug( "Trying to do an action");
             Channel channel = new Channel($"{_device_micro_service_options.Address}:{_device_micro_service_options.Port}",
                 ChannelCredentials.Insecure);
             var client = new Drone.DroneClient(channel);
-            DroneReply reply;
             int logging_action = 0;
-            reply = action(client);
+            T reply = action(client);
 
             channel.ShutdownAsync().Wait();
-            var result = reply.Message ? true : false;
 
             _logger.LogWarning(logging_action, "{action} attemped on {device}. Result was {result}",
-                action, device.Name, result, JsonConvert.SerializeObject(device));
-            return result;
+                action, device.Name, reply, JsonConvert.SerializeObject(device));
+            return reply;
         }
 
         public async Task<IActionResult> TakeOff(int id) {
-            DroneActionDelegate takeoff_delegate = (_client =>  { return _client.doTakeoff( new DroneRequest{}); });
+            DroneActionDelegate<DroneReply> takeoff_delegate = (_client =>  { return _client.doTakeoff( new DroneRequest{}); });
 
-            await DoDeviceAction(id, takeoff_delegate, "Takeoff");
+            await DoDeviceAction<DroneReply>(id, takeoff_delegate, "Takeoff");
             return Ok();
         }
         public async Task<IActionResult> Land(int id) {
-            DroneActionDelegate landing_delegate = (_client =>  { return _client.doLanding( new DroneRequest{}); });
-            await DoDeviceAction(id, landing_delegate, "Landing");
+            DroneActionDelegate<DroneReply> landing_delegate = (_client =>  { return _client.doLanding( new DroneRequest{}); });
+            await DoDeviceAction<DroneReply>(id, landing_delegate, "Landing");
             return Ok();
         }
 
@@ -226,8 +224,8 @@ namespace DroHub.Areas.DHub.Controllers
                 Heading = heading
             };
             _logger.LogDebug("Called move to position with position {latitude} {longitude} {altitude} {heading}", latitude, longitude, altitude, heading);
-            DroneActionDelegate movetoposition = (_client => { return _client.moveToPosition(new_position); });
-            await DoDeviceAction(id, movetoposition, "Move to Position");
+            DroneActionDelegate<DroneReply> movetoposition = (_client => { return _client.moveToPosition(new_position); });
+            await DoDeviceAction<DroneReply>(id, movetoposition, "Move to Position");
             return Ok();
         }
 
