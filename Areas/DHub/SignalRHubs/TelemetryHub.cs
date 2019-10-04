@@ -12,6 +12,10 @@ using DroHub.Data;
 using Grpc.Core;
 using DroHub.Helpers;
 using Microsoft.Extensions.Options;
+using System.Collections.Generic;
+
+using Microsoft.EntityFrameworkCore;
+
 
 namespace DroHub.Areas.DHub.SignalRHubs
 {
@@ -185,10 +189,24 @@ namespace DroHub.Areas.DHub.SignalRHubs
             stopping_token.Register(() =>
                     _logger.LogWarning(LoggingEvents.Telemetry, "TelemetryListener tasks are stopping."));
 
-            Task.Run(() => GatherPosition(stopping_token));
-            Task.Run(() => GatherBatteryLevel(stopping_token));
-            Task.Run(() => GatherRadioSignal(stopping_token));
-            Task.Run(() => GatherFlyingState(stopping_token));
+            var telemetry_tasks = new List<Task>();
+            telemetry_tasks.Add(Task.Run(() => GatherPosition(stopping_token)));
+            telemetry_tasks.Add(Task.Run(() => GatherBatteryLevel(stopping_token)));
+            telemetry_tasks.Add(Task.Run(() => GatherRadioSignal(stopping_token)));
+            telemetry_tasks.Add(Task.Run(() => GatherFlyingState(stopping_token)));
+
+            Task tasks_result = Task.WhenAll(telemetry_tasks.ToArray());
+            try
+            {
+                await tasks_result;
+            }
+            catch
+            {
+                if (tasks_result.Status == TaskStatus.RanToCompletion)
+                    _logger.LogInformation("All telemetry streams closed correctly.");
+                else if (tasks_result.Status == TaskStatus.Faulted)
+                    _logger.LogWarning("Some telemetry tasks failed");
+            }
         }
     }
 }
