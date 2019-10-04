@@ -210,6 +210,9 @@ class DroneChooser(object):
         else:
             raise Exception("Unknown drone type {} passed.".format(drone_type))
 
+    def getIP(self):
+        return self._ip
+
 class DroneVideoEncoder(DroneChooser):
     Vp8_Command = "/usr/bin/ffmpeg -hwaccel vaapi -i rtsp://{source_url}/live -r 10 -c:v libvpx \
             -deadline realtime -threads 4 -speed -5 -skip_threshold 60 -vp8flags error_resilient -f rtp rtp://docker:6004"
