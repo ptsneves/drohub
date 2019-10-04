@@ -187,6 +187,8 @@ namespace DroHub.Areas.DHub.Controllers
         private delegate DroneReply DroneActionDelegate(Drone.DroneClient my_client);
         private async Task<bool> DoDeviceAction(int id, DroneActionDelegate action, string action_name_for_logging) {
             var device = await getDeviceById(id);
+
+            _logger.LogDebug( "Trying to do an action");
             Channel channel = new Channel($"{_device_micro_service_options.Address}:{_device_micro_service_options.Port}",
                 ChannelCredentials.Insecure);
             var client = new Drone.DroneClient(channel);
