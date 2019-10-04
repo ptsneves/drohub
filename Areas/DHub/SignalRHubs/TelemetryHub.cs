@@ -56,6 +56,12 @@ namespace DroHub.Areas.DHub.SignalRHubs
             {
                 //check if the device exists before we add it to the db
                 var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
+                var device = await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == telemetry_data.Serial);
+                if (device == null)
+                {
+                    _logger.LogDebug("Not saving received telemetry for unregistered device {}", telemetry_data);
+                    return;
+                }
                 context.Add(telemetry_data);
                 await context.SaveChangesAsync();
             }
