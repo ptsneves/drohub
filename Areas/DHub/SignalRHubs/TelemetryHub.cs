@@ -191,6 +191,37 @@ namespace DroHub.Areas.DHub.SignalRHubs
             }
         }
 
+        protected async Task GatherFileList(CancellationToken stopping_token) {
+            while (!stopping_token.IsCancellationRequested)
+            {
+                try
+                {
+                    using (var call = _client.getFileList(new DroneRequest { }, cancellationToken: stopping_token))
+                    {
+                        while (!stopping_token.IsCancellationRequested)
+                        {
+                            if (await call.ResponseStream.MoveNext(stopping_token)) {
+                                DroneFileList file_list = call.ResponseStream.Current;
+                                _logger.LogDebug("received file_list {file_list}", file_list);
+                                await _hub.Clients.All.SendAsync("file_list", JsonConvert.SerializeObject(file_list));
+                                // await RecordTelemetry(file_list);
+                            }
+                            else {
+                                _logger.LogDebug(LoggingEvents.FileListTelemetry, "Nothing received.Waiting");
+                                await Task.Delay(1000);
+                            }
+                        }
+                    }
+                }
+                catch (RpcException e)
+                {
+                    _logger.LogWarning(LoggingEvents.FileListTelemetry, e.ToString() + "\nWaiting 1 second before retrying");
+                    await Task.Delay(1000);
+                    _logger.LogDebug(LoggingEvents.FileListTelemetry, "Calling again");
+                }
+            }
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stopping_token) {
             stopping_token.Register(() =>
                     _logger.LogWarning(LoggingEvents.Telemetry, "TelemetryListener tasks are stopping."));

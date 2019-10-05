@@ -198,6 +198,43 @@ class RadioSignalContainer(DroneMessageContainerBase):
         logging.debug(new_signal_quality)
         super().append(new_signal_quality)
 
+class FileListContainer(DroneMessageContainerBase):
+    def __init__(self, drone_serial):
+        super().__init__(drone_serial)
+
+    def getFileList(self):
+        resource_list_url = "http://{}:180/api/v1/media/medias".format(self.drone.getIP())
+        logging.debug("Trying to access API at {}".format(resource_list_url))
+        with urllib.request.urlopen(resource_list_url) as http_request:
+            drone_file_list = drohub_pb2.DroneFileList()
+            drone_file_list.serial = self.serial.Get()
+            drone_file_list.timestamp = int(time.time())
+
+
+            query_result = json.loads(http_request.read().decode('utf-8'))
+            for high_level_resource in query_result:
+                for resource in high_level_resource["resources"]:
+                    media_type = None
+                    if resource["type"] == "VIDEO":
+                        media_type = drohub_pb2.FileEntry.ResourceType.VIDEO
+                    elif resource["type"] == "IMAGE":
+                        media_type = drohub_pb2.FileEntry.ResourceType.IMAGE
+                    else:
+                        media_type = drohub_pb2.FileEntry.ResourceType.OTHER
+
+                    new_entry = drone_file_list.file_entries.add()
+                    new_entry.resource_id = resource["url"]
+                    new_entry.resource_type = media_type
+                    if "thumbnail" in resource:
+                        new_entry.thumbnail_id = resource["thumbnail"]
+
+            return drone_file_list
+
+
+
+    def dispatchFileList(self, message):
+        logging.debug()
+        super().append(self.getFileList())
 
 class DroneChooser(object):
     def __init__(self, drone_type):
@@ -314,6 +351,7 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         self.battery_level_container = BatteryLevelContainer(self.serial)
         self.radio_signal_container = RadioSignalContainer(self.serial)
         self.flying_state_container = FlyingStateContainer(self.serial)
+        self.file_list_container = FileListContainer(self.serial)
         self.drone = DronePersistentConnection(drone_type, "127.0.0.1", callbacks = [self.cb1])
         super().__init__()
 
@@ -332,6 +370,8 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
             self.radio_signal_container.dispatchRadioRSSILevel(message)
         elif message.Full_Name == "Ardrone3_PilotingState_FlyingStateChanged":
             self.flying_state_container.dispatchFlyingState(message)
+        elif message.Full_Name == " Common_CommonState_MassStorageContent":
+            self.file_list_container.dispatchFileList(message)
 
     def getPosition(self, request, context):
         while True:
@@ -371,33 +411,11 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         return drohub_pb2.DroneReply(message=go_to_position.success())
 
     def getFileList(self, request, context):
-        resource_list_url = "http://{}:180/api/v1/media/medias".format(self.drone.getIP())
-        logging.debug("Trying to access API at {}".format(resource_list_url))
-        with urllib.request.urlopen(resource_list_url) as http_request:
-            drone_file_list = drohub_pb2.DroneFileList()
-            drone_file_list.serial = self.serial.Get()
-            drone_file_list.timestamp = int(time.time())
+        self.file_list_container.getFileList()
 
-
-            query_result = json.loads(http_request.read().decode('utf-8'))
-            for high_level_resource in query_result:
-                for resource in high_level_resource["resources"]:
-                    media_type = None
-                    if resource["type"] == "VIDEO":
-                        media_type = drohub_pb2.FileEntry.ResourceType.VIDEO
-                    elif resource["type"] == "IMAGE":
-                        media_type = drohub_pb2.FileEntry.ResourceType.IMAGE
-                    else:
-                        media_type = drohub_pb2.FileEntry.ResourceType.OTHER
-
-                    new_entry = drone_file_list.file_entries.add()
-                    new_entry.resource_id = resource["url"]
-                    new_entry.resource_type = media_type
-                    if "thumbnail" in resource:
-                        new_entry.thumbnail_id = resource["thumbnail"]
-
-            return drone_file_list
-
+    def getFileListStream(self, request, context):
+        while True:
+            yield self.file_list_container.getLastElement()
 
 def serve(drone_type):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
