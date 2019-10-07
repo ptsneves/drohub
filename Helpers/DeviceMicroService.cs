@@ -25,8 +25,10 @@ namespace DroHub.Helpers {
         private readonly IHubContext<TelemetryHub> _hub;
         private readonly IServiceProvider _services;
         private readonly DeviceMicroServiceOptions _device_options;
+
+        private List<Task> telemetry_tasks;
         public DeviceMicroService(IServiceProvider services,
-            ILogger<DeviceMicroService> logger,
+            ILogger<DeviceMicroServiceHelper> logger,
             IHubContext<TelemetryHub> hub,
             IOptionsMonitor<DeviceMicroServiceOptions> device_options) {
 
@@ -38,6 +40,7 @@ namespace DroHub.Helpers {
             _client = new Drone.DroneClient(_channel);
             _hub = hub;
             _services = services;
+
         }
 
         protected async Task RecordTelemetry(IDroneTelemetry telemetry_data)
@@ -215,7 +218,6 @@ namespace DroHub.Helpers {
             stopping_token.Register(() =>
                     _logger.LogWarning(LoggingEvents.Telemetry, "DeviceMicroService tasks are stopping."));
 
-            var telemetry_tasks = new List<Task>();
             telemetry_tasks.Add(Task.Run(() => GatherPosition(stopping_token)));
             telemetry_tasks.Add(Task.Run(() => GatherBatteryLevel(stopping_token)));
             telemetry_tasks.Add(Task.Run(() => GatherRadioSignal(stopping_token)));
