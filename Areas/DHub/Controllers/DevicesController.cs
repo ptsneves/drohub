@@ -13,10 +13,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using DroHub.Helpers;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Hosting;
 
 namespace DroHub.Areas.DHub.Controllers
 {
@@ -31,17 +30,17 @@ namespace DroHub.Areas.DHub.Controllers
         private const string DefaultIso = "200"; // TODO Get value directly from above lists
 
         private readonly IHubContext<NotificationsHub> _notifications_hubContext;
-        private readonly DeviceMicroServiceOptions _device_micro_service_options;
         private readonly ILogger<DevicesController> _logger;
+        private readonly DeviceMicroService _device_micro_service;
         public DevicesController(DroHubContext context, UserManager<DroHubUser> userManager,
             IHubContext<NotificationsHub> hubContext, ILogger<DevicesController> logger,
-            IOptionsMonitor<DeviceMicroServiceOptions> device_micro_service_options)
+            DeviceMicroService device_micro_service)
         {
             _context = context;
             _userManager = userManager;
             _notifications_hubContext = hubContext;
             _logger = logger;
-            _device_micro_service_options = device_micro_service_options.CurrentValue;
+            _device_micro_service = device_micro_service;
         }
 
         // --- SETTINGS SELECT LISTS
@@ -184,55 +183,22 @@ namespace DroHub.Areas.DHub.Controllers
                     .FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
         }
 
-        private delegate T DroneActionDelegate<T>(Drone.DroneClient my_client);
-        private async Task<T> DoDeviceAction<T>(int id, DroneActionDelegate<T> action, string action_name_for_logging) {
-            var device = await getDeviceById(id);
-
-            _logger.LogDebug( "Trying to do an action");
-            Channel channel = new Channel($"{_device_micro_service_options.Address}:{_device_micro_service_options.Port}",
-                ChannelCredentials.Insecure);
-            var client = new Drone.DroneClient(channel);
-            int logging_action = 0;
-            T reply = action(client);
-
-            channel.ShutdownAsync().Wait();
-
-            _logger.LogWarning(logging_action, "{action} attemped on {device}. Result was {result}",
-                action, device.Name, reply, JsonConvert.SerializeObject(device));
-            return reply;
-        }
-
-        public async Task<IActionResult> GetFileList(int id) {
-            DroneActionDelegate<DroneFileList> get_file_list_delegate = (_client => { return _client.getFileList(new DroneRequest { }); });
-            return Json(
-                await DoDeviceAction<DroneFileList>(id, get_file_list_delegate, "GetFileList"));
-        }
-
         public async Task<IActionResult> TakeOff(int id) {
-            DroneActionDelegate<DroneReply> takeoff_delegate = (_client =>  { return _client.doTakeoff( new DroneRequest{}); });
-
-            await DoDeviceAction<DroneReply>(id, takeoff_delegate, "Takeoff");
+            var _ = _device_micro_service.TakeOffAsync(await getDeviceById(id));
             return Ok();
         }
         public async Task<IActionResult> Land(int id) {
-            DroneActionDelegate<DroneReply> landing_delegate = (_client =>  { return _client.doLanding( new DroneRequest{}); });
-            await DoDeviceAction<DroneReply>(id, landing_delegate, "Landing");
+            var _ = _device_micro_service.LandAsync(await getDeviceById(id));
             return Ok();
         }
 
         public async Task<IActionResult> MoveToPosition(int id, float latitude, float longitude, float altitude, double heading)
         {
-            var new_position = new DroneRequestPosition
-            {
-                Latitude = latitude,
-                Longitude = longitude,
-                Altitude = altitude,
-                Heading = heading
-            };
-            _logger.LogDebug("Called move to position with position {latitude} {longitude} {altitude} {heading}", latitude, longitude, altitude, heading);
-            DroneActionDelegate<DroneReply> movetoposition = (_client => { return _client.moveToPosition(new_position); });
-            await DoDeviceAction<DroneReply>(id, movetoposition, "Move to Position");
+            var _ = _device_micro_service.MoveToPositionAsync(await getDeviceById(id), latitude, longitude, altitude, heading);
             return Ok();
+        }
+        public async Task<IActionResult> GetFileList(int id) {
+            return Json(await _device_micro_service.GetFileListAsync(await getDeviceById(id)));
         }
 
         // GET: DroHub/Devices/Gallery/5

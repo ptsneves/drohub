@@ -50,7 +50,9 @@ namespace DroHub
             });
             services.Configure<DeviceMicroServiceOptions>(Configuration.GetSection("DeviceMicroServiceOptions"));
             services.AddHostedService<NotificationsHubPoller>();
-            services.AddHostedService<DeviceMicroService>();
+            services.AddSingleton<DeviceMicroService>();
+            services.AddHostedService<BackgroundServiceStarter<DeviceMicroService>>();
+
             services.AddSignalR();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }

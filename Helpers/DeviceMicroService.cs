@@ -218,6 +218,51 @@ namespace DroHub.Helpers {
             }
         }
 
+        private delegate T DroneActionDelegate<T>(Drone.DroneClient my_client);
+        private  Task<T> DoDeviceActionAsync<T>(Device device, DroneActionDelegate<T> action, string action_name_for_logging) {
+            var task = Task.Run(() =>
+            {
+                _logger.LogDebug( "Trying to do an action");
+                int logging_action = 0;
+                T reply = action(_client);
+
+                _logger.LogWarning(logging_action, "{action} attemped on {device}. Result was {result}",
+                    action, device.Name, reply, JsonConvert.SerializeObject(device));
+                return reply;
+            });
+            _telemetry_tasks.Add(task);
+            return task;
+        }
+
+        public Task<DroneReply> TakeOffAsync(Device device) {
+            DroneActionDelegate<DroneReply> takeoff_delegate = (_client =>  { return _client.doTakeoff( new DroneRequest{}); });
+
+            return DoDeviceActionAsync<DroneReply>(device, takeoff_delegate, "Takeoff");
+        }
+
+        public Task<DroneReply> LandAsync(Device device) {
+            DroneActionDelegate<DroneReply> landing_delegate = (_client =>  { return _client.doLanding( new DroneRequest{}); });
+            return DoDeviceActionAsync<DroneReply>(device, landing_delegate, "Landing");
+        }
+
+        public Task<DroneReply> MoveToPositionAsync(Device device, float latitude, float longitude, float altitude, double heading)
+        {
+            var new_position = new DroneRequestPosition
+            {
+                Latitude = latitude,
+                Longitude = longitude,
+                Altitude = altitude,
+                Heading = heading
+            };
+            _logger.LogDebug("Called move to position with position {latitude} {longitude} {altitude} {heading}", latitude, longitude, altitude, heading);
+            DroneActionDelegate<DroneReply> movetoposition = (_client => { return _client.moveToPosition(new_position); });
+            return DoDeviceActionAsync<DroneReply>(device, movetoposition, "Move to Position");
+        }
+
+        public Task<DroneFileList> GetFileListAsync(Device device) {
+            DroneActionDelegate<DroneFileList> get_file_list_delegate = (_client => { return _client.getFileList(new DroneRequest { }); });
+            return DoDeviceActionAsync<DroneFileList>(device, get_file_list_delegate, "GetFileList");
+        }
 
 
         private async void stopAllActionTasks() {
