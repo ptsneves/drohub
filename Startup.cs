@@ -12,6 +12,7 @@ using Serilog;
 using System;
 using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
+using DroHub.Helpers;
 
 namespace DroHub
 {
@@ -49,7 +50,7 @@ namespace DroHub
             });
             services.Configure<DeviceMicroServiceOptions>(Configuration.GetSection("DeviceMicroServiceOptions"));
             services.AddHostedService<NotificationsHubPoller>();
-            services.AddHostedService<TelemetryListener>();
+            services.AddHostedService<DeviceMicroService>();
             services.AddSignalR();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }

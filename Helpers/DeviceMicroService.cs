@@ -1,0 +1,238 @@
+using System;
+using System.Threading.Tasks;
+using System.Threading;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
+using DroHub.Areas.DHub.Models;
+using Newtonsoft.Json;
+using DroHub.Data;
+using Grpc.Core;
+using DroHub.Helpers;
+using Microsoft.Extensions.Options;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
+using DroHub.Areas.DHub.SignalRHubs;
+using Microsoft.AspNetCore.SignalR;
+
+namespace DroHub.Helpers {
+    public class DeviceMicroService : BackgroundService
+    {
+        private readonly ILogger<DeviceMicroService> _logger;
+        private Channel _channel;
+        private Drone.DroneClient _client;
+        private readonly IHubContext<TelemetryHub> _hub;
+        private readonly IServiceProvider _services;
+        private readonly DeviceMicroServiceOptions _device_options;
+        public DeviceMicroService(IServiceProvider services,
+            ILogger<DeviceMicroService> logger,
+            IHubContext<TelemetryHub> hub,
+            IOptionsMonitor<DeviceMicroServiceOptions> device_options) {
+
+            _device_options = device_options.CurrentValue;
+            _logger = logger;
+            _logger.LogDebug($"Started DeviceMicroService{_device_options.Address}:{_device_options.Port}");
+
+            _channel = new Channel($"{_device_options.Address}:{_device_options.Port}", ChannelCredentials.Insecure);
+            _client = new Drone.DroneClient(_channel);
+            _hub = hub;
+            _services = services;
+        }
+
+        protected async Task RecordTelemetry(IDroneTelemetry telemetry_data)
+        {
+            using (var scope = _services.CreateScope())
+            {
+                //check if the device exists before we add it to the db
+                var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
+                var device = await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == telemetry_data.Serial);
+                if (device == null)
+                {
+                    _logger.LogDebug("Not saving received telemetry for unregistered device {}", telemetry_data);
+                    return;
+                }
+                context.Add(telemetry_data);
+                await context.SaveChangesAsync();
+            }
+        }
+
+        protected async Task GatherPosition(CancellationToken stopping_token) {
+            while (!stopping_token.IsCancellationRequested)
+            {
+                try
+                {
+                    using (var call = _client.getPosition(new DroneRequest { }, cancellationToken: stopping_token))
+                    {
+                        while (!stopping_token.IsCancellationRequested)
+                        {
+                            if (await call.ResponseStream.MoveNext(stopping_token)) {
+                                DronePosition position = call.ResponseStream.Current;
+                                _logger.LogDebug("received position {position}", position);
+                                await _hub.Clients.All.SendAsync("position", JsonConvert.SerializeObject(position));
+                                await RecordTelemetry(position);
+                            }
+                            else {
+                                _logger.LogDebug(LoggingEvents.PositionTelemetry, "Nothing received.Waiting");
+                                await Task.Delay(1000);
+                            }
+                        }
+                    }
+                }
+                catch (RpcException e)
+                {
+                    _logger.LogWarning(LoggingEvents.PositionTelemetry, e.ToString() + "\nWaiting 1 second before retrying");
+                    await Task.Delay(1000);
+                    _logger.LogDebug(LoggingEvents.PositionTelemetry, "Calling again");
+                }
+            }
+        }
+
+        protected async Task GatherRadioSignal(CancellationToken stopping_token) {
+            while (!stopping_token.IsCancellationRequested)
+            {
+                try
+                {
+                    using (var call = _client.getRadioSignal(new DroneRequest { }, cancellationToken: stopping_token))
+                    {
+                        while (!stopping_token.IsCancellationRequested)
+                        {
+                            if (await call.ResponseStream.MoveNext(stopping_token)) {
+                                DroneRadioSignal radio_signal = call.ResponseStream.Current;
+                                _logger.LogDebug("received radio_signal {radio_signal}", radio_signal);
+                                await _hub.Clients.All.SendAsync("radio_signal", JsonConvert.SerializeObject(radio_signal));
+                                await RecordTelemetry(radio_signal);
+                            }
+                            else {
+                                _logger.LogDebug(LoggingEvents.RadioSignalTelemetry, "Nothing received. Waiting");
+                                await Task.Delay(1000);
+                            }
+                        }
+                    }
+                }
+                catch (RpcException e)
+                {
+                    _logger.LogWarning(LoggingEvents.RadioSignalTelemetry, e.ToString() + "\nWaiting 1 second before retrying");
+                    await Task.Delay(1000);
+                    _logger.LogDebug(LoggingEvents.RadioSignalTelemetry, "Calling again");
+                }
+            }
+        }
+
+        protected async Task GatherFlyingState(CancellationToken stopping_token) {
+            while (!stopping_token.IsCancellationRequested)
+            {
+                try
+                {
+                    using (var call = _client.getFlyingState(new DroneRequest { }, cancellationToken: stopping_token))
+                    {
+                        while (!stopping_token.IsCancellationRequested)
+                        {
+                            if (await call.ResponseStream.MoveNext(stopping_token)) {
+                                DroneFlyingState flying_state = call.ResponseStream.Current;
+                                _logger.LogDebug("received flying_state {flying_state}", flying_state);
+                                await _hub.Clients.All.SendAsync("flying_state", JsonConvert.SerializeObject(flying_state));
+                                await RecordTelemetry(flying_state);
+                            }
+                            else {
+                                _logger.LogDebug(LoggingEvents.FlyingStateTelemetry, "Nothing received. Waiting");
+                                await Task.Delay(1000);
+                            }
+                        }
+                    }
+                }
+                catch (RpcException e)
+                {
+                    _logger.LogWarning(LoggingEvents.FlyingStateTelemetry, e.ToString() + "\nWaiting 1 second before retrying");
+                    await Task.Delay(1000);
+                    _logger.LogDebug(LoggingEvents.FlyingStateTelemetry, "Calling again");
+                }
+            }
+        }
+
+        protected async Task GatherBatteryLevel(CancellationToken stopping_token) {
+            while (!stopping_token.IsCancellationRequested)
+            {
+                try
+                {
+                    using (var call = _client.getBatteryLevel(new DroneRequest { }, cancellationToken: stopping_token))
+                    {
+                        while (!stopping_token.IsCancellationRequested)
+                        {
+                            if (await call.ResponseStream.MoveNext(stopping_token)) {
+                                DroneBatteryLevel battery_level = call.ResponseStream.Current;
+                                _logger.LogDebug("received battery_level {battery_level}", battery_level);
+                                await _hub.Clients.All.SendAsync("battery_level", JsonConvert.SerializeObject(battery_level));
+                                await RecordTelemetry(battery_level);
+                            }
+                            else {
+                                _logger.LogDebug(LoggingEvents.BatteryLevelTelemetry, "Nothing received.Waiting");
+                                await Task.Delay(1000);
+                            }
+                        }
+                    }
+                }
+                catch (RpcException e)
+                {
+                    _logger.LogWarning(LoggingEvents.BatteryLevelTelemetry, e.ToString() + "\nWaiting 1 second before retrying");
+                    await Task.Delay(1000);
+                    _logger.LogDebug(LoggingEvents.BatteryLevelTelemetry, "Calling again");
+                }
+            }
+        }
+
+        protected async Task GatherFileList(CancellationToken stopping_token) {
+            while (!stopping_token.IsCancellationRequested)
+            {
+                try
+                {
+                    using (var call = _client.getFileListStream(new DroneRequest { }, cancellationToken: stopping_token))
+                    {
+                        while (!stopping_token.IsCancellationRequested)
+                        {
+                            if (await call.ResponseStream.MoveNext(stopping_token)) {
+                                DroneFileList file_list = call.ResponseStream.Current;
+                                _logger.LogDebug("received file_list {file_list}", file_list);
+                                await _hub.Clients.All.SendAsync("file_list", JsonConvert.SerializeObject(file_list));
+                            }
+                            else {
+                                _logger.LogDebug(LoggingEvents.FileListTelemetry, "Nothing received.Waiting");
+                                await Task.Delay(1000);
+                            }
+                        }
+                    }
+                }
+                catch (RpcException e)
+                {
+                    _logger.LogWarning(LoggingEvents.FileListTelemetry, e.ToString() + "\nWaiting 1 second before retrying");
+                    await Task.Delay(1000);
+                    _logger.LogDebug(LoggingEvents.FileListTelemetry, "Calling again");
+                }
+            }
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken stopping_token) {
+            stopping_token.Register(() =>
+                    _logger.LogWarning(LoggingEvents.Telemetry, "DeviceMicroService tasks are stopping."));
+
+            var telemetry_tasks = new List<Task>();
+            telemetry_tasks.Add(Task.Run(() => GatherPosition(stopping_token)));
+            telemetry_tasks.Add(Task.Run(() => GatherBatteryLevel(stopping_token)));
+            telemetry_tasks.Add(Task.Run(() => GatherRadioSignal(stopping_token)));
+            telemetry_tasks.Add(Task.Run(() => GatherFlyingState(stopping_token)));
+
+            Task tasks_result = Task.WhenAll(telemetry_tasks.ToArray());
+            try
+            {
+                await tasks_result;
+            }
+            catch
+            {
+                if (tasks_result.Status == TaskStatus.RanToCompletion)
+                    _logger.LogInformation("All telemetry streams closed correctly.");
+                else if (tasks_result.Status == TaskStatus.Faulted)
+                    _logger.LogWarning("Some telemetry tasks failed");
+            }
+        }
+    }
+}
