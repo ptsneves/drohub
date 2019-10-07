@@ -26,7 +26,9 @@ namespace DroHub.Helpers {
         private readonly IServiceProvider _services;
         private readonly DeviceMicroServiceOptions _device_options;
 
-        private List<Task> telemetry_tasks;
+        private readonly List<Task> _telemetry_tasks;
+        private readonly List<Task> _action_tasks;
+        private readonly CancellationTokenSource _action_cancelation_source;
         public DeviceMicroService(IServiceProvider services,
             ILogger<DeviceMicroServiceHelper> logger,
             IHubContext<TelemetryHub> hub,
@@ -40,7 +42,9 @@ namespace DroHub.Helpers {
             _client = new Drone.DroneClient(_channel);
             _hub = hub;
             _services = services;
-
+            _telemetry_tasks = new List<Task>();
+            _action_tasks= new List<Task>();
+            _action_cancelation_source = new CancellationTokenSource();
         }
 
         protected async Task RecordTelemetry(IDroneTelemetry telemetry_data)
@@ -214,16 +218,16 @@ namespace DroHub.Helpers {
             }
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stopping_token) {
-            stopping_token.Register(() =>
-                    _logger.LogWarning(LoggingEvents.Telemetry, "DeviceMicroService tasks are stopping."));
 
-            telemetry_tasks.Add(Task.Run(() => GatherPosition(stopping_token)));
-            telemetry_tasks.Add(Task.Run(() => GatherBatteryLevel(stopping_token)));
-            telemetry_tasks.Add(Task.Run(() => GatherRadioSignal(stopping_token)));
-            telemetry_tasks.Add(Task.Run(() => GatherFlyingState(stopping_token)));
 
-            Task tasks_result = Task.WhenAll(telemetry_tasks.ToArray());
+        private async void stopAllActionTasks() {
+            _logger.LogWarning(LoggingEvents.Telemetry, "DeviceMicroService action tasks are stopping.");
+            _action_cancelation_source.Cancel();
+            await joinTasks(_action_tasks);
+        }
+
+        private async Task joinTasks(List<Task> tasks) {
+            Task tasks_result = Task.WhenAll(tasks.ToArray());
             try
             {
                 await tasks_result;
@@ -231,10 +235,19 @@ namespace DroHub.Helpers {
             catch
             {
                 if (tasks_result.Status == TaskStatus.RanToCompletion)
-                    _logger.LogInformation("All telemetry streams closed correctly.");
+                   _logger.LogInformation("Task set closed correctly.");
                 else if (tasks_result.Status == TaskStatus.Faulted)
-                    _logger.LogWarning("Some telemetry tasks failed");
+                   _logger.LogWarning("Some tasks failed");
             }
+        }
+        protected override async Task ExecuteAsync(CancellationToken stopping_token) {
+            stopping_token.Register(() => stopAllActionTasks());
+
+            _telemetry_tasks.Add(Task.Run(() => GatherPosition(stopping_token)));
+            _telemetry_tasks.Add(Task.Run(() => GatherBatteryLevel(stopping_token)));
+            _telemetry_tasks.Add(Task.Run(() => GatherRadioSignal(stopping_token)));
+            _telemetry_tasks.Add(Task.Run(() => GatherFlyingState(stopping_token)));
+            await joinTasks(_telemetry_tasks);
         }
     }
 }
