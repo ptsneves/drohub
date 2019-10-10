@@ -60,13 +60,6 @@ namespace DroHub
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            Serilog.Debugging.SelfLog.Enable(Console.Error);
-
-            Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(Configuration)
-                .Enrich.FromLogContext()
-                .CreateLogger();
-
 
             if (env.IsDevelopment())
             {
