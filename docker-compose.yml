@@ -6,7 +6,7 @@ services:
         image: "janus:latest"
         ports:
             - "8088:8088"
-            - "6004:6004/udp"
+            - "6004-7004:6004-7004/udp"
         depends_on:
             - "web"
     web:

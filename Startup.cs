@@ -11,8 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using System;
 using System.Net;
-using Microsoft.AspNetCore.HttpOverrides;
+
 using DroHub.Helpers;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace DroHub
 {
@@ -49,9 +50,11 @@ namespace DroHub
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
             services.Configure<DeviceMicroServiceOptions>(Configuration.GetSection("DeviceMicroServiceOptions"));
+            services.Configure<JanusServiceOptions>(Configuration.GetSection("JanusServiceOptions"));
             services.AddHostedService<NotificationsHubPoller>();
             services.AddSingleton<DeviceMicroService>();
             services.AddHostedService<BackgroundServiceStarter<DeviceMicroService>>();
+            services.AddHttpClient<JanusService>();
 
             services.AddSignalR();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
