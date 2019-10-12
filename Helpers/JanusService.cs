@@ -236,9 +236,9 @@ namespace DroHub.Helpers {
             var request = new JanusRequest(session, new JanusRequest.ListRequest());
             return (await getJanusAnswer($"/janus/{session.Id}/{handle}", request)).PluginData.StreamingPluginData.Streams;
         }
-        public async Task<JanusAnswer> destroyMountPoint(CreateSession session, Int64 handle, Int64 stream_id) {
+        public async Task destroyMountPoint(CreateSession session, Int64 handle, Int64 stream_id) {
             var request = new JanusRequest(session, new JanusRequest.DestroyRequest(stream_id));
-            return await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
+            await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
         public async Task destroyMountPoints(CreateSession session, Int64 handle, string with_description) {
@@ -250,7 +250,7 @@ namespace DroHub.Helpers {
             }
         }
 
-        public async Task<JanusAnswer> createRTPVideoMountPoint(CreateSession session, Int64 handle, JanusRequest.RTPMountPointInfo option) {
+        public async Task createRTPVideoMountPoint(CreateSession session, Int64 handle, JanusRequest.RTPMountPointInfo option) {
             if (! _options.RTPPortRange.Contains(option.VideoPort))
                 throw new InvalidOperationException(
                     $"Port {option.VideoPort} is not contained between the allowed {_options.RTPPortStart} and {_options.RTPPortEnd} ports."
@@ -258,13 +258,13 @@ namespace DroHub.Helpers {
 
             option.Request = "create";
             var request = new JanusRequest(session, option);
-            return await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
+            await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
-        public async Task<JanusAnswer> getStreamInfo(CreateSession session, Int64 handle, Int64 stream_id)
+        public async Task<JanusRequest.RTPMountPointInfo> getStreamInfo(CreateSession session, Int64 handle, Int64 stream_id)
         {
             var request = new JanusRequest(session, new JanusRequest.InfoRequest(stream_id));
-            return await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
+            return (await getJanusAnswer($"/janus/{session.Id}/{handle}", request)).PluginData.StreamingPluginData.RTPMountPointInfo;
         }
 
         public async Task<IEnumerable<int>> getAvailableMountPointPorts() {
@@ -274,7 +274,7 @@ namespace DroHub.Helpers {
             var not_available = new List<int>();
             foreach (var stream in list) {
                 var info = await getStreamInfo(session, handle, stream.Id);
-                not_available.Add(info.PluginData.StreamingPluginData.RTPMountPointInfo.VideoPort);
+                not_available.Add(info.VideoPort);
             }
             return _options.RTPPortRange.Where(i => ! not_available.Contains(i));
         }
