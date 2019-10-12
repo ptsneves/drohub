@@ -231,26 +231,16 @@ namespace DroHub.Helpers {
         public async Task<List<JanusAnswer.JanusPluginData.JanusStreamingPluginData.JanusStreamListInfo>> listMountPoints(
                 CreateSession session, Int64 handle) {
             var request = new JanusRequest(session, new JanusRequest.ListRequest());
-            var payload = new StringContent(JsonConvert.SerializeObject(request, Formatting.Indented), Encoding.UTF8, "application/json");
             _logger.LogDebug("List request message {payload}", JsonConvert.SerializeObject(request, Formatting.Indented));
-            var response = await Client.PostAsync($"/janus/{session.Id}/{handle}", payload);
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadAsAsync<JanusAnswer>();
-            _logger.LogDebug("List request result {result}", await response.Content.ReadAsStringAsync());
-            return result.PluginData.StreamingPluginData.Streams;
+            return (await getJanusAnswer($"/janus/{session.Id}/{handle}", request)).PluginData.StreamingPluginData.Streams;
         }
         public async Task<JanusAnswer> destroyMountPoint(CreateSession session, Int64 handle, Int64 stream_id) {
             var request = new JanusRequest(session, new JanusRequest.DestroyRequest{
                     StreamId = stream_id
                 }
             );
-            var payload = new StringContent(JsonConvert.SerializeObject(request, Formatting.Indented), Encoding.UTF8, "application/json");
-            _logger.LogDebug("List request message {payload}", JsonConvert.SerializeObject(request, Formatting.Indented));
-            var response = await Client.PostAsync($"/janus/{session.Id}/{handle}", payload);
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadAsAsync<JanusAnswer>();
-            _logger.LogDebug("List request result {result}", await response.Content.ReadAsStringAsync());
-            return result;
+            _logger.LogDebug("Destrou mount point request message {payload}", JsonConvert.SerializeObject(request, Formatting.Indented));
+            return await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
         public async Task destroyMountPoints(CreateSession session, Int64 handle, string with_description) {
@@ -270,13 +260,8 @@ namespace DroHub.Helpers {
 
             option.Request = "create";
             var request = new JanusRequest(session, option);
-            var payload = new StringContent(JsonConvert.SerializeObject(request, Formatting.Indented), Encoding.UTF8, "application/json");
             _logger.LogDebug("request message to add RTP Mountpoint {payload}", JsonConvert.SerializeObject(request, Formatting.Indented));
-            var response = await Client.PostAsync($"/janus/{session.Id}/{handle}", payload);
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadAsAsync<JanusAnswer>();
-            _logger.LogDebug("request result for RTP mountpoint adding {result}", await response.Content.ReadAsStringAsync());
-            return result;
+            return await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
         public async Task<JanusAnswer> getStreamInfo(CreateSession session, Int64 handle, Int64 stream_id)
@@ -285,13 +270,8 @@ namespace DroHub.Helpers {
                     StreamId = stream_id
                 }
             );
-            var payload = new StringContent(JsonConvert.SerializeObject(request, Formatting.Indented), Encoding.UTF8, "application/json");
             _logger.LogDebug("Info request message {payload}", JsonConvert.SerializeObject(request, Formatting.Indented));
-            var response = await Client.PostAsync($"/janus/{session.Id}/{handle}", payload);
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadAsAsync<JanusAnswer>();
-            _logger.LogDebug("Info request result {result}", await response.Content.ReadAsStringAsync());
-            return result;
+            return await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
         public async Task<IEnumerable<int>> getAvailableMountPointPorts() {
