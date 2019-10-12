@@ -180,6 +180,11 @@ namespace DroHub.Helpers {
         public class CreateStreamerPluginHandler : JanusBasicSession {
             [JsonProperty("plugin")]
             public string Plugin { get { return "janus.plugin.streaming"; } }
+            public override string JanusAction {get {return "attach"; } }
+
+            public CreateStreamerPluginHandler(CreateSession session) {
+                TransactionId = session.TransactionId;
+            }
         }
 
         public HttpClient Client { get; }
@@ -214,19 +219,10 @@ namespace DroHub.Helpers {
             return session;
         }
 
-        public async Task<Int64> createHandle(CreateSession session) {
-            var handle = new CreateStreamerPluginHandler
-            {
-                TransactionId = session.TransactionId,
-                JanusAction = "attach",
-            };
-            var payload = new StringContent(JsonConvert.SerializeObject(handle, Formatting.Indented), Encoding.UTF8, "application/json");
+        public async Task<Int64> createStreamerPluginHandle(CreateSession session) {
+            var handle = new CreateStreamerPluginHandler(session);
             _logger.LogDebug("Handle to created {payload}", JsonConvert.SerializeObject(handle, Formatting.Indented));
-            var response = await Client.PostAsync($"/janus/{session.Id}", payload);
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadAsAsync<JanusAnswer>();
-            _logger.LogDebug("Handle creation result {result}", await response.Content.ReadAsStringAsync());
-            return result.Data.Id;
+            return (await getJanusAnswer($"/janus/{session.Id}", handle)).Data.Id;
         }
 
         public async Task<List<JanusAnswer.JanusPluginData.JanusStreamingPluginData.JanusStreamListInfo>> listMountPoints(
@@ -312,7 +308,7 @@ namespace DroHub.Helpers {
 
         public async Task<IEnumerable<int>> getAvailableMountPointPorts() {
             var session = await createSession();
-            var handle = await createHandle(session);
+            var handle = await createStreamerPluginHandle(session);
             var list = await listMountPoints(session, handle);
             var not_available = new List<int>();
             foreach (var stream in list) {
