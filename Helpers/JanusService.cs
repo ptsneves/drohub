@@ -139,6 +139,19 @@ namespace DroHub.Helpers {
                 public InfoRequest(Int64 stream_id) : base(stream_id) { }
                 public override string Request { get { return "info"; } }
             }
+            public class WatchRequest : MessageWithId {
+                public WatchRequest(Int64 stream_id) : base(stream_id) { }
+                public override string Request { get { return "watch"; } }
+            }
+            public class StartRequest : MessageWithId {
+                public StartRequest(Int64 stream_id) : base(stream_id) { }
+                public override string Request { get { return "start"; } }
+            }
+            public class StopRequest : MessageWithId {
+                public StopRequest(Int64 stream_id) : base(stream_id) { }
+                public override string Request { get { return "stop"; } }
+            }
+
             public class ListRequest : MessageBody {
                 public override string Request { get { return "list"; } }
             }
@@ -238,6 +251,21 @@ namespace DroHub.Helpers {
         }
         public async Task destroyMountPoint(CreateSession session, Int64 handle, Int64 stream_id) {
             var request = new JanusRequest(session, new JanusRequest.DestroyRequest(stream_id));
+            await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
+        }
+
+        public async Task startStream(CreateSession session, Int64 handle, Int64 stream_id) {
+            var request = new JanusRequest(session, new JanusRequest.StartRequest(stream_id));
+            await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
+        }
+
+        public async Task stopStream(CreateSession session, Int64 handle, Int64 stream_id) {
+            var request = new JanusRequest(session, new JanusRequest.StopRequest(stream_id));
+            await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
+        }
+
+        public async Task watchStream(CreateSession session, Int64 handle, Int64 stream_id) {
+            var request = new JanusRequest(session, new JanusRequest.WatchRequest(stream_id));
             await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
