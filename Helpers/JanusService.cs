@@ -229,7 +229,7 @@ namespace DroHub.Helpers {
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadAsAsync<JanusAnswer>();
             _logger.LogDebug("Janus answer result {result}", JsonConvert.SerializeObject(result, Formatting.Indented));
-            if (result.JanusAnswerStatus != "success")
+            if (result.JanusAnswerStatus != "success" && result.JanusAnswerStatus != "ack")
                 throw new ApplicationException("Janus service failed an action");
             return result;
         }
