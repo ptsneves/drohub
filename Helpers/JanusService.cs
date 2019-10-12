@@ -110,26 +110,26 @@ namespace DroHub.Helpers {
                 public virtual string Request { get; set; }
 
             }
-            public class DestroyRequest : MessageBody {
-                public override string Request { get { return "destroy"; } }
-
+            public class MessageWithId : MessageBody {
                 [JsonProperty("id")]
                 public Int64 StreamId { get; set; }
             }
 
+            public class DestroyRequest : MessageWithId {
+                public override string Request { get { return "destroy"; } }
+            }
+
+            public class InfoRequest : MessageWithId {
+                public override string Request { get { return "info"; } }
+            }
             public class ListRequest : MessageBody {
                 public override string Request { get { return "list"; } }
             }
 
-            public class InfoRequest : MessageBody {
-                public override string Request { get { return "info"; } }
-                [JsonProperty("id")]
-                public Int64 StreamId { get; set; }
-            }
             [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
             public class RTPMountPointInfo : MessageBody {
 
-                    [Required(ErrorMessage = "Secret is required.")]
+                    // [Required(ErrorMessage = "Secret is required.")]
                     [JsonProperty("secret")]
                     public string Secret { get; set; }
 
