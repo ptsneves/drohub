@@ -299,7 +299,7 @@ namespace DroHub.Helpers {
         }
 
         public async Task<IEnumerable<int>> getAvailableMountPointPorts() {
-            var session = await createSession(5);
+            var session = await createSession();
             var handle = await createHandle(session);
             var list = await listMountPoints(session, handle);
             var not_available = new List<int>();
