@@ -96,8 +96,17 @@ namespace DroHub.Helpers {
         }
         public class CreateSession : JanusBasicSession
         {
-           [JsonProperty("id")]
+            [JsonProperty("id")]
             public Int64 Id { get; set; }
+            public override string JanusAction {
+                get {return "create";}
+            }
+            public CreateSession() {
+                Random random = new Random();
+                TransactionId = Guid.NewGuid();
+                JanusAction = "create";
+                Id = random.NextLong(0, Int64.MaxValue);
+            }
         }
         public class JanusRequest : JanusBasicSession
         {
@@ -186,19 +195,18 @@ namespace DroHub.Helpers {
             _logger.LogDebug("Starting Janus Service with Options {_options}", JsonConvert.SerializeObject(_options, Formatting.Indented));
         }
 
-        public async Task<CreateSession> createSession(Int64 id) {
-            var session = new CreateSession
-            {
-                TransactionId = Guid.NewGuid(),
-                JanusAction = "create",
-                Id = id
-            };
-            var payload = new StringContent(JsonConvert.SerializeObject(session), Encoding.UTF8, "application/json");
-            _logger.LogDebug("Session to created {payload}", JsonConvert.SerializeObject(session, Formatting.Indented));
-            var response = await Client.PostAsync("/janus", payload);
+        private async Task<JanusAnswer> getJanusAnswer(string relative_path, Object object_to_serialize) {
+            var payload = new StringContent(JsonConvert.SerializeObject(object_to_serialize), Encoding.UTF8, "application/json");
+            var response = await Client.PostAsync(relative_path, payload);
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadAsAsync<JanusAnswer>();
-            _logger.LogDebug("Session creation result {result}", JsonConvert.SerializeObject(result, Formatting.Indented));
+            _logger.LogDebug("Janus answer result {result}", JsonConvert.SerializeObject(result, Formatting.Indented));
+            return result;
+        }
+        public async Task<CreateSession> createSession() {
+            var session = new CreateSession();
+            _logger.LogDebug("Session to be created {payload}", JsonConvert.SerializeObject(session, Formatting.Indented));
+            await getJanusAnswer("/janus", session);
             return session;
         }
 
