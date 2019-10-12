@@ -245,7 +245,7 @@ namespace DroHub.Helpers {
             var list = await listMountPoints(session, handle);
             foreach (var stream in list) {
                 if (stream.Description.Contains(with_description)) {
-                    destroyMountPoint(session, handle, stream.Id);
+                    await destroyMountPoint(session, handle, stream.Id);
                 }
             }
         }
