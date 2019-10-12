@@ -50,7 +50,7 @@ namespace DroHub.Helpers {
             public class JanusError
             {
                 [JsonProperty("code")]
-                int Code { get; set; }
+                Int64 Code { get; set; }
                 [JsonProperty("reason")]
                 string Reason { get; set; }
             }
@@ -95,7 +95,7 @@ namespace DroHub.Helpers {
         public class CreateSession : JanusBasicSession
         {
            [JsonProperty("id")]
-            public int Id { get; set; }
+            public Int64 Id { get; set; }
         }
         public class JanusRequest : JanusBasicSession
         {
@@ -179,7 +179,7 @@ namespace DroHub.Helpers {
             _logger.LogDebug("Starting Janus Service with Options {_options}", JsonConvert.SerializeObject(_options, Formatting.Indented));
         }
 
-        public async Task<CreateSession> createSession(int id) {
+        public async Task<CreateSession> createSession(Int64 id) {
             var session = new CreateSession
             {
                 TransactionId = Guid.NewGuid(),
