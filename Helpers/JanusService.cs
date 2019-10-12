@@ -93,6 +93,8 @@ namespace DroHub.Helpers {
 
             [JsonProperty("plugindata")]
             public JanusPluginData PluginData { get; set; }
+            [JsonProperty("janus")]
+            public string JanusAnswerStatus { get; set; }
         }
         public class CreateSession : JanusBasicSession
         {
@@ -201,6 +203,8 @@ namespace DroHub.Helpers {
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadAsAsync<JanusAnswer>();
             _logger.LogDebug("Janus answer result {result}", JsonConvert.SerializeObject(result, Formatting.Indented));
+            if (result.JanusAnswerStatus != "success")
+                throw new ApplicationException("Janus service failed an action");
             return result;
         }
         public async Task<CreateSession> createSession() {
