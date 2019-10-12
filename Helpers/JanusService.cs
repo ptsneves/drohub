@@ -112,9 +112,12 @@ namespace DroHub.Helpers {
         }
         public class JanusRequest : JanusBasicSession
         {
-            public interface IBody {
-
+            public JanusRequest(CreateSession session, IBody body_message) {
+                TransactionId = session.TransactionId;
+                Body = body_message;
             }
+
+            public interface IBody { }
             public class MessageBody : IBody {
 
                 [JsonProperty("request")]
@@ -227,11 +230,7 @@ namespace DroHub.Helpers {
 
         public async Task<List<JanusAnswer.JanusPluginData.JanusStreamingPluginData.JanusStreamListInfo>> listMountPoints(
                 CreateSession session, Int64 handle) {
-            var request = new JanusRequest
-            {
-                TransactionId = session.TransactionId,
-                Body = new JanusRequest.ListRequest {}
-            };
+            var request = new JanusRequest(session, new JanusRequest.ListRequest());
             var payload = new StringContent(JsonConvert.SerializeObject(request, Formatting.Indented), Encoding.UTF8, "application/json");
             _logger.LogDebug("List request message {payload}", JsonConvert.SerializeObject(request, Formatting.Indented));
             var response = await Client.PostAsync($"/janus/{session.Id}/{handle}", payload);
@@ -241,13 +240,10 @@ namespace DroHub.Helpers {
             return result.PluginData.StreamingPluginData.Streams;
         }
         public async Task<JanusAnswer> destroyMountPoint(CreateSession session, Int64 handle, Int64 stream_id) {
-            var request = new JanusRequest
-            {
-                TransactionId = session.TransactionId,
-                Body = new JanusRequest.DestroyRequest {
+            var request = new JanusRequest(session, new JanusRequest.DestroyRequest{
                     StreamId = stream_id
                 }
-            };
+            );
             var payload = new StringContent(JsonConvert.SerializeObject(request, Formatting.Indented), Encoding.UTF8, "application/json");
             _logger.LogDebug("List request message {payload}", JsonConvert.SerializeObject(request, Formatting.Indented));
             var response = await Client.PostAsync($"/janus/{session.Id}/{handle}", payload);
@@ -273,11 +269,7 @@ namespace DroHub.Helpers {
                 );
 
             option.Request = "create";
-            var request = new JanusRequest
-            {
-                TransactionId = session.TransactionId,
-                Body = option
-            };
+            var request = new JanusRequest(session, option);
             var payload = new StringContent(JsonConvert.SerializeObject(request, Formatting.Indented), Encoding.UTF8, "application/json");
             _logger.LogDebug("request message to add RTP Mountpoint {payload}", JsonConvert.SerializeObject(request, Formatting.Indented));
             var response = await Client.PostAsync($"/janus/{session.Id}/{handle}", payload);
@@ -289,14 +281,10 @@ namespace DroHub.Helpers {
 
         public async Task<JanusAnswer> getStreamInfo(CreateSession session, Int64 handle, Int64 stream_id)
         {
-            var request = new JanusRequest
-            {
-                TransactionId = session.TransactionId,
-                Body = new JanusRequest.InfoRequest
-                {
+            var request = new JanusRequest(session, new JanusRequest.InfoRequest{
                     StreamId = stream_id
                 }
-            };
+            );
             var payload = new StringContent(JsonConvert.SerializeObject(request, Formatting.Indented), Encoding.UTF8, "application/json");
             _logger.LogDebug("Info request message {payload}", JsonConvert.SerializeObject(request, Formatting.Indented));
             var response = await Client.PostAsync($"/janus/{session.Id}/{handle}", payload);
