@@ -125,15 +125,18 @@ namespace DroHub.Helpers {
 
             }
             public class MessageWithId : MessageBody {
+                public MessageWithId(Int64 stream_id) { StreamId = stream_id; }
                 [JsonProperty("id")]
                 public Int64 StreamId { get; set; }
             }
 
             public class DestroyRequest : MessageWithId {
+                public DestroyRequest(Int64 stream_id) : base(stream_id) { }
                 public override string Request { get { return "destroy"; } }
             }
 
             public class InfoRequest : MessageWithId {
+                public InfoRequest(Int64 stream_id) : base(stream_id) { }
                 public override string Request { get { return "info"; } }
             }
             public class ListRequest : MessageBody {
@@ -234,10 +237,7 @@ namespace DroHub.Helpers {
             return (await getJanusAnswer($"/janus/{session.Id}/{handle}", request)).PluginData.StreamingPluginData.Streams;
         }
         public async Task<JanusAnswer> destroyMountPoint(CreateSession session, Int64 handle, Int64 stream_id) {
-            var request = new JanusRequest(session, new JanusRequest.DestroyRequest{
-                    StreamId = stream_id
-                }
-            );
+            var request = new JanusRequest(session, new JanusRequest.DestroyRequest(stream_id));
             return await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
@@ -263,10 +263,7 @@ namespace DroHub.Helpers {
 
         public async Task<JanusAnswer> getStreamInfo(CreateSession session, Int64 handle, Int64 stream_id)
         {
-            var request = new JanusRequest(session, new JanusRequest.InfoRequest{
-                    StreamId = stream_id
-                }
-            );
+            var request = new JanusRequest(session, new JanusRequest.InfoRequest(stream_id));
             return await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
