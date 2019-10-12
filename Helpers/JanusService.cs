@@ -75,6 +75,8 @@ namespace DroHub.Helpers {
                     [JsonProperty("stream")]
                     public JanusStreamListInfo Stream { get; set; }
 
+                    [JsonProperty("info")]
+                    public JanusRequest.RTPMountPointInfo RTPMountPointInfo { get; set; }
 
                 }
                 [JsonProperty("plugin")]
@@ -119,6 +121,11 @@ namespace DroHub.Helpers {
                 public override string Request { get { return "list"; } }
             }
 
+            public class InfoRequest : MessageBody {
+                public override string Request { get { return "info"; } }
+                [JsonProperty("id")]
+                public Int64 StreamId { get; set; }
+            }
             [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
             public class RTPMountPointInfo : MessageBody {
 
@@ -270,6 +277,37 @@ namespace DroHub.Helpers {
             var result = await response.Content.ReadAsAsync<JanusAnswer>();
             _logger.LogDebug("request result for RTP mountpoint adding {result}", await response.Content.ReadAsStringAsync());
             return result;
+        }
+
+        public async Task<JanusAnswer> getStreamInfo(CreateSession session, Int64 handle, Int64 stream_id)
+        {
+            var request = new JanusRequest
+            {
+                TransactionId = session.TransactionId,
+                Body = new JanusRequest.InfoRequest
+                {
+                    StreamId = stream_id
+                }
+            };
+            var payload = new StringContent(JsonConvert.SerializeObject(request, Formatting.Indented), Encoding.UTF8, "application/json");
+            _logger.LogDebug("Info request message {payload}", JsonConvert.SerializeObject(request, Formatting.Indented));
+            var response = await Client.PostAsync($"/janus/{session.Id}/{handle}", payload);
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadAsAsync<JanusAnswer>();
+            _logger.LogDebug("Info request result {result}", await response.Content.ReadAsStringAsync());
+            return result;
+        }
+
+        public async Task<IEnumerable<int>> getAvailableMountPointPorts() {
+            var session = await createSession(5);
+            var handle = await createHandle(session);
+            var list = await listMountPoints(session, handle);
+            var not_available = new List<int>();
+            foreach (var stream in list) {
+                var info = await getStreamInfo(session, handle, stream.Id);
+                not_available.Add(info.PluginData.StreamingPluginData.RTPMountPointInfo.VideoPort);
+            }
+            return _options.RTPPortRange.Where(i => ! not_available.Contains(i));
         }
     }
 }
