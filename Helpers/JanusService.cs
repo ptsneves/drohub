@@ -33,6 +33,11 @@ namespace DroHub.Helpers {
     }
     public class JanusService
     {
+        public class JanusServiceException : Exception
+        {
+            public JanusServiceException(string message): base(message) { }
+        }
+
         public class JanusBasicSession
         {
             [JsonProperty("transaction")]
@@ -234,7 +239,7 @@ namespace DroHub.Helpers {
             var result = await response.Content.ReadAsAsync<JanusAnswer>();
             _logger.LogDebug("Janus answer result {result}", JsonConvert.SerializeObject(result, Formatting.Indented));
             if (result.JanusAnswerStatus != "success" && result.JanusAnswerStatus != "ack")
-                throw new ApplicationException("Janus service failed an action");
+                throw new JanusServiceException("Janus service failed an action");
             return result;
         }
         public async Task<CreateSession> createSession() {
