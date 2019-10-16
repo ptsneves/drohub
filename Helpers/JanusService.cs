@@ -15,7 +15,7 @@ namespace DroHub.Helpers {
         public JanusServiceOptions() {
             Address = "http://docker";
             Port = 8088;
-            Token = "NOTOKEN";
+            AdminKey = "NOTOKEN";
             RTPPortStart = 6004;
             RTPPortEnd = 6005;
         }
@@ -29,7 +29,7 @@ namespace DroHub.Helpers {
                 return Enumerable.Range(RTPPortStart, RTPPortEnd);
             }
         }
-        public string Token { get; set; }
+        public string AdminKey { get; set; }
     }
     public class JanusService
     {
@@ -122,42 +122,46 @@ namespace DroHub.Helpers {
 
                 [JsonProperty("request")]
                 public virtual string Request { get; set; }
-
+                [JsonProperty("admin_key")]
+                public string AdminKey { get; set; }
+                public MessageBody(string admin_key) { AdminKey = admin_key; }
             }
             public class MessageWithId : MessageBody {
-                public MessageWithId(Int64 stream_id) { StreamId = stream_id; }
+                public MessageWithId(string admin_key, Int64 stream_id) : base(admin_key) { StreamId = stream_id; }
                 [JsonProperty("id")]
                 public Int64 StreamId { get; set; }
             }
 
             public class DestroyRequest : MessageWithId {
-                public DestroyRequest(Int64 stream_id) : base(stream_id) { }
+                public DestroyRequest(string admin_key, Int64 stream_id) : base(admin_key, stream_id) { }
                 public override string Request { get { return "destroy"; } }
             }
 
             public class InfoRequest : MessageWithId {
-                public InfoRequest(Int64 stream_id) : base(stream_id) { }
+                public InfoRequest(string admin_key, Int64 stream_id) : base(admin_key, stream_id) { }
                 public override string Request { get { return "info"; } }
             }
             public class WatchRequest : MessageWithId {
-                public WatchRequest(Int64 stream_id) : base(stream_id) { }
+                public WatchRequest(string admin_key, Int64 stream_id) : base(admin_key, stream_id) { }
                 public override string Request { get { return "watch"; } }
             }
             public class StartRequest : MessageWithId {
-                public StartRequest(Int64 stream_id) : base(stream_id) { }
+                public StartRequest(string admin_key, Int64 stream_id) : base(admin_key, stream_id) { }
                 public override string Request { get { return "start"; } }
             }
             public class StopRequest : MessageWithId {
-                public StopRequest(Int64 stream_id) : base(stream_id) { }
+                public StopRequest(string admin_key, Int64 stream_id) : base(admin_key, stream_id) { }
                 public override string Request { get { return "stop"; } }
             }
 
             public class ListRequest : MessageBody {
                 public override string Request { get { return "list"; } }
+                public ListRequest(string admin_key) : base(admin_key) { }
             }
 
             [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
             public class RTPMountPointInfo : MessageBody {
+                    public RTPMountPointInfo(string admin_key) : base(admin_key) {}
 
                     // [Required(ErrorMessage = "Secret is required.")]
                     [JsonProperty("secret")]
@@ -246,26 +250,26 @@ namespace DroHub.Helpers {
 
         public async Task<List<JanusAnswer.JanusPluginData.JanusStreamingPluginData.JanusStreamListInfo>> listMountPoints(
                 CreateSession session, Int64 handle) {
-            var request = new JanusRequest(session, new JanusRequest.ListRequest());
+            var request = new JanusRequest(session, new JanusRequest.ListRequest(_options.AdminKey));
             return (await getJanusAnswer($"/janus/{session.Id}/{handle}", request)).PluginData.StreamingPluginData.Streams;
         }
         public async Task destroyMountPoint(CreateSession session, Int64 handle, Int64 stream_id) {
-            var request = new JanusRequest(session, new JanusRequest.DestroyRequest(stream_id));
+            var request = new JanusRequest(session, new JanusRequest.DestroyRequest(_options.AdminKey, stream_id));
             await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
         public async Task startStream(CreateSession session, Int64 handle, Int64 stream_id) {
-            var request = new JanusRequest(session, new JanusRequest.StartRequest(stream_id));
+            var request = new JanusRequest(session, new JanusRequest.StartRequest(_options.AdminKey, stream_id));
             await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
         public async Task stopStream(CreateSession session, Int64 handle, Int64 stream_id) {
-            var request = new JanusRequest(session, new JanusRequest.StopRequest(stream_id));
+            var request = new JanusRequest(session, new JanusRequest.StopRequest(_options.AdminKey, stream_id));
             await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
         public async Task watchStream(CreateSession session, Int64 handle, Int64 stream_id) {
-            var request = new JanusRequest(session, new JanusRequest.WatchRequest(stream_id));
+            var request = new JanusRequest(session, new JanusRequest.WatchRequest(_options.AdminKey, stream_id));
             await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
@@ -285,13 +289,14 @@ namespace DroHub.Helpers {
                 );
 
             option.Request = "create";
+            option.AdminKey = _options.AdminKey;
             var request = new JanusRequest(session, option);
             await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
         public async Task<JanusRequest.RTPMountPointInfo> getStreamInfo(CreateSession session, Int64 handle, Int64 stream_id)
         {
-            var request = new JanusRequest(session, new JanusRequest.InfoRequest(stream_id));
+            var request = new JanusRequest(session, new JanusRequest.InfoRequest(_options.AdminKey, stream_id));
             return (await getJanusAnswer($"/janus/{session.Id}/{handle}", request)).PluginData.StreamingPluginData.RTPMountPointInfo;
         }
 
