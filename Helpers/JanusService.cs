@@ -306,10 +306,10 @@ namespace DroHub.Helpers {
             await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
-        public async Task destroyMountPoints(CreateSession session, Int64 handle, string with_description) {
+        public async Task destroyMountPoints(CreateSession session, Int64 handle, Int64[] ids) {
             var list = await listMountPoints(session, handle);
             foreach (var stream in list) {
-                if (stream.Description.Contains(with_description)) {
+                if (ids.Contains(stream.Id)) {
                     await destroyMountPoint(session, handle, stream.Id);
                 }
             }
