@@ -24,6 +24,11 @@ namespace DroHub.Areas.DHub.Models
         public DateTime CreationDate { get; set; }
         [JsonIgnore]
         public DroHubUser User { get; set; }
+        public string LiveVideoSecret { get; set; }
+        public string LiveVideoRTPUrl { get; set; }
+        public int LiveVideoPt { get; set; }
+        public string LiveVideoRTPMap { get; set; }
+        public string LiveVideoFMTProfile { get; set; }
 
         public ICollection<DronePosition> positions { get; set; }
         public ICollection<DroneBatteryLevel> battery_levels { get; set; }
