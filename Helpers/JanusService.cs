@@ -231,13 +231,15 @@ namespace DroHub.Helpers {
         }
 
         private async Task<JanusAnswer> getJanusAnswer(string relative_path, Object object_to_serialize) {
-            _logger.LogDebug("Session to be created {payload}", JsonConvert.SerializeObject(object_to_serialize,
+            _logger.LogDebug("Request to be created {payload}", JsonConvert.SerializeObject(object_to_serialize,
                 Formatting.Indented));
             var payload = new StringContent(JsonConvert.SerializeObject(object_to_serialize), Encoding.UTF8, "application/json");
             var response = await Client.PostAsync(relative_path, payload);
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadAsAsync<JanusAnswer>();
-            _logger.LogDebug("Janus answer result {result}", JsonConvert.SerializeObject(result, Formatting.Indented));
+            _logger.LogDebug("Janus answer result {result}", JsonConvert.SerializeObject(
+                    await response.Content.ReadAsStringAsync(), Formatting.Indented));
+
             if (result.JanusAnswerStatus != "success" && result.JanusAnswerStatus != "ack")
                 throw new JanusServiceException("Janus service failed an action");
             return result;
