@@ -83,6 +83,12 @@ namespace DroHub.Helpers {
                     [JsonProperty("info")]
                     public JanusRequest.RTPMountPointInfo RTPMountPointInfo { get; set; }
 
+                    [JsonProperty("error_code")]
+                    public string ErrorCode { get; set; }
+
+                    [JsonProperty("error")]
+                    public string Error { get; set; }
+
                 }
                 [JsonProperty("plugin")]
                 public string PluginName { get; set; }
