@@ -37,6 +37,14 @@ namespace DroHub.Helpers {
         {
             public JanusServiceException(string message): base(message) { }
         }
+        public class RTPMountPoint
+        {
+            public string LiveVideoSecret { get; set; }
+            public string LiveVideoRTPUrl { get; set; }
+            public int LiveVideoPt { get; set; }
+            public string LiveVideoRTPMap { get; set; }
+            public string LiveVideoFMTProfile { get; set; }
+        }
 
         public class JanusBasicSession
         {
@@ -134,9 +142,10 @@ namespace DroHub.Helpers {
                 [JsonProperty("request")]
                 public virtual string Request { get; set; }
                 [JsonProperty("admin_key")]
-                public string AdminKey { get; set; }
+                public string AdminKey { get;}
                 public MessageBody(string admin_key) { AdminKey = admin_key; }
             }
+
             public class MessageWithId : MessageBody {
                 public MessageWithId(string admin_key, Int64 stream_id) : base(admin_key) { StreamId = stream_id; }
                 [JsonProperty("id")]
@@ -174,6 +183,10 @@ namespace DroHub.Helpers {
             public class RTPMountPointInfo : MessageBody {
                     public RTPMountPointInfo(string admin_key) : base(admin_key) {}
 
+                    [Required(ErrorMessage = "Id is required.")]
+                    [JsonProperty("id")]
+                    public Int64 Id{ get; set; }
+
                     // [Required(ErrorMessage = "Secret is required.")]
                     [JsonProperty("secret")]
                     public string Secret { get; set; }
@@ -201,6 +214,8 @@ namespace DroHub.Helpers {
                     public string VideoRTPMap { get; set; }
                     [JsonProperty("videofmtp")]
                     public string VideoFMTProfile { get; set; }
+
+                    public override string Request { get { return "create"; } }
 
                     [Required(ErrorMessage = "Description is required.")]
                     [JsonProperty("description")]
@@ -295,16 +310,38 @@ namespace DroHub.Helpers {
             }
         }
 
-        public async Task createRTPVideoMountPoint(CreateSession session, Int64 handle, JanusRequest.RTPMountPointInfo option) {
-            if (! _options.RTPPortRange.Contains(option.VideoPort))
-                throw new InvalidOperationException(
-                    $"Port {option.VideoPort} is not contained between the allowed {_options.RTPPortStart} and {_options.RTPPortEnd} ports."
-                );
+        public async Task<JanusService.RTPMountPoint> createRTPVideoMountPoint(CreateSession session, Int64 handle, Int64 id,
+                string description, string secret, int video_pt, string rtp_map, string fmt_profile) {
+            var rand = new Random();
+            int video_port = rand.Next(_options.RTPPortStart, _options.RTPPortEnd);
+            var request = new JanusRequest(session, new JanusRequest.RTPMountPointInfo(_options.AdminKey)
+            {
+                Id = id,
+                Video = true,
+                VideoPort = video_port,
+                VideoPt = video_pt,
+                VideoRTPMap = rtp_map,
+                VideoFMTProfile = fmt_profile,
+                Description = description,
+                // Secret = secret
+            });
+            var result = (await getJanusAnswer($"/janus/{session.Id}/{handle}", request));
+            _logger.LogDebug("Janus answer {result}", JsonConvert.SerializeObject(result.PluginData.StreamingPluginData));
+            if (!String.IsNullOrEmpty(result.PluginData.StreamingPluginData.Error))
+            {
+                _logger.LogDebug("Is null or empty");
+                throw new JanusServiceException(JsonConvert.SerializeObject(result.PluginData.StreamingPluginData.Error));
+            }
 
-            option.Request = "create";
-            option.AdminKey = _options.AdminKey;
-            var request = new JanusRequest(session, option);
-            await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
+            var stream = result.PluginData.StreamingPluginData.Stream;
+            return new JanusService.RTPMountPoint
+            {
+                LiveVideoRTPMap = rtp_map,
+                LiveVideoPt = video_pt,
+                LiveVideoFMTProfile = fmt_profile,
+                LiveVideoRTPUrl = $"rtp://{new Uri(_options.Address).Host}:{video_port}",
+                LiveVideoSecret = secret
+            };
         }
 
         public async Task<JanusRequest.RTPMountPointInfo> getStreamInfo(CreateSession session, Int64 handle, Int64 stream_id)
