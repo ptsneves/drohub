@@ -97,6 +97,79 @@ class DroneMessageContainerBase():
             while len((container_copy)) > 0:
                 return container_copy.popleft()
 
+class DroneVideoContainer(DroneMessageContainerBase):
+    Vp8_Command = "/usr/bin/ffmpeg -hwaccel vaapi -i rtsp://{source_url}/live -r 10 -c:v libvpx \
+            -deadline realtime -threads 4 -speed -5 -skip_threshold 60 -vp8flags error_resilient -f rtp {rtp_url}"
+
+    H264_Command = '/usr/bin/ffmpeg -r 10 -threads 4 -hwaccel vaapi -i rtsp://{source_url}/live -vf format=yuv420p \
+            -vaapi_device /dev/dri/renderD128 -c:v h264_vaapi -profile:v constrained_baseline -level 3.0 -bf 0 -bsf: v \
+            "dump_extra=freq=keyframe" -vf "format=nv12,hwupload" -f rtp {rtp_url}?pkt_size=1300"'
+
+    def __init__(self, drone_serial):
+        super().__init__(drone_serial)
+        self._processes = {}
+        if not self._doesCommandExist("ffmpeg"):
+            raise Exception(
+                "ffmpeg does not exist. And we need it to relay the video")
+
+    def pollProcess(self, rtp_server_url):
+        logging.debug("Starting polling process")
+        while True:
+            new_message = drohub_pb2.DroneVideoState(
+                rtp_url=rtp_server_url,
+                serial=self.drone_serial.Get(),
+                timestamp=int(time.time()))
+
+            if rtp_server_url not in self._processes.keys():
+                new_message.state = drohub_pb2.DroneVideoState.State.INVALID_CONDITION
+                new_message.human_message = "There is no record of sending video to this url {}".format(rtp_server_url)
+            elif self._processes[rtp_server_url].poll() == None:
+                new_message.state = drohub_pb2.DroneVideoState.State.DIED
+                new_message.human_message = "Process is dead. stderr is:\n{}".format(io.TextIOWrapper(
+                        self._processes[rtp_server_url].stderr, encoding='utf-8').readlines())
+            elif self._processes[rtp_server_url].poll():
+                new_message.state = drohub_pb2.DroneVideoState.State.LIVE
+                new_message.human_message = "Process for {} is living".format(rtp_server_url)
+            else:
+                new_message.state = drohub_pb2.DroneVideoState.State.INVALID_CONDITION
+                new_message.human_message = "We do not really know what is going on. Its a bug"
+
+            logging.debug(new_message.human_message)
+            super().append(new_message)
+            time.sleep(5)
+
+
+    def sendVideoTo(self, drone_ip, rtp_server_url, video_type):
+        try:
+            if rtp_server_url in self._processes.keys():
+                raise Exception("Request rtp server url is already in use. Choose another one")
+
+            if video_type == drohub_pb2.DroneSendVideoRequest.VideoType.VP8:
+                self._processes[rtp_server_url] = self.runProcess(
+                    DroneVideoContainer.Vp8_Command.format(source_url=drone_ip, rtp_url=rtp_server_url))
+                logging.debug("Sending VP8 to {}".format(rtp_server_url))
+            elif video_type == drohub_pb2.DroneSendVideoRequest.VideoType.H264:
+                self._processes[rtp_server_url] = self.runProcess(
+                    DroneVideoContainer.H264_Command.format(source_url=drone_ip, rtp_url=rtp_server_url))
+                logging.debug("Sending H264 to {}".format(rtp_server_url))
+            else:
+                raise Exception("Video Type requested is not recognized")
+        except:
+            self._cleanup()
+            raise
+
+    def _cleanup(self):
+        for _, process in self._processes.items():
+            process.kill()
+
+    def _doesCommandExist(self, command):
+        return shutil.which(command)
+
+    def runProcess(self, command):
+        process = subprocess.Popen(
+            command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return process
+
 class PositionContainer(DroneMessageContainerBase):
     def __init__(selfi, drone_serial):
         super().__init__(drone_serial)
@@ -252,50 +325,9 @@ class DroneChooser(object):
     def getIP(self):
         return self._ip
 
-class DroneVideoEncoder(DroneChooser):
-    Vp8_Command = "/usr/bin/ffmpeg -hwaccel vaapi -i rtsp://{source_url}/live -r 10 -c:v libvpx \
-            -deadline realtime -threads 4 -speed -5 -skip_threshold 60 -vp8flags error_resilient -f rtp rtp://docker:6004"
-
-    H264_Command = '/usr/bin/ffmpeg -r 10 -threads 4 -hwaccel vaapi -i rtsp://{source_url}/live -vf format=yuv420p \
-            -vaapi_device /dev/dri/renderD128 -c:v h264_vaapi -profile:v constrained_baseline -level 3.0 -bf 0 -bsf: v \
-            "dump_extra=freq=keyframe" -vf "format=nv12,hwupload" -f rtp rtp://docker:5004?pkt_size=1300"'
-
-    def __init__(self, drone_type, destination_rtp_ip):
+class DroneRAII(DroneChooser):
+    def __init__(self, drone_type, *args, **kwargs):
         super().__init__(drone_type)
-        self._destination_rtp_ip = destination_rtp_ip
-        self._rtsp_source_url = self._ip
-        if not self._doesCommandExist("ffmpeg"):
-            raise Exception("ffmpeg does not exist. And we need it to relay the video")
-
-
-        if not self.runProcess(DroneVideoEncoder.Vp8_Command.format(source_url=self._ip,
-            dest_ip = self._destination_rtp_ip)):
-
-            raise Exception("Could not spawn Vp8 video relayer.")
-
-        if not self.runProcess(DroneVideoEncoder.H264_Command.format(source_url=self._ip,
-            dest_ip = self._destination_rtp_ip)):
-
-            raise Exception("Could not spawn H264 video relayer.")
-
-
-    def _doesCommandExist(self, command):
-        return shutil.which(command)
-
-    def runProcess(self, command):
-        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        #process.wait()
-        logging.info(command)
-
-        return True
-        return {"ret": 0,
-            "command": command,
-            "stdout": io.TextIOWrapper(process.stdout, encoding='utf-8').readlines(),
-            "stderr" : io.TextIOWrapper(process.stderr, encoding='utf-8').readlines()}
-
-class DroneRAII(DroneVideoEncoder):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
         self._drone = olympe.Drone(self._ip, **{**self._drone_args_dict, **kwargs})
         self._drone.connection()
         self._drone(setPilotingSource(source="SkyController")).wait()
@@ -347,12 +379,13 @@ class DronePersistentConnection(DroneThreadSafe):
 class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def __init__(self, drone_type):
         self.serial = ParrotSerialNumber()
+        self.video_encoder = DroneVideoContainer(self.serial)
         self.position_container = PositionContainer(self.serial)
         self.battery_level_container = BatteryLevelContainer(self.serial)
         self.radio_signal_container = RadioSignalContainer(self.serial)
         self.flying_state_container = FlyingStateContainer(self.serial)
         self.file_list_container = FileListContainer(self.serial)
-        self.drone = DronePersistentConnection(drone_type, "127.0.0.1", callbacks = [self.cb1])
+        self.drone = DronePersistentConnection(drone_type, callbacks = [self.cb1])
         super().__init__()
 
     def cb1(self, message):
@@ -372,6 +405,14 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
             self.flying_state_container.dispatchFlyingState(message)
         elif message.Full_Name == " Common_CommonState_MassStorageContent":
             self.file_list_container.dispatchFileList(message)
+
+    def sendVideoTo(self, request, context):
+        self.video_encoder.sendVideoTo(self.drone.getIP(), request.rtp_url, request.video_type)
+        t = threading.Thread(target=self.video_encoder.pollProcess, args=(request.rtp_url,)).start()
+        while True:
+            yield self.video_encoder.getLastElement()
+        # t.Stop()
+        t.join()
 
     def getPosition(self, request, context):
         while True:

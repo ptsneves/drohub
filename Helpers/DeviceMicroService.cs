@@ -14,6 +14,7 @@ using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using DroHub.Areas.DHub.SignalRHubs;
+using DroHub.Areas.DHub.Models;
 using Microsoft.AspNetCore.SignalR;
 
 namespace DroHub.Helpers {
@@ -29,10 +30,12 @@ namespace DroHub.Helpers {
         private readonly List<Task> _telemetry_tasks;
         private readonly List<Task> _action_tasks;
         private readonly CancellationTokenSource _action_cancelation_source;
+        private readonly JanusService _janus_service;
         public DeviceMicroService(IServiceProvider services,
             ILogger<DeviceMicroServiceHelper> logger,
             IHubContext<TelemetryHub> hub,
-            IOptionsMonitor<DeviceMicroServiceOptions> device_options) {
+            IOptionsMonitor<DeviceMicroServiceOptions> device_options,
+            JanusService janus_service) {
 
             _device_options = device_options.CurrentValue;
             _logger = logger;
@@ -45,6 +48,7 @@ namespace DroHub.Helpers {
             _telemetry_tasks = new List<Task>();
             _action_tasks= new List<Task>();
             _action_cancelation_source = new CancellationTokenSource();
+            _janus_service = janus_service;
         }
 
         protected async Task RecordTelemetry(IDroneTelemetry telemetry_data)
@@ -218,6 +222,93 @@ namespace DroHub.Helpers {
             }
         }
 
+        protected async Task GatherVideoSources(CancellationToken stopping_token) {
+            using (var scope = _services.CreateScope())
+            {
+                //check if the device exists before we add it to the db
+                var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
+                var devices = await context.Devices.ToListAsync();
+                foreach (var device in devices) {
+                    _telemetry_tasks.Add(Task.Run(() => GatherVideoSource(stopping_token, device)));
+                }
+            }
+        }
+
+        private async Task<JanusService.RTPMountPoint> createMountPointForDevice(Device device)
+        {
+            var session = await _janus_service.createSession();
+            var handle = await _janus_service.createStreamerPluginHandle(session);
+            var mountpoint = await _janus_service.createRTPVideoMountPoint(session, handle, device.Id, device.SerialNumber,
+                    "mysecret", 100, "VP8/90000", null);
+            return mountpoint;
+        }
+
+        private async Task destroyMountPointForDevice(Device device)
+        {
+            var session = await _janus_service.createSession();
+            var handle = await _janus_service.createStreamerPluginHandle(session);
+            await _janus_service.destroyMountPoint(session, handle, device.Id);
+        }
+
+        protected async Task GatherVideoSource(CancellationToken stopping_token, Device device) {
+            while (!stopping_token.IsCancellationRequested)
+            {
+                try
+                {
+                    var mountpoint = await createMountPointForDevice(device);
+                    device.LiveVideoRTPUrl = mountpoint.LiveVideoRTPUrl;
+                    device.LiveVideoFMTProfile = mountpoint.LiveVideoFMTProfile;
+                    device.LiveVideoPt = mountpoint.LiveVideoPt;
+                    device.LiveVideoRTPMap = mountpoint.LiveVideoRTPMap;
+                    device.LiveVideoSecret = mountpoint.LiveVideoSecret;
+
+
+                    var send_video_request = new DroneSendVideoRequest
+                    {
+                        RtpUrl = mountpoint.LiveVideoRTPUrl,
+                        VideoType = (mountpoint.LiveVideoRTPMap == "VP8/90000" ? DroneSendVideoRequest.Types.VideoType.Vp8 :
+                            DroneSendVideoRequest.Types.VideoType.H264)
+                    };
+                    using (var call = _client.sendVideoTo(send_video_request, cancellationToken: stopping_token))
+                    {
+                        using (var scope = _services.CreateScope())
+                        {
+                            var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
+                            context.Update(device);
+                            await context.SaveChangesAsync();
+                            _logger.LogDebug("Saved edit information on device {}", device);
+                        }
+
+                        while (!stopping_token.IsCancellationRequested)
+                        {
+                            if (await call.ResponseStream.MoveNext(stopping_token))
+                            {
+                                DroneVideoState video_state = call.ResponseStream.Current;
+                                _logger.LogDebug("received video_state {video_state}", video_state);
+                            }
+                            else
+                            {
+                                // _logger.LogDebug(LoggingEvents.FileListTelemetry, "Nothing received.Waiting");
+                                await Task.Delay(5000);
+                            }
+                        }
+                    }
+                }
+                catch (RpcException e)
+                {
+                    await destroyMountPointForDevice(device);
+                    _logger.LogWarning(LoggingEvents.FileListTelemetry, e.ToString() + "\nWaiting 1 second before retrying");
+                    await Task.Delay(1000);
+                    _logger.LogDebug(LoggingEvents.FileListTelemetry, "Calling again");
+                }
+                catch (JanusService.JanusServiceException e)
+                {
+                    await Task.Delay(1000);
+                }
+                await destroyMountPointForDevice(device);
+            }
+        }
+
         private delegate T DroneActionDelegate<T>(Drone.DroneClient my_client);
         private  Task<T> DoDeviceActionAsync<T>(Device device, DroneActionDelegate<T> action, string action_name_for_logging) {
             var task = Task.Run(() =>
@@ -287,7 +378,7 @@ namespace DroHub.Helpers {
         }
         protected override async Task ExecuteAsync(CancellationToken stopping_token) {
             stopping_token.Register(() => stopAllActionTasks());
-
+            _telemetry_tasks.Add(Task.Run(() => GatherVideoSources(stopping_token)));
             _telemetry_tasks.Add(Task.Run(() => GatherPosition(stopping_token)));
             _telemetry_tasks.Add(Task.Run(() => GatherBatteryLevel(stopping_token)));
             _telemetry_tasks.Add(Task.Run(() => GatherRadioSignal(stopping_token)));
