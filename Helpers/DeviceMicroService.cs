@@ -374,7 +374,9 @@ namespace DroHub.Helpers {
                     {
                         _logger.LogDebug($"Called pingService function for {device.Id} aka {device.Name}");
 
-                        while (await call.ResponseStream.MoveNext(spawned_cancel_src.Token) && call.ResponseStream.Current.Message)
+                        while (await call.ResponseStream.MoveNext(spawned_cancel_src.Token) &&
+                            call.ResponseStream.Current.Message &&
+                            call.ResponseStream.Current.Serial == device.SerialNumber)
                         {
                             if (!tasks.Any())
                                 tasks.AddRange(spawnTelemetryTasks(spawned_cancel_src.Token, device));
@@ -386,7 +388,7 @@ namespace DroHub.Helpers {
                 {
                     _logger.LogDebug(e.Message);
                 }
-                _logger.LogDebug("No valid state of drone");
+                _logger.LogDebug($"No valid state of drone {device.Id} aka {device.Name}");
                 spawned_cancel_src.Cancel();
                 await joinTasks(tasks);
                 await Task.Delay(5000);

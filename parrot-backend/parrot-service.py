@@ -452,27 +452,39 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
             TakeOff()
             >> FlyingStateChanged(state="hovering", _timeout=5)
         ).wait()
-        return drohub_pb2.DroneReply(message=takeoff.success())
+        return drohub_pb2.DroneReply(
+            serial = self.serial.Get(),
+            timestamp = int(time.time()),
+            message=takeoff.success())
 
     def doLanding(self, request, context):
         logging.warning("Landing")
         landing = self.drone.getDrone()(Landing()
             >> FlyingStateChanged(state="landed")
         ).wait()
-        return drohub_pb2.DroneReply(message=landing.success())
+        return drohub_pb2.DroneReply(
+            serial = self.serial.Get(),
+            timestamp = int(time.time()),
+            message=landing.success())
 
     def moveToPosition(self, request, context):
         go_to_position = self.drone.getDrone()(moveTo(
             request.latitude, request.longitude, request.altitude,  MoveTo_Orientation_mode.HEADING_DURING, request.heading)
         ).wait()
-        return drohub_pb2.DroneReply(message=go_to_position.success())
+        return drohub_pb2.DroneReply(
+            serial = self.serial.Get(),
+            timestamp = int(time.time()),
+            message=go_to_position.success())
 
     def pingService(self, request, context):
         logging.debug("ping Service requested")
         while True:
             logging.debug("Drone connected? {}".format(self.drone.checkDroneConnected()))
             time.sleep(4)
-            yield drohub_pb2.DroneReply(message=self.drone.checkDroneConnected())
+            yield drohub_pb2.DroneReply(
+                serial = self.serial.Get(),
+                timestamp = int(time.time()),
+                message=self.drone.checkDroneConnected())
 
     def getFileList(self, request, context):
         self.file_list_container.getFileList()
