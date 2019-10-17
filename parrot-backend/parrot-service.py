@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 import sys
-sys.path.append('../')
+import os
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../')
 from concurrent import futures
 from collections import deque
 import logging
