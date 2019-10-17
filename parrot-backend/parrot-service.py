@@ -14,6 +14,9 @@ import io
 import shutil
 import urllib.request
 import json
+import socket
+from contextlib import closing
+
 
 import grpc
 import DrohubGRPCProto.python.drohub_pb2_grpc as drohub_pb2_grpc
@@ -355,7 +358,19 @@ class DronePersistentConnection(DroneThreadSafe):
         self.stop_keep_alive = True
         threading.Thread(target = self._keepConnectionAlive).start()
 
-    def _checkDroneConnected(self):
+
+    def _checkSocket(self, host, port):
+        with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+            sock.settimeout(5)
+            if sock.connect_ex((host, port)) == 0:
+                return True
+            else:
+                return False
+
+    def checkDroneConnected(self):
+        if not self._checkSocket(self._ip, 180):
+            logging.info("Drone is unreachable through the controller. Not even trying.")
+            return False
         state = self.getDrone().connection_state()
         if state.OK:
             return True
@@ -370,7 +385,7 @@ class DronePersistentConnection(DroneThreadSafe):
     def _keepConnectionAlive(self):
         self.stop_keep_alive = False
         while (self.stop_keep_alive == False):
-            if self._checkDroneConnected() == False:
+            if self.checkDroneConnected() == False:
                 try:
                    self._reconnectDrone()
                 except Exception:
@@ -451,6 +466,13 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
             request.latitude, request.longitude, request.altitude,  MoveTo_Orientation_mode.HEADING_DURING, request.heading)
         ).wait()
         return drohub_pb2.DroneReply(message=go_to_position.success())
+
+    def pingService(self, request, context):
+        logging.debug("ping Service requested")
+        while True:
+            logging.debug("Drone connected? {}".format(self.drone.checkDroneConnected()))
+            time.sleep(4)
+            yield drohub_pb2.DroneReply(message=self.drone.checkDroneConnected())
 
     def getFileList(self, request, context):
         self.file_list_container.getFileList()

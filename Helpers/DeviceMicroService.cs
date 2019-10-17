@@ -9,12 +9,10 @@ using DroHub.Areas.DHub.Models;
 using Newtonsoft.Json;
 using DroHub.Data;
 using Grpc.Core;
-using DroHub.Helpers;
 using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using DroHub.Areas.DHub.SignalRHubs;
-using DroHub.Areas.DHub.Models;
 using Microsoft.AspNetCore.SignalR;
 
 namespace DroHub.Helpers {
@@ -27,12 +25,10 @@ namespace DroHub.Helpers {
         private readonly IServiceProvider _services;
         private readonly DeviceMicroServiceOptions _device_options;
 
-        private readonly List<Task> _telemetry_tasks;
-        private readonly List<Task> _action_tasks;
-        private readonly CancellationTokenSource _action_cancelation_source;
         private readonly JanusService _janus_service;
+        private Dictionary<int, List<Task>> _tasks_by_device_id;
         public DeviceMicroService(IServiceProvider services,
-            ILogger<DeviceMicroServiceHelper> logger,
+            ILogger<DeviceMicroService> logger,
             IHubContext<TelemetryHub> hub,
             IOptionsMonitor<DeviceMicroServiceOptions> device_options,
             JanusService janus_service) {
@@ -45,10 +41,8 @@ namespace DroHub.Helpers {
             _client = new Drone.DroneClient(_channel);
             _hub = hub;
             _services = services;
-            _telemetry_tasks = new List<Task>();
-            _action_tasks= new List<Task>();
-            _action_cancelation_source = new CancellationTokenSource();
             _janus_service = janus_service;
+            _tasks_by_device_id = new Dictionary<int, List<Task>>();
         }
 
         protected async Task RecordTelemetry(IDroneTelemetry telemetry_data)
@@ -222,18 +216,6 @@ namespace DroHub.Helpers {
             }
         }
 
-        protected async Task GatherVideoSources(CancellationToken stopping_token) {
-            using (var scope = _services.CreateScope())
-            {
-                //check if the device exists before we add it to the db
-                var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
-                var devices = await context.Devices.ToListAsync();
-                foreach (var device in devices) {
-                    _telemetry_tasks.Add(Task.Run(() => GatherVideoSource(stopping_token, device)));
-                }
-            }
-        }
-
         private async Task<JanusService.RTPMountPoint> createMountPointForDevice(Device device)
         {
             var session = await _janus_service.createSession();
@@ -321,7 +303,7 @@ namespace DroHub.Helpers {
                     action, device.Name, reply, JsonConvert.SerializeObject(device));
                 return reply;
             });
-            _telemetry_tasks.Add(task);
+            _tasks_by_device_id[device.Id].Add(task); //crash the action if we do not have such a device id, as this means we do not have telemetry
             return task;
         }
 
@@ -355,14 +337,8 @@ namespace DroHub.Helpers {
             return DoDeviceActionAsync<DroneFileList>(device, get_file_list_delegate, "GetFileList");
         }
 
-
-        private async void stopAllActionTasks() {
-            _logger.LogWarning(LoggingEvents.Telemetry, "DeviceMicroService action tasks are stopping.");
-            _action_cancelation_source.Cancel();
-            await joinTasks(_action_tasks);
-        }
-
-        private async Task joinTasks(List<Task> tasks) {
+        private async Task joinTasks(List<Task> tasks)
+        {
             Task tasks_result = Task.WhenAll(tasks.ToArray());
             try
             {
@@ -371,19 +347,71 @@ namespace DroHub.Helpers {
             catch
             {
                 if (tasks_result.Status == TaskStatus.RanToCompletion)
-                   _logger.LogInformation("Task set closed correctly.");
+                    _logger.LogInformation("Task set closed correctly.");
                 else if (tasks_result.Status == TaskStatus.Faulted)
-                   _logger.LogWarning("Some tasks failed");
+                    _logger.LogWarning("Some tasks failed");
             }
         }
+
+        protected List<Task> spawnTelemetryTasks(CancellationToken stopping_token, Device device) {
+            var telemetry_tasks = new List<Task>();
+            telemetry_tasks.Add(Task.Run(() => GatherVideoSource(stopping_token, device)));
+            telemetry_tasks.Add(Task.Run(() => GatherPosition(stopping_token)));
+            telemetry_tasks.Add(Task.Run(() => GatherBatteryLevel(stopping_token)));
+            telemetry_tasks.Add(Task.Run(() => GatherRadioSignal(stopping_token)));
+            telemetry_tasks.Add(Task.Run(() => GatherFlyingState(stopping_token)));
+            return telemetry_tasks;
+        }
+
+        protected async Task spawnHeartBeatMonitor(CancellationToken stopping_token, Device device) {
+            while (!stopping_token.IsCancellationRequested)
+            {
+                var spawned_cancel_src = CancellationTokenSource.CreateLinkedTokenSource(stopping_token);
+                var tasks = new List<Task>();
+                try
+                {
+                    using (var call = _client.pingService(new DroneRequest { }, cancellationToken: spawned_cancel_src.Token))
+                    {
+                        _logger.LogDebug($"Called pingService function for {device.Id} aka {device.Name}");
+
+                        while (await call.ResponseStream.MoveNext(spawned_cancel_src.Token) && call.ResponseStream.Current.Message)
+                        {
+                            if (!tasks.Any())
+                                tasks.AddRange(spawnTelemetryTasks(spawned_cancel_src.Token, device));
+                            await Task.Delay(5000);
+                        }
+                    }
+                }
+                catch (RpcException e)
+                {
+                    _logger.LogDebug(e.Message);
+                }
+                _logger.LogDebug("No valid state of drone");
+                spawned_cancel_src.Cancel();
+                await joinTasks(tasks);
+                await Task.Delay(5000);
+            }
+        }
+        protected async Task spawnHeartBeatMonitors(CancellationToken stopping_token)
+        {
+            using (var scope = _services.CreateScope())
+            {
+                //check if the device exists before we add it to the db
+                var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
+                var devices = await context.Devices.ToListAsync();
+                foreach (var device in devices)
+                {
+                    var task = Task.Run(() => spawnHeartBeatMonitor(stopping_token, device));
+                    if (_tasks_by_device_id.ContainsKey(device.Id))
+                        _tasks_by_device_id[device.Id].Add(task);
+                    else
+                        _tasks_by_device_id.Add(device.Id, new List<Task> { task });
+                }
+            }
+            await joinTasks(_tasks_by_device_id.Values.SelectMany(x => x).ToList());
+        }
         protected override async Task ExecuteAsync(CancellationToken stopping_token) {
-            stopping_token.Register(() => stopAllActionTasks());
-            _telemetry_tasks.Add(Task.Run(() => GatherVideoSources(stopping_token)));
-            _telemetry_tasks.Add(Task.Run(() => GatherPosition(stopping_token)));
-            _telemetry_tasks.Add(Task.Run(() => GatherBatteryLevel(stopping_token)));
-            _telemetry_tasks.Add(Task.Run(() => GatherRadioSignal(stopping_token)));
-            _telemetry_tasks.Add(Task.Run(() => GatherFlyingState(stopping_token)));
-            await joinTasks(_telemetry_tasks);
+            await spawnHeartBeatMonitors(stopping_token);
         }
     }
 }
