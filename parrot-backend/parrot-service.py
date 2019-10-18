@@ -102,7 +102,7 @@ class DroneMessageContainerBase():
                 return container_copy.popleft()
 
 class DroneVideoContainer(DroneMessageContainerBase):
-    Vp8_Command = "/usr/bin/ffmpeg -hwaccel vaapi -i rtsp://{source_url}/live -r 10 -c:v libvpx \
+    Vp8_Command = "/usr/bin/ffmpeg -hwaccel vaapi   -vaapi_device /dev/dri/renderD128 -i rtsp://{source_url}/live -r 10 -c:v libvpx \
             -deadline realtime -threads 4 -speed -5 -skip_threshold 60 -vp8flags error_resilient -f rtp {rtp_url}"
 
     H264_Command = '/usr/bin/ffmpeg -r 10 -threads 4 -hwaccel vaapi -i rtsp://{source_url}/live -vf format=yuv420p \
