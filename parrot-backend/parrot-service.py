@@ -317,6 +317,7 @@ class DroneChooser(object):
     def __init__(self, drone_type):
         self._drone_args_dict = {}
         self._drone_args_dict["loglevel"] = TraceLogger.level.warning
+        self._drone_type = drone_type
         if drone_type == "simulator":
             self._ip = '10.202.0.1'
         elif drone_type == "anafi":
@@ -328,6 +329,9 @@ class DroneChooser(object):
 
     def getIP(self):
         return self._ip
+
+    def getDroneType(self):
+        return self._drone_type
 
 class DroneRAII(DroneChooser):
     def __init__(self, drone_type, *args, **kwargs):
