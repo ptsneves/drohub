@@ -175,7 +175,7 @@ class DroneVideoContainer(DroneMessageContainerBase):
         return process
 
 class PositionContainer(DroneMessageContainerBase):
-    def __init__(selfi, drone_serial):
+    def __init__(self, drone_serial):
         super().__init__(drone_serial)
 
     def dispatchPosition(self, message):
