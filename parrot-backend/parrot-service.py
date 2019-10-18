@@ -371,8 +371,16 @@ class DronePersistentConnection(DroneThreadSafe):
             else:
                 return False
 
+    def _checkDronePage(self):
+        if self.getDroneType() == "simulator":
+            return self._checkSocket(self._ip, 80)
+        elif self.getDroneType() == "anafi":
+            return self._checkSocket(self._ip, 180)
+
+        raise Exception("Cannot check drone page for unknown drone type {}".format(self.getDroneType()))
+
     def checkDroneConnected(self):
-        if not self._checkSocket(self._ip, 180):
+        if not self._checkDronePage():
             logging.info("Drone is unreachable through the controller. Not even trying.")
             return False
         state = self.getDrone().connection_state()
