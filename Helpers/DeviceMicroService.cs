@@ -398,6 +398,9 @@ namespace DroHub.Helpers {
                 {
                     _logger.LogDebug(e.Message);
                 }
+                catch(Exception e) {
+                    _logger.LogDebug(e.Message);
+                }
                 _logger.LogDebug($"No valid state of drone {device.Id} aka {device.Name}");
                 spawned_cancel_src.Cancel();
                 joinTasks(tasks);
