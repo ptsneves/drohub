@@ -386,8 +386,8 @@ namespace DroHub.Helpers {
                         _logger.LogDebug($"Called pingService function for {device.Id} aka {device.Name}");
 
                         while (await call.ResponseStream.MoveNext(spawned_cancel_src.Token) &&
-                            call.ResponseStream.Current.Message &&
-                            call.ResponseStream.Current.Serial == device.SerialNumber)
+                            call.ResponseStream.Current.Serial == device.SerialNumber &&
+                            call.ResponseStream.Current.Message)
                         {
                             if (!tasks.Any())
                                 tasks.AddRange(spawnTelemetryTasks(spawned_cancel_src.Token, device));
