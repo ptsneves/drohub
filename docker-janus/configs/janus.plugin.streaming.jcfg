@@ -86,24 +86,3 @@ general: {
 	#events = false					# Whether events should be sent to event
 									# handlers (default is yes)
 }
-
-vp8: {
-	type = "rtp"
-	id = 20
-	description = "vp8"
-	video = true
-	videoport = 6004
-	videopt = 100
-	videortpmap = "VP8/90000"
-}
-
-h264: {
-	type = "rtp"
-	id = 1
-	description = "h264"
-	video = true
-	videoport = 5004
-	videopt = 96
-	videortpmap = "H264/90000"
-	videofmtp = "profile-level-id=42e01f;packetization-mode=1"
-}
