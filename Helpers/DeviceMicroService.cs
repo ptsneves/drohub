@@ -391,7 +391,6 @@ namespace DroHub.Helpers {
                         {
                             if (!tasks.Any())
                                 tasks.AddRange(spawnTelemetryTasks(spawned_cancel_src.Token, device));
-                            await Task.Delay(5000);
                         }
                     }
                 }
