@@ -263,14 +263,15 @@ namespace DroHub.Helpers {
 
                         while (!stopping_token.IsCancellationRequested)
                         {
+
                             if (await call.ResponseStream.MoveNext(stopping_token))
                             {
                                 DroneVideoState video_state = call.ResponseStream.Current;
-                                _logger.LogDebug("received video_state {video_state}", video_state);
+                                _logger.LogDebug(LoggingEvents.GatherVideoTelemetry, "received video_state {video_state}", video_state);
                             }
                             else
                             {
-                                // _logger.LogDebug(LoggingEvents.FileListTelemetry, "Nothing received.Waiting");
+                                _logger.LogDebug(LoggingEvents.GatherVideoTelemetry, "Nothing received.Waiting");
                                 await Task.Delay(5000);
                             }
                         }
