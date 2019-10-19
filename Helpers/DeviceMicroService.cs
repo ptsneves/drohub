@@ -334,17 +334,29 @@ namespace DroHub.Helpers {
         public Task<DroneFileList> GetFileListAsync(Device device) {
             DroneActionDelegate<DroneFileList> get_file_list_delegate = (_client => { return _client.getFileList(new DroneRequest { }); });
             return DoDeviceActionAsync<DroneFileList>(device, get_file_list_delegate, "GetFileList");
+            // foreach (var file_entry in file_list.FileEntries) {
+
+            //     var file_post_information = new FilePostInformation{
+            //         ResourceId = file_entry.ResourceId,
+            //     };
+            //     file_post_information.PostAddresses.Add(new FilePostInformation.Types.PostAddress
+            //     {
+            //         PostUrl = "1da",
+            //         HttpHeaders = "sasdsd"
+            //     });
+
+            //     DroneActionDelegate<Grpc.Core.AsyncServerStreamingCall<FilePostProgress>> post_file_delegate = (_client => { return _client.postFileTo(file_post_information); });
+            //     var postInformation = await DoDeviceAction<Grpc.Core.AsyncServerStreamingCall<FilePostProgress>>(id, post_file_delegate, "PostFileTo");
+            // }
         }
 
-        private async Task joinTasks(List<Task> tasks)
+
+        private void joinTasks(List<Task> tasks)
         {
-            Task tasks_result = Task.WhenAll(tasks.ToArray());
-            try
+            if (tasks.Any())
             {
-                await tasks_result;
-            }
-            catch
-            {
+                Task tasks_result = Task.WhenAll(tasks.ToArray());
+                tasks_result.Wait();
                 if (tasks_result.Status == TaskStatus.RanToCompletion)
                     _logger.LogInformation("Task set closed correctly.");
                 else if (tasks_result.Status == TaskStatus.Faulted)
@@ -389,7 +401,7 @@ namespace DroHub.Helpers {
                 }
                 _logger.LogDebug($"No valid state of drone {device.Id} aka {device.Name}");
                 spawned_cancel_src.Cancel();
-                await joinTasks(tasks);
+                joinTasks(tasks);
                 await Task.Delay(5000);
             }
         }
@@ -409,7 +421,7 @@ namespace DroHub.Helpers {
                         _tasks_by_device_id.Add(device.Id, new List<Task> { task });
                 }
             }
-            await joinTasks(_tasks_by_device_id.Values.SelectMany(x => x).ToList());
+            joinTasks(_tasks_by_device_id.Values.SelectMany(x => x).ToList());
         }
         protected override async Task ExecuteAsync(CancellationToken stopping_token) {
             await spawnHeartBeatMonitors(stopping_token);
