@@ -75,7 +75,7 @@ class ParrotSerialNumber():
 
 class DroneMessageContainerBase():
     def __init__(self, drone_serial):
-        self.container = deque(maxlen=3)
+        self.container = deque(maxlen=2)
         self.lk = threading.Lock()
         self.cv_consumer = threading.Condition(self.lk)
         self.drone_serial = drone_serial
