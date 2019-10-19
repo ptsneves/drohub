@@ -96,12 +96,17 @@ class DroneMessageContainerBase():
         with self.cv_consumer:
             self.cv_consumer.notify_all()
 
-    def getLastElement(self):
+    def getElements(self, context):
+        def abortWait():
+            with self.cv_consumer:
+                self.cv_consumer.notify_all()
+
         with self.cv_consumer:
+            context.add_callback(abortWait)
             self.cv_consumer.wait()
             container_copy = self.container
-            while len((container_copy)) > 0:
-                return container_copy.popleft()
+            while context.is_active() and len((container_copy)) > 0:
+                yield container_copy.popleft()
 
 class DroneVideoContainer(DroneMessageContainerBase):
     Vp8_Command = "/usr/bin/ffmpeg -hwaccel vaapi   -vaapi_device /dev/dri/renderD128 -i rtsp://{source_url}/live -r 10 -c:v libvpx \
@@ -206,9 +211,6 @@ class PositionContainer(DroneMessageContainerBase):
 
         logging.debug(new_drone_position)
         super().append(new_drone_position)
-
-    def getLastPosition(self):
-        return super().getLastElement()
 
 class FlyingStateContainer(DroneMessageContainerBase):
     def __init__(selfi, drone_serial):
@@ -452,20 +454,25 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
             yield element
 
     def getPosition(self, request, context):
-        while True:
-            yield self.position_container.getLastPosition()
+        elements = self.position_container.getElements(context)
+        for element in elements:
+            yield element
 
     def getBatteryLevel(self, request, context):
-        while True:
-            yield self.battery_level_container.getLastElement()
+        elements = self.battery_level_container.getElements(context)
+        for element in elements:
+            yield element
 
     def getRadioSignal(self, request, context):
-        while True:
-            yield self.radio_signal_container.getLastElement()
+        elements = self.radio_signal_container.getElements(context)
+        for element in elements:
+            yield element
 
     def getFlyingState(self, request, context):
-        while True:
-            yield self.flying_state_container.getLastElement()
+        elements = self.flying_state_container.getElements(context)
+        for element in elements:
+            yield element
+
 
     def doTakeoff(self, request, context):
         logging.warning("Taking off")
@@ -511,8 +518,9 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         self.file_list_container.getFileList()
 
     def getFileListStream(self, request, context):
-        while True:
-            yield self.file_list_container.getLastElement()
+        elements = self.file_list_container.getElements(context)
+        for element in elements:
+            yield element
 
 def serve(drone_type):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
