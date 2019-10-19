@@ -364,7 +364,6 @@ class DronePersistentConnection(DroneThreadSafe):
         self.stop_keep_alive = True
         threading.Thread(target = self._keepConnectionAlive).start()
 
-
     def _checkSocket(self, host, port):
         with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
             sock.settimeout(5)
@@ -404,7 +403,6 @@ class DronePersistentConnection(DroneThreadSafe):
                    self._reconnectDrone()
                 except Exception:
                     logging.warning("Reconnection failed. Trying again")
-
 
 class DroneRPC(drohub_pb2_grpc.DroneServicer):
     def __init__(self, drone_type):
