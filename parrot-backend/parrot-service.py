@@ -11,6 +11,7 @@ import functools
 import threading
 import argparse
 import subprocess
+import signal
 import io
 import shutil
 import urllib.request
@@ -181,7 +182,7 @@ class DroneVideoContainer(DroneMessageContainerBase):
 
     def runProcess(self, command):
         process = subprocess.Popen(
-            command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
         return process
 
 class PositionContainer(DroneMessageContainerBase):
