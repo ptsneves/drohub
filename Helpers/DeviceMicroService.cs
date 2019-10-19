@@ -279,10 +279,8 @@ namespace DroHub.Helpers {
                 }
                 catch (RpcException e)
                 {
-                    await destroyMountPointForDevice(device);
                     _logger.LogWarning(LoggingEvents.FileListTelemetry, e.ToString() + "\nWaiting 1 second before retrying");
                     await Task.Delay(1000);
-                    _logger.LogDebug(LoggingEvents.FileListTelemetry, "Calling again");
                 }
                 catch (JanusService.JanusServiceException e)
                 {
