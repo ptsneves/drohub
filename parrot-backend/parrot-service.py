@@ -394,7 +394,7 @@ class DronePersistentConnection(DroneThreadSafe):
 
     def checkDroneConnected(self):
         if not self._checkDronePage():
-            logging.info("Drone is unreachable through the controller. Not even trying.")
+            logging.info("Drone is unreachable through the controller.")
             return False
         state = self.getDrone().connection_state()
         if state.OK:
@@ -505,10 +505,9 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
             message=go_to_position.success())
 
     def pingService(self, request, context):
-        logging.debug("ping Service requested")
-        while True:
-            logging.debug("Drone connected? {}".format(self.drone.checkDroneConnected()))
-            time.sleep(4)
+        while context.is_active():
+            time.sleep(2)
+            logging.debug("ping {}".format(self.serial.Get()))
             yield drohub_pb2.DroneReply(
                 serial = self.serial.Get(),
                 timestamp = int(time.time()),
