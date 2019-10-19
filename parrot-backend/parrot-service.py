@@ -41,20 +41,12 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 class ParrotSerialNumber():
     def __init__(self):
-        self.lock = threading.Lock()
         self.serial = ""
         self._MSB = ""
         self._MSB_set = False
         self._LSB = ""
         self._LSB_set = False
 
-    def _useLock(function):
-        def wrapper(*args, **kwargs):
-            with args[0].lock:
-                return function(*args, **kwargs)
-        return wrapper
-
-    @_useLock
     def setMSB(self, msb):
         if self._MSB_set:
             if msb == self._MSB:
@@ -65,8 +57,6 @@ class ParrotSerialNumber():
         if self._LSB_set:
             self.serial = msb + self._LSB
 
-
-    @_useLock
     def setLSB(self, lsb):
         if self._LSB_set:
             if lsb == self._LSB:
@@ -78,7 +68,6 @@ class ParrotSerialNumber():
         if self._MSB_set:
             self.serial = self._MSB + lsb
 
-    @_useLock
     def Get(self):
         if self._MSB_set and self._LSB_set:
             return self.serial
