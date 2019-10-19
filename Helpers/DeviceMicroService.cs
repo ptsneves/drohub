@@ -69,18 +69,11 @@ namespace DroHub.Helpers {
                 {
                     using (var call = _client.getPosition(new DroneRequest { }, cancellationToken: stopping_token))
                     {
-                        while (!stopping_token.IsCancellationRequested)
-                        {
-                            if (await call.ResponseStream.MoveNext(stopping_token)) {
+                        while  (await call.ResponseStream.MoveNext(stopping_token)) {
                                 DronePosition position = call.ResponseStream.Current;
                                 _logger.LogDebug("received position {position}", position);
                                 await _hub.Clients.All.SendAsync("position", JsonConvert.SerializeObject(position));
                                 await RecordTelemetry(position);
-                            }
-                            else {
-                                _logger.LogDebug(LoggingEvents.PositionTelemetry, "Nothing received.Waiting");
-                                await Task.Delay(1000);
-                            }
                         }
                     }
                 }
@@ -100,18 +93,11 @@ namespace DroHub.Helpers {
                 {
                     using (var call = _client.getRadioSignal(new DroneRequest { }, cancellationToken: stopping_token))
                     {
-                        while (!stopping_token.IsCancellationRequested)
-                        {
-                            if (await call.ResponseStream.MoveNext(stopping_token)) {
-                                DroneRadioSignal radio_signal = call.ResponseStream.Current;
-                                _logger.LogDebug("received radio_signal {radio_signal}", radio_signal);
-                                await _hub.Clients.All.SendAsync("radio_signal", JsonConvert.SerializeObject(radio_signal));
-                                await RecordTelemetry(radio_signal);
-                            }
-                            else {
-                                _logger.LogDebug(LoggingEvents.RadioSignalTelemetry, "Nothing received. Waiting");
-                                await Task.Delay(1000);
-                            }
+                        while (await call.ResponseStream.MoveNext(stopping_token)) {
+                            DroneRadioSignal radio_signal = call.ResponseStream.Current;
+                            _logger.LogDebug("received radio_signal {radio_signal}", radio_signal);
+                            await _hub.Clients.All.SendAsync("radio_signal", JsonConvert.SerializeObject(radio_signal));
+                            await RecordTelemetry(radio_signal);
                         }
                     }
                 }
@@ -131,18 +117,11 @@ namespace DroHub.Helpers {
                 {
                     using (var call = _client.getFlyingState(new DroneRequest { }, cancellationToken: stopping_token))
                     {
-                        while (!stopping_token.IsCancellationRequested)
-                        {
-                            if (await call.ResponseStream.MoveNext(stopping_token)) {
-                                DroneFlyingState flying_state = call.ResponseStream.Current;
-                                _logger.LogDebug("received flying_state {flying_state}", flying_state);
-                                await _hub.Clients.All.SendAsync("flying_state", JsonConvert.SerializeObject(flying_state));
-                                await RecordTelemetry(flying_state);
-                            }
-                            else {
-                                _logger.LogDebug(LoggingEvents.FlyingStateTelemetry, "Nothing received. Waiting");
-                                await Task.Delay(1000);
-                            }
+                        while (await call.ResponseStream.MoveNext(stopping_token)) {
+                            DroneFlyingState flying_state = call.ResponseStream.Current;
+                            _logger.LogDebug("received flying_state {flying_state}", flying_state);
+                            await _hub.Clients.All.SendAsync("flying_state", JsonConvert.SerializeObject(flying_state));
+                            await RecordTelemetry(flying_state);
                         }
                     }
                 }
@@ -162,18 +141,11 @@ namespace DroHub.Helpers {
                 {
                     using (var call = _client.getBatteryLevel(new DroneRequest { }, cancellationToken: stopping_token))
                     {
-                        while (!stopping_token.IsCancellationRequested)
-                        {
-                            if (await call.ResponseStream.MoveNext(stopping_token)) {
-                                DroneBatteryLevel battery_level = call.ResponseStream.Current;
-                                _logger.LogDebug("received battery_level {battery_level}", battery_level);
-                                await _hub.Clients.All.SendAsync("battery_level", JsonConvert.SerializeObject(battery_level));
-                                await RecordTelemetry(battery_level);
-                            }
-                            else {
-                                _logger.LogDebug(LoggingEvents.BatteryLevelTelemetry, "Nothing received.Waiting");
-                                await Task.Delay(1000);
-                            }
+                        while (await call.ResponseStream.MoveNext(stopping_token)) {
+                            DroneBatteryLevel battery_level = call.ResponseStream.Current;
+                            _logger.LogDebug("received battery_level {battery_level}", battery_level);
+                            await _hub.Clients.All.SendAsync("battery_level", JsonConvert.SerializeObject(battery_level));
+                            await RecordTelemetry(battery_level);
                         }
                     }
                 }
@@ -193,17 +165,10 @@ namespace DroHub.Helpers {
                 {
                     using (var call = _client.getFileListStream(new DroneRequest { }, cancellationToken: stopping_token))
                     {
-                        while (!stopping_token.IsCancellationRequested)
-                        {
-                            if (await call.ResponseStream.MoveNext(stopping_token)) {
-                                DroneFileList file_list = call.ResponseStream.Current;
-                                _logger.LogDebug("received file_list {file_list}", file_list);
-                                await _hub.Clients.All.SendAsync("file_list", JsonConvert.SerializeObject(file_list));
-                            }
-                            else {
-                                _logger.LogDebug(LoggingEvents.FileListTelemetry, "Nothing received.Waiting");
-                                await Task.Delay(1000);
-                            }
+                        while (await call.ResponseStream.MoveNext(stopping_token)) {
+                            DroneFileList file_list = call.ResponseStream.Current;
+                            _logger.LogDebug("received file_list {file_list}", file_list);
+                            await _hub.Clients.All.SendAsync("file_list", JsonConvert.SerializeObject(file_list));
                         }
                     }
                 }
@@ -261,19 +226,10 @@ namespace DroHub.Helpers {
                             _logger.LogDebug("Saved edit information on device {}", device);
                         }
 
-                        while (!stopping_token.IsCancellationRequested)
+                        while (await call.ResponseStream.MoveNext(stopping_token))
                         {
-
-                            if (await call.ResponseStream.MoveNext(stopping_token))
-                            {
-                                DroneVideoState video_state = call.ResponseStream.Current;
-                                _logger.LogDebug(LoggingEvents.GatherVideoTelemetry, "received video_state {video_state}", video_state);
-                            }
-                            else
-                            {
-                                _logger.LogDebug(LoggingEvents.GatherVideoTelemetry, "Nothing received.Waiting");
-                                await Task.Delay(5000);
-                            }
+                            DroneVideoState video_state = call.ResponseStream.Current;
+                            _logger.LogDebug(LoggingEvents.GatherVideoTelemetry, "received video_state {video_state}", video_state);
                         }
                     }
                 }
