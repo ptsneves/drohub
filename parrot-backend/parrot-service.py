@@ -7,6 +7,7 @@ from concurrent import futures
 from collections import deque
 import logging
 import time
+import functools
 import threading
 import argparse
 import subprocess
@@ -116,9 +117,10 @@ class DroneVideoContainer(DroneMessageContainerBase):
             raise Exception(
                 "ffmpeg does not exist. And we need it to relay the video")
 
-    def pollProcess(self, rtp_server_url):
+    def pollProcess(self, rtp_server_url, context):
         logging.debug("Starting polling process")
-        while True:
+        context.add_callback(functools.partial(self._cleanProcess, rtp_server_url))
+        while context.is_active():
             new_message = drohub_pb2.DroneVideoState(
                 rtp_url=rtp_server_url,
                 serial=self.drone_serial.Get(),
@@ -127,20 +129,25 @@ class DroneVideoContainer(DroneMessageContainerBase):
             if rtp_server_url not in self._processes.keys():
                 new_message.state = drohub_pb2.DroneVideoState.State.INVALID_CONDITION
                 new_message.human_message = "There is no record of sending video to this url {}".format(rtp_server_url)
+                context.cancel()
+                self._cleanProcess(rtp_server_url)
             elif self._processes[rtp_server_url].poll() == None:
                 new_message.state = drohub_pb2.DroneVideoState.State.DIED
                 new_message.human_message = "Process is dead. stderr is:\n{}".format(io.TextIOWrapper(
                         self._processes[rtp_server_url].stderr, encoding='utf-8').readlines())
+                context.cancel()
+                self._cleanProcess(rtp_server_url)
             elif self._processes[rtp_server_url].poll():
                 new_message.state = drohub_pb2.DroneVideoState.State.LIVE
                 new_message.human_message = "Process for {} is living".format(rtp_server_url)
             else:
                 new_message.state = drohub_pb2.DroneVideoState.State.INVALID_CONDITION
                 new_message.human_message = "We do not really know what is going on. Its a bug"
+                context.cancel()
+                self._cleanProcess(rtp_server_url)
 
             logging.debug(new_message.human_message)
-            super().append(new_message)
-            time.sleep(5)
+            yield new_message
 
 
     def sendVideoTo(self, drone_ip, rtp_server_url, video_type):
@@ -159,12 +166,15 @@ class DroneVideoContainer(DroneMessageContainerBase):
             else:
                 raise Exception("Video Type requested is not recognized")
         except:
-            self._cleanup()
+            self._cleanProcess(rtp_server_url)
             raise
 
-    def _cleanup(self):
-        for _, process in self._processes.items():
-            process.kill()
+    def _cleanProcess(self, rtp_url):
+        if rtp_url in self._processes:
+            logging.debug("killing video of process that pumps video to {}".format(rtp_url))
+            os.killpg(os.getpgid(self._processes[rtp_url].pid), signal.SIGTERM)
+            self._processes[rtp_url].kill()
+            del self._processes[rtp_url]
 
     def _doesCommandExist(self, command):
         return shutil.which(command)
@@ -436,11 +446,9 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
 
     def sendVideoTo(self, request, context):
         self.video_encoder.sendVideoTo(self.drone.getIP(), request.rtp_url, request.video_type)
-        t = threading.Thread(target=self.video_encoder.pollProcess, args=(request.rtp_url,)).start()
-        while True:
-            yield self.video_encoder.getLastElement()
-        # t.Stop()
-        t.join()
+        elements = self.video_encoder.pollProcess(request.rtp_url, context)
+        for element in elements:
+            yield element
 
     def getPosition(self, request, context):
         while True:
