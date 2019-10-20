@@ -81,7 +81,7 @@
 #}
 
 general: {
-	#admin_key = "supersecret"		# If set, mountpoints can be created via API
+	admin_key = "IY03E0dwBWK8p7jfBZxN"		# If set, mountpoints can be created via API
 									# only if this key is provided in the request
 	#events = false					# Whether events should be sent to event
 									# handlers (default is yes)
