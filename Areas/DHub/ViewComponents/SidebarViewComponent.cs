@@ -11,7 +11,6 @@ namespace DroHub.Areas.DHub.ViewComponents
     public class SidebarViewComponent : ViewComponent
     {
         private readonly DroHubContext _context;
-        private readonly UserManager<DroHubUser> _userManager;
 
         public SidebarViewComponent(DroHubContext context)
         {
