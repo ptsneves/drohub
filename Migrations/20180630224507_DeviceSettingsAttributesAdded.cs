@@ -11,12 +11,15 @@ namespace DroHub.Data.Migrations
                 table: "Devices",
                 newName: "Id");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "SerialNumber",
-                table: "Devices",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldNullable: true);
+            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
+            {
+                migrationBuilder.AlterColumn<string>(
+                    name: "SerialNumber",
+                    table: "Devices",
+                    nullable: false,
+                    oldClrType: typeof(string),
+                    oldNullable: true);
+            }
 
             migrationBuilder.AddColumn<string>(
                 name: "Apperture",
@@ -45,29 +48,34 @@ namespace DroHub.Data.Migrations
             migrationBuilder.DropIndex(
                 name: "IX_Devices_SerialNumber",
                 table: "Devices");
+            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
+            {
+                migrationBuilder.DropColumn(
+                    name: "Apperture",
+                    table: "Devices");
 
-            migrationBuilder.DropColumn(
-                name: "Apperture",
-                table: "Devices");
+                migrationBuilder.DropColumn(
+                    name: "FocusMode",
+                    table: "Devices");
 
-            migrationBuilder.DropColumn(
-                name: "FocusMode",
-                table: "Devices");
-
-            migrationBuilder.DropColumn(
-                name: "ISO",
-                table: "Devices");
+                migrationBuilder.DropColumn(
+                    name: "ISO",
+                    table: "Devices");
+            }
 
             migrationBuilder.RenameColumn(
                 name: "Id",
                 table: "Devices",
                 newName: "ID");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "SerialNumber",
-                table: "Devices",
-                nullable: true,
-                oldClrType: typeof(string));
+            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
+            {
+                migrationBuilder.AlterColumn<string>(
+                    name: "SerialNumber",
+                    table: "Devices",
+                    nullable: true,
+                    oldClrType: typeof(string));
+            }
         }
     }
 }

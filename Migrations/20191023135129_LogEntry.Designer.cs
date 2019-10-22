@@ -3,29 +3,25 @@ using System;
 using DroHub.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace DroHub.Data.Migrations
 {
     [DbContext(typeof(DroHubContext))]
-    [Migration("20190819153134_DroneBatteryLevels")]
-    partial class DroneBatteryLevels
+    [Migration("20191023135129_LogEntry")]
+    partial class LogEntry
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "2.2.6-servicing-10079")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                .HasAnnotation("ProductVersion", "2.2.6-servicing-10079");
 
             modelBuilder.Entity("DroHub.Areas.DHub.Models.Device", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .ValueGeneratedOnAdd();
 
                     b.Property<string>("Apperture");
 
@@ -39,6 +35,16 @@ namespace DroHub.Data.Migrations
                     b.Property<string>("FocusMode");
 
                     b.Property<string>("ISO");
+
+                    b.Property<string>("LiveVideoFMTProfile");
+
+                    b.Property<int>("LiveVideoPt");
+
+                    b.Property<string>("LiveVideoRTPMap");
+
+                    b.Property<string>("LiveVideoRTPUrl");
+
+                    b.Property<string>("LiveVideoSecret");
 
                     b.Property<string>("Name");
 
@@ -57,12 +63,10 @@ namespace DroHub.Data.Migrations
                     b.ToTable("Devices");
                 });
 
-            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
             modelBuilder.Entity("DroHub.Areas.DHub.Models.LogEntry", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .ValueGeneratedOnAdd();
 
                     b.Property<string>("EventId");
 
@@ -85,7 +89,6 @@ namespace DroHub.Data.Migrations
                     b.ToTable("Logs");
                 });
 
-           }
             modelBuilder.Entity("DroHub.Areas.Identity.Data.DroHubUser", b =>
                 {
                     b.Property<string>("Id")
@@ -140,8 +143,7 @@ namespace DroHub.Data.Migrations
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
-                        .HasName("UserNameIndex")
-                        .HasFilter("[NormalizedUserName] IS NOT NULL");
+                        .HasName("UserNameIndex");
 
                     b.ToTable("AspNetUsers");
                 });
@@ -149,15 +151,14 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("DroneBatteryLevel", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .ValueGeneratedOnAdd();
 
                     b.Property<double>("BatteryLevelPercent");
 
                     b.Property<string>("Serial")
                         .IsRequired();
 
-                    b.Property<long>("Timestamp");
+                    b.Property<uint>("Timestamp");
 
                     b.HasKey("Id");
 
@@ -166,11 +167,29 @@ namespace DroHub.Data.Migrations
                     b.ToTable("DroneBatteryLevels");
                 });
 
+            modelBuilder.Entity("DroneFlyingState", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Serial")
+                        .IsRequired();
+
+                    b.Property<int>("State");
+
+                    b.Property<uint>("Timestamp");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Serial");
+
+                    b.ToTable("DroneFlyingStates");
+                });
+
             modelBuilder.Entity("DronePosition", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .ValueGeneratedOnAdd();
 
                     b.Property<double>("Altitude");
 
@@ -181,13 +200,34 @@ namespace DroHub.Data.Migrations
                     b.Property<string>("Serial")
                         .IsRequired();
 
-                    b.Property<long>("Timestamp");
+                    b.Property<uint>("Timestamp");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Serial");
 
                     b.ToTable("Positions");
+                });
+
+            modelBuilder.Entity("DroneRadioSignal", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<float>("Rssi");
+
+                    b.Property<string>("Serial")
+                        .IsRequired();
+
+                    b.Property<float>("SignalQuality");
+
+                    b.Property<uint>("Timestamp");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Serial");
+
+                    b.ToTable("DroneRadioSignals");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -208,8 +248,7 @@ namespace DroHub.Data.Migrations
 
                     b.HasIndex("NormalizedName")
                         .IsUnique()
-                        .HasName("RoleNameIndex")
-                        .HasFilter("[NormalizedName] IS NOT NULL");
+                        .HasName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles");
                 });
@@ -217,8 +256,7 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .ValueGeneratedOnAdd();
 
                     b.Property<string>("ClaimType");
 
@@ -237,8 +275,7 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .ValueGeneratedOnAdd();
 
                     b.Property<string>("ClaimType");
 
@@ -320,10 +357,28 @@ namespace DroHub.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
+            modelBuilder.Entity("DroneFlyingState", b =>
+                {
+                    b.HasOne("DroHub.Areas.DHub.Models.Device", "Device")
+                        .WithMany("flying_states")
+                        .HasForeignKey("Serial")
+                        .HasPrincipalKey("SerialNumber")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("DronePosition", b =>
                 {
                     b.HasOne("DroHub.Areas.DHub.Models.Device", "Device")
                         .WithMany("positions")
+                        .HasForeignKey("Serial")
+                        .HasPrincipalKey("SerialNumber")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("DroneRadioSignal", b =>
+                {
+                    b.HasOne("DroHub.Areas.DHub.Models.Device", "Device")
+                        .WithMany("radio_signals")
                         .HasForeignKey("Serial")
                         .HasPrincipalKey("SerialNumber")
                         .OnDelete(DeleteBehavior.Cascade);

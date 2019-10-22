@@ -15,9 +15,12 @@ namespace DroHub.Data.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
+            {
+                migrationBuilder.DropColumn(
                 name: "ConnectState",
                 table: "AspNetUsers");
+            }
         }
     }
 }

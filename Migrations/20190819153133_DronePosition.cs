@@ -7,11 +7,6 @@ namespace DroHub.Data.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddUniqueConstraint(
-                name: "AK_Devices_SerialNumber",
-                table: "Devices",
-                column: "SerialNumber");
-
             migrationBuilder.CreateTable(
                 name: "Positions",
                 columns: table => new
@@ -46,9 +41,6 @@ namespace DroHub.Data.Migrations
             migrationBuilder.DropTable(
                 name: "Positions");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_Devices_SerialNumber",
-                table: "Devices");
         }
     }
 }

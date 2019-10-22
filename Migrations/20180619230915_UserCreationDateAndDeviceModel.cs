@@ -50,16 +50,19 @@ namespace DroHub.Data.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
+            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
+            {
+                migrationBuilder.DropTable(
                 name: "Devices");
 
-            migrationBuilder.DropColumn(
+                migrationBuilder.DropColumn(
                 name: "CreationDate",
                 table: "AspNetUsers");
 
-            migrationBuilder.DropColumn(
+                migrationBuilder.DropColumn(
                 name: "LastLogin",
                 table: "AspNetUsers");
+            }
         }
     }
 }

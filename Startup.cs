@@ -31,7 +31,8 @@ namespace DroHub
         {
             services.AddDbContext<DroHubContext>(options =>
             {
-                options.UseSqlServer(Configuration.GetConnectionString("DroHubConnection"));
+                // options.UseSqlServer(Configuration.GetConnectionString("DroHubConnection"));
+                options.UseSqlite("Data Source=drohub.db");
             });
 
 

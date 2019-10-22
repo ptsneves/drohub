@@ -67,6 +67,7 @@ namespace DroHub.Data.Migrations
                     b.ToTable("Devices");
                 });
 
+            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
             modelBuilder.Entity("DroHub.Areas.DHub.Models.LogEntry", b =>
                 {
                     b.Property<int>("Id")
@@ -94,6 +95,7 @@ namespace DroHub.Data.Migrations
                     b.ToTable("Logs");
                 });
 
+            }
             modelBuilder.Entity("DroHub.Areas.Identity.Data.DroHubUser", b =>
                 {
                     b.Property<string>("Id")
