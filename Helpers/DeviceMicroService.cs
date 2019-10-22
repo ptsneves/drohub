@@ -382,7 +382,18 @@ namespace DroHub.Helpers {
             joinTasks(_tasks_by_device_id.Values.SelectMany(x => x).ToList());
         }
         protected override async Task ExecuteAsync(CancellationToken stopping_token) {
-            await spawnHeartBeatMonitors(stopping_token);
+            do
+            {
+                try
+                {
+                    await spawnHeartBeatMonitors(stopping_token);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogWarning(e.Message);
+                    await Task.Delay(5000);
+                }
+            } while (!stopping_token.IsCancellationRequested);
         }
     }
 }
