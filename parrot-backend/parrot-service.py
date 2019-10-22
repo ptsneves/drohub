@@ -125,7 +125,6 @@ class DroneVideoContainer(DroneMessageContainerBase):
                 new_message.state = drohub_pb2.DroneVideoState.State.INVALID_CONDITION
                 new_message.human_message = "There is no record of sending video to this url {}".format(rtp_server_url)
                 context.cancel()
-                self._cleanProcess(rtp_server_url)
             elif self._processes[rtp_server_url].poll() == None:
                 new_message.state = drohub_pb2.DroneVideoState.State.DIED
                 new_message.human_message = "Process is dead. stderr is:\n{}".format(io.TextIOWrapper(
