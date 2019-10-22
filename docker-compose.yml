@@ -1,18 +1,14 @@
 version: "3"
 services:
     janus:
-        deploy:
-          mode: "global"
-        image: "janus:latest"
+        image: "ptsneves/airborneprojects:janus"
         ports:
             - "8088:8088"
             - "6004-7004:6004-7004/udp"
         depends_on:
             - "web"
     web:
-        deploy:
-          mode: "global"
-        image: "drohub:latest"
+        image: "ptsneves/airborneprojects:drohub"
         ports:
             - "5000:5000"
         depends_on:
@@ -31,9 +27,7 @@ services:
     db:
         ports:
             - "1433:1433"
-        deploy:
-          mode: "global"
-        image: "mcr.microsoft.com/mssql/server:2017-latest"
+        image: "ptsneves/airborneprojects:mssql-tiny"
         volumes:
             - "/opt/aux-container-data/:/opt/aux-container-data/"
         environment:
