@@ -57,35 +57,6 @@ namespace DroHub.Data.Migrations
                     b.ToTable("Devices");
                 });
 
-            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer") {
-            modelBuilder.Entity("DroHub.Areas.DHub.Models.LogEntry", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<string>("EventId");
-
-                    b.Property<string>("Exception");
-
-                    b.Property<string>("Level")
-                        .IsRequired();
-
-                    b.Property<string>("Message")
-                        .IsRequired();
-
-                    b.Property<string>("SourceContext")
-                        .IsRequired()
-                        .HasMaxLength(100);
-
-                    b.Property<DateTime>("Timestamp");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Logs");
-                });
-
-          }
             modelBuilder.Entity("DroHub.Areas.Identity.Data.DroHubUser", b =>
                 {
                     b.Property<string>("Id")
