@@ -240,7 +240,7 @@ namespace DroHub.Areas.DHub.Controllers
                 _logger.LogWarning(e.ToString());
                 return RedirectToAction(nameof(Create), "Devices");
             }
-
+            _device_micro_service.spawnHeartBeatMonitor(device);
             return RedirectToAction(nameof(Data), new {id = device.Id});
         }
 

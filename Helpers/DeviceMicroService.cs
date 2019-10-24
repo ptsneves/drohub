@@ -27,6 +27,9 @@ namespace DroHub.Helpers {
 
         private readonly JanusService _janus_service;
         private Dictionary<int, List<Task>> _tasks_by_device_id;
+        private CancellationTokenSource _cancellation_token_source;
+        private Dictionary<int, bool> _heartbeats_active_by_id;
+
         public DeviceMicroService(IServiceProvider services,
             ILogger<DeviceMicroService> logger,
             IHubContext<TelemetryHub> hub,
@@ -43,6 +46,8 @@ namespace DroHub.Helpers {
             _services = services;
             _janus_service = janus_service;
             _tasks_by_device_id = new Dictionary<int, List<Task>>();
+            _heartbeats_active_by_id = new Dictionary<int, bool>();
+            _cancellation_token_source = null;
         }
 
         protected async Task RecordTelemetry(IDroneTelemetry telemetry_data)
@@ -240,6 +245,7 @@ namespace DroHub.Helpers {
                 }
                 catch (JanusService.JanusServiceException e)
                 {
+                    _logger.LogWarning(LoggingEvents.FileListTelemetry, e.ToString() + "\nWaiting 1 second before retrying");
                     await Task.Delay(1000);
                 }
                 await destroyMountPointForDevice(device);
@@ -248,6 +254,9 @@ namespace DroHub.Helpers {
 
         private delegate T DroneActionDelegate<T>(Drone.DroneClient my_client);
         private  Task<T> DoDeviceActionAsync<T>(Device device, DroneActionDelegate<T> action, string action_name_for_logging) {
+            if (_cancellation_token_source == null)
+                throw new InvalidOperationException("Cannot make any action when we have not yet initialized the service async token");
+
             var task = Task.Run(() =>
             {
                 _logger.LogDebug( "Trying to do an action");
@@ -330,7 +339,28 @@ namespace DroHub.Helpers {
             return telemetry_tasks;
         }
 
-        protected async Task spawnHeartBeatMonitor(CancellationToken stopping_token, Device device) {
+        public void spawnHeartBeatMonitor(Device device) {
+            if (_cancellation_token_source == null)
+                throw new InvalidOperationException("Cannot make any action when we have not yet initialized the service async token");
+            spawnHeartBeatMonitor(_cancellation_token_source.Token, device);
+        }
+        protected void spawnHeartBeatMonitor(CancellationToken stopping_token, Device device) {
+            var task = spawnHeartBeatMonitorTask(stopping_token, device);
+            if (_tasks_by_device_id.ContainsKey(device.Id))
+                _tasks_by_device_id[device.Id].Add(task);
+            else
+                _tasks_by_device_id.Add(device.Id, new List<Task> { task });
+        }
+
+        protected async Task spawnHeartBeatMonitorTask(CancellationToken stopping_token, Device device) {
+            lock (_heartbeats_active_by_id)
+            {
+                if (_heartbeats_active_by_id.ContainsKey(device.Id) && _heartbeats_active_by_id[device.Id])
+                {
+                    return;
+                }
+                _heartbeats_active_by_id.Add(device.Id, true);
+            }
             while (!stopping_token.IsCancellationRequested)
             {
                 var spawned_cancel_src = CancellationTokenSource.CreateLinkedTokenSource(stopping_token);
@@ -359,6 +389,9 @@ namespace DroHub.Helpers {
                 }
                 _logger.LogDebug($"No valid state of drone {device.Id} aka {device.Name}");
                 spawned_cancel_src.Cancel();
+                lock(_heartbeats_active_by_id) {
+                    _heartbeats_active_by_id[device.Id] = false;
+                }
                 joinTasks(tasks);
                 await Task.Delay(5000);
             }
@@ -372,16 +405,13 @@ namespace DroHub.Helpers {
                 var devices = await context.Devices.ToListAsync();
                 foreach (var device in devices)
                 {
-                    var task = Task.Run(() => spawnHeartBeatMonitor(stopping_token, device));
-                    if (_tasks_by_device_id.ContainsKey(device.Id))
-                        _tasks_by_device_id[device.Id].Add(task);
-                    else
-                        _tasks_by_device_id.Add(device.Id, new List<Task> { task });
+                    spawnHeartBeatMonitor(stopping_token, device);
                 }
             }
             joinTasks(_tasks_by_device_id.Values.SelectMany(x => x).ToList());
         }
         protected override async Task ExecuteAsync(CancellationToken stopping_token) {
+            _cancellation_token_source = CancellationTokenSource.CreateLinkedTokenSource(stopping_token);
             do
             {
                 try
@@ -391,8 +421,8 @@ namespace DroHub.Helpers {
                 catch (Exception e)
                 {
                     _logger.LogWarning(e.Message);
-                    await Task.Delay(5000);
                 }
+                await Task.Delay(5000);
             } while (!stopping_token.IsCancellationRequested);
         }
     }
