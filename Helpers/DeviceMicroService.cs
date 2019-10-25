@@ -424,6 +424,7 @@ namespace DroHub.Helpers {
                 }
                 await Task.Delay(5000);
             } while (!stopping_token.IsCancellationRequested);
+            _logger.LogWarning("Stopping DeviceMicroService");
         }
     }
 }
