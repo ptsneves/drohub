@@ -31,10 +31,17 @@ namespace DroHub
         {
             services.AddDbContext<DroHubContext>(options =>
             {
-                // options.UseSqlServer(Configuration.GetConnectionString("DroHubConnection"));
-                options.UseSqlite("Data Source=drohub.db");
+                switch (Configuration.GetValue<string>("DatabaseProvider")){
+                    case "mssql":
+                        options.UseSqlServer(Configuration.GetConnectionString("DroHubConnection"));
+                        break;
+                    case "sqlite3":
+                        options.UseSqlite("Data Source=drohub.db");
+                        break;
+                    default:
+                        throw new InvalidProgramException("You need to set DatabaseProvider property to sqlite3 or mssql");
+                }
             });
-
 
             services.Configure<ForwardedHeadersOptions>(options =>
             {
