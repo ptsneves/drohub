@@ -2,6 +2,7 @@ version: "3"
 services:
     janus:
         image: "ptsneves/airborneprojects:janus"
+        network_mode: host
         ports:
             - "8088:8088"
             - "6004-7004:6004-7004/udp"
@@ -9,6 +10,7 @@ services:
             - "web"
     web:
         image: "ptsneves/airborneprojects:drohub"
+        network_mode: host
         ports:
             - "5000:5000"
         depends_on:
