@@ -48,7 +48,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
             }
         }
 
-        private async Task DoTask() {
+        private async Task DoTask(CancellationToken stoppingToken) {
             using (var scope = _services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
@@ -61,7 +61,7 @@ namespace DroHub.Areas.DHub.SignalRHubs
                 if (notifications.Length != 0)
                 {
                     _last_log_entry_id = notifications.First().Id;
-                    await _hub.Clients.All.SendAsync("notification", JsonConvert.SerializeObject(notifications) );
+                    await _hub.Clients.All.SendAsync("notification", JsonConvert.SerializeObject(notifications), stoppingToken);
                 }
             }
         }
@@ -74,11 +74,11 @@ namespace DroHub.Areas.DHub.SignalRHubs
             while (!stoppingToken.IsCancellationRequested)
             {
 
-                await DoTask();
+                await DoTask(stoppingToken);
 
                 await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
             }
-
+            _logger.LogWarning("Stopped Notifications Hub");
         }
     }
 }
