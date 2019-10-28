@@ -8,10 +8,11 @@ RUN dotnet restore
 # Copy everything else and build
 COPY . ./
 RUN rm -f drohub.db && \
-    dotnet publish -c Release -o out -p:InformationalVersion=$(cat .git/$(cat .git/HEAD | cut -d' ' -f2)) && \
-    dotnet ef database update && \
-    cp drohub.db ./out/ && \
-    rm ./appsettings.Development.json
+    rm ./appsettings.Development.json && \
+    DatabaseProvider="sqlite3" dotnet ef database update
+
+RUN dotnet publish -c Release -o out -p:InformationalVersion=$(cat .git/$(cat .git/HEAD | cut -d' ' -f2)) && \
+    cp drohub.db ./out/
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/core/aspnet:2.2
