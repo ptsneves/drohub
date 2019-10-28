@@ -13,7 +13,6 @@ namespace DroHub.Areas.DHub.ViewComponents
     public class NotificationsViewComponent : ViewComponent
     {
         private readonly DroHubContext _context;
-        private readonly UserManager<DroHubUser> _userManager;
 
         private readonly ILogger<NotificationsViewComponent> _logger;
         public NotificationsViewComponent(DroHubContext context, ILogger<NotificationsViewComponent> logger)
