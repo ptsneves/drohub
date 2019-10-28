@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace DroHub.Areas.DHub.ViewComponents {
     public class VideoViewComponent : ViewComponent {
-        public async Task<IViewComponentResult> InvokeAsync(Device device) {
+        public IViewComponentResult Invoke(Device device) {
             return View("Video", device);
         }
     }

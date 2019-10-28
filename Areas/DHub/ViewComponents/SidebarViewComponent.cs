@@ -17,7 +17,7 @@ namespace DroHub.Areas.DHub.ViewComponents
             _context = context;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync() {
+        public IViewComponentResult Invoke() {
             return View("Sidebar");
         }
     }

@@ -22,7 +22,7 @@ namespace DroHub.Areas.DHub.ViewComponents
             _logger = logger;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync() {
+        public IViewComponentResult Invoke() {
             var notifications = _context.Logs.OrderByDescending(l => l.Id).Take(10).ToArray();
             return View("Notifications", notifications);
         }
