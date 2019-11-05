@@ -21,8 +21,8 @@ from contextlib import closing
 
 
 import grpc
-import DrohubGRPCProto.python.drohub_pb2_grpc as drohub_pb2_grpc
-import DrohubGRPCProto.python.drohub_pb2 as drohub_pb2
+import RPCInterfaces.python.drohub_pb2_grpc as drohub_pb2_grpc
+import RPCInterfaces.python.drohub_pb2 as drohub_pb2
 
 import olympe
 import olympe_deps
