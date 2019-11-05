@@ -74,6 +74,7 @@
                                     @{
                                         var takeoff_action_url = Url.Action("TakeOff", "Devices", new {id = device.Id});
                                         var landing_action_url = Url.Action("Land", "Devices", new {id = device.Id});
+                                        var return_to_home_action_url = Url.Action("ReturnToHome", "Devices", new {id = device.Id});
                                         var move_to_position_action_url = Url.Action("MoveToPosition", "Devices", new {id = device.Id});
                                         var move_to_position_box_id = move_to_position_box_id_prefix + device.Id;
                                     }
@@ -112,8 +113,8 @@
                                             title="Take off this device">TakeOff</a>
                                         <a onclick='followActionAndDoNothing("@landing_action_url")'
                                             class="btn btn-danger" title="Land this device">Land</a>
-                                        <button type='button btn btn-danger' onclick="$('#@move_to_position_box_id').attr('style', 'display:initial')"
-                                            class="btn btn-danger">Move to Position</button>
+                                        <button type='button btn btn-danger' onclick="followActionAndDoNothing('@return_to_home_action_url')"
+                                            class="btn btn-danger">Return to Home</button>
 
                                         <div class="box" id="@move_to_position_box_id" style="display: none">
                                             <div class="box-header with-border">

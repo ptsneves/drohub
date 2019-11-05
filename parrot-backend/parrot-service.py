@@ -27,8 +27,8 @@ import DrohubGRPCProto.python.drohub_pb2 as drohub_pb2
 import olympe
 import olympe_deps
 
-from olympe.messages.ardrone3.Piloting import TakeOff, moveBy, Landing, moveTo
-from olympe.messages.ardrone3.PilotingState import FlyingStateChanged
+from olympe.messages.ardrone3.Piloting import TakeOff, moveBy, Landing, moveTo, NavigateHome
+from olympe.messages.ardrone3.PilotingState import FlyingStateChanged, NavigateHomeStateChanged
 from olympe.messages.common.SettingsState import ProductSerialHighChanged, ProductSerialLowChanged
 from olympe.messages.common.CommonState import LinkSignalQuality
 from olympe.enums.drone_manager import connection_state
@@ -479,6 +479,16 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         return drohub_pb2.DroneReply(
             serial = self.serial.Get(),
             timestamp = int(time.time()),
+            message=landing.success())
+
+    def doReturnToHome(self, request, context):
+        logging.warning("Returning to Home")
+        landing = self.drone.getDrone()(NavigateHome(start=1)
+                                        >> NavigateHomeStateChanged(state='inProgress')
+                                        ).wait()
+        return drohub_pb2.DroneReply(
+            serial=self.serial.Get(),
+            timestamp=int(time.time()),
             message=landing.success())
 
     def moveToPosition(self, request, context):

@@ -192,6 +192,12 @@ namespace DroHub.Areas.DHub.Controllers
             return Ok();
         }
 
+        public async Task<IActionResult> ReturnToHome(int id)
+        {
+            var _ = _device_micro_service.ReturnToHomeAsync(await getDeviceById(id));
+            return Ok();
+        }
+
         public async Task<IActionResult> MoveToPosition(int id, float latitude, float longitude, float altitude, double heading)
         {
             var _ = _device_micro_service.MoveToPositionAsync(await getDeviceById(id), latitude, longitude, altitude, heading);

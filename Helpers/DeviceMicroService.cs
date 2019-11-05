@@ -282,6 +282,12 @@ namespace DroHub.Helpers {
             return DoDeviceActionAsync<DroneReply>(device, landing_delegate, "Landing");
         }
 
+        public Task<DroneReply> ReturnToHomeAsync(Device device)
+        {
+            DroneActionDelegate<DroneReply> landing_delegate = (_client => { return _client.doReturnToHome(new DroneRequest { }); });
+            return DoDeviceActionAsync<DroneReply>(device, landing_delegate, "Returning to Home");
+        }
+
         public Task<DroneReply> MoveToPositionAsync(Device device, float latitude, float longitude, float altitude, double heading)
         {
             var new_position = new DroneRequestPosition
