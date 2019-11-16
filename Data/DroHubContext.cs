@@ -24,11 +24,13 @@ namespace DroHub.Data
         public DbSet<DroneRadioSignal> DroneRadioSignals { get; set; }
 
         public DbSet<DroneFlyingState> DroneFlyingStates { get; set; }
+        public DbSet<DroneReply> DroneReplies { get; set; }
+        public DbSet<DroneVideoStateResult> DroneVideoStatesResults { get; set; }
         //public DbSet<DeviceSettings> DeviceSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-
+            // builder.Ignore<DroneBatteryLevel.Isset>();
 
             // foreach (var property in builder.Model.GetEntityTypes()
             //     .SelectMany(t => t.GetProperties())
@@ -36,7 +38,7 @@ namespace DroHub.Data
             // {
             //     if (property.GetMaxLength() == null)
             //         property.SetMaxLength(450);
-            // }
+            // }]
 
             base.OnModelCreating(builder);
             // Customize the ASP.NET Identity model and override the defaults if needed.
@@ -73,6 +75,12 @@ namespace DroHub.Data
                 .HasKey(d => d.Id);
 
             builder.Entity<DroneFlyingState>()
+                .HasIndex(d => d.Serial);
+
+            builder.Entity<DroneReply>()
+                .HasIndex(d => d.Serial);
+
+            builder.Entity<DroneVideoStateResult>()
                 .HasIndex(d => d.Serial);
 
             builder.Entity<LogEntry>()
@@ -113,6 +121,18 @@ namespace DroHub.Data
                 .HasForeignKey(p => p.Serial)
                 .HasPrincipalKey(d => d.SerialNumber);
 
+            builder.Entity<DroneReply>()
+                .HasOne(p => p.Device)
+                .WithMany(d => d.drone_replies)
+                .HasForeignKey(p => p.Serial)
+                .HasPrincipalKey(d => d.SerialNumber);
+
+            builder.Entity<DroneVideoStateResult>()
+                .HasOne(p => p.Device)
+                .WithMany(d => d.drone_video_states)
+                .HasForeignKey(p => p.Serial)
+                .HasPrincipalKey(d => d.SerialNumber);
+
             builder.Entity<Device>()
                 .HasMany(d => d.positions)
                 .WithOne(p => p.Device)
@@ -133,6 +153,15 @@ namespace DroHub.Data
                 .WithOne(p => p.Device)
                 .IsRequired();
 
+            builder.Entity<Device>()
+                .HasMany(d => d.drone_replies)
+                .WithOne(p => p.Device)
+                .IsRequired();
+
+            builder.Entity<Device>()
+                .HasMany(d => d.drone_video_states)
+                .WithOne(p => p.Device)
+                .IsRequired();
         }
     }
 }

@@ -68,17 +68,17 @@ namespace DroHub.Areas.DHub.SignalRHubs
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            stoppingToken.Register(() =>
-                    _logger.LogInformation($"Background task is stopping."));
+            // stoppingToken.Register(() =>
+            //         _logger.LogInformation($"Background task is stopping."));
 
-            while (!stoppingToken.IsCancellationRequested)
-            {
+            // while (!stoppingToken.IsCancellationRequested)
+            // {
 
-                await DoTask(stoppingToken);
+            //     await DoTask(stoppingToken);
 
                 await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
-            }
-            _logger.LogWarning("Stopped Notifications Hub");
+            // }
+            // _logger.LogWarning("Stopped Notifications Hub");
         }
     }
 }

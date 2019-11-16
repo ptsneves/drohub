@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
+import base64
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../')
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../RPCInterfaces/python/')
+sys.path.append(os.path.dirname('/usr/local/lib/python3.7/dist-packages/thrift'))
+
 from concurrent import futures
 from collections import deque
 import logging
@@ -18,11 +21,18 @@ import urllib.request
 import json
 import socket
 from contextlib import closing
+from drohub import *
+from drohub.ttypes import *
+import struct
+import random
+from thrift.protocol.TProtocol import TProtocolException
 
-
-import grpc
-import RPCInterfaces.python.drohub_pb2_grpc as drohub_pb2_grpc
-import RPCInterfaces.python.drohub_pb2 as drohub_pb2
+import thrift
+from thrift.transport import TTransport
+from thrift.protocol import TBinaryProtocol, TJSONProtocol, TProtocolDecorator
+from thrift.server import TServer
+import websocket
+import queue
 
 import olympe
 import olympe_deps
@@ -40,12 +50,17 @@ from olympe.tools.logger import TraceLogger, DroneLogger, ErrorCodeDrone
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 class ParrotSerialNumber():
-    def __init__(self):
+    def __init__(self, expected_serial):
         self.serial = ""
         self._MSB = ""
         self._MSB_set = False
         self._LSB = ""
         self._LSB_set = False
+        self._expected_serial = expected_serial
+
+    def validateSerial(self):
+        if self.serial != self._expected_serial:
+            raise Exception("Retrieved serial and expected expected do not match.")
 
     def setMSB(self, msb):
         if self._MSB_set:
@@ -56,6 +71,7 @@ class ParrotSerialNumber():
         self._MSB_set = True
         if self._LSB_set:
             self.serial = msb + self._LSB
+            
 
     def setLSB(self, lsb):
         if self._LSB_set:
@@ -70,8 +86,10 @@ class ParrotSerialNumber():
 
     def Get(self):
         if self._MSB_set and self._LSB_set:
+            self.validateSerial()
             return self.serial
-        raise Exception("Cannot get serial until we have received all the serial message parts.")
+        else:
+            self._expected_serial
 
 class DroneMessageContainerBase():
     def __init__(self, drone_serial):
@@ -85,17 +103,11 @@ class DroneMessageContainerBase():
         with self.cv_consumer:
             self.cv_consumer.notify_all()
 
-    def getElements(self, context):
-        def abortWait():
-            with self.cv_consumer:
-                self.cv_consumer.notify_all()
-
+    def getElement(self):
         with self.cv_consumer:
-            context.add_callback(abortWait)
             self.cv_consumer.wait()
             container_copy = self.container
-            while context.is_active() and len((container_copy)) > 0:
-                yield container_copy.popleft()
+            return container_copy.popleft()
 
 class DroneVideoContainer(DroneMessageContainerBase):
     Vp8_Command = "/usr/bin/ffmpeg -hwaccel vaapi   -vaapi_device /dev/dri/renderD128 -i rtsp://{source_url}/live -r 10 -c:v libvpx \
@@ -190,7 +202,7 @@ class PositionContainer(DroneMessageContainerBase):
             #as this parrot specific.
             return
 
-        new_drone_position = drohub_pb2.DronePosition(
+        new_drone_position = DronePosition(
                         latitude = message.state()['latitude'],
                         longitude = message.state()['longitude'],
                         altitude = message.state()['altitude'],
@@ -230,7 +242,7 @@ class FlyingStateContainer(DroneMessageContainerBase):
         return flying_state_enum
 
     def dispatchFlyingState(self, message):
-        new_drone_flying_state = drohub_pb2.DroneFlyingState(
+        new_drone_flying_state = DroneFlyingState(
                         state = self.mapStateToEnum(message.state()['state']),
                         serial = self.drone_serial.Get(),
                         timestamp = int(time.time()))
@@ -246,7 +258,7 @@ class BatteryLevelContainer(DroneMessageContainerBase):
         super().__init__(drone_serial)
 
     def dispatchBatteryLevel(self, message):
-        new_battery_level = drohub_pb2.DroneBatteryLevel(
+        new_battery_level = DroneBatteryLevel(
             battery_level_percent=message.state()['percent'],
             serial = self.drone_serial.Get(),
             timestamp=int(time.time()))
@@ -259,7 +271,7 @@ class RadioSignalContainer(DroneMessageContainerBase):
         super().__init__(drone_serial)
 
     def dispatchRadioRSSILevel(self, message):
-        new_rssi_level = drohub_pb2.DroneRadioSignal(
+        new_rssi_level = DroneRadioSignal(
             serial = self.drone_serial.Get(),
             timestamp=int(time.time()),
             rssi = message.state()['rssi']
@@ -268,7 +280,7 @@ class RadioSignalContainer(DroneMessageContainerBase):
         super().append(new_rssi_level)
 
     def dispatchRadioSignalQuality(self, message):
-        new_signal_quality = drohub_pb2.DroneRadioSignal(
+        new_signal_quality = DroneRadioSignal(
             serial = self.drone_serial.Get(),
             timestamp=int(time.time()),
             signal_quality = message.state()['value']
@@ -403,9 +415,9 @@ class DronePersistentConnection(DroneThreadSafe):
                 except Exception:
                     logging.warning("Reconnection failed. Trying again")
 
-class DroneRPC(drohub_pb2_grpc.DroneServicer):
-    def __init__(self, drone_type):
-        self.serial = ParrotSerialNumber()
+class DroneRPC(object):
+    def __init__(self, drone_type, expected_serial):
+        self.serial = ParrotSerialNumber(expected_serial)
         self.video_encoder = DroneVideoContainer(self.serial)
         self.position_container = PositionContainer(self.serial)
         self.battery_level_container = BatteryLevelContainer(self.serial)
@@ -416,12 +428,14 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         super().__init__()
 
     def cb1(self, message):
-        if message.Full_Name == "Ardrone3_PilotingState_PositionChanged":
-            self.position_container.dispatchPosition(message)
-        elif message.Full_Name == "Common_SettingsState_ProductSerialHighChanged":
+        pass
+       
+        if message.Full_Name == "Common_SettingsState_ProductSerialHighChanged":
             self.serial.setMSB(message.state()['high'])
         elif message.Full_Name == "Common_SettingsState_ProductSerialLowChanged":
             self.serial.setLSB(message.state()['low'])
+        elif message.Full_Name == "Ardrone3_PilotingState_PositionChanged":
+            self.position_container.dispatchPosition(message)
         elif message.Full_Name == "Common_CommonState_BatteryStateChanged" or message.Full_Name == "Battery_Alert":
             self.battery_level_container.dispatchBatteryLevel(message)
         elif message.Full_Name == "Common_CommonState_LinkSignalQuality":
@@ -433,100 +447,288 @@ class DroneRPC(drohub_pb2_grpc.DroneServicer):
         elif message.Full_Name == " Common_CommonState_MassStorageContent":
             self.file_list_container.dispatchFileList(message)
 
-    def sendVideoTo(self, request, context):
+    def sendVideoTo(self):
         self.video_encoder.sendVideoTo(self.drone.getIP(), request.rtp_url, request.video_type)
-        elements = self.video_encoder.pollProcess(request.rtp_url, context)
+
+    def getVideoState(self):
+        elements = self.video_encoder.pollProcess(request.rtp_url)
         for element in elements:
-            yield element
+            return element
 
-    def getPosition(self, request, context):
-        elements = self.position_container.getElements(context)
-        for element in elements:
-            yield element
+    def getPosition(self):
+        logging.warning("Get Position")
+        d = self.position_container.getElement()
+        logging.warning("Sent Position")
+        return d
 
-    def getBatteryLevel(self, request, context):
-        elements = self.battery_level_container.getElements(context)
-        for element in elements:
-            yield element
+    def getBatteryLevel(self):
+        return self.battery_level_container.getElement()
 
-    def getRadioSignal(self, request, context):
-        elements = self.radio_signal_container.getElements(context)
-        for element in elements:
-            yield element
+    def getRadioSignal(self):
+        return self.radio_signal_container.getElement()
 
-    def getFlyingState(self, request, context):
-        elements = self.flying_state_container.getElements(context)
-        for element in elements:
-            yield element
+    def getFlyingState(self):
+        return self.flying_state_container.getElement()
 
-
-    def doTakeoff(self, request, context):
+    def doTakeoff(self):
         logging.warning("Taking off")
         takeoff = self.drone.getDrone()(
             TakeOff()
             >> FlyingStateChanged(state="hovering", _timeout=5)
         ).wait()
-        return drohub_pb2.DroneReply(
+        return DroneReply(
             serial = self.serial.Get(),
-            timestamp = int(time.time()),
-            message=takeoff.success())
+            timestamp=int(time.time()),
+            result=takeoff.success())
 
-    def doLanding(self, request, context):
+    def doLanding(self):
         logging.warning("Landing")
         landing = self.drone.getDrone()(Landing()
             >> FlyingStateChanged(state="landed")
         ).wait()
-        return drohub_pb2.DroneReply(
+        return DroneReply(
             serial = self.serial.Get(),
             timestamp = int(time.time()),
-            message=landing.success())
+            result=landing.success())
 
-    def doReturnToHome(self, request, context):
+    def doReturnToHome(self):
         logging.warning("Returning to Home")
         landing = self.drone.getDrone()(NavigateHome(start=1)
                                         >> NavigateHomeStateChanged(state='inProgress')
                                         ).wait()
-        return drohub_pb2.DroneReply(
+        return DroneReply(
             serial=self.serial.Get(),
             timestamp=int(time.time()),
-            message=landing.success())
+            result=landing.success())
 
-    def moveToPosition(self, request, context):
+    def moveToPosition(self):
         go_to_position = self.drone.getDrone()(moveTo(
             request.latitude, request.longitude, request.altitude,  MoveTo_Orientation_mode.HEADING_DURING, request.heading)
         ).wait()
-        return drohub_pb2.DroneReply(
+        return DroneReply(
             serial = self.serial.Get(),
             timestamp = int(time.time()),
-            message=go_to_position.success())
+            result=go_to_position.success())
 
-    def pingService(self, request, context):
-        while context.is_active():
-            time.sleep(2)
-            logging.debug("ping {}".format(self.serial.Get()))
-            yield drohub_pb2.DroneReply(
-                serial = self.serial.Get(),
-                timestamp = int(time.time()),
-                message=self.drone.checkDroneConnected())
+    def pingService(self):
+        logging.debug("ping {}".format(self.serial.Get()))
+        return DroneReply(
+            serial = self.serial.Get(),
+            timestamp=int(time.time()),
+            result=self.drone.checkDroneConnected())
 
     def getFileList(self, request, context):
         self.file_list_container.getFileList()
 
     def getFileListStream(self, request, context):
-        elements = self.file_list_container.getElements(context)
+        elements = self.file_list_container.getElement()
         for element in elements:
-            yield element
+            return element
 
-def serve(drone_type):
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    drohub_pb2_grpc.add_DroneServicer_to_server(DroneRPC(drone_type), server)
-    server.add_insecure_port('[::]:50051')
-    server.start()
-    try:
+
+class TReverseTunnelServerFactory(object):
+    """Factory transport that builds framed transports"""
+
+    def __init__(self, transport):
+        self.trans = transport
+    def getTransport(self, trans):
+        return self.trans
+
+
+class TReverseTunnelServer(TTransport.TTransportBase):
+    def __init__(self, transport, acceptable_clients):
+        self._transport = transport
+        self._connections = queue.Queue(10)
+
+    def listen(self):
+        pass
+
+    def accept(self):
+        self._connections.put(None)
+        return TTransport.TBufferedTransport(self)
+
+    def read(self, sz):
+        return self._transport.read(sz)
+
+    def write(self, buf):
+        self._transport.write(buf)
+
+    def close(self):
+        self._transport.close()
+
+    def flush(self):
+        #We assume that once we flush we are done with a message
+        self._connections.get()
+        self._transport.flush()
+
+
+class TWebSocketClient(TTransport.TTransportBase):
+    def __init__(self, url, expected_serial):
+        headers = [
+            "User-Agent: AirborneProjets",
+            "Content-Type: application/x-thrift",
+            "x-device-expected-serial: {expected_serial}".format(expected_serial=expected_serial)]
+        self.ws = websocket.create_connection(url, header=headers, enable_multithread=True, skip_utf8_validation=True)
+        # websocket.enableTrace(True)
+        self._close = False
+
+
+    def read(self, sz):
+        if self._close:
+            raise TTransport.TTransportException(type=TTransport.TTransportException.END_OF_FILE,
+                                      message='TSocket read 0 bytes')
+        r = self.ws.recv()
+        logging.debug("Read {}".format(r))
+        return r
+
+    def write(self, buf):
+        if self._close:
+            raise TTransport.TTransportException(type=TTransport.TTransportException.END_OF_FILE,
+                                      message='TSocket sent 0 bytes')
+        logging.debug("Write {}".format(buf))
+        self.ws.send_binary(buf)
+
+    def close(self):
+        self._close = True
+        self.ws.close(timeout=None)
+
+    def flush(self):
+        pass
+
+
+class TLockedFramedTransportFactory(object):
+    """Factory transport that builds framed transports"""
+
+    def getTransport(self, trans):
+        framed = TLockedFramedTransport(trans)
+        return framed
+
+
+class TLockedFramedTransport(TTransport.TFramedTransport):
+    def __init__(self, trans):
+        self.input_m = threading.Lock()
+        self.output_m = threading.Lock()
+        self.flush_m = threading.Lock()
+
+        super().__init__(trans)
+
+    def read(self, sz):
+        self.input_m.acquire()
+        try:
+            return super().read(sz)
+        finally:
+            self.input_m.release()
+
+    def write(self, buf):
+        # print("Aquiring")
+        self.output_m.acquire()
+        try:
+            super().write(buf)
+        finally:
+            # print("Releasing")
+            self.output_m.release()
+
+    def flush(self):
+        self.flush_m.acquire()
+        try:
+            super().flush()
+        finally:
+            self.flush_m.release()
+
+
+class TMessageValidatorProtocolFactory(object):
+    """Factory transport that builds framed transports"""
+    def __init__(self, protocol_factory, validation_mode, operation_mode):
+        self.protocol_factory = protocol_factory
+        self._validation_mode = validation_mode
+
+    def getProtocol(self, trans):
+        protocol = TMessageValidatorProtocol(self.protocol_factory.getProtocol(trans), self._validation_mode, self._validation_mode)
+        return protocol
+
+
+class TMessageValidatorProtocol(TProtocolDecorator.TProtocolDecorator):
+    _MAGIC_NUMBER = 21474347
+    class ValidationMode:
+        KEEP_READING = 0
+        THROW_EXCEPTION = 1
+    class OperationMode:
+        SEQID_SLAVE = 0
+        SEQID_MASTER = 1
+    def __init__(self, protocol, validation_mode, operation_mode):
+        self._validation_mode = validation_mode
+        self._operation_mode = operation_mode
+        self.trans = protocol.trans
+        self._rand_seq_id = random.randint(-2147483648, 2147483647)
+
+    def _readMagicNumber(self):
+        result = 0
         while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except KeyboardInterrupt:
-        server.stop(0)
+            result = result << 8 | ord(self.trans.read(1))
+            if result == TMessageValidatorProtocol._MAGIC_NUMBER:
+                break
+
+    def writeMagicNumber(self):
+        buff = struct.pack("!i", TMessageValidatorProtocol._MAGIC_NUMBER)
+        self.trans.write(buff)
+
+    def writeMessageBegin(self, name, m_type, seqid):
+        if self._operation_mode == TMessageValidatorProtocol.OperationMode.SEQID_MASTER:
+            self._rand_seq_id = self._rand_seq_id + 1
+            seqid = self._rand_seq_id
+        elif self._operation_mode == TMessageValidatorProtocol.OperationMode.SEQID_SLAVE:
+            pass
+        else:
+            raise TProtocolException(
+                type=TProtocolException.NOT_IMPLEMENTED, message='Invalid operation mode selected')
+        self.writeMagicNumber()
+        super(TMessageValidatorProtocol, self).writeMessageBegin(name, m_type, seqid)
+
+    def readMessageBegin(self):
+        self._readMagicNumber()
+        (name, msg_type, seqid) = super(TMessageValidatorProtocol, self).readMessageBegin()
+        if self._operation_mode == TMessageValidatorProtocol.OperationMode.SEQID_MASTER:
+            while self._rand_seq_id != seqid:
+                if self._validation_mode == TMessageValidatorProtocol.ValidationMode.KEEP_READING:
+                    self._readMagicNumber()
+                    (name, msg_type, seqid) = super(TMessageValidatorProtocol, self).readMessageBegin()
+                elif self._validation_mode == TMessageValidatorProtocol.ValidationMode.THROW_EXCEPTION:
+                    raise TProtocolException(type=TProtocolException.BAD_VERSION, message='Received an unexpected seq id')
+
+        return (name, msg_type, seqid)
+
+def serve(drone_type, drohub_url, expected_serial):
+    handler = DroneRPC(drone_type, expected_serial)
+    transport = None
+    while True:
+        try:
+            processor = Drone.Processor(handler)
+            transport = TWebSocketClient(drohub_url, expected_serial)
+            transport = TReverseTunnelServer(transport, 10)
+            tfactory = TTransport.TFramedTransportFactory()
+            pfactory = TMessageValidatorProtocolFactory(TJSONProtocol.TJSONProtocolFactory(),
+                TMessageValidatorProtocol.ValidationMode.KEEP_READING, TMessageValidatorProtocol.OperationMode.SEQID_SLAVE)
+
+            server = TServer.TThreadPoolServer(processor, transport, tfactory, pfactory)
+            server.serve()
+        # except (ConnectionRefusedError, TTransport.TTransportException) as _:
+        #     time.sleep(5)
+        #     logging.error("Failed to connect to drohub. Retrying")
+        #     pass
+        except KeyboardInterrupt as _:
+            try:
+                transport.close()
+            except _:
+                pass
+            break
+        # except (Exception, SystemExit) as _:
+        #     if transport:
+        #         try:
+        #             transport.close()
+        #         except _:
+        #             pass
+        #         time.sleep(5)
+        #         continue
 
 
 if __name__ == '__main__':
@@ -538,7 +740,9 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', dest="verbosity", action="store_const",
                         const=logging.DEBUG, default = logging.INFO,
                         help="Whether to print debugging information")
+    parser.add_argument('serial', nargs=1, type=str, help='The expected serial number of the drone')
+    parser.add_argument('url', nargs=1, type=str, help='The websocket url for the drohub server')
     args = parser.parse_args()
-    logging.basicConfig(level=args.verbosity, format='%(relativeCreated)6d %(threadName)s %(message)s')
-
-    serve(args.drone_type)
+    logging.basicConfig(
+        level=args.verbosity, format='%(asctime)-15s %(levelname)s  %(threadName)s %(message)s')
+    serve(args.drone_type, args.url[0], args.serial[0])

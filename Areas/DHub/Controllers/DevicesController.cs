@@ -11,12 +11,13 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Logging;
 using DroHub.Helpers;
 using Microsoft.Extensions.Hosting;
-
+using DroHub.Helpers.Thrift;
 namespace DroHub.Areas.DHub.Controllers
 {
     [Area("DHub")]
@@ -31,16 +32,17 @@ namespace DroHub.Areas.DHub.Controllers
 
         private readonly IHubContext<NotificationsHub> _notifications_hubContext;
         private readonly ILogger<DevicesController> _logger;
-        private readonly DeviceMicroService _device_micro_service;
+        private readonly ConnectionManager _device_connection_manager;
+
         public DevicesController(DroHubContext context, UserManager<DroHubUser> userManager,
             IHubContext<NotificationsHub> hubContext, ILogger<DevicesController> logger,
-            DeviceMicroService device_micro_service)
+             ConnectionManager device_connection_manager)
         {
             _context = context;
             _userManager = userManager;
             _notifications_hubContext = hubContext;
             _logger = logger;
-            _device_micro_service = device_micro_service;
+            _device_connection_manager = device_connection_manager;
         }
 
         // --- SETTINGS SELECT LISTS
@@ -184,27 +186,89 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         public async Task<IActionResult> TakeOff(int id) {
-            var _ = _device_micro_service.TakeOffAsync(await getDeviceById(id));
+            var device = await getDeviceById(id);
+            var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
+            if (rpc_session != null)
+            {
+                using (var client = rpc_session.getClient<Drone.Client>(_logger))
+                {
+                    _logger.LogDebug("Retrieved client handle");
+                    await client.Client.doTakeoffAsync(CancellationToken.None);
+                    _logger.LogDebug("Finie");
+                }
+                return Ok();
+            }
             return Ok();
         }
         public async Task<IActionResult> Land(int id) {
-            var _ = _device_micro_service.LandAsync(await getDeviceById(id));
+            var device = await getDeviceById(id);
+            var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
+            if (rpc_session != null)
+            {
+                using (var client = rpc_session.getClient<Drone.Client>(_logger))
+                {
+                    _logger.LogDebug("Retrieved client handle");
+                    await client.Client.doLandingAsync(CancellationToken.None);
+                    _logger.LogDebug("Finie");
+                }
+                return Ok();
+            }
             return Ok();
         }
 
         public async Task<IActionResult> ReturnToHome(int id)
         {
-            var _ = _device_micro_service.ReturnToHomeAsync(await getDeviceById(id));
+            var device = await getDeviceById(id);
+            var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
+            if (rpc_session != null)
+            {
+                using (var client = rpc_session.getClient<Drone.Client>(_logger))
+                {
+                    _logger.LogDebug("Retrieved client handle");
+                    await client.Client.doReturnToHomeAsync(CancellationToken.None);
+                    _logger.LogDebug("Finie");
+                }
+                return Ok();
+            }
             return Ok();
         }
 
         public async Task<IActionResult> MoveToPosition(int id, float latitude, float longitude, float altitude, double heading)
         {
-            var _ = _device_micro_service.MoveToPositionAsync(await getDeviceById(id), latitude, longitude, altitude, heading);
-            return Ok();
+            var device = await getDeviceById(id);
+            var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
+            if (rpc_session != null)
+            {
+                using (var client = rpc_session.getClient<Drone.Client>(_logger))
+                {
+                    _logger.LogDebug("Retrieved client handle");
+                    var drone_request = new DroneRequestPosition
+                    {
+                        Latitude = latitude,
+                        Longitude = longitude,
+                        Altitude = altitude,
+                        Heading = heading,
+                        Serial = device.SerialNumber
+                    };
+                    await client.Client.moveToPositionAsync(drone_request, CancellationToken.None);
+                    _logger.LogDebug("Finie");
+                }
+                return Ok();
+            }
+            return Ok(); ;
         }
         public async Task<IActionResult> GetFileList(int id) {
-            return Json(await _device_micro_service.GetFileListAsync(await getDeviceById(id)));
+            var device = await getDeviceById(id);
+            var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
+            if (rpc_session != null)
+            {
+                using (var client = rpc_session.getClient<Drone.Client>(_logger))
+                {
+                    _logger.LogDebug("Retrieved client handle");
+                    return Json(await client.Client.getFileListAsync(CancellationToken.None));
+                }
+            }
+            return Ok(); ;
         }
 
         // GET: DroHub/Devices/Gallery/5
@@ -246,7 +310,7 @@ namespace DroHub.Areas.DHub.Controllers
                 _logger.LogWarning(e.ToString());
                 return RedirectToAction(nameof(Create), "Devices");
             }
-            _device_micro_service.spawnHeartBeatMonitor(device);
+            // _device_micro_service.spawnHeartBeatMonitor(device);
             return RedirectToAction(nameof(Data), new {id = device.Id});
         }
 

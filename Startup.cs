@@ -13,7 +13,13 @@ using System;
 using System.Net;
 
 using DroHub.Helpers;
+using DroHub.Helpers.Thrift;
 using Microsoft.AspNetCore.HttpOverrides;
+
+using Thrift.Protocol;
+using Thrift.Server;
+using Thrift.Transport;
+using Thrift.Transport.Server;
 
 namespace DroHub
 {
@@ -60,11 +66,10 @@ namespace DroHub
             services.Configure<DeviceMicroServiceOptions>(Configuration.GetSection("DeviceMicroServiceOptions"));
             services.Configure<JanusServiceOptions>(Configuration.GetSection("JanusServiceOptions"));
             services.AddHostedService<NotificationsHubPoller>();
-            services.AddSingleton<DeviceMicroService>();
-            services.AddHostedService<BackgroundServiceStarter<DeviceMicroService>>();
             services.AddHttpClient<JanusService>();
 
             services.AddSignalR();
+            services.AddWebSocketManager();
             services.AddMvc().AddRazorPagesOptions(options =>
             {
                 options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/Account/Login");
@@ -74,6 +79,8 @@ namespace DroHub
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+            app.MapWebSocketManager("/ws");
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -89,11 +96,11 @@ namespace DroHub
                 ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
             });
 
+
             app.UseStaticFiles();
             app.UseCookiePolicy();
 
             app.UseAuthentication();
-
             app.UseMvc(routes =>
             {
                 routes.MapRoute(
@@ -108,6 +115,6 @@ namespace DroHub
                 route.MapHub<NotificationsHub>("/notificationshub");
                 route.MapHub<TelemetryHub>("/telemetryhub");
             });
-    }
+        }
     }
 }

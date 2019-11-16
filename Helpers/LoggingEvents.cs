@@ -10,7 +10,7 @@ namespace DroHub.Helpers
         public const int FileListTelemetry = 1004;
         public const int GatherVideoTelemetry = 1005;
 
-        public const int GrpcUserAction = 2000;
+        public const int RPCUserAction = 2000;
         public const int TakeOffAction = 2001;
         public const int LandAction = 2002;
     }

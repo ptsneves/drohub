@@ -506,21 +506,21 @@
                 var connection = new signalR.HubConnectionBuilder().withUrl("/telemetryHub").
                     configureLogging(signalR.LogLevel.Information).build();
 
-                connection.on("position", function (message) {
+                connection.on("DronePosition", function (message) {
                     updatePositionData(message)
                 });
 
-                connection.on("battery_level", function (message) {
+                connection.on("DroneBatteryLevel", function (message) {
                     battery_level = JSON.parse(message);
                     populateBatteryLevel(battery_level);
                 });
 
-                connection.on("radio_signal", function (message) {
+                connection.on("DroneRadioSignal", function (message) {
                     radio_signal = JSON.parse(message);
                     populateRadioSignal(radio_signal);
                 });
 
-                connection.on("flying_state", function (message) {
+                connection.on("DroneFlyingState", function (message) {
                     flying_state = JSON.parse(message);
                     populateFlyingState(flying_state)
                 });
