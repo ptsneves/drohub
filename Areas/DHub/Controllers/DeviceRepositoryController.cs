@@ -239,7 +239,7 @@ namespace DroHub.Areas.DHub.Controllers
                 var downloadFile = File(fileBytes, MediaTypeNames.Application.Octet, DownloadFileName);
                 return downloadFile;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return RedirectToAction("Index", new { id = id });
             }
