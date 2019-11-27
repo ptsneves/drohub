@@ -64,30 +64,38 @@ namespace DroHub.Helpers.Thrift
         protected delegate Task<T> DeviceActionDelegate<T>(Drone.Client client,
             CancellationToken token);
 
-        protected async Task doDroneAction<T>(ThriftMessageHandler handler, DeviceActionDelegate<T> del) where T : IDroneTelemetry
+        protected async Task doDroneActionForEver<T>(ThriftMessageHandler handler,
+                    DeviceActionDelegate<T> del) where T : IDroneTelemetry
         {
-            var token = _cancellation_token_source.Token;
             string t_name = typeof(T).FullName;
-            _logger.LogDebug($"Starting Service {t_name}");
+            var token = _cancellation_token_source.Token;
             while (!token.IsCancellationRequested)
             {
-                try
-                {
-                    using (var client = handler.getClient<Drone.Client>(_logger))
-                    {
-                        T telemetry = await del(client.Client, token);
-                        _logger.LogDebug($"received {t_name} {telemetry}", telemetry);
-                        await _hub.Clients.All.SendAsync($"{t_name}", JsonConvert.SerializeObject(telemetry));
-                        await RecordTelemetry(telemetry);
-                    }
-                }
-                catch (Exception e)
-                {
-                    _logger.LogWarning($"{t_name} service failed with {e.ToString()}");
-                    await Task.Delay(5000, token);
-                }
+                await doDroneAction<T>(handler, del, token);
             }
             _logger.LogInformation($"Stopping {t_name} service because we received a cancellation request");
+        }
+        protected async Task doDroneAction<T>(ThriftMessageHandler handler,
+            DeviceActionDelegate<T> del, CancellationToken token) where T : IDroneTelemetry
+        {
+            string t_name = typeof(T).FullName;
+            _logger.LogDebug($"Starting Service {t_name}");
+            try
+            {
+
+                using (var client = handler.getClient<Drone.Client>(_logger))
+                {
+                    T telemetry = await del(client.Client, token);
+                    _logger.LogDebug($"received {t_name} {telemetry}", telemetry);
+                    await _hub.Clients.All.SendAsync($"{t_name}", JsonConvert.SerializeObject(telemetry));
+                    await RecordTelemetry(telemetry);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning($"{t_name} service failed with {e.ToString()}");
+                await Task.Delay(5000, token);
+            }
         }
         private async Task pingConnection(ThriftMessageHandler handler)
         {
@@ -98,7 +106,7 @@ namespace DroHub.Helpers.Thrift
                 await Task.Delay(5000);
                 return result;
             });
-            await doDroneAction<DroneReply>(handler, del);
+            await doDroneActionForEver<DroneReply>(handler, del);
         }
 
         private async Task GatherPosition(ThriftMessageHandler handler) {
@@ -106,14 +114,14 @@ namespace DroHub.Helpers.Thrift
             {
                 return client.getPositionAsync(token);
             });
-            await doDroneAction<DronePosition>(handler, del);
+            await doDroneActionForEver<DronePosition>(handler, del);
         }
         protected async Task GatherRadioSignal(ThriftMessageHandler handler)
         {
             DeviceActionDelegate<DroneRadioSignal> del = ((client, token) => {
                 return client.getRadioSignalAsync(token);
             });
-            await doDroneAction<DroneRadioSignal>(handler, del);
+            await doDroneActionForEver<DroneRadioSignal>(handler, del);
         }
 
         protected async Task GatherFlyingState(ThriftMessageHandler handler)
@@ -122,7 +130,7 @@ namespace DroHub.Helpers.Thrift
             {
                 return client.getFlyingStateAsync(token);
             });
-            await doDroneAction<DroneFlyingState>(handler, del);
+            await doDroneActionForEver<DroneFlyingState>(handler, del);
         }
         protected async Task GatherBatteryLevel(ThriftMessageHandler handler)
         {
@@ -130,7 +138,7 @@ namespace DroHub.Helpers.Thrift
             {
                 return client.getBatteryLevelAsync(token);
             });
-            await doDroneAction<DroneBatteryLevel>(handler, del);
+            await doDroneActionForEver<DroneBatteryLevel>(handler, del);
         }
 
         protected async Task GatherVideoSource(ThriftMessageHandler handler, Device device)
