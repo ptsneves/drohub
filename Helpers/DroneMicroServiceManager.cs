@@ -40,8 +40,8 @@ namespace DroHub.Helpers.Thrift
                 Task.Run(async () => await GatherPosition(handler)),
                 Task.Run(async () => await GatherRadioSignal(handler)),
                 Task.Run(async () => await GatherFlyingState(handler)),
-                Task.Run(async () => await GatherBatteryLevel(handler))
-                // Task.Run(async () => await GatherVideoSource(handler))
+                Task.Run(async () => await GatherBatteryLevel(handler)),
+                Task.Run(async () => await GatherVideoSource(handler))
             };
         }
 
@@ -141,10 +141,18 @@ namespace DroHub.Helpers.Thrift
             await doDroneActionForEver<DroneBatteryLevel>(handler, del);
         }
 
-        protected async Task GatherVideoSource(ThriftMessageHandler handler, Device device)
+        protected async Task GatherVideoSource(ThriftMessageHandler handler)
         {
-            DeviceActionDelegate<DroneVideoStateResult> del = (async (client, token) =>
+            DroneSendVideoRequest send_video_request;
+            Device device;
+            using (var scope = _services.CreateScope())
             {
+                var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
+                device = await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == handler.SerialNumber);
+                if (device == null)
+                {
+                    throw new ApplicationException("Cannot create video mountpoint for unregistered device {}");
+                }
                 var mountpoint = await createMountPointForDevice(device);
                 device.LiveVideoRTPUrl = mountpoint.LiveVideoRTPUrl;
                 device.LiveVideoFMTProfile = mountpoint.LiveVideoFMTProfile;
@@ -152,24 +160,41 @@ namespace DroHub.Helpers.Thrift
                 device.LiveVideoRTPMap = mountpoint.LiveVideoRTPMap;
                 device.LiveVideoSecret = mountpoint.LiveVideoSecret;
 
-                var send_video_request = new DroneSendVideoRequest
+                send_video_request = new DroneSendVideoRequest
                 {
                     RtpUrl = mountpoint.LiveVideoRTPUrl,
                     VideoType = (mountpoint.LiveVideoRTPMap == "VP8/90000" ? VideoType.VP8 :
                         VideoType.H264)
                 };
-                var result = await client.sendVideoToAsync(send_video_request, token);
-                using (var scope = _services.CreateScope())
-                {
-                    var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
-                    context.Update(device);
-                    await context.SaveChangesAsync();
-                    _logger.LogDebug("Saved edit information on device {}", device);
-                }
-                return result;
+                context.Update(device);
+                await context.SaveChangesAsync();
+                _logger.LogDebug("Saved edit information on device {}", device);
+            }
+
+
+            DeviceActionDelegate<DroneVideoStateResult> video_starter_del = (async (client, token) =>
+            {
+                return await client.sendVideoToAsync(send_video_request, token);
             });
-            await doDroneAction<DroneVideoStateResult>(handler, del);
-            await destroyMountPointForDevice(device);
+
+            DeviceActionDelegate<DroneVideoStateResult> video_state_poller = (async (client, token) =>
+            {
+                Task.Delay(5000);
+                return await client.getVideoStateAsync(send_video_request, token);
+            });
+
+            try
+            {
+                while (!_cancellation_token_source.Token.IsCancellationRequested)
+                {
+                    await doDroneAction<DroneVideoStateResult>(handler, video_starter_del, _cancellation_token_source.Token);
+                    await doDroneActionForEver<DroneVideoStateResult>(handler, video_state_poller);
+                }
+            }
+            finally
+            {
+                await destroyMountPointForDevice(device);
+            }
         }
 
         private async Task<JanusService.RTPMountPoint> createMountPointForDevice(Device device)
