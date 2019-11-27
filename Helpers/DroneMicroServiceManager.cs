@@ -54,7 +54,7 @@ namespace DroHub.Helpers.Thrift
                 var device = await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == telemetry_data.Serial);
                 if (device == null)
                 {
-                    _logger.LogDebug("Not saving received telemetry for unregistered device {}", telemetry_data);
+                    _logger.LogDebug("Not saving received telemetry for unregistered device {telemetry_data}", telemetry_data);
                     return;
                 }
                 context.Add(telemetry_data);
