@@ -95,6 +95,7 @@ namespace DroHub.Helpers.Thrift
             {
                 var result = await client.pingServiceAsync(token);
                 result.ActionName = "ping service";
+                await Task.Delay(5000);
                 return result;
             });
             await doDroneAction<DroneReply>(handler, del);
