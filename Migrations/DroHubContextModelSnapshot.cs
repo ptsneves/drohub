@@ -254,7 +254,7 @@ namespace DroHub.Data.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<string>("HumanStruct");
+                    b.Property<string>("HumanMessage");
 
                     b.Property<string>("RtpUrl");
 

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DroHub.Data.Migrations
 {
     [DbContext(typeof(DroHubContext))]
-    [Migration("20191125231016_DroneReplyAndDroneVideoStateResult")]
+    [Migration("20191127185742_DroneReplyAndDroneVideoStateResult")]
     partial class DroneReplyAndDroneVideoStateResult
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -256,7 +256,7 @@ namespace DroHub.Data.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<string>("HumanStruct");
+                    b.Property<string>("HumanMessage");
 
                     b.Property<string>("RtpUrl");
 

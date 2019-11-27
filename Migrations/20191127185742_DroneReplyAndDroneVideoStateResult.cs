@@ -35,7 +35,7 @@ namespace DroHub.Data.Migrations
                     Id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     State = table.Column<int>(nullable: false),
-                    HumanStruct = table.Column<string>(nullable: true),
+                    HumanMessage = table.Column<string>(nullable: true),
                     RtpUrl = table.Column<string>(nullable: true),
                     Serial = table.Column<string>(nullable: false),
                     Timestamp = table.Column<long>(nullable: false)
