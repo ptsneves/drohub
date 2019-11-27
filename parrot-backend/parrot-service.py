@@ -60,7 +60,7 @@ class ParrotSerialNumber():
 
     def validateSerial(self):
         if self.serial != self._expected_serial:
-            raise Exception("Retrieved serial and expected expected do not match.")
+            raise Exception("Retrieved serial and expected expected do not match {} {}.".format(self.serial, self._expected_serial))
 
     def setMSB(self, msb):
         if self._MSB_set:
