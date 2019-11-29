@@ -530,7 +530,7 @@ class TReverseTunnelServerFactory(object):
 class TReverseTunnelServer(TTransport.TTransportBase):
     def __init__(self, transport, acceptable_clients):
         self._transport = transport
-        self._connections = queue.Queue(10)
+        self._connections = queue.Queue(acceptable_clients)
 
     def listen(self):
         pass
