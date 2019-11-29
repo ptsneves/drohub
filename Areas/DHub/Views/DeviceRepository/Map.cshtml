@@ -417,7 +417,7 @@
             function populateRadioSignal(radio_signal) {
                 $(`.radio-signal-value-${radio_signal.Serial}`).each(
                     function(index, element) {
-                        if (radio_signal.RadioOptionCase == 2) {
+                        if (radio_signal.__isset['rssi'] == true) {
                             $(this).removeClass('label-default');
                             $(this).addClass('label-primary');
 
