@@ -528,7 +528,23 @@ class TReverseTunnelServerFactory(object):
 
 
 class TReverseTunnelServer(TTransport.TTransportBase):
-    def __init__(self, transport, acceptable_clients):
+    """A transport that allows RPC Servers use Client Transports.
+
+    This useful for reverse connections, where
+    a centralized server gives RPC calls to slaves that attached to
+    it. One example of it being useful is to have an RPC service behind
+    a restrited network that does not allow incoming connections.
+
+    The current implementation of this Transport is compatible with
+    ThreadedPoolServer and other concurrent servers as it blocks the
+    accept method according to how many calls are currently ongoing.
+    The logic is that if we are a server, whenever there is a flush
+    it means that we have finished a call. I do not think this is
+    in the specification but this seems to be a good heuristic to
+    signal the accept caller.
+    """
+
+    def __init__(self, transport, acceptable_clients=10):
         self._transport = transport
         self._connections = queue.Queue(acceptable_clients)
 
@@ -536,6 +552,8 @@ class TReverseTunnelServer(TTransport.TTransportBase):
         pass
 
     def accept(self):
+        if self._connections.empty():
+            self._transport.open()
         self._connections.put(None)
         return TTransport.TBufferedTransport(self)
 
@@ -546,6 +564,9 @@ class TReverseTunnelServer(TTransport.TTransportBase):
         self._transport.write(buf)
 
     def close(self):
+        with self._connections.mutex:
+            self._connections.queue.clear()
+
         self._transport.close()
 
     def flush(self):
