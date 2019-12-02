@@ -179,7 +179,7 @@ namespace DroHub.Helpers.Thrift
 
             DeviceActionDelegate<DroneVideoStateResult> video_state_poller = (async (client, token) =>
             {
-                Task.Delay(5000);
+                await Task.Delay(5000);
                 return await client.getVideoStateAsync(send_video_request, token);
             });
 
