@@ -49,6 +49,10 @@ from olympe.messages.skyctrl.CoPiloting import setPilotingSource
 from olympe.tools.logger import TraceLogger, DroneLogger, ErrorCodeDrone
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
+class LogHelper(object):
+    def __init__(self):
+        self.log = logging.getLogger(self.__class__.__name__)
+
 class ParrotSerialNumber():
     def __init__(self, expected_serial):
         self.serial = ""
@@ -91,8 +95,9 @@ class ParrotSerialNumber():
         else:
             self._expected_serial
 
-class DroneMessageContainerBase():
+class DroneMessageContainerBase(LogHelper):
     def __init__(self, drone_serial):
+        super(DroneMessageContainerBase, self).__init__()
         self.container = deque(maxlen=2)
         self.lk = threading.Lock()
         self.cv_consumer = threading.Condition(self.lk)
@@ -146,7 +151,7 @@ class DroneVideoContainer(DroneMessageContainerBase):
             new_message.human_message = "We do not really know what is going on. Its a bug"
             self._cleanProcess(rtp_server_url)
 
-        logging.debug(new_message.human_message)
+        self.log.debug(new_message.human_message)
         return new_message
 
 
@@ -158,11 +163,11 @@ class DroneVideoContainer(DroneMessageContainerBase):
             if video_type == VideoType.VP8:
                 self._processes[rtp_server_url] = self.runProcess(
                     DroneVideoContainer.Vp8_Command.format(source_url=drone_ip, rtp_url=rtp_server_url))
-                logging.debug("Sending VP8 to {}".format(rtp_server_url))
+                self.log.debug("Sending VP8 to {}".format(rtp_server_url))
             elif video_type == VideoType.H264:
                 self._processes[rtp_server_url] = self.runProcess(
                     DroneVideoContainer.H264_Command.format(source_url=drone_ip, rtp_url=rtp_server_url))
-                logging.debug("Sending H264 to {}".format(rtp_server_url))
+                self.log.debug("Sending H264 to {}".format(rtp_server_url))
             else:
                 raise Exception("Video Type requested is not recognized")
         except Exception as e:
@@ -171,7 +176,7 @@ class DroneVideoContainer(DroneMessageContainerBase):
 
     def _cleanProcess(self, rtp_url):
         if rtp_url in self._processes:
-            logging.debug("killing video of process that pumps video to {}".format(rtp_url))
+            self.log.debug("killing video of process that pumps video to {}".format(rtp_url))
             os.killpg(os.getpgid(self._processes[rtp_url].pid), signal.SIGTERM)
             self._processes[rtp_url].kill()
             del self._processes[rtp_url]
@@ -191,7 +196,7 @@ class PositionContainer(DroneMessageContainerBase):
     def dispatchPosition(self, message):
 
         if message.state()['latitude'] == 500.0 or message.state()['longitude'] == 500.0:
-            logging.debug("Received invalid position due to lack of position lock (GPS etc)")
+            self.log.debug("Received invalid position due to lack of position lock (GPS etc)")
             #This means that we do not have a position lock. Lets not send this
             #as this parrot specific.
             return
@@ -203,7 +208,7 @@ class PositionContainer(DroneMessageContainerBase):
                         serial = self.drone_serial.Get(),
                         timestamp = int(time.time()))
 
-        logging.debug(new_drone_position)
+        self.log.debug(new_drone_position)
         super().append(new_drone_position)
 
 class FlyingStateContainer(DroneMessageContainerBase):
@@ -241,7 +246,7 @@ class FlyingStateContainer(DroneMessageContainerBase):
                         serial = self.drone_serial.Get(),
                         timestamp = int(time.time()))
 
-        logging.debug(new_drone_flying_state)
+        self.log.debug(new_drone_flying_state)
         super().append(new_drone_flying_state)
 
     def getLastFlyingState(self):
@@ -257,7 +262,7 @@ class BatteryLevelContainer(DroneMessageContainerBase):
             serial = self.drone_serial.Get(),
             timestamp=int(time.time()))
 
-        logging.debug(new_battery_level)
+        self.log.debug(new_battery_level)
         super().append(new_battery_level)
 
 class RadioSignalContainer(DroneMessageContainerBase):
@@ -270,7 +275,7 @@ class RadioSignalContainer(DroneMessageContainerBase):
             timestamp=int(time.time()),
             rssi = message.state()['rssi']
         )
-        logging.debug(new_rssi_level)
+        self.log.debug(new_rssi_level)
         super().append(new_rssi_level)
 
     def dispatchRadioSignalQuality(self, message):
@@ -279,7 +284,7 @@ class RadioSignalContainer(DroneMessageContainerBase):
             timestamp=int(time.time()),
             signal_quality = message.state()['value']
         )
-        logging.debug(new_signal_quality)
+        self.log.debug(new_signal_quality)
         super().append(new_signal_quality)
 
 class FileListContainer(DroneMessageContainerBase):
@@ -288,7 +293,7 @@ class FileListContainer(DroneMessageContainerBase):
 
     def getFileList(self):
         resource_list_url = "http://{}:180/api/v1/media/medias".format(self.drone.getIP())
-        logging.debug("Trying to access API at {}".format(resource_list_url))
+        self.log.debug("Trying to access API at {}".format(resource_list_url))
         with urllib.request.urlopen(resource_list_url) as http_request:
             drone_file_list = drohub_pb2.DroneFileList()
             drone_file_list.serial = self.serial.Get()
@@ -317,11 +322,12 @@ class FileListContainer(DroneMessageContainerBase):
 
 
     def dispatchFileList(self, message):
-        logging.debug()
+        self.log.debug()
         super().append(self.getFileList())
 
-class DroneChooser(object):
+class DroneChooser(LogHelper):
     def __init__(self, drone_type):
+        super(DroneChooser, self).__init__()
         self._drone_args_dict = {}
         self._drone_args_dict["loglevel"] = TraceLogger.level.warning
         self._drone_type = drone_type
@@ -387,7 +393,7 @@ class DronePersistentConnection(DroneThreadSafe):
 
     def checkDroneConnected(self):
         if not self._checkDronePage():
-            logging.info("Drone is unreachable through the controller.")
+            self.log.info("Drone is unreachable through the controller.")
             return False
         state = self.getDrone().connection_state()
         if state.OK:
@@ -396,7 +402,7 @@ class DronePersistentConnection(DroneThreadSafe):
             return False
 
     def _reconnectDrone(self):
-        logging.info("Trying to connect")
+        self.log.info("Trying to connect")
         if not self.getDrone().connection():
             raise Exception("Drone is not connected")
 
@@ -407,10 +413,11 @@ class DronePersistentConnection(DroneThreadSafe):
                 try:
                    self._reconnectDrone()
                 except Exception:
-                    logging.warning("Reconnection failed. Trying again")
+                    self.log.warning("Reconnection failed. Trying again")
 
-class DroneRPC(object):
+class DroneRPC(LogHelper):
     def __init__(self, drone_type, expected_serial):
+        super(DroneRPC, self).__init__()
         self.serial = ParrotSerialNumber(expected_serial)
         self.video_encoder = DroneVideoContainer(self.serial)
         self.position_container = PositionContainer(self.serial)
@@ -419,7 +426,6 @@ class DroneRPC(object):
         self.flying_state_container = FlyingStateContainer(self.serial)
         self.file_list_container = FileListContainer(self.serial)
         self.drone = DronePersistentConnection(drone_type, callbacks = [self.cb1])
-        super().__init__()
 
     def cb1(self, message):
         pass
@@ -448,9 +454,9 @@ class DroneRPC(object):
         return self.video_encoder.getVideoState(request.rtp_url)
 
     def getPosition(self):
-        logging.warning("Get Position")
+        self.log.warning("Get Position")
         d = self.position_container.getElement()
-        logging.warning("Sent Position")
+        self.log.warning("Sent Position")
         return d
 
     def getBatteryLevel(self):
@@ -463,7 +469,7 @@ class DroneRPC(object):
         return self.flying_state_container.getElement()
 
     def doTakeoff(self):
-        logging.warning("Taking off")
+        self.log.warning("Taking off")
         takeoff = self.drone.getDrone()(
             TakeOff()
             >> FlyingStateChanged(state="hovering", _timeout=5)
@@ -474,7 +480,7 @@ class DroneRPC(object):
             result=takeoff.success())
 
     def doLanding(self):
-        logging.warning("Landing")
+        self.log.warning("Landing")
         landing = self.drone.getDrone()(Landing()
             >> FlyingStateChanged(state="landed")
         ).wait()
@@ -484,7 +490,7 @@ class DroneRPC(object):
             result=landing.success())
 
     def doReturnToHome(self):
-        logging.warning("Returning to Home")
+        self.log.warning("Returning to Home")
         landing = self.drone.getDrone()(NavigateHome(start=1)
                                         >> NavigateHomeStateChanged(state='inProgress')
                                         ).wait()
@@ -503,7 +509,7 @@ class DroneRPC(object):
             result=go_to_position.success())
 
     def pingService(self):
-        logging.debug("ping {}".format(self.serial.Get()))
+        self.log.debug("ping {}".format(self.serial.Get()))
         return DroneReply(
             serial = self.serial.Get(),
             timestamp=int(time.time()),
@@ -575,8 +581,9 @@ class TReverseTunnelServer(TTransport.TTransportBase):
         self._transport.flush()
 
 
-class TWebSocketClient(TTransport.TTransportBase):
+class TWebSocketClient(LogHelper, TTransport.TTransportBase):
     def __init__(self, url, expected_serial):
+        super(TWebSocketClient, self).__init__()
         headers = [
             "User-Agent: AirborneProjets",
             "Content-Type: application/x-thrift",
@@ -585,25 +592,25 @@ class TWebSocketClient(TTransport.TTransportBase):
         # websocket.enableTrace(True)
         self._close = False
 
-
     def read(self, sz):
         if self._close:
             raise TTransport.TTransportException(type=TTransport.TTransportException.END_OF_FILE,
                                       message='TSocket read 0 bytes')
         r = self.ws.recv()
-        logging.debug("Read {}".format(r))
+        self.log.debug("Read {}".format(r))
         return r
 
     def write(self, buf):
         if self._close:
             raise TTransport.TTransportException(type=TTransport.TTransportException.END_OF_FILE,
                                       message='TSocket sent 0 bytes')
-        logging.debug("Write {}".format(buf))
+        self.log.debug("Write {}".format(buf))
         self.ws.send_binary(buf)
 
     def close(self):
         self._close = True
         self.ws.close(timeout=None)
+        self.log.debug("Closed WebSocket cleint")
 
     def flush(self):
         pass
@@ -726,7 +733,7 @@ def serve(drone_type, drohub_url, expected_serial):
             server.serve()
         # except (ConnectionRefusedError, TTransport.TTransportException) as _:
         #     time.sleep(5)
-        #     logging.error("Failed to connect to drohub. Retrying")
+        #     self.log.error("Failed to connect to drohub. Retrying")
         #     pass
         except KeyboardInterrupt as _:
             try:
@@ -756,6 +763,5 @@ if __name__ == '__main__':
     parser.add_argument('serial', nargs=1, type=str, help='The expected serial number of the drone')
     parser.add_argument('url', nargs=1, type=str, help='The websocket url for the drohub server')
     args = parser.parse_args()
-    logging.basicConfig(
-        level=args.verbosity, format='%(asctime)-15s %(levelname)s  %(threadName)s %(message)s')
+    logging.basicConfig(level=args.verbosity, format='%(asctime)-15s %(levelname)s %(name)s %(threadName)s --> %(message)s')
     serve(args.drone_type, args.url[0], args.serial[0])
