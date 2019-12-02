@@ -525,6 +525,11 @@
                     populateFlyingState(flying_state)
                 });
 
+                connection.on("DroneReply", function (message) {
+                    drone_reply = JSON.parse(message);
+                    //pingService
+                });
+
                 connection.start().then(function () {
                     console.log("Notifications started SIGNALR");
 
