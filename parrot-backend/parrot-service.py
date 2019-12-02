@@ -763,5 +763,15 @@ if __name__ == '__main__':
     parser.add_argument('serial', nargs=1, type=str, help='The expected serial number of the drone')
     parser.add_argument('url', nargs=1, type=str, help='The websocket url for the drohub server')
     args = parser.parse_args()
-    logging.basicConfig(level=args.verbosity, format='%(asctime)-15s %(levelname)s %(name)s %(threadName)s --> %(message)s')
+
+    logging.basicConfig(
+        level=args.verbosity, format='%(asctime)-15s %(levelname)s %(name)s %(threadName)s --> \033[1;1m%(message)s\033[1;0m')
+    logging.addLevelName(
+        logging.ERROR, "\033[1;11m%s\033[0m" % logging.getLevelName(logging.ERROR))
+    logging.addLevelName(
+        logging.WARNING, "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING))
+    logging.addLevelName(
+        logging.INFO, "\033[1;36m%s\033[0m" % logging.getLevelName(logging.INFO))
+    logging.addLevelName(
+        logging.DEBUG, "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.DEBUG))
     serve(args.drone_type, args.url[0], args.serial[0])
