@@ -189,6 +189,7 @@ namespace DroHub.Helpers.Thrift
                 {
                     await doDroneAction<DroneVideoStateResult>(handler, video_starter_del, _cancellation_token_source.Token);
                     await doDroneActionForEver<DroneVideoStateResult>(handler, video_state_poller);
+                    await Task.Delay(5000);
                 }
             }
             finally
