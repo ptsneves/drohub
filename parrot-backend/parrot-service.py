@@ -585,33 +585,42 @@ class TReverseTunnelServer(TTransport.TTransportBase):
 class TWebSocketClient(LogHelper, TTransport.TTransportBase):
     def __init__(self, url, expected_serial):
         super(TWebSocketClient, self).__init__()
-        headers = [
+        self._url = url
+        self._headers = [
             "User-Agent: AirborneProjets",
             "Content-Type: application/x-thrift",
             "x-device-expected-serial: {expected_serial}".format(expected_serial=expected_serial)]
-        self.ws = websocket.create_connection(url, header=headers, enable_multithread=True, skip_utf8_validation=True)
         # websocket.enableTrace(True)
-        self._close = False
+
+    def __enter__(self):
+        self.ws = websocket.create_connection(self._url, header=self._headers, enable_multithread=True, skip_utf8_validation=True)
+        self.log.info("Successfully connected to {}".format(self._url))
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if self.ws.connected:
+            self.ws.close(timeout=5)
+            self.log.debug("Closed WebSocket client")
 
     def read(self, sz):
-        if self._close:
+        try:
+            r = self.ws.recv()
+            self.log.debug("Read {}".format(r))
+            return r
+        except Exception as e:
             raise TTransport.TTransportException(type=TTransport.TTransportException.END_OF_FILE,
-                                      message='TSocket read 0 bytes')
-        r = self.ws.recv()
-        self.log.debug("Read {}".format(r))
-        return r
+                                                 message=repr(e))
 
     def write(self, buf):
-        if self._close:
+        try:
+            self.log.debug("Write {}".format(buf))
+            self.ws.send_binary(buf)
+        except Exception as e:
             raise TTransport.TTransportException(type=TTransport.TTransportException.END_OF_FILE,
-                                      message='TSocket sent 0 bytes')
-        self.log.debug("Write {}".format(buf))
-        self.ws.send_binary(buf)
+                                                 message=repr(e))
 
     def close(self):
-        self._close = True
-        self.ws.close(timeout=None)
-        self.log.debug("Closed WebSocket cleint")
+        pass
 
     def flush(self):
         pass
@@ -724,14 +733,14 @@ def serve(drone_type, drohub_url, expected_serial):
     while True:
         try:
             processor = Drone.Processor(handler)
-            transport = TWebSocketClient(drohub_url, expected_serial)
-            transport = TReverseTunnelServer(transport, 10)
-            tfactory = TTransport.TFramedTransportFactory()
-            pfactory = TMessageValidatorProtocolFactory(TJSONProtocol.TJSONProtocolFactory(),
-                TMessageValidatorProtocol.ValidationMode.KEEP_READING, TMessageValidatorProtocol.OperationMode.SEQID_SLAVE)
+            with TWebSocketClient(drohub_url, expected_serial) as ws:
+                transport = TReverseTunnelServer(ws, 10)
+                tfactory = TTransport.TFramedTransportFactory()
+                pfactory = TMessageValidatorProtocolFactory(TJSONProtocol.TJSONProtocolFactory(),
+                    TMessageValidatorProtocol.ValidationMode.KEEP_READING, TMessageValidatorProtocol.OperationMode.SEQID_SLAVE)
 
-            server = TServer.TThreadPoolServer(processor, transport, tfactory, pfactory)
-            server.serve()
+                server = TServer.TThreadPoolServer(processor, transport, tfactory, pfactory)
+                server.serve()
         # except (ConnectionRefusedError, TTransport.TTransportException) as _:
         #     time.sleep(5)
         #     self.log.error("Failed to connect to drohub. Retrying")
