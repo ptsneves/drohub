@@ -559,8 +559,7 @@ class TReverseTunnelServer(TTransport.TTransportBase):
         pass
 
     def accept(self):
-        if self._connections.empty():
-            self._transport.open()
+        self._transport.open()
         self._connections.put(None)
         return TTransport.TBufferedTransport(self)
 
