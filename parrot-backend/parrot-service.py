@@ -397,7 +397,7 @@ class DronePersistentConnection(DroneThreadSafe):
 
     def checkDroneConnected(self):
         if not self._checkDronePage():
-            self.log.info("Drone is unreachable through the controller.")
+            self.log.warn("Drone is unreachable through the controller.")
             return False
         state = self.getDrone().connection_state()
         if state.OK:
@@ -406,7 +406,7 @@ class DronePersistentConnection(DroneThreadSafe):
             return False
 
     def _reconnectDrone(self):
-        self.log.info("Trying to connect")
+        self.log.warn("Trying to connect")
         if not self.getDrone().connection():
             raise Exception("Drone is not connected")
 
@@ -466,9 +466,7 @@ class DroneRPC(LogHelper):
         return self.video_encoder.getVideoState(request.rtp_url)
 
     def getPosition(self):
-        self.log.warning("Get Position")
         d = self.position_container.getElement()
-        self.log.warning("Sent Position")
         return d
 
     def getBatteryLevel(self):
