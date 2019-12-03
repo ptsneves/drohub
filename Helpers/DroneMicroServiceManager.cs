@@ -171,26 +171,17 @@ namespace DroHub.Helpers.Thrift
                 _logger.LogDebug("Saved edit information on device {}", device);
             }
 
-
-            DeviceActionDelegate<DroneVideoStateResult> video_starter_del = (async (client, token) =>
-            {
-                return await client.sendVideoToAsync(send_video_request, token);
-            });
-
             DeviceActionDelegate<DroneVideoStateResult> video_state_poller = (async (client, token) =>
             {
-                await Task.Delay(5000);
-                return await client.getVideoStateAsync(send_video_request, token);
+                var result = await client.getVideoStateAsync(send_video_request, token);
+                if (result.State != DroneVideoState.LIVE)
+                    return await client.sendVideoToAsync(send_video_request, token);
+                return result;
             });
 
             try
             {
-                while (!_cancellation_token_source.Token.IsCancellationRequested)
-                {
-                    await doDroneAction<DroneVideoStateResult>(handler, video_starter_del, _cancellation_token_source.Token);
-                    await doDroneActionForEver<DroneVideoStateResult>(handler, video_state_poller);
-                    await Task.Delay(5000);
-                }
+                await doDroneActionForEver<DroneVideoStateResult>(handler, video_state_poller);
             }
             finally
             {
