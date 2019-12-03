@@ -609,7 +609,7 @@ class TWebSocketClient(LogHelper, TTransport.TTransportBase):
 
     def __exit__(self, type, value, traceback):
         if self.ws.connected:
-            self.ws.close(timeout=5)
+            self.ws.close(timeout=0)
             self.log.debug("Closed WebSocket client")
 
     def read(self, sz):
