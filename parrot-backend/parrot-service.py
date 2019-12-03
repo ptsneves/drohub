@@ -135,21 +135,24 @@ class DroneVideoContainer(DroneMessageContainerBase):
             serial=self.drone_serial.Get(),
             timestamp=int(time.time()))
 
-        if rtp_server_url not in self._processes.keys():
-            new_message.state = DroneVideoState.INVALID_CONDITION
-            new_message.human_message = "There is no record of sending video to this url {}".format(rtp_server_url)
-        elif self._processes[rtp_server_url].poll() == None:
-            new_message.state = DroneVideoState.DIED
-            new_message.human_message = "Process is dead. stderr is:\n{}".format(io.TextIOWrapper(
-                    self._processes[rtp_server_url].stderr, encoding='utf-8').readlines())
-            self._cleanProcess(rtp_server_url)
-        elif self._processes[rtp_server_url].poll():
-            new_message.state = DroneVideoState.LIVE
-            new_message.human_message = "Process for {} is living".format(rtp_server_url)
+        if rtp_server_url in self._processes.keys():
+            poll_result = self._processes[rtp_server_url].poll()
+            if poll_result == None or poll_result < 0:
+                new_message.state = DroneVideoState.DIED
+                new_message.human_message = "Process is dead. stderr is:\n{}".format(io.TextIOWrapper(
+                        self._processes[rtp_server_url].stderr, encoding='utf-8').readlines())
+                self._cleanProcess(rtp_server_url)
+            elif poll_result > 0:
+                new_message.state = DroneVideoState.LIVE
+                new_message.human_message = "Process for {} is living".format(rtp_server_url)
+            else:
+                new_message.state = DroneVideoState.INVALID_CONDITION
+                new_message.human_message = "We do not really know what is going on. Its a bug"
+                self._cleanProcess(rtp_server_url)
         else:
             new_message.state = DroneVideoState.INVALID_CONDITION
-            new_message.human_message = "We do not really know what is going on. Its a bug"
-            self._cleanProcess(rtp_server_url)
+            new_message.human_message = "There is no record of sending video to this url {}".format(
+                rtp_server_url)
 
         self.log.debug(new_message.human_message)
         return new_message
@@ -435,7 +438,7 @@ class DroneRPC(LogHelper):
         return self
 
     def __exit__(self, type, value, traceback):
-        pass
+        self.log.info("Closed DroneRPC service")
 
     def cb1(self, message):
         if message.Full_Name == "Common_SettingsState_ProductSerialHighChanged":
