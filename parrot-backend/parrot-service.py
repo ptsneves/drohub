@@ -425,7 +425,8 @@ class DroneRPC(LogHelper):
         self.radio_signal_container = RadioSignalContainer(self.serial)
         self.flying_state_container = FlyingStateContainer(self.serial)
         self.file_list_container = FileListContainer(self.serial)
-        self.drone = DronePersistentConnection(drone_type, callbacks = [self.cb1])
+        self.drone = DronePersistentConnection(drone_type, callbacks=[self.cb1])
+        self.log.info("DroneRPC initialized")
 
     def cb1(self, message):
         pass
