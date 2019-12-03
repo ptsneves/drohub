@@ -418,19 +418,26 @@ class DronePersistentConnection(DroneThreadSafe):
 class DroneRPC(LogHelper):
     def __init__(self, drone_type, expected_serial):
         super(DroneRPC, self).__init__()
-        self.serial = ParrotSerialNumber(expected_serial)
+        self._drone_type = drone_type
+        self._expected_serial = expected_serial
+
+
+    def __enter__(self):
+        self.serial = ParrotSerialNumber(self._expected_serial)
         self.video_encoder = DroneVideoContainer(self.serial)
         self.position_container = PositionContainer(self.serial)
         self.battery_level_container = BatteryLevelContainer(self.serial)
         self.radio_signal_container = RadioSignalContainer(self.serial)
         self.flying_state_container = FlyingStateContainer(self.serial)
         self.file_list_container = FileListContainer(self.serial)
-        self.drone = DronePersistentConnection(drone_type, callbacks=[self.cb1])
+        self.drone = DronePersistentConnection(self._drone_type, callbacks=[self.cb1])
         self.log.info("DroneRPC initialized")
+        return self
+
+    def __exit__(self, type, value, traceback):
+        pass
 
     def cb1(self, message):
-        pass
-       
         if message.Full_Name == "Common_SettingsState_ProductSerialHighChanged":
             self.serial.setMSB(message.state()['high'])
         elif message.Full_Name == "Common_SettingsState_ProductSerialLowChanged":
@@ -718,37 +725,37 @@ class TMessageValidatorProtocol(TProtocolDecorator.TProtocolDecorator):
         return (name, msg_type, seqid)
 
 def serve(drone_type, drohub_url, expected_serial):
-    handler = DroneRPC(drone_type, expected_serial)
-    transport = None
-    while True:
-        try:
-            processor = Drone.Processor(handler)
-            with TWebSocketClient(drohub_url, expected_serial) as ws:
-                transport = TReverseTunnelServer(ws, 10)
-                tfactory = TTransport.TFramedTransportFactory()
-                pfactory = TMessageValidatorProtocolFactory(TJSONProtocol.TJSONProtocolFactory(),
-                    TMessageValidatorProtocol.ValidationMode.KEEP_READING, TMessageValidatorProtocol.OperationMode.SEQID_SLAVE)
-
-                server = TServer.TThreadPoolServer(processor, transport, tfactory, pfactory)
-                server.serve()
-        # except (ConnectionRefusedError, TTransport.TTransportException) as _:
-        #     time.sleep(5)
-        #     self.log.error("Failed to connect to drohub. Retrying")
-        #     pass
-        except KeyboardInterrupt as _:
+    with DroneRPC(drone_type, expected_serial) as handler:
+        transport = None
+        while True:
             try:
-                transport.close()
-            except _:
-                pass
-            break
-        # except (Exception, SystemExit) as _:
-        #     if transport:
-        #         try:
-        #             transport.close()
-        #         except _:
-        #             pass
-        #         time.sleep(5)
-        #         continue
+                processor = Drone.Processor(handler)
+                with TWebSocketClient(drohub_url, expected_serial) as ws:
+                    transport = TReverseTunnelServer(ws, 10)
+                    tfactory = TTransport.TFramedTransportFactory()
+                    pfactory = TMessageValidatorProtocolFactory(TJSONProtocol.TJSONProtocolFactory(),
+                        TMessageValidatorProtocol.ValidationMode.KEEP_READING, TMessageValidatorProtocol.OperationMode.SEQID_SLAVE)
+
+                    server = TServer.TThreadPoolServer(processor, transport, tfactory, pfactory)
+                    server.serve()
+            # except (ConnectionRefusedError, TTransport.TTransportException) as _:
+            #     time.sleep(5)
+            #     self.log.error("Failed to connect to drohub. Retrying")
+            #     pass
+            except KeyboardInterrupt as _:
+                try:
+                    transport.close()
+                except _:
+                    pass
+                break
+            # except (Exception, SystemExit) as _:
+            #     if transport:
+            #         try:
+            #             transport.close()
+            #         except _:
+            #             pass
+            #         time.sleep(5)
+            #         continue
 
 
 if __name__ == '__main__':
