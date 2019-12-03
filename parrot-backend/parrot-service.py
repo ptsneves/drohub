@@ -605,6 +605,8 @@ class TWebSocketClient(LogHelper, TTransport.TTransportBase):
     def read(self, sz):
         try:
             r = self.ws.recv()
+            if r == '':
+                raise Exception('Connections is closed')
             self.log.debug("Read {}".format(r))
             return r
         except Exception as e:
