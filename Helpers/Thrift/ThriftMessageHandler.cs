@@ -215,7 +215,7 @@ namespace DroHub.Helpers.Thrift
             lock (_input_streams)
             {
                 UTF8Encoding utf8 = new UTF8Encoding();
-                // _logger.LogDebug("{ascii}", utf8.GetString(buffer, 0, count));
+                _logger.LogDebug("{ascii}", utf8.GetString(buffer, 0, count));
                 foreach (var input_stream in _input_streams)
                 {
                     if (input_stream.CanWrite)
