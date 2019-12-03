@@ -68,8 +68,8 @@ namespace DroHub.Helpers.Thrift
                         if (res > 0)
                         {
                             ASCIIEncoding ascii = new ASCIIEncoding();
-
-                            _logger.LogDebug($"Send async res {res} !" + ascii.GetString(buffer, 0, maximum_to_flush));
+                            var a = ascii.GetString(buffer, 0, maximum_to_flush);
+                            _logger.LogDebug($"Send async res {res} !{a}");
                             await socket.SendAsync(buffer, WebSocketMessageType.Binary, true, tkn);
                             _logger.LogDebug("Sent");
                         }
