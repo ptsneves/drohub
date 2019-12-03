@@ -173,6 +173,7 @@ class DroneVideoContainer(DroneMessageContainerBase):
                 self.log.debug("Sending H264 to {}".format(rtp_server_url))
             else:
                 raise Exception("Video Type requested is not recognized")
+            return self.getVideoState(rtp_server_url)
         except Exception as e:
             self._cleanProcess(rtp_server_url)
             raise e
