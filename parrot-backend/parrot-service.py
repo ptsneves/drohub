@@ -645,27 +645,16 @@ class TLockedFramedTransport(TTransport.TFramedTransport):
         super().__init__(trans)
 
     def read(self, sz):
-        self.input_m.acquire()
-        try:
+        with self.input_m:
             return super().read(sz)
-        finally:
-            self.input_m.release()
 
     def write(self, buf):
-        # print("Aquiring")
-        self.output_m.acquire()
-        try:
+        with self.output_m:
             super().write(buf)
-        finally:
-            # print("Releasing")
-            self.output_m.release()
 
     def flush(self):
-        self.flush_m.acquire()
-        try:
+        with self.flush_m:
             super().flush()
-        finally:
-            self.flush_m.release()
 
 
 class TMessageValidatorProtocolFactory(object):
