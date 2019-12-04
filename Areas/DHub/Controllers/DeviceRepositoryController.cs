@@ -23,18 +23,21 @@ namespace DroHub.Areas.DHub.Controllers
         private readonly DroHubContext _context;
         private readonly UserManager<DroHubUser> _userManager;
         private readonly DropboxRepositorySettings _dropboxRepositorySettings;
+        private readonly RepositoryOptions _repository_settings;
         private readonly ILogger<DeviceRepositoryController> _logger;
         #endregion
 
         #region Constructor
         public DeviceRepositoryController(DroHubContext context, UserManager<DroHubUser> userManager,
             IOptions<DropboxRepositorySettings> dropboxRepositorySettings,
+            IOptions<RepositoryOptions> repository_settings,
             ILogger<DeviceRepositoryController> logger)
         {
             _context = context;
             _userManager = userManager;
             _dropboxRepositorySettings = dropboxRepositorySettings.Value;
             _logger = logger;
+            _repository_settings = repository_settings.Value;
         }
         #endregion
 
@@ -164,6 +167,16 @@ namespace DroHub.Areas.DHub.Controllers
             if (string.IsNullOrWhiteSpace(currentDevice.DropboxToken)) {
                 return RedirectToAction(nameof(Index), new { id = currentDevice.Id});
             }
+
+            var google_api_key = _repository_settings.GoogleMapsAPIKey;
+            if (!String.IsNullOrEmpty(google_api_key))
+            {
+                ViewData["GoogleAPIKey"] = $"&key={google_api_key}";
+            }
+            else {
+                ViewData["GoogleAPIKey"] = "";
+            }
+
             return View(await GetDeviceListInternal());
         }
 

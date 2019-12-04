@@ -57,6 +57,7 @@ namespace DroHub
             });
 
             services.Configure<DropboxRepositorySettings>(Configuration.GetSection("RepositoriesConfiguration").GetSection("Dropbox"));
+            services.Configure<RepositoryOptions>(Configuration.GetSection("RepositoriesConfiguration"));
             services.Configure<CookiePolicyOptions>(options =>
             {
                 // This lambda determines whether user consent for non-essential cookies is needed for a given request.
