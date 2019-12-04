@@ -57,12 +57,6 @@ var locked_id = null;
 
 var simulcastStarted = false, svcStarted = false;
 
-
-$(document).ready(function() {
-	// Initialize the library (all console debuggers enabled)
-	initJanus();
-});
-
 function initJanus() {
 	Janus.init({debug: "all", callback: function() {
 		// Make sure the browser supports WebRTC

@@ -274,6 +274,7 @@
     <script src="/lib/signalr/dist/browser/signalr.js"></script>
     <script src="/js/common-dropbox.js"></script>
     <script>
+            initJanus();
             var marker_dict = {};
             function centerMapOnDevice(device_serial_number) {
                 let device_marker = marker_dict[`@drone_marker_id_prefix${device_serial_number}`];
