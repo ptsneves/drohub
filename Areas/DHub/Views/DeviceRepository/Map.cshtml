@@ -266,6 +266,10 @@
             </script>
         }
     }
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/6.4.0/adapter.min.js" ></script>
+    <script type="text/javascript" src="~/js/janus.js" ></script>
+    <script type="text/javascript" src="~/js/streamingtest.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?p@(ViewData["GoogleAPIKey"])"></script>
     <script src="/lib/dropbox-sdk/Dropbox-sdk.min.js"></script>
     <script src="/lib/signalr/dist/browser/signalr.js"></script>
     <script src="/js/common-dropbox.js"></script>
@@ -637,9 +641,6 @@
                     console.log("Received bad json")
                 })
         }
+        initMap()
         </script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/6.4.0/adapter.min.js" ></script>
-        <script type="text/javascript" src="~/js/janus.js" ></script>
-        <script type="text/javascript" src="~/js/streamingtest.js"></script>
-        <script async defer src="https://maps.googleapis.com/maps/api/js?callback=initMap@(ViewData["GoogleAPIKey"])"></script>
 }
