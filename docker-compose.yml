@@ -9,7 +9,7 @@ services:
         depends_on:
             - "web"
     web:
-        image: "ptsneves/airborneprojects:drohub"
+        image: "ptsneves/airborneprojects:release-master"
         network_mode: host
         ports:
             - "5000:5000"
