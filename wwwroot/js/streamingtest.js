@@ -42,10 +42,6 @@
 // in the presented order. The first working server will be used for
 // the whole session.
 //
-var server = null;
-
-
-server = "/janus";
 var janus = null;
 var streaming = null;
 var opaqueId = "streamingtest-"+Janus.randomString(12);
@@ -57,7 +53,7 @@ var locked_id = null;
 
 var simulcastStarted = false, svcStarted = false;
 
-function initJanus() {
+function initJanus(server_url, stun_server_url) {
 	Janus.init({debug: "all", callback: function() {
 		// Make sure the browser supports WebRTC
 		if(!Janus.isWebrtcSupported()) {
@@ -70,9 +66,9 @@ function initJanus() {
 		console.log("inited Janus");
 		janus = new Janus(
 			{
-				server: server,
+				server: server_url,
 				iceServers: [
-					{ url: "stun:stun.l.google.com:19302" }
+					{ url: stun_server_url }
 					],
 				// iceTransportPolicy: "relay"
 				success: function() {

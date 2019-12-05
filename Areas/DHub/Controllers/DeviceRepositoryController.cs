@@ -176,6 +176,8 @@ namespace DroHub.Areas.DHub.Controllers
             else {
                 ViewData["GoogleAPIKey"] = "";
             }
+            ViewData["FrontEndStunServerUrl"] = _repository_settings.FrontEndStunServerUrl;
+            ViewData["FrontEndJanusUrl"] = _repository_settings.FrontEndJanusUrl;
 
             return View(await GetDeviceListInternal());
         }
