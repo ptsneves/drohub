@@ -52,14 +52,22 @@ namespace DroHub.Areas.DHub.Controllers
             return new DropboxClient(device.DropboxToken, new DropboxClientConfig(_dropboxRepositorySettings.AppName));
         }
         #endregion
+        private async Task<Device> getDeviceById(int? id)
+        {
+            if (id == null) return null;
+            return await _context.UserDevices
+                .Where(ud => _userManager.GetUserId(User) == ud.DroHubUserId && ud.Device.Id == id)
+                .Select(ud => ud.Device)
+                .FirstOrDefaultAsync();
+        }
 
         // GET: /<controller>/
         public async Task<IActionResult> Index(int? id)
         {
             if (id == null) return NotFound();
 
-            DroHubUser currentUser = await _userManager.GetUserAsync(User);
-            Device currentDevice = await _context.Devices.FirstOrDefaultAsync(device => device.Id == id && device.User == currentUser);
+
+            Device currentDevice = await getDeviceById(id);
 
             if (currentDevice == null) return NotFound();
 
@@ -86,54 +94,53 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         // GET: /<controller>/Auth
-        public async Task<ActionResult> Auth(string code, string state)
-        {
-            try
-            {
-                DroHubUser currentUser = await _userManager.GetUserAsync(User);
-                // Get device by connect state (defined on Index Method)
-                Device currentDevice = await _context.Devices.FirstOrDefaultAsync(
-                    device => device.DropboxConnectState == state && device.User == currentUser);
+        // public async Task<ActionResult> Auth(string code, string state)
+        // {
+        //     try
+        //     {
+        //         DroHubUser currentUser = await _userManager.GetUserAsync(User);
+        //         Device currentDevice = currentUser.Devices.FirstOrDefault(
+        //             device => device.DropboxConnectState == state);
 
-                if (currentDevice == null) // same as (currentDevice.ConnectState != state) but not necessary because it's already verified
-                                           // above with device.DropboxConnectState == state
-                {
-                    //this.Flash("There was an error connecting to Dropbox.");
-                    return RedirectToAction(nameof(Index), "Devices", new { area = "DHub" });
-                }
-                // else
-                var response = await DropboxOAuth2Helper.ProcessCodeFlowAsync(
-                    code,
-                    _dropboxRepositorySettings.APIKey,
-                    _dropboxRepositorySettings.APISecret,
-                    _dropboxRepositorySettings.AuthRedirectUri);
+        //         if (currentDevice == null) // same as (currentDevice.ConnectState != state) but not necessary because it's already verified
+        //                                    // above with device.DropboxConnectState == state
+        //         {
+        //             //this.Flash("There was an error connecting to Dropbox.");
+        //             return RedirectToAction(nameof(Index), "Devices", new { area = "DHub" });
+        //         }
+        //         // else
+        //         var response = await DropboxOAuth2Helper.ProcessCodeFlowAsync(
+        //             code,
+        //             _dropboxRepositorySettings.APIKey,
+        //             _dropboxRepositorySettings.APISecret,
+        //             _dropboxRepositorySettings.AuthRedirectUri);
 
-                currentDevice.DropboxToken = response.AccessToken; // Save dropbox token for this device
-                currentDevice.DropboxConnectState = string.Empty; // Clear current Dropbox connect state
-                await _context.SaveChangesAsync();
+        //         currentDevice.DropboxToken = response.AccessToken; // Save dropbox token for this device
+        //         currentDevice.DropboxConnectState = string.Empty; // Clear current Dropbox connect state
+        //         await _context.SaveChangesAsync();
 
-                //this.Flash("This account has been connected to Dropbox.", FlashLevel.Success);
-                return RedirectToAction(nameof(Index), new { id = currentDevice.Id });
-            }
-            catch (Exception e)
-            {
-                var message = string.Format(
-                    "code: {0}\nAppKey: {1}\nAppSecret: {2}\nRedirectUri: {3}\nException : {4}",
-                    code,
-                    _dropboxRepositorySettings.APIKey,
-                    _dropboxRepositorySettings.APISecret,
-                    _dropboxRepositorySettings.AuthRedirectUri,
-                    e);
-                //this.Flash(message, FlashLevel.Danger);
-                return RedirectToAction(nameof(Index), "Devices", new { area = "DHub" });
-            }
-        }
+        //         //this.Flash("This account has been connected to Dropbox.", FlashLevel.Success);
+        //         return RedirectToAction(nameof(Index), new { id = currentDevice.Id });
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         var message = string.Format(
+        //             "code: {0}\nAppKey: {1}\nAppSecret: {2}\nRedirectUri: {3}\nException : {4}",
+        //             code,
+        //             _dropboxRepositorySettings.APIKey,
+        //             _dropboxRepositorySettings.APISecret,
+        //             _dropboxRepositorySettings.AuthRedirectUri,
+        //             e);
+        //         //this.Flash(message, FlashLevel.Danger);
+        //         return RedirectToAction(nameof(Index), "Devices", new { area = "DHub" });
+        //     }
+        // }
         private async Task<List<Device>> GetDeviceListInternal()
         {
-            var currentUser = await _userManager.GetUserAsync(User);
-            List<Device> device_list = await _context.Devices.
-                Where(d => d.User == currentUser).
-                ToListAsync();
+            var device_list = await _context.UserDevices
+                    .Where(ud => _userManager.GetUserId(User) == ud.DroHubUserId)
+                    .Select(ud => ud.Device)
+                    .ToListAsync();
             foreach (var device in device_list)
             {
                 var battery_level = await _context.DroneBatteryLevels.OrderByDescending(l => l.Id).Where(b => b.Serial == device.SerialNumber).FirstOrDefaultAsync();
@@ -159,14 +166,12 @@ namespace DroHub.Areas.DHub.Controllers
             return device_list;
         }
         public async Task<IActionResult> Map() {
-            DroHubUser currentUser = await _userManager.GetUserAsync(User);
-            Device currentDevice = await _context.Devices.FirstOrDefaultAsync(device => device.User == currentUser);
+            var devices = await _context.UserDevices
+                .Where(ud => _userManager.GetUserId(User) == ud.DroHubUserId)
+                .CountAsync();
 
-            if (currentDevice == null) return RedirectToAction("Manage", "Account", new { area = "Identity" });
-
-            if (string.IsNullOrWhiteSpace(currentDevice.DropboxToken)) {
-                return RedirectToAction(nameof(Index), new { id = currentDevice.Id});
-            }
+            if (devices == 0)
+                return RedirectToAction("Manage", "Account", new { area = "Identity" });
 
             var google_api_key = _repository_settings.GoogleMapsAPIKey;
             if (!String.IsNullOrEmpty(google_api_key))
@@ -187,9 +192,7 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<ActionResult> Disconnect(int? id)
         {
             if (id == null) return NotFound();
-
-            DroHubUser currentUser = await _userManager.GetUserAsync(User);
-            Device currentDevice = await _context.Devices.FirstOrDefaultAsync(device => device.Id == id && device.User == currentUser);
+            Device currentDevice = await getDeviceById(id);
 
             if (currentDevice == null) return NotFound();
 
@@ -205,8 +208,7 @@ namespace DroHub.Areas.DHub.Controllers
         {
             if (id == null) return NotFound();
 
-            DroHubUser currentUser = await _userManager.GetUserAsync(User);
-            Device currentDevice = await _context.Devices.FirstOrDefaultAsync(device => device.Id == id && device.User == currentUser);
+            Device currentDevice = await getDeviceById(id);
 
             if (currentDevice == null) return NotFound();
 
@@ -235,8 +237,7 @@ namespace DroHub.Areas.DHub.Controllers
         {
             if (id == null) NotFound();
 
-            DroHubUser currentUser = await _userManager.GetUserAsync(User);
-            Device currentDevice = await _context.Devices.FirstOrDefaultAsync(device => device.Id == id && device.User == currentUser);
+            Device currentDevice = await getDeviceById(id);
 
             if (currentDevice == null) return NotFound();
 

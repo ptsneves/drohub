@@ -26,6 +26,7 @@ namespace DroHub.Data
         public DbSet<DroneFlyingState> DroneFlyingStates { get; set; }
         public DbSet<DroneReply> DroneReplies { get; set; }
         public DbSet<DroneVideoStateResult> DroneVideoStatesResults { get; set; }
+        public DbSet<UserDevice> UserDevices { get; set; }
         //public DbSet<DeviceSettings> DeviceSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -92,12 +93,6 @@ namespace DroHub.Data
                 .Property(d => d.SerialNumber)
                 .IsRequired();
 
-            // ----- RELATIONSHIPS ----------------------------------
-            // --- One to Many (1 User <-> n Devices)
-            builder.Entity<DroHubUser>()
-                .HasMany(d => d.Devices)
-                .WithOne(u => u.User);
-
             builder.Entity<DronePosition>()
                 .HasOne(p => p.Device)
                 .WithMany(d => d.positions)
@@ -163,6 +158,19 @@ namespace DroHub.Data
                 .HasMany(d => d.drone_video_states)
                 .WithOne(p => p.Device)
                 .IsRequired();
+
+            builder.Entity<UserDevice>()
+                .HasKey(ud => new { ud.DeviceId, ud.DroHubUserId });
+
+            builder.Entity<UserDevice>()
+                .HasOne<Device>(ud => ud.Device)
+                .WithMany(d => d.UserDevices)
+                .HasForeignKey(ud => ud.DeviceId);
+
+            builder.Entity<UserDevice>()
+                .HasOne<DroHubUser>(ud => ud.DroHubUser)
+                .WithMany(u => u.UserDevices)
+                .HasForeignKey(ud => ud.DroHubUserId);
         }
     }
 }

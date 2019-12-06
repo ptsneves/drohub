@@ -115,11 +115,11 @@ namespace DroHub.Areas.DHub.Controllers
         // GET: DroHub/GetDevicesList
         public async Task<IActionResult> GetDevicesList() {
             var currentUser = await _userManager.GetUserAsync(User);
-            var devices = await _context.Devices.Where(d => d.User == currentUser).ToListAsync();
-            List<Device> device_list = new List<Device>();
-            foreach(var device in devices) {
-                device_list.Add(device);
-            }
+
+            var device_list = await _context.UserDevices
+                .Where(ud => ud.DroHubUser == currentUser)
+                .Select(ud => ud.Device)
+                .ToListAsync();
 
             if (device_list.Any() == false)
                 return NoContent();
@@ -144,10 +144,7 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> Camera(int? id)
         {
             if (id == null) return NotFound();
-
-            var currentUser = await _userManager.GetUserAsync(User);
-
-            var device = await _context.Devices.FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
+            var device = await getDeviceById(id);
             if (device == null) return NotFound();
 
             // Get all device settings options available
@@ -170,19 +167,18 @@ namespace DroHub.Areas.DHub.Controllers
         private async Task<Device> getDeviceById(int? id, bool include_positions = false) {
             if (id == null) return null;
 
-            var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser == null)
-                throw new System.InvalidOperationException("Could not find what user are we, so we cannot query associated devices");
-
             if (include_positions)
             {
-                return await _context.Devices
-                    .Include(d => d.positions)
-                    .FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
+                return await _context.UserDevices
+                    .Where(ud => _userManager.GetUserId(User) == ud.DroHubUserId && ud.Device.Id == id)
+                    .Select(ud => ud.Device)
+                    .FirstOrDefaultAsync();
             }
             else
-                return await _context.Devices
-                    .FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
+                return await _context.UserDevices
+                    .Where(ud => _userManager.GetUserId(User) == ud.DroHubUserId && ud.Device.Id == id)
+                    .Select(ud => ud.Device)
+                    .FirstOrDefaultAsync();
         }
 
         public async Task<IActionResult> TakeOff(int id) {
@@ -291,27 +287,52 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> Create([Bind("Id,Name,SerialNumber,CreationDate,ISO,Apperture,FocusMode")]
             Device device)
         {
-            device.CreationDate = DateTime.Now;
-            device.User = await _userManager.GetUserAsync(User);
-            device.ISO = DefaultIso;
-            device.Apperture = DefaultApperture;
-            device.FocusMode = DefaultFocusMode;
-
             if (!ModelState.IsValid)
             {
                 return View(device);
             }
 
-            _context.Add(device);
-            try {
+            bool exists = _context.Devices.Any(d => d.SerialNumber == device.SerialNumber);
+            Device device_to_operate = null;
+            if (exists)
+            {
+                device_to_operate = _context.Devices.Single(d => d.SerialNumber == device.SerialNumber);
+            }
+            else {
+                device.CreationDate = DateTime.Now;
+                device.ISO = DefaultIso;
+                device.Apperture = DefaultApperture;
+                device.FocusMode = DefaultFocusMode;
+                device.UserDevices = new List<UserDevice>();
+                device_to_operate = device;
+                _context.Add(device_to_operate);
+            }
+            return await Edit(device_to_operate);
+        }
+
+        private async Task<IActionResult> Edit(Device device) {
+            if (device.UserDevices == null)
+            {
+                device.UserDevices = new List<UserDevice>();
+            }
+
+            device.UserDevices.Add(
+                new UserDevice
+                {
+                    Device = device,
+                    DroHubUser = await _userManager.GetUserAsync(User)
+                }
+            );
+            try
+            {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateException e) {
+            catch (DbUpdateException e)
+            {
                 _logger.LogWarning(e.ToString());
                 return RedirectToAction(nameof(Create), "Devices");
             }
-            // _device_micro_service.spawnHeartBeatMonitor(device);
-            return RedirectToAction(nameof(Data), new {id = device.Id});
+            return RedirectToAction(nameof(Data), new { id = device.Id });
         }
 
         // GET: DroHub/Devices/Edit/5
@@ -319,8 +340,7 @@ namespace DroHub.Areas.DHub.Controllers
         {
             if (id == null) return NotFound();
 
-            var currentUser = await _userManager.GetUserAsync(User);
-            var device = await _context.Devices.FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
+            var device = await getDeviceById(id);
 
             if (device == null) return NotFound();
 
@@ -351,21 +371,7 @@ namespace DroHub.Areas.DHub.Controllers
             {
                 return View(device);
             }
-
-            try
-            {
-                _context.Update(device);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DeviceExists(device.Id))
-                    return NotFound();
-                throw;
-            }
-
-            return RedirectToAction(nameof(Data), new { id = id });
-
+            return await Edit(device);
         }
 
         // GET: DroHub/Devices/Delete/5
@@ -376,8 +382,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return NotFound();
             }
 
-            var currentUser = await _userManager.GetUserAsync(User);
-            var device = await _context.Devices.FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
+            var device = await getDeviceById(id);
             if (device == null)
             {
                 return NotFound();
@@ -392,14 +397,13 @@ namespace DroHub.Areas.DHub.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var currentUser = await _userManager.GetUserAsync(User);
-            var device = await _context.Devices.FirstOrDefaultAsync(d => d.Id == id && d.User == currentUser);
-            if (device == null)
+            var ud = _context.UserDevices.Single(d => d.DeviceId == id);
+            if (ud == null)
             {
                 return NotFound();
             }
 
-            _context.Devices.Remove(device);
+            _context.UserDevices.Remove(ud);
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Create));

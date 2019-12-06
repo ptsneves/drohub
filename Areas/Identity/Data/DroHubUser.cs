@@ -16,6 +16,6 @@ namespace DroHub.Areas.Identity.Data
         public DateTime CreationDate { get; set; }
         public DateTime LastLogin { get; set; }
 
-        public ICollection<Device> Devices { get; set; }
+        public IList<UserDevice> UserDevices { get; set; }
     }
 }

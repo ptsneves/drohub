@@ -3,14 +3,16 @@ using System;
 using DroHub.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace DroHub.Data.Migrations
 {
     [DbContext(typeof(DroHubContext))]
-    partial class DroHubContextModelSnapshot : ModelSnapshot
+    [Migration("20191206200939_ManyUsersToManyDevices")]
+    partial class ManyUsersToManyDevices
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -20,8 +22,7 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("DroHub.Areas.DHub.Models.Device", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("MySql:ValueGeneratedOnAdd", true);
+                        .ValueGeneratedOnAdd();
 
                     b.Property<string>("Apperture");
 
