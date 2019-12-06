@@ -39,7 +39,7 @@ namespace DroHub
             {
                 switch (Configuration.GetValue<string>("DatabaseProvider")){
                     case "mssql":
-                        options.UseSqlServer(Configuration.GetConnectionString("DroHubConnection"));
+                        options.UseSqlServer(Configuration.GetConnectionString("DroHubConnectionMSSQL"));
                         break;
                     case "sqlite3":
                         options.UseSqlite("Data Source=drohub.db");
