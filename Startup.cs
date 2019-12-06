@@ -41,11 +41,11 @@ namespace DroHub
                     case "mssql":
                         options.UseSqlServer(Configuration.GetConnectionString("DroHubConnectionMSSQL"));
                         break;
-                    case "sqlite3":
-                        options.UseSqlite("Data Source=drohub.db");
+                    case "mysql":
+                        options.UseMySql(Configuration.GetConnectionString("DroHubConnectionMySQL"));
                         break;
                     default:
-                        throw new InvalidProgramException("You need to set DatabaseProvider property to sqlite3 or mssql");
+                        throw new InvalidProgramException("You need to set DatabaseProvider property to mysql or mssql");
                 }
             });
 

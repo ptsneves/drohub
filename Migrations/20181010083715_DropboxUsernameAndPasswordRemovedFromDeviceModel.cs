@@ -6,16 +6,13 @@ namespace DroHub.Data.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
-            {
-                migrationBuilder.DropColumn(
-                    name: "DropboxPassword",
-                    table: "Devices");
-
-                migrationBuilder.DropColumn(
-                name: "DropboxUsername",
+            migrationBuilder.DropColumn(
+                name: "DropboxPassword",
                 table: "Devices");
-            }
+
+            migrationBuilder.DropColumn(
+            name: "DropboxUsername",
+            table: "Devices");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

@@ -45,6 +45,7 @@ namespace DroHub.Data
             // For example, you can rename the ASP.NET Identity table names and more.
             // Add your customizations after calling base.OnModelCreating(builder);
 
+            builder.Entity<Device>(entity => entity.Property(m => m.SerialNumber).HasMaxLength(256));
             // ----- KEYS AND INDEXES -------------------------------
             builder.Entity<Device>()
                 .HasIndex(d => d.SerialNumber)

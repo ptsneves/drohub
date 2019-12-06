@@ -35,28 +35,25 @@ namespace DroHub.Data.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
-            {
-                migrationBuilder.DropColumn(
-                    name: "LiveVideoFMTProfile",
-                    table: "Devices");
+            migrationBuilder.DropColumn(
+                name: "LiveVideoFMTProfile",
+                table: "Devices");
 
-                migrationBuilder.DropColumn(
-                    name: "LiveVideoPt",
-                    table: "Devices");
+            migrationBuilder.DropColumn(
+                name: "LiveVideoPt",
+                table: "Devices");
 
-                migrationBuilder.DropColumn(
-                    name: "LiveVideoRTPMap",
-                    table: "Devices");
+            migrationBuilder.DropColumn(
+                name: "LiveVideoRTPMap",
+                table: "Devices");
 
-                migrationBuilder.DropColumn(
-                    name: "LiveVideoRTPUrl",
-                    table: "Devices");
+            migrationBuilder.DropColumn(
+                name: "LiveVideoRTPUrl",
+                table: "Devices");
 
-                migrationBuilder.DropColumn(
-                    name: "LiveVideoSecret",
-                    table: "Devices");
-            }
+            migrationBuilder.DropColumn(
+                name: "LiveVideoSecret",
+                table: "Devices");
         }
     }
 }

@@ -30,24 +30,21 @@ namespace DroHub.Data.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
-            {
-                migrationBuilder.DropColumn(
-                    name: "DropboxConnectState",
-                    table: "Devices");
-
-                migrationBuilder.DropColumn(
-                name: "DropboxPassword",
+            migrationBuilder.DropColumn(
+                name: "DropboxConnectState",
                 table: "Devices");
 
-                migrationBuilder.DropColumn(
-                name: "DropboxToken",
-                table: "Devices");
+            migrationBuilder.DropColumn(
+            name: "DropboxPassword",
+            table: "Devices");
 
-                migrationBuilder.DropColumn(
-                name: "DropboxUsername",
-                table: "Devices");
-            }
+            migrationBuilder.DropColumn(
+            name: "DropboxToken",
+            table: "Devices");
+
+            migrationBuilder.DropColumn(
+            name: "DropboxUsername",
+            table: "Devices");
         }
     }
 }
