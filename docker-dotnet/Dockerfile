@@ -7,9 +7,6 @@ RUN dotnet restore
 
 # Copy everything else and build
 COPY . ./
-RUN rm ./appsettings.Development.json && \
-    DatabaseProvider="mysql" dotnet ef database update
-
 RUN dotnet publish -c Release -o out -p:InformationalVersion=$(cat .git/$(cat .git/HEAD | cut -d' ' -f2))
 
 # Build runtime image
