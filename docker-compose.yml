@@ -13,3 +13,16 @@ services:
         network_mode: host
         ports:
             - "5000:5000"
+        depends_on:
+            - "database"
+        restart: on-failure
+    database:
+        image: mysql:latest
+        network_mode: host
+        ports:
+            - "3306:3306"
+        environment:
+          - "MYSQL_DATABASE=master"
+          - "MYSQL_RANDOM_ROOT_PASSWORD=yes"
+          - "MYSQL_USER=sa"
+          - "MYSQL_PASSWORD=XXXXX"
