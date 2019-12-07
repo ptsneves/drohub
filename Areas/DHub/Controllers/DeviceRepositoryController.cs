@@ -176,7 +176,7 @@ namespace DroHub.Areas.DHub.Controllers
             var google_api_key = _repository_settings.GoogleMapsAPIKey;
             if (!String.IsNullOrEmpty(google_api_key))
             {
-                ViewData["GoogleAPIKey"] = $"&key={google_api_key}";
+                ViewData["GoogleAPIKey"] = $"key={google_api_key}";
             }
             else {
                 ViewData["GoogleAPIKey"] = "";
