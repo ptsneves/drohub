@@ -14,15 +14,8 @@ namespace Microsoft.AspNetCore.Hosting
                 var services = scope.ServiceProvider;
                 var db = services.GetRequiredService<T>();
                 var logger = services.GetRequiredService<ILogger<T>>();
-                try
-                {
-                    db.Database.Migrate();
-                    logger.LogWarning("Ran migrate database");
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "An error occurred while migrating the database.");
-                }
+                db.Database.Migrate();
+                logger.LogWarning("Ran migrate database");
             }
             return webHost;
         }
