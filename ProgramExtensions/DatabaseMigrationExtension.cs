@@ -5,7 +5,7 @@ using System;
 
 namespace Microsoft.AspNetCore.Hosting
 {
-    public static class IWebHostExtensions
+    public static partial class IWebHostExtensions
     {
         public static IWebHost MigrateDatabase<T>(this IWebHost webHost) where T : DbContext
         {
