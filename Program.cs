@@ -32,10 +32,18 @@ namespace DroHub
                 .CreateLogger();
             try
             {
+                IWebHost web_host;
                 if (_config.GetValue<bool>("AutoMigration"))
-                    CreateWebHostBuilder(args).Build().MigrateDatabase<DroHubContext>().Run();
+                    web_host = CreateWebHostBuilder(args)
+                     .Build()
+                     .MigrateDatabase<DroHubContext>();
+
                 else
-                    CreateWebHostBuilder(args).Build().Run();
+                    web_host = CreateWebHostBuilder(args)
+                    .Build();
+
+                (await web_host.InitializeAdminUser<DroHubContext>())
+                .Run();
             }
             finally
             {
