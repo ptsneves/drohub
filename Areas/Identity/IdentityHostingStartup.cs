@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using DroHub.IdentityClaims;
 
 [assembly: HostingStartup(typeof(DroHub.Areas.Identity.IdentityHostingStartup))]
 namespace DroHub.Areas.Identity
@@ -14,10 +15,13 @@ namespace DroHub.Areas.Identity
         public void Configure(IWebHostBuilder builder)
         {
             builder.ConfigureServices((context, services) => {
-
                 services.AddDefaultIdentity<DroHubUser>()
-                    .AddEntityFrameworkStores<DroHubContext>();
-
+                    .AddEntityFrameworkStores<DroHubContext>()
+                    .AddClaimsPrincipalFactory<DroHubClaimsPrincipalFactory>();
+                services.AddAuthorization(options =>
+                {
+                    options.AddIsAdminPolicy();
+                });
                 // Passwords validation settings.
                 // https://docs.microsoft.com/en-us/aspnet/core/security/authentication/identity-configuration?view=aspnetcore-2.1#password
                 services.Configure<IdentityOptions>(options =>
