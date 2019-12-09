@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DroHub.Areas.Identity.Pages.Account
 {
-    [AllowAnonymous]
+    [Authorize(Policy = "IsAdmin")]
     public class RegisterModel : PageModel
     {
         private readonly SignInManager<DroHubUser> _signInManager;
