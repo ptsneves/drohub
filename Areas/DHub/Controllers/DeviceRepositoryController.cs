@@ -165,7 +165,7 @@ namespace DroHub.Areas.DHub.Controllers
             }
             return device_list;
         }
-        public async Task<IActionResult> Map() {
+        public async Task<IActionResult> Dashboard() {
             var devices = await _context.UserDevices
                 .Where(ud => _userManager.GetUserId(User) == ud.DroHubUserId)
                 .CountAsync();
