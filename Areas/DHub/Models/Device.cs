@@ -10,8 +10,10 @@ namespace DroHub.Areas.DHub.Models
     public class Device
     {
         public int Id { get; set; }
+        [Required]
         public string Name { get; set; }
         [Display(Name = "Serial Number")]
+        [Required]
         public string SerialNumber { get; set; }
         public string DropboxToken { get; set; }
         [StringLength(32)]
