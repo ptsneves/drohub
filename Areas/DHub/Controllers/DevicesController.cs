@@ -276,7 +276,7 @@ namespace DroHub.Areas.DHub.Controllers
         // GET: DroHub/Devices/Create
         public IActionResult Create()
         {
-            return View();
+            return PartialView("Create", new Device{});
         }
 
         // POST: DroHub/Devices/Create
@@ -329,10 +329,10 @@ namespace DroHub.Areas.DHub.Controllers
             }
             catch (DbUpdateException e)
             {
-                _logger.LogWarning(e.ToString());
-                return RedirectToAction(nameof(Create), "Devices");
+                ModelState.AddModelError("", "Failed to add this device to the user");
+
             }
-            return RedirectToAction(nameof(Data), new { id = device.Id });
+            return View(device);
         }
 
         // GET: DroHub/Devices/Edit/5

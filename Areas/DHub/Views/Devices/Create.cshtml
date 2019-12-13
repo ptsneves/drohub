@@ -2,60 +2,35 @@
 @{
     ViewData["Title"] = "Create";
 }
-<!-- Content Header (Page header) -->
-<section class="content-header">
-    <h1>
-        Device
-        <small>Register</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a asp-area="DHub" asp-controller="Devices" asp-action="" title="Back to devices list"><i class="fa fa-camera"></i> Devices</a></li>
-        <li class="active">Register</li>
-    </ol>
-</section>
-<!-- /Content Header (Page header) -->
-<!-- Main content -->
-<section class="content">
-    <div class="row">
-        <div class="col-sm-6">
-            <div class="box box-primary">
-                <div class="box-header with-border">
-                    <h3 class="box-title">New Device</h3>
-                </div>
-                <form asp-action="Create">
-                    <div class="box-body">
-                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                        <div class="form-group">
-                            <label asp-for="Name" class="control-label"></label>
-                            <input asp-for="Name" class="form-control" required />
-                            <span asp-validation-for="Name" class="text-danger"></span>
-                        </div>
-                        <div class="form-group">
-                            <label asp-for="SerialNumber" class="control-label"></label>
-                            <input asp-for="SerialNumber" class="form-control" required />
-                            <span asp-validation-for="SerialNumber" class="text-danger"></span>
-                        </div>
+
+<div class="modal fade" id="modal-add-device" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title">Create Device</h4>
+            </div>
+            <div class="modal-body">
+                <form asp-controller="Devices" asp-action="Create">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input name="IsValid" type="hidden" value="@ViewData.ModelState.IsValid.ToString()" />
+                    <div class="form-group">
+                        <label asp-for="Name" class="control-label"></label>
+                        <input asp-for="Name" class="form-control" required />
+                        <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
-                    <div class="box-footer text-right">
-                        <a asp-area="DHub" asp-controller="Devices" asp-action="" class="btn btn-warning" title="Back to devices list">Back to list</a>
-                        <input type="submit" value="Register" title="Register this device" class="btn btn-success" />
+                    <div class="form-group">
+                        <label asp-for="SerialNumber" class="control-label"></label>
+                        <input asp-for="SerialNumber" class="form-control" required />
+                        <span asp-validation-for="SerialNumber" class="text-danger"></span>
                     </div>
                 </form>
             </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default pull-left"  data-save="modal">Register</button>
+            </div>
         </div>
     </div>
-</section>
-<!-- /Main content -->
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-    <!-- <script>
-        var socket = io('http://procme.ddns.net:3002/drotag');
-        socket.on('connect', function () {
-            console.log('Connected!');
-            socket.emit('server_test', JSON.stringify("hello"));
-            socket.on('server_test', function (msg) {
-                console.log('Received: ', msg);
-            });
-        });
-    </script> -->
-}
+</div>

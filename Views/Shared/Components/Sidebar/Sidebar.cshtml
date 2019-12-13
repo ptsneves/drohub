@@ -27,7 +27,7 @@
                     </a>
                     <ul class="treeview-menu" id="devices-list">
                         <li>
-                            <a asp-action="Create" asp-area="DHub" asp-controller="Devices">
+                            <a data-toggle="ajax-modal" href="#modal-add-device" data-target="#modal-add-device" data-url='@Url.Action("Create", "Devices", new {Area = "DHub"})'>
                                 <i class="fa fa-plus"></i>
                                 Associate Device
                             </a>
