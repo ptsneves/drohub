@@ -1,6 +1,7 @@
 .dockerignore
 .env
 .git
+!.git/HEAD
 .gitignore
 .vs
 .vscode
