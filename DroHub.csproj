@@ -12,6 +12,14 @@
     <Deterministic>false</Deterministic>
   </PropertyGroup>
 
+
+  <ItemGroup>
+    <Content Remove="DroHub.Tests\**" />
+    <Compile Remove="DroHub.Tests\**" />
+    <EmbeddedResource Remove="DroHub.Tests\**" />
+    <None Remove="DroHub.Tests\**" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="ApacheThrift" Version="0.13.0.1" />
     <PackageReference Include="Google.Protobuf" Version="3.6.1" />
