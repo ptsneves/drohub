@@ -41,7 +41,7 @@ namespace DroHub.IdentityClaims
             if (user == null)
             {
                 var admin_password = generatePassword(10, 0);
-                logger.LogWarning("Initialized admin password. Please change it. Password is {admin}", admin_password);
+                logger.LogWarning("Initialized admin password. Please change it. GENERATED ROOT PASSWORD {admin}\n", admin_password);
                 user = new DroHubUser
                 {
                     EmailConfirmed = true,
