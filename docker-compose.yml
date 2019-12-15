@@ -8,8 +8,6 @@ services:
         ports:
             - "8088:8088"
             - "6004-6200:6004-6200/udp"
-        depends_on:
-            - "web"
     web:
         build:
             context: .
@@ -20,6 +18,7 @@ services:
             - "5000:5000"
         depends_on:
             - "database"
+            - "janus"
         restart: on-failure
     database:
         image: mysql:latest
