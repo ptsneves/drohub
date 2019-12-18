@@ -64,7 +64,7 @@ namespace DroHub.Helpers.Thrift
             int result = 0;
             do
             {
-                var d = await Trans.ReadAsync(HeaderBuffer, 0, 1);
+                var d = await Trans.ReadAllAsync(HeaderBuffer, 0, 1);
                 result = result << 8 | (int)HeaderBuffer[0];
                 // Console.WriteLine($"buffer read {d} in {HeaderBuffer[0]}-> {result} or {_MAGIC_NUMBER} == {result == _MAGIC_NUMBER}");
             } while (!cancellationToken.IsCancellationRequested && result != _MAGIC_NUMBER);
