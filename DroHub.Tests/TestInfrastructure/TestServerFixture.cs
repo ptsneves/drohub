@@ -35,7 +35,7 @@ namespace DroHub.Tests.TestInfrastructure
             var database_container = _containers.Containers.First(c => c.Name == "web");
             using (var logs = _docker.Host.Logs(database_container.Id))
             {
-                AdminPassword = logs.ReadToEnd().FirstOrDefault(line => line.Contains("GENERATED ROOT PASSWORD")).Split(null).Last();
+                AdminPassword = logs.ReadToEnd().First(line => line.Contains("GENERATED ROOT PASSWORD")).Split(null).Last();
             }
         }
 
