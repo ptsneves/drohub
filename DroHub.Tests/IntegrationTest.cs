@@ -64,6 +64,7 @@ namespace DroHub.Tests
         }
 
         [InlineData("True", "MyAnafi", "000000")]
+        [InlineData("False", "MyAnafi", "000000")]
         [InlineData("False", "MyAnafi", null)]
         [InlineData("False", null, null)]
         [InlineData("False", null, "000000")]
