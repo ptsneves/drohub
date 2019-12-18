@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 using System.Threading;
+using Thrift.Transport;
 using Thrift.Protocol;
 using Thrift.Protocol.Entities;
 using Thrift;
@@ -43,6 +44,20 @@ namespace DroHub.Helpers.Thrift
             _random_seq_id = rand.Next();
         }
 
+        public class Factory: TProtocolFactory {
+            private ValidationModeEnum _validation_mode;
+            private OperationModeEnum _operation_mode;
+            private TProtocolFactory _protocol_factory;
+            public Factory(TProtocolFactory protocol_factory, ValidationModeEnum validation_mode, OperationModeEnum operation_mode) {
+                _protocol_factory = protocol_factory;
+                _validation_mode = validation_mode;
+                _operation_mode = operation_mode;
+            }
+            public override TProtocol GetProtocol(TTransport transport)
+            {
+                return new TAMessageValidatorProtocol(_protocol_factory.GetProtocol(transport), _validation_mode, _operation_mode);
+            }
+        }
         private async Task ReadMagicNumber(CancellationToken cancellationToken)
         {
             byte[] HeaderBuffer = new byte[1];
