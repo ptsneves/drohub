@@ -34,6 +34,7 @@ namespace DroHub.Tests.TestInfrastructure
         public static async ValueTask<HttpClientHelper> createHttpClient(DroHubFixture test_fixture) {
             var http_helper = new HttpClientHelper(test_fixture);
             http_helper.Response = await http_helper.Client.GetAsync(test_fixture.SiteUri);
+            http_helper.Response.EnsureSuccessStatusCode();
             http_helper.verificationToken = DroHubFixture.getVerificationToken(await http_helper.Response.Content.ReadAsStringAsync());
             return http_helper;
         }
@@ -49,6 +50,7 @@ namespace DroHub.Tests.TestInfrastructure
             });
             http_helper.Response.Dispose();
             http_helper.Response = await http_helper.Client.PostAsync(login_uri, contentToSend);
+            http_helper.Response.EnsureSuccessStatusCode();
             if (http_helper.Response.RequestMessage.RequestUri != new Uri(test_fixture.SiteUri, "Identity/Account/Manage"))
             {
                 Console.WriteLine(http_helper.verificationToken);
