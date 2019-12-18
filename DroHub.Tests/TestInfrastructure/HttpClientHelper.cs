@@ -56,7 +56,7 @@ namespace DroHub.Tests.TestInfrastructure
                 new KeyValuePair<string, string>("__RequestVerificationToken", http_helper.verificationToken),
             });
             http_helper.Response.Dispose();
-            http_helper.Response = await http_helper.Client.PostAsync(login_uri, contentToSend))
+            http_helper.Response = await http_helper.Client.PostAsync(login_uri, contentToSend);
             if (http_helper.Response.RequestMessage.RequestUri != new Uri(test_fixture.SiteUri, "Identity/Account/Manage"))
             {
                 Console.WriteLine(http_helper.verificationToken);

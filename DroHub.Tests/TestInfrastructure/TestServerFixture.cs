@@ -39,6 +39,13 @@ namespace DroHub.Tests.TestInfrastructure
             }
         }
 
+        public static AngleSharp.Html.Dom.IHtmlDocument getHtmlDOM(string responseBody)
+        {
+            var context = BrowsingContext.New(Configuration.Default);
+            var parser = context.GetService<IHtmlParser>();
+            return parser.ParseDocument(responseBody);
+        }
+
         public void Dispose() {
             _containers.Dispose();
         }
