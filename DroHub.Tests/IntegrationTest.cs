@@ -2,8 +2,6 @@ using System;
 using Xunit;
 using DroHub.Tests.TestInfrastructure;
 using System.Linq;
-using AngleSharp;
-using AngleSharp.Html.Parser;
 using System.Threading;
 using System.Threading.Tasks;
 using Thrift.Transport;
@@ -24,16 +22,8 @@ namespace DroHub.Tests
         public IntegrationTest(DroHubFixture fixture) {
             _fixture = fixture;
         }
-        private string getVerificationToken(string responseBody)
-        {
-            var context = BrowsingContext.New(Configuration.Default);
-            var parser = context.GetService<IHtmlParser>();
-            var document = parser.ParseDocument(responseBody);
-            return document.QuerySelectorAll("input[name='__RequestVerificationToken']").FirstOrDefault().GetAttribute("value");
-        }
 
         [Fact]
-
         public async void TestConnectionClosedOnNoSerial()
         {
             using (var ws_transport = new TWebSocketClient(_fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text))
@@ -55,38 +45,30 @@ namespace DroHub.Tests
             }
         }
 
-        public async void TestLogin()
+        [Fact]
+        public async void TestLoginIsHomePage() {
+            using (var http_helper = await HttpClientHelper.createHttpClient(_fixture))
+                Assert.Equal(new Uri(_fixture.SiteUri, "Identity/Account/Login?ReturnUrl=%2FIdentity%2FAccount%2FManage"),
+                    http_helper.Response.RequestMessage.RequestUri);
+        }
+
+        [InlineData("admin", null)]
+        [InlineData("admin", "1")]
+        [Theory]
+        public async void TestLogin(string user, string password)
         {
-            CookieContainer cookieContainer = new CookieContainer();
-
-            string verificationToken;
-            var login_uri = new Uri(_fixture.SiteUri, "Identity/Account/Login");
-
-            using (HttpClientHandler handler_http = new HttpClientHandler { UseCookies = true, UseDefaultCredentials = true, CookieContainer = cookieContainer })
+            if (user == "admin" && password == null)
             {
-                using (HttpClient client = new HttpClient(handler_http))
+                password = _fixture.AdminPassword;
+                using (var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, user, password)) { }
+            }
+            else
+            {
+                await Assert.ThrowsAsync<System.InvalidProgramException>(async () =>
                 {
-                    using (HttpResponseMessage response = await client.GetAsync(_fixture.SiteUri))
-                    {
-                        Assert.Equal(new Uri(_fixture.SiteUri, "Identity/Account/Login?ReturnUrl=%2FIdentity%2FAccount%2FManage"),
-                            response.RequestMessage.RequestUri);
-                        verificationToken = getVerificationToken(await response.Content.ReadAsStringAsync());
-                    }
-                    var contentToSend = new FormUrlEncodedContent(new[]
-                    {   
-                        new KeyValuePair<string, string>("Input.UserName", "admin"),
-                        new KeyValuePair<string, string>("Input.Password", _fixture.AdminPassword),
-                        new KeyValuePair<string, string>("__RequestVerificationToken", verificationToken),
-                    });
-
-                    using (var response = await client.PostAsync(login_uri, contentToSend)) {
-                        Assert.Equal(response.RequestMessage.RequestUri, new Uri(_fixture.SiteUri, "Identity/Account/Manage"));
-
-                        var result = await response.Content.ReadAsStringAsync();
-                    }
-
-                }
-            };
+                    using (var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, user, password)) { }
+                });
+            }
         }
     }
 }
