@@ -13,10 +13,12 @@ namespace DroHub.Tests.TestInfrastructure
         private readonly ICompositeService _containers;
         private readonly IHostService _docker;
         public Uri SiteUri { get; private set; }
+        public Uri ThriftUri {get; private set; }
         public string AdminPassword { get; private set; }
 
         public DroHubFixture() {
             SiteUri = new Uri("http://localhost:5000/");
+            ThriftUri = new Uri("ws://localhost:5000/ws");
             var docker_compose_file = Path.GetFullPath("../../../../docker-compose.yml");
 
             _containers = new Builder()
