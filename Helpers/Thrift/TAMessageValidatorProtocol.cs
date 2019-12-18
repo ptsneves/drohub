@@ -95,19 +95,22 @@ namespace DroHub.Helpers.Thrift
         {
             await ReadMagicNumber(cancellationToken);
             TMessage new_message = await base.ReadMessageBeginAsync(cancellationToken);
-            // Console.WriteLine($"seq id {_random_seq_id} == {new_message.SeqID}");
-            while (_random_seq_id != new_message.SeqID)
+            Console.WriteLine($"seq id {_random_seq_id} == {new_message.SeqID}");
+            if (OperationMode == OperationModeEnum.SEQID_MASTER)
             {
-                if (ValidationMode == ValidationModeEnum.KEEP_READING)
+                while (_random_seq_id != new_message.SeqID)
                 {
-                    // Console.WriteLine("Re reading");
-                    await ReadMagicNumber(cancellationToken);
-                    new_message = await base.ReadMessageBeginAsync(cancellationToken);
+                    if (ValidationMode == ValidationModeEnum.KEEP_READING)
+                    {
+                        // Console.WriteLine("Re reading");
+                        await ReadMagicNumber(cancellationToken);
+                        new_message = await base.ReadMessageBeginAsync(cancellationToken);
+                    }
+                    else if (ValidationMode == ValidationModeEnum.THROW_EXCEPTION)
+                        throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "Received SeqID and sent one do not match.");
+                    else
+                        throw new InvalidProgramException("This is an unreachable situation");
                 }
-                else if (ValidationMode == ValidationModeEnum.THROW_EXCEPTION)
-                    throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "Received SeqID and sent one do not match.");
-                else
-                    throw new InvalidProgramException("This is an unreachable situation");
             }
             return new_message;
         }
