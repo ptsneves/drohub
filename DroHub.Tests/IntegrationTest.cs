@@ -25,6 +25,28 @@ namespace DroHub.Tests
         }
 
         [Fact]
+
+        public async void TestConnectionClosedOnNoSerial()
+        {
+            using (var ws_transport = new TWebSocketClient(new Uri("ws://localhost:5000/ws"), System.Net.WebSockets.WebSocketMessageType.Text))
+            {
+                await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());
+                await Task.Delay(5000);
+            }
+        }
+
+        [InlineData("")]
+        [InlineData("0000")]
+        [Theory]
+        public async void TestConnectionClosedOnInvalidSerial(string serial_field) {
+            using (var ws_transport = new TWebSocketClient(new Uri("ws://localhost:5000/ws"), System.Net.WebSockets.WebSocketMessageType.Text))
+            {
+                if (serial_field != null)
+                    ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", serial_field);
+                await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());
+            }
+        }
+
         public async void TestLogin()
         {
             CookieContainer cookieContainer = new CookieContainer();

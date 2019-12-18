@@ -34,6 +34,18 @@ namespace DroHub.Helpers.Thrift
         }
         public async ValueTask<List<Task>> getTasks(ThriftMessageHandler handler, CancellationToken token)
         {
+            using (var scope = _services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
+                //check if the device exists before we add it to the db
+                var device = await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == handler.SerialNumber);
+                if (device == null)
+                {
+                    _logger.LogInformation("Received data from an unregistered device. Closing the connections");
+                    return new List<Task> { };
+                }
+            }
+
             _cancellation_token_source = CancellationTokenSource.CreateLinkedTokenSource(token);
             var result = new List<Task>{
                 Task.Run(async () => await pingConnection(handler)),
