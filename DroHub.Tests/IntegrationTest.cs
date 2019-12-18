@@ -1,18 +1,10 @@
 using System;
 using Xunit;
 using DroHub.Tests.TestInfrastructure;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using Thrift.Transport;
-using Thrift.Protocol;
-using DroHub.Helpers.Thrift;
-using Microsoft.Extensions.Logging;
+using System.Linq;
 using System.Collections.Generic;
-using System.Collections;
 using System.Net.Http;
-using System.Net;
-using System.Reflection;
 
 namespace DroHub.Tests
 {
@@ -68,6 +60,28 @@ namespace DroHub.Tests
                 {
                     using (var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, user, password)) { }
                 });
+            }
+        }
+
+        [InlineData("MyAnafi", "000000")]
+        [Theory]
+        public async void TestCreateDevice(string device_name, string device_serial) {
+            using (var http_client_helper = await HttpClientHelper.createLoggedInAdmin(_fixture)) {
+                var content = await http_client_helper.Response.Content.ReadAsStringAsync();
+                var create_device_url = new Uri(_fixture.SiteUri, "DHub/Devices/Create");
+                using (var create_page_response = await http_client_helper.Client.GetAsync(create_device_url)) {
+                    create_page_response.EnsureSuccessStatusCode();
+                    var verification_token = DroHubFixture.getVerificationToken(await create_page_response.Content.ReadAsStringAsync());
+                    var data_dic = new Dictionary<string, string>();
+                    data_dic["Name"] = device_name;
+                    data_dic["SerialNumber"] = device_serial;
+                    data_dic["__RequestVerificationToken"] = verification_token;
+                    var urlenc = new FormUrlEncodedContent(data_dic);
+                    using (var post_device_create_response = await http_client_helper.Client.PostAsync(create_device_url, urlenc)) {
+                        var dom = DroHubFixture.getHtmlDOM(await post_device_create_response.Content.ReadAsStringAsync());
+                        Assert.Equal("True", dom.QuerySelectorAll("input[name='IsValid']").First().GetAttribute("value"));
+                    }
+                }
             }
         }
     }
