@@ -149,30 +149,32 @@ namespace DroHub.Helpers.Thrift
         }
 
         public async Task runHandler(HttpContext context, IThriftTasks tasks) {
+
+            if (!context.WebSockets.IsWebSocketRequest)
+            {
+                _logger.LogDebug("Got a non websocket request.");
+                context.Response.StatusCode = 400;
+                return;
+            }
+
+            if (context.Request.ContentType != "application/x-thrift")
+            {
+                _logger.LogInformation("Got a non thrift message");
+                context.Response.StatusCode = 400;
+                return;
+            }
+
+            if (context.Request.Headers["x-device-expected-serial"] == StringValues.Empty)
+            {
+                _logger.LogInformation("Peer did not provide a serial");
+                context.Response.StatusCode = 400;
+                return;
+            }
+
             try
             {
                 _serial_number = context.Request.Headers["x-device-expected-serial"];
                 _cancellation_token_src = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
-                if (!context.WebSockets.IsWebSocketRequest)
-                {
-                    _logger.LogDebug("Got a non websocket request.");
-                    context.Response.StatusCode = 400;
-                    return;
-                }
-
-                if (context.Request.ContentType != "application/x-thrift")
-                {
-                    _logger.LogInformation("Got a non thrift message");
-                    context.Response.StatusCode = 400;
-                    return;
-                }
-
-                if (context.Request.Headers["x-device-expected-serial"] == StringValues.Empty)
-                {
-                    _logger.LogInformation("Peer did not provide a serial");
-                    context.Response.StatusCode = 400;
-                    return;
-                }
                 _socket = await context.WebSockets.AcceptWebSocketAsync();
                 _task_list.Add(Task.Run(async () => await ReceiveFromWebSocket(_socket)));
                 _task_list.AddRange(tasks.getTasks(this, _cancellation_token_src.Token));
