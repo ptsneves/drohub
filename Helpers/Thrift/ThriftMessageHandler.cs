@@ -178,12 +178,12 @@ namespace DroHub.Helpers.Thrift
                 _task_list.AddRange(tasks.getTasks(this, _cancellation_token_src.Token));
                 _socket_id = _connection_manager.AddSocket(this);
                 await _task_completion_src.Task;
-                _cancellation_token_src.Cancel();
             }
             finally
             {
                 try
                 {
+                    _cancellation_token_src.Cancel();
                     _connection_manager.RemoveSocket(_socket_id);
                     _logger.LogDebug($"Stopping all tasks for disconnect ${_cancellation_token_src.IsCancellationRequested}");
                     await Task.WhenAll(_task_list.ToArray());
