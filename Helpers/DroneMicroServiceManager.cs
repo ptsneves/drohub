@@ -32,10 +32,10 @@ namespace DroHub.Helpers.Thrift
             _cancellation_token_source = null;
             _services = services;
         }
-        public List<Task> getTasks(ThriftMessageHandler handler, CancellationToken token)
+        public async ValueTask<List<Task>> getTasks(ThriftMessageHandler handler, CancellationToken token)
         {
             _cancellation_token_source = CancellationTokenSource.CreateLinkedTokenSource(token);
-            return new List<Task>{
+            var result = new List<Task>{
                 Task.Run(async () => await pingConnection(handler)),
                 Task.Run(async () => await GatherPosition(handler)),
                 Task.Run(async () => await GatherRadioSignal(handler)),
@@ -43,6 +43,7 @@ namespace DroHub.Helpers.Thrift
                 Task.Run(async () => await GatherBatteryLevel(handler)),
                 Task.Run(async () => await GatherVideoSource(handler))
             };
+            return result;
         }
 
         private async Task RecordTelemetry(IDroneTelemetry telemetry_data)
