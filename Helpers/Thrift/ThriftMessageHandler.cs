@@ -4,6 +4,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Web;
 using System;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using System.IO;
@@ -177,8 +178,14 @@ namespace DroHub.Helpers.Thrift
                 _cancellation_token_src = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
                 _socket = await context.WebSockets.AcceptWebSocketAsync();
                 _task_list.Add(Task.Run(async () => await ReceiveFromWebSocket(_socket)));
-                _task_list.AddRange(tasks.getTasks(this, _cancellation_token_src.Token));
                 _socket_id = _connection_manager.AddSocket(this);
+                var new_tasks = tasks.getTasks(this, _cancellation_token_src.Token);
+                if (!new_tasks.Any())
+                {
+                    _logger.LogInformation("No tasks were given for this socket. Closing.");
+                    context.Response.StatusCode = 400;
+                    return;
+                }
                 await _task_completion_src.Task;
             }
             finally
