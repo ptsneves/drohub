@@ -1,12 +1,20 @@
 using System;
 using Xunit;
 using DroHub.Tests.TestInfrastructure;
-using System.Net.Http;
-using System.Net;
 using System.Linq;
-using System.Collections.Generic;
 using AngleSharp;
 using AngleSharp.Html.Parser;
+using System.Threading;
+using System.Threading.Tasks;
+using Thrift.Transport;
+using Thrift.Protocol;
+using DroHub.Helpers.Thrift;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Collections;
+using System.Net.Http;
+using System.Net;
+using System.Reflection;
 
 namespace DroHub.Tests
 {
