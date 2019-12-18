@@ -27,14 +27,6 @@ namespace DroHub.Tests.TestInfrastructure
             Client = new HttpClient(handlerHttp);
         }
 
-        public static string getVerificationToken(string responseBody)
-        {
-            var context = BrowsingContext.New(Configuration.Default);
-            var parser = context.GetService<IHtmlParser>();
-            var document = parser.ParseDocument(responseBody);
-            return document.QuerySelectorAll("input[name='__RequestVerificationToken']").First().GetAttribute("value");
-        }
-
         public static async  ValueTask<HttpClientHelper> createLoggedInAdmin(DroHubFixture test_fixture) {
             return await createLoggedInUser(test_fixture, "admin", test_fixture.AdminPassword);
         }
@@ -42,7 +34,7 @@ namespace DroHub.Tests.TestInfrastructure
         public static async ValueTask<HttpClientHelper> createHttpClient(DroHubFixture test_fixture) {
             var http_helper = new HttpClientHelper(test_fixture);
             http_helper.Response = await http_helper.Client.GetAsync(test_fixture.SiteUri);
-            http_helper.verificationToken = getVerificationToken(await http_helper.Response.Content.ReadAsStringAsync());
+            http_helper.verificationToken = DroHubFixture.getVerificationToken(await http_helper.Response.Content.ReadAsStringAsync());
             return http_helper;
         }
 

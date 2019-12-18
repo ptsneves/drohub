@@ -5,6 +5,8 @@ using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Commands;
 using System.Linq;
 using System.IO;
+using AngleSharp;
+using AngleSharp.Html.Parser;
 
 namespace DroHub.Tests.TestInfrastructure
 {
@@ -46,6 +48,11 @@ namespace DroHub.Tests.TestInfrastructure
             return parser.ParseDocument(responseBody);
         }
 
+        public static string getVerificationToken(string responseBody)
+        {
+            var document = getHtmlDOM(responseBody);
+            return document.QuerySelectorAll("input[name='__RequestVerificationToken']").First().GetAttribute("value");
+        }
         public void Dispose() {
             _containers.Dispose();
         }
