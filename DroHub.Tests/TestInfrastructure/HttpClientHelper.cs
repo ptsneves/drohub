@@ -27,7 +27,7 @@ namespace DroHub.Tests.TestInfrastructure
             Client = new HttpClient(handlerHttp);
         }
 
-        private static string getVerificationToken(string responseBody)
+        public static string getVerificationToken(string responseBody)
         {
             var context = BrowsingContext.New(Configuration.Default);
             var parser = context.GetService<IHtmlParser>();
