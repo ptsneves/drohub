@@ -1,13 +1,8 @@
 using System;
-using Microsoft.AspNetCore.Mvc;
-using System.Net.WebSockets;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading;
-using System.Reflection;
-using Microsoft.Extensions.Logging;
 namespace DroHub.Helpers.Thrift
 {
     public class WebSocketManagerMiddleware
