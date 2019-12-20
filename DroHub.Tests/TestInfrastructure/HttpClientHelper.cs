@@ -58,6 +58,29 @@ namespace DroHub.Tests.TestInfrastructure
             }
             return http_helper;
         }
+
+        public static async ValueTask<HttpClientHelper> createDevice(DroHubFixture test_fixture, string device_name, string device_serial) {
+            var http_helper = await HttpClientHelper.createLoggedInAdmin(test_fixture);
+            var content = await http_helper.Response.Content.ReadAsStringAsync();
+            var create_device_url = new Uri(test_fixture.SiteUri, "DHub/Devices/Create");
+            using (var create_page_response = await http_helper.Client.GetAsync(create_device_url))
+            {
+                create_page_response.EnsureSuccessStatusCode();
+                var verification_token = DroHubFixture.getVerificationToken(await create_page_response.Content.ReadAsStringAsync());
+                var data_dic = new Dictionary<string, string>();
+                if (device_name != null)
+                    data_dic["Name"] = device_name;
+                if (device_serial != null)
+                    data_dic["SerialNumber"] = device_serial;
+                data_dic["__RequestVerificationToken"] = verification_token;
+                var urlenc = new FormUrlEncodedContent(data_dic);
+                http_helper.Response?.Dispose();
+                http_helper.Response = await http_helper.Client.PostAsync(create_device_url, urlenc);
+                http_helper.Response.EnsureSuccessStatusCode();
+                return http_helper;
+            }
+        }
+
         protected virtual void Dispose(bool disposing)
         {
             if (!_disposed)
