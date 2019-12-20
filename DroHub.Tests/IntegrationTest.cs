@@ -80,17 +80,21 @@ namespace DroHub.Tests
             }
         }
 
-        [InlineData("")]
-        [InlineData("0000")]
+        [InlineData("", true)]
+        [InlineData("NonexistingSerial", true)]
+        [InlineData("000000", false)]
         [Theory]
-        public async void TestConnectionClosedOnInvalidSerial(string serial_field)
+        public async void TestConnectionClosedOnInvalidSerial(string serial_field, bool expect_throw)
         {
             using (var ws_transport = new TWebSocketClient(_fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text))
             {
                 ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
                 if (serial_field != null)
                     ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", serial_field);
-                await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());
+                if (expect_throw)
+                    await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());
+                else
+                    await ws_transport.OpenAsync();
             }
         }
     }
