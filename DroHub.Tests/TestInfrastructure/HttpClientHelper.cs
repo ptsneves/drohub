@@ -110,6 +110,13 @@ namespace DroHub.Tests.TestInfrastructure
             }
         }
 
+        public static async ValueTask<HttpClientHelper> deleteDevice(DroHubFixture test_fixture, string serial_number)
+        {
+            var devices_list = await HttpClientHelper.getDeviceList(test_fixture);
+            int device_id = devices_list.First(d => d.serialNumber == serial_number).id;
+            return await HttpClientHelper.deleteDevice(test_fixture, device_id);
+        }
+
         protected virtual void Dispose(bool disposing)
         {
             if (!_disposed)

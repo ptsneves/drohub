@@ -55,13 +55,8 @@ namespace DroHub.Tests
             }
             if (is_valid == "True")
             {
+                (await HttpClientHelper.deleteDevice(_fixture, device_serial)).Dispose();
                 var devices_list = await HttpClientHelper.getDeviceList(_fixture);
-                int device_id = devices_list.First(d => d.serialNumber == device_serial).id;
-                using (var helper = await HttpClientHelper.deleteDevice(_fixture, device_id))
-                {
-                    ;
-                }
-                devices_list = await HttpClientHelper.getDeviceList(_fixture);
                 Assert.ThrowsAny<ArgumentNullException>(() => devices_list.First(d => d.serialNumber == device_serial));
             }
         }
@@ -102,12 +97,7 @@ namespace DroHub.Tests
             }
             if (create_delete_device)
             {
-                var devices_list = await HttpClientHelper.getDeviceList(_fixture);
-                int device_id = devices_list.First(d => d.serialNumber == serial_field).id;
-                using (var helper = await HttpClientHelper.deleteDevice(_fixture, device_id))
-                {
-                    ;
-                }
+                (await HttpClientHelper.deleteDevice(_fixture, serial_field)).Dispose();
             }
         }
     }
