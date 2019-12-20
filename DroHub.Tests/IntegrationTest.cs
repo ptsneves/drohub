@@ -77,12 +77,19 @@ namespace DroHub.Tests
             }
         }
 
-        [InlineData("", true)]
-        [InlineData("NonexistingSerial", true)]
-        [InlineData("000000", false)]
+        [InlineData("ASerial", false, true)]
+        [InlineData(null, true, false)]
         [Theory]
-        public async void TestConnectionClosedOnInvalidSerial(string serial_field, bool expect_throw)
+        public async void TestConnectionClosedOnInvalidSerial(string serial_field, bool expect_throw, bool create_delete_device)
         {
+            if (create_delete_device)
+            {
+                using (var helper = await HttpClientHelper.createDevice(_fixture, "SomeName", serial_field))
+                {
+                    var dom = DroHubFixture.getHtmlDOM(await helper.Response.Content.ReadAsStringAsync());
+                    Assert.Equal("True", dom.QuerySelectorAll("input[name='IsValid']").First().GetAttribute("value"));
+                }
+            }
             using (var ws_transport = new TWebSocketClient(_fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text))
             {
                 ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
@@ -92,6 +99,15 @@ namespace DroHub.Tests
                     await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());
                 else
                     await ws_transport.OpenAsync();
+            }
+            if (create_delete_device)
+            {
+                var devices_list = await HttpClientHelper.getDeviceList(_fixture);
+                int device_id = devices_list.First(d => d.serialNumber == serial_field).id;
+                using (var helper = await HttpClientHelper.deleteDevice(_fixture, device_id))
+                {
+                    ;
+                }
             }
         }
     }
