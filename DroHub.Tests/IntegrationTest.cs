@@ -42,16 +42,25 @@ namespace DroHub.Tests
         }
 
         [InlineData("True", "MyAnafi", "000000")]
-        [InlineData("False", "MyAnafi", "000000")]
         [InlineData("False", "MyAnafi", null)]
         [InlineData("False", null, null)]
         [InlineData("False", null, "000000")]
         [Theory]
-        public async void TestCreateDevice(string is_valid, string device_name, string device_serial) {
+        public async void TestCreateAndDeleteDevice(string is_valid, string device_name, string device_serial)
+        {
             using (var helper = await HttpClientHelper.createDevice(_fixture, device_name, device_serial))
             {
                 var dom = DroHubFixture.getHtmlDOM(await helper.Response.Content.ReadAsStringAsync());
                 Assert.Equal(is_valid, dom.QuerySelectorAll("input[name='IsValid']").First().GetAttribute("value"));
+            }
+            if (is_valid == "True")
+            {
+                var devices_list = await HttpClientHelper.getDeviceList(_fixture);
+                int device_id = devices_list.First(d => d.serialNumber == device_serial).id;
+                using (var helper = await HttpClientHelper.deleteDevice(_fixture, device_id))
+                {
+                    ;
+                }
             }
         }
 
