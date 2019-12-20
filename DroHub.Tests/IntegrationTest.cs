@@ -87,6 +87,7 @@ namespace DroHub.Tests
         {
             using (var ws_transport = new TWebSocketClient(_fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text))
             {
+                ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
                 if (serial_field != null)
                     ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", serial_field);
                 await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());

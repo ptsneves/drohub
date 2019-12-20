@@ -2,14 +2,12 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Net.WebSockets;
 using System.Text;
-using System.Web;
 using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using Microsoft.Extensions.Primitives;
 using Thrift.Transport;
 using Thrift.Transport.Client;
@@ -158,12 +156,12 @@ namespace DroHub.Helpers.Thrift
                 return;
             }
 
-            if (context.Request.ContentType != "application/x-thrift")
-            {
-                _logger.LogInformation("Got a non thrift message");
-                context.Response.StatusCode = 400;
-                return;
-            }
+            // if (context.Request.ContentType != "application/x-thrift")
+            // {
+            //     _logger.LogInformation("Got a non thrift message");
+            //     context.Response.StatusCode = 400;
+            //     return;
+            // }
 
             if (context.Request.Headers["x-device-expected-serial"] == StringValues.Empty)
             {
