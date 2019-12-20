@@ -61,6 +61,8 @@ namespace DroHub.Tests
                 {
                     ;
                 }
+                devices_list = await HttpClientHelper.getDeviceList(_fixture);
+                Assert.ThrowsAny<ArgumentNullException>(() => devices_list.First(d => d.serialNumber == device_serial));
             }
         }
 
