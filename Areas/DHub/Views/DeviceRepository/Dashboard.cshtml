@@ -613,37 +613,6 @@
                         populateRadioSignal(JSON.parse($(this).html()))
                     }
                 )
-                $.getJSON(url)
-                .done(function (device_list) {
-                    $.each(device_list, function (i, device) {
-                        if (device.dropboxToken === undefined)
-                            return;
-
-                        var dbx = new Dropbox.Dropbox({ accessToken: device.dropboxToken, fetch: fetch})
-                        getFolders(dbx, `/${device.serialNumber}`, (folder_entry) => {
-                            console.log( folder_entry["path_lower"])
-                            getFile(dbx, folder_entry["path_lower"], (file) => {
-                                    let latitude = getCoordinate(file, 'latitude')
-                                    let longitude = getCoordinate(file, 'longitude')
-                                    let content_cb = populateMarkerContentDropbox.bind(null, dbx, file);
-                                    let icon_url =  `${window.location.origin}/images/map-hand-drawn-paper-svgrepo-com.svg`
-                                    let marker_icon = {
-                                        url: icon_url, // url
-                                        scaledSize: new google.maps.Size(50, 50), // scaled size
-                                        origin: new google.maps.Point(0,0), // origin
-                                        anchor: new google.maps.Point(0, 0) // anchorscaledSize: new google.maps.Size(50, 50), // scaled size
-                                            }
-                                    let populate_cb = populateMarkers.bind(null, map, device.serialNumber, file.id,
-                                        latitude, longitude, marker_icon, content_cb);
-                                    populate_cb()
-                                }
-                             )
-                        })
-                    })
-                })
-                .fail(function () {
-                    console.log("Received bad json")
-                })
         }
         initMap()
         </script>
