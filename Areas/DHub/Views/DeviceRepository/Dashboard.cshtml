@@ -183,7 +183,7 @@
             <div class="col-md-10" id="map-collumn">
                 <div class="box">
                     <div class="embed-responsive embed-responsive-16by9">
-                        <div id="map" class="embed-responsive-item" style="border: 1px solid black"></div>
+                        <div class="google-map embed-responsive-item" style="border: 1px solid black"></div>
                     </div>
                 </div>
             </div>
@@ -510,7 +510,7 @@
                     } 
                 );
             }
-            function initLiveTelemetry(map) {
+            function initLiveTelemetry() {
                 var connection = new signalR.HubConnectionBuilder().withUrl("/telemetryHub").
                     configureLogging(signalR.LogLevel.Information).build();
 
@@ -572,48 +572,25 @@
                 populate_marker_cb()
             }
 
-            function initMap() {
-                var map = new google.maps.Map(document.getElementById('map'), {
-                    zoom: 8,
-                    center: {lat: 40.5, lng: -7},
-                    mapTypeId: 'satellite'
-                    });
 
-                var url = '@Url.Action("GetDevicesList", "Devices", new {Area = "DHub"})'
+            var url = '@Url.Action("GetDevicesList", "Devices", new {Area = "DHub"})'
 
-                map.addListener("rightclick", function(event) {
-                    var lat = event.latLng.lat();
-                    var lng = event.latLng.lng();
-                    // populate yor box/field with lat, lng
-                    console.log("Lat=" + lat + "; Lng=" + lng);
-                    $('#modal-longitude-value').text(lng);
-                    $('#modal-latitude-value').text(lat);
-                    $('#modal-move-to-position').modal({focus: true, show: true, keyboard: true});
-                });
+            initLiveTelemetry();
 
-                let infowindow = new google.maps.InfoWindow();
-                initLiveTelemetry(map);
+            $('.initial-battery-level').each(function() {
+                    populateBatteryLevel(JSON.parse($(this).html()));
+                }
+            )
 
-                $('.initial-position').each(function() {
-                        updatePositionData($(this).html(), map);
-                    }
-                )
+            $('.initial-flying-state').each(function() {
+                    populateFlyingState(JSON.parse($(this).html()))
+                }
+            )
 
-                $('.initial-battery-level').each(function() {
-                        populateBatteryLevel(JSON.parse($(this).html()));
-                    }
-                )
+            $('.initial-radio-signals').each(function() {
+                    populateRadioSignal(JSON.parse($(this).html()))
+                }
+            )
 
-                $('.initial-flying-state').each(function() {
-                        populateFlyingState(JSON.parse($(this).html()))
-                    }
-                )
-
-                $('.initial-radio-signals').each(function() {
-                        populateRadioSignal(JSON.parse($(this).html()))
-                    }
-                )
-        }
-        initMap()
         </script>
 }

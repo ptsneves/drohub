@@ -4,6 +4,34 @@
 // Write your JavaScript code.
 
 $(function () {
+
+    function initializeMap(index, element) {
+        let map = new google.maps.Map(element, {
+            zoom: 8,
+            center: { lat: 40.5, lng: -7 },
+            mapTypeId: 'satellite'
+        });
+
+        map.addListener("rightclick",
+            function (event) {
+                var lat = event.latLng.lat();
+                var lng = event.latLng.lng();
+                // populate yor box/field with lat, lng
+                console.log("Lat=" + lat + "; Lng=" + lng);
+                $('#modal-longitude-value').text(lng);
+                $('#modal-latitude-value').text(lat);
+                $('#modal-move-to-position').modal({ focus: true, show: true, keyboard: true });
+            }
+        );
+
+        $('.initial-position').each(
+            function () {
+                updatePositionData($(this).html(), map);
+            }
+        );
+    }
+    $('.google-map').each(initializeMap);
+
     function followActionAndDoNothing(event) {
         var url = $(this).data('url');
         $.get(url);
