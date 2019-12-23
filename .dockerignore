@@ -2,6 +2,7 @@
 .env
 .git
 !.git/HEAD
+!.git/refs/heads/master
 .gitignore
 .vs
 .vscode

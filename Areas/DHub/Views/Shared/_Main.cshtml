@@ -65,7 +65,7 @@
                 @{
                     var build_hash = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
                 }
-                @build_hash
+                <span class="build-hash">@build_hash</span>
                 <strong>&copy; @DateTime.Now.Year <a href="https://www.airborneprojects.com/">AIRBORNE PROJECTS</a> | </strong> All rights reserved.
             </div>
             <strong>&nbsp;</strong>

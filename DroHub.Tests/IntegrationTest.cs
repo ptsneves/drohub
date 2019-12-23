@@ -35,10 +35,17 @@ namespace DroHub.Tests
             }
             else
             {
-                await Assert.ThrowsAsync<System.InvalidProgramException>(async () =>
-                {
-                    using (var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, user, password)) { }
-                });
+                await Assert.ThrowsAsync<System.InvalidProgramException>(async () => (await HttpClientHelper.createLoggedInUser(_fixture, user, password)).Dispose());
+            }
+        }
+
+        [Fact]
+        public async void TestHashInFooter()
+        {
+            using (var http_client_helper = await HttpClientHelper.createLoggedInAdmin(_fixture))
+            {
+                var dom = DroHubFixture.getHtmlDOM(await http_client_helper.Response.Content.ReadAsStringAsync());
+                Assert.Matches("\\b[0-9a-f]{7,40}\\b", dom.QuerySelectorAll("span.build-hash").First().TextContent);
             }
         }
 
