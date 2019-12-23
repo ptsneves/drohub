@@ -100,7 +100,7 @@ namespace DroHub.Helpers.Thrift
                 {
                     T telemetry = await del(client.Client, token);
                     _logger.LogDebug($"received {t_name} {telemetry}", telemetry);
-                    await _hub.Clients.All.SendAsync($"{t_name}", JsonConvert.SerializeObject(telemetry));
+                    await _hub.Clients.All.SendAsync(t_name, JsonConvert.SerializeObject(telemetry));
                     await RecordTelemetry(telemetry);
                 }
             }

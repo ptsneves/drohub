@@ -66,7 +66,7 @@ namespace DroHub.Helpers.Thrift
             {
                 var d = await Trans.ReadAllAsync(HeaderBuffer, 0, 1);
                 result = result << 8 | (int)HeaderBuffer[0];
-                // Console.WriteLine($"buffer read {d} in {HeaderBuffer[0]}-> {result} or {_MAGIC_NUMBER} == {result == _MAGIC_NUMBER}");
+                // Console.WriteLine($"buffer read {d} {string.Format("0x{0:X}",HeaderBuffer[0] )} in {HeaderBuffer[0]}-> {result} or {_MAGIC_NUMBER} == {result == _MAGIC_NUMBER}");
             } while (!cancellationToken.IsCancellationRequested && result != _MAGIC_NUMBER);
         }
         private async Task WriteMagicNumber(CancellationToken cancellationToken) {
@@ -95,7 +95,7 @@ namespace DroHub.Helpers.Thrift
         {
             await ReadMagicNumber(cancellationToken);
             TMessage new_message = await base.ReadMessageBeginAsync(cancellationToken);
-            Console.WriteLine($"seq id {_random_seq_id} == {new_message.SeqID}");
+            // Console.WriteLine($"seq id {_random_seq_id} == {new_message.SeqID}");
             if (OperationMode == OperationModeEnum.SEQID_MASTER)
             {
                 while (_random_seq_id != new_message.SeqID)

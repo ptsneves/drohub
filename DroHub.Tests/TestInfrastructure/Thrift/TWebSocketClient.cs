@@ -14,7 +14,6 @@ public class TWebSocketClient : Thrift.Transport.TTransport
     public ClientWebSocketOptions WebSocketOptions { get { return ws.Options; } }
     private readonly SemaphoreSlim _read_semapthore;
     private readonly SemaphoreSlim _send_semapthore;
-    private FileStream fs;
 
     public TWebSocketClient(Uri transport_uri, WebSocketMessageType message_type) {
         _read_semapthore = new SemaphoreSlim(1);
@@ -23,7 +22,6 @@ public class TWebSocketClient : Thrift.Transport.TTransport
         disposed = false;
         TransportUri = transport_uri;
         MessageType = message_type;
-        fs = new FileStream("/tmp/stream", FileMode.Create, FileAccess.Write);
     }
     public override bool IsOpen => ws.State == WebSocketState.Open;
 
@@ -48,9 +46,8 @@ public class TWebSocketClient : Thrift.Transport.TTransport
         try
         {
             var result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer, offset, length), cancellationToken);
-            UTF8Encoding utf8 = new UTF8Encoding();
-            Console.WriteLine($"Read {result.Count} !! {utf8.GetString(buffer, offset, length)}");
-            fs.Write(buffer, 0, result.Count);
+            // UTF8Encoding utf8 = new UTF8Encoding();
+            // Console.WriteLine($"Read {result.Count} !! {utf8.GetString(buffer, offset, length)}");
             return result.Count;
         }
         finally {
@@ -64,8 +61,8 @@ public class TWebSocketClient : Thrift.Transport.TTransport
         try
         {
             await ws.SendAsync(new ArraySegment<byte>(buffer, offset, length), MessageType, false, cancellationToken);
-            UTF8Encoding utf8 = new UTF8Encoding();
-            Console.WriteLine($"send {utf8.GetString(buffer, offset, length)}");
+            // UTF8Encoding utf8 = new UTF8Encoding();
+            // Console.WriteLine($"send {utf8.GetString(buffer, offset, length)}");
         }
         finally
         {
@@ -81,7 +78,6 @@ public class TWebSocketClient : Thrift.Transport.TTransport
         if (disposing)
         {
             ws.Dispose();
-            fs.Dispose();
         }
         disposed = true;
     }

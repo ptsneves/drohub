@@ -3,8 +3,6 @@ using System.Net.Http;
 using System.Net;
 using System.Linq;
 using System.Threading.Tasks;
-using AngleSharp;
-using AngleSharp.Html.Parser;
 using System.Collections.Generic;
 
 namespace DroHub.Tests.TestInfrastructure
@@ -115,6 +113,24 @@ namespace DroHub.Tests.TestInfrastructure
             var devices_list = await HttpClientHelper.getDeviceList(test_fixture);
             int device_id = devices_list.First(d => d.serialNumber == serial_number).id;
             return await HttpClientHelper.deleteDevice(test_fixture, device_id);
+        }
+
+        public static async ValueTask<List<T>> getDeviceTelemetry<T>(DroHubFixture test_fixture, string serial_number,
+                int start_index, int end_index) {
+            var devices_list = await HttpClientHelper.getDeviceList(test_fixture);
+            int device_id = devices_list.First(d => d.serialNumber == serial_number).id;
+
+            using (var http_helper = await HttpClientHelper.createLoggedInAdmin(test_fixture)) {
+                var content = await http_helper.Response.Content.ReadAsStringAsync();
+                var create_device_url = new Uri(test_fixture.SiteUri, $"DHub/Devices/Get{typeof(T)}s/{device_id}");
+                http_helper.Response?.Dispose();
+                var data_dic = new Dictionary<string, string>();
+                data_dic["start_index"] = start_index.ToString();
+                data_dic["end_index"] = end_index.ToString();
+                var urlenc = new FormUrlEncodedContent(data_dic);
+                http_helper.Response = await http_helper.Client.PostAsync(create_device_url, urlenc);
+                return Newtonsoft.Json.JsonConvert.DeserializeObject<List<List<T>>>(await http_helper.Response.Content.ReadAsStringAsync()).First();
+            }
         }
 
         protected virtual void Dispose(bool disposing)

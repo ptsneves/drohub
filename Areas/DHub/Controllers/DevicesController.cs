@@ -18,8 +18,18 @@ using Microsoft.Extensions.Logging;
 using DroHub.Helpers;
 using Microsoft.Extensions.Hosting;
 using DroHub.Helpers.Thrift;
+
 namespace DroHub.Areas.DHub.Controllers
 {
+    internal static class LinqExtensions
+    {
+        internal static IQueryable<ICollection<TelemetryType>> IncludeTelemetry<TelemetryType>(
+            this System.Linq.IQueryable<Device> source, IncludeTelemetryDelegate<TelemetryType> dele) where TelemetryType : IDroneTelemetry
+        {
+            return dele(source);
+        }
+        internal delegate IQueryable<ICollection<TelemetryType>> IncludeTelemetryDelegate<TelemetryType>(System.Linq.IQueryable<Device> source) where TelemetryType : IDroneTelemetry;
+    }
     [Area("DHub")]
     public class DevicesController : AuthorizedController
     {
@@ -125,6 +135,76 @@ namespace DroHub.Areas.DHub.Controllers
                 return NoContent();
 
             return Json(device_list);
+        }
+
+        private async Task<IActionResult> GetTelemetry<TelemetryType>(int? id, int start_index, int end_index,
+            LinqExtensions.IncludeTelemetryDelegate<TelemetryType> include_delegate) where TelemetryType : IDroneTelemetry {
+
+            if (id == null || start_index < 1 || end_index < start_index ) return BadRequest();
+
+            var current_user = await _userManager.GetUserAsync(User);
+            var telemetries = await _context.UserDevices
+                    .Where(ud => _userManager.GetUserId(User) == ud.DroHubUserId && ud.Device.Id == id)
+                    .Select(ud => ud.Device)
+                    .OrderByDescending(d => d.Id)
+                    .IncludeTelemetry(include_delegate)
+                    .Skip(start_index-1)
+                    .Take(Math.Min(end_index-start_index+1, 10))
+                    .ToArrayAsync();
+            return Json(telemetries);
+        }
+
+        public async Task<IActionResult> GetDronePositions(int? id, int start_index, int end_index) {
+            LinqExtensions.IncludeTelemetryDelegate<DronePosition> del = (source =>
+            {
+                return source.Select(d => d.positions);
+            });
+            return await GetTelemetry(id, start_index, end_index, del);
+        }
+
+        public async Task<IActionResult> GetDroneBatteryLevels(int? id, int start_index, int end_index)
+        {
+            LinqExtensions.IncludeTelemetryDelegate<DroneBatteryLevel> del = (source =>
+            {
+                return source.Select(d => d.battery_levels);
+            });
+            return await GetTelemetry(id, start_index, end_index, del);
+        }
+
+        public async Task<IActionResult> GetDroneRadioSignals(int? id, int start_index, int end_index)
+        {
+            LinqExtensions.IncludeTelemetryDelegate<DroneRadioSignal> del = (source =>
+            {
+                return source.Select(d => d.radio_signals);
+            });
+            return await GetTelemetry(id, start_index, end_index, del);
+        }
+
+        public async Task<IActionResult> GetDroneFlyingStates(int? id, int start_index, int end_index)
+        {
+            LinqExtensions.IncludeTelemetryDelegate<DroneFlyingState> del = (source =>
+            {
+                return source.Select(d => d.flying_states);
+            });
+            return await GetTelemetry(id, start_index, end_index, del);
+        }
+
+        public async Task<IActionResult> GetDroneReplys(int? id, int start_index, int end_index)
+        {
+            LinqExtensions.IncludeTelemetryDelegate<DroneReply> del = (source =>
+            {
+                return source.Select(d => d.drone_replies);
+            });
+            return await GetTelemetry(id, start_index, end_index, del);
+        }
+
+        public async Task<IActionResult> GetDroneVideoStateResults(int? id, int start_index, int end_index)
+        {
+            LinqExtensions.IncludeTelemetryDelegate<DroneVideoStateResult> del = (source =>
+            {
+                return source.Select(d => d.drone_video_states);
+            });
+            return await GetTelemetry(id, start_index, end_index, del);
         }
 
         // GET: DroHub/Devices/Data/5
