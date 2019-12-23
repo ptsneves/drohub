@@ -61,80 +61,13 @@ namespace DroHub.Areas.DHub.Controllers
                 .FirstOrDefaultAsync();
         }
 
-        // GET: /<controller>/
         public async Task<IActionResult> Index(int? id)
         {
             if (id == null) return NotFound();
 
-
-            Device currentDevice = await getDeviceById(id);
-
-            if (currentDevice == null) return NotFound();
-
-            if (!string.IsNullOrWhiteSpace(currentDevice.DropboxToken))
-            {
-                return RedirectToAction(nameof(Gallery), new { id = id });
-            }
-            // else
-            currentDevice.DropboxConnectState = Guid.NewGuid().ToString("N"); // Set new dropbox connect state to this device
-            _context.SaveChanges();
-            if (_dropboxRepositorySettings.APIKey == null)
-                throw new System.InvalidOperationException("API Key is not available. Please set it");
-
-            var redirect = DropboxOAuth2Helper.GetAuthorizeUri(
-                OAuthResponseType.Code,
-                _dropboxRepositorySettings.APIKey,
-                _dropboxRepositorySettings.AuthRedirectUri,
-                currentDevice.DropboxConnectState,
-                true); // force_reapprove Whether or not to force the user to approve the app again if they've already done so.
-                       // If false (default), a user who has already approved the application may be automatically redirected to the URI specified by redirect_uri.
-                       // If true, the user will not be automatically redirected and will have to approve the app again.
-
-            return Redirect(redirect.ToString());
+            return await Dashboard();
         }
 
-        // GET: /<controller>/Auth
-        // public async Task<ActionResult> Auth(string code, string state)
-        // {
-        //     try
-        //     {
-        //         DroHubUser currentUser = await _userManager.GetUserAsync(User);
-        //         Device currentDevice = currentUser.Devices.FirstOrDefault(
-        //             device => device.DropboxConnectState == state);
-
-        //         if (currentDevice == null) // same as (currentDevice.ConnectState != state) but not necessary because it's already verified
-        //                                    // above with device.DropboxConnectState == state
-        //         {
-        //             //this.Flash("There was an error connecting to Dropbox.");
-        //             return RedirectToAction(nameof(Index), "Devices", new { area = "DHub" });
-        //         }
-        //         // else
-        //         var response = await DropboxOAuth2Helper.ProcessCodeFlowAsync(
-        //             code,
-        //             _dropboxRepositorySettings.APIKey,
-        //             _dropboxRepositorySettings.APISecret,
-        //             _dropboxRepositorySettings.AuthRedirectUri);
-
-        //         currentDevice.DropboxToken = response.AccessToken; // Save dropbox token for this device
-        //         currentDevice.DropboxConnectState = string.Empty; // Clear current Dropbox connect state
-        //         await _context.SaveChangesAsync();
-
-        //         //this.Flash("This account has been connected to Dropbox.", FlashLevel.Success);
-        //         return RedirectToAction(nameof(Index), new { id = currentDevice.Id });
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         var message = string.Format(
-        //             "code: {0}\nAppKey: {1}\nAppSecret: {2}\nRedirectUri: {3}\nException : {4}",
-        //             code,
-        //             _dropboxRepositorySettings.APIKey,
-        //             _dropboxRepositorySettings.APISecret,
-        //             _dropboxRepositorySettings.AuthRedirectUri,
-        //             e);
-        //         //this.Flash(message, FlashLevel.Danger);
-        //         return RedirectToAction(nameof(Index), "Devices", new { area = "DHub" });
-        //     }
-        // }
         private async Task<List<Device>> GetDeviceListInternal()
         {
             var device_list = await _context.UserDevices
