@@ -69,14 +69,12 @@ namespace DroHub.Tests
             }
         }
 
-
         [Fact]
         public async void TestConnectionClosedOnNoSerial()
         {
             using (var ws_transport = new TWebSocketClient(_fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text))
             {
                 await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());
-                await Task.Delay(5000);
             }
         }
 
