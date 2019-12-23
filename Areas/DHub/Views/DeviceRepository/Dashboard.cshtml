@@ -109,12 +109,15 @@
                                     </div>
 
                                     <div class="box box-solid">
-                                        <a onclick='followActionAndDoNothing("@takeoff_action_url")' class="btn btn-danger"
-                                            title="Take off this device">TakeOff</a>
-                                        <a onclick='followActionAndDoNothing("@landing_action_url")'
-                                            class="btn btn-danger" title="Land this device">Land</a>
-                                        <button type='button btn btn-danger' onclick="followActionAndDoNothing('@return_to_home_action_url')"
-                                            class="btn btn-danger">Return to Home</button>
+                                        <button data-url="@takeoff_action_url" data-toggle="ajax-request" class="btn btn-danger" title="Take off this device">
+                                            TakeOff
+                                        </button>
+                                        <button data-url="@landing_action_url" data-toggle="ajax-request" class="btn btn-danger" title="Land this device">
+                                            Land
+                                        </button>
+                                        <button type='button btn btn-danger' data-toggle="ajax-request" data-url="@return_to_home_action_url" class="btn btn-danger">
+                                            Return to Home
+                                        </button>
 
                                         <div class="box" id="@move_to_position_box_id" style="display: none">
                                             <div class="box-header with-border">

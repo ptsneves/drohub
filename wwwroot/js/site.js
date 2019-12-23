@@ -2,10 +2,15 @@
 // for details on configuring this project to bundle and minify static web assets.
 
 // Write your JavaScript code.
-function followActionAndDoNothing(action_url) {
-    $.getJSON(action_url)
-}
+
 $(function () {
+    function followActionAndDoNothing(event) {
+        var url = $(this).data('url');
+        $.get(url);
+    }
+    $('a[data-toggle="ajax-request"]').click(followActionAndDoNothing);
+    $('button[data-toggle="ajax-request"]').click(followActionAndDoNothing);
+
     var placeholderElement = $('#modal-placeholder');
     function makeModal (event) {
         var url = $(this).data('url');
