@@ -8,7 +8,7 @@
 <!-- Content Header (Page header) -->
 <!-- Main content -->
 
-<section class="content">
+<section class="content janus-section" data-janus-url='@ViewData["FrontEndJanusUrl"]' data-stun-server-url='@ViewData["FrontEndStunServerUrl"]'>
     <style>
         .control-sidebar-open {
             width: 30%;
@@ -60,50 +60,55 @@
                     <div class="box-body">
                         <input type="text" name="drone_search" class="form-control" placeholder="Search device by name or serial...">
                         @foreach(var device in @Model) {
+                            var takeoff_action_url = Url.Action("TakeOff", "Devices", new {id = device.Id});
+                            var landing_action_url = Url.Action("Land", "Devices", new {id = device.Id});
+                            var return_to_home_action_url = Url.Action("ReturnToHome", "Devices", new {id = device.Id});
+                            var move_to_position_action_url = Url.Action("MoveToPosition", "Devices", new {id = device.Id});
+                            var move_to_position_box_id = move_to_position_box_id_prefix + device.Id;
+                            var radio_signals_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.radio_signals?.FirstOrDefault()) as String);
+                            var position_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.positions?.FirstOrDefault()) as String);
+                            var battery_level_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.battery_levels?.FirstOrDefault()) as String);
+                            var flying_state_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.flying_states?.FirstOrDefault()) as String);
+
                             <div class="box" id="devices-box-@device.Name">
                                 <div class="box-header with-border">
                                     <h3 class="box-title">
-                                        <i class="fa fa-paper-plane text-muted blinking plane-icon-@device.SerialNumber"></i>
+                                        <i class="fa fa-paper-plane text-muted blinking telemetry-single-data flying-state-text" data-renderer="renderPlaneIcon" data-serial="@device.SerialNumber" data-telemetry='@flying_state_initial'></i>
                                         @device.Name</h3>
                                     <div class="box-tools pull-right">
-                                        <button type="button" class="btn btn-box-tool" title="Center map in device" onclick="centerMapOnDevice('@device.SerialNumber')"><i class="fa fa-map"></i></button>
+                                        <button type="button" class="btn btn-box-tool map-marker-action-button" title="Center map in device" data-serial='@device.SerialNumber' data-device-type="drone" data-toggle="centerMapOnDevice"><i class="fa fa-map"></i></button>
                                         <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
                                     </div>
                                 </div>
                                 <div class="box-body">
-                                    @{
-                                        var takeoff_action_url = Url.Action("TakeOff", "Devices", new {id = device.Id});
-                                        var landing_action_url = Url.Action("Land", "Devices", new {id = device.Id});
-                                        var return_to_home_action_url = Url.Action("ReturnToHome", "Devices", new {id = device.Id});
-                                        var move_to_position_action_url = Url.Action("MoveToPosition", "Devices", new {id = device.Id});
-                                        var move_to_position_box_id = move_to_position_box_id_prefix + device.Id;
-                                    }
                                     <div class="box box-solid">
                                         <ul class="nav nav-pills nav-stacked">
                                             <li>
                                                     <i class="fa fa-info"></i>
                                                     Device State
-                                                    <span class="label label-default pull-right device-state-value-@device.SerialNumber">No data</span>
+                                                    <span class="label label-default pull-right telemetry-single-data flying-state-text" data-renderer="renderFlyingState" data-serial="@device.SerialNumber" data-telemetry='@flying_state_initial'>No data</span>
                                             </li>
                                             <li>
                                                     <i class="fa fa-signal"></i>
                                                     Telemetry Signal
-                                                    <span class="label label-default pull-right radio-signal-value-@device.SerialNumber">No data</span>
+                                                    <span class="label label-default pull-right telemetry-single-data radio-signal-text" data-renderer="renderRadioSignal" data-serial="@device.SerialNumber" data-telemetry='@radio_signals_initial'>
+                                                        No data
+                                                    </span>
                                             </li>
                                             <li>
                                                     <i class="fa fa-battery"></i>
                                                     Battery
-                                                    <span class="label label-default pull-right battery-level-value-@device.SerialNumber">No data</span>
+                                                    <span class="label label-default pull-right telemetry-single-data battery-level-text" data-renderer="renderBatteryLevel" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>No data</span>
                                             </li>
                                             <li>
                                                     <i class="fa fa-arrows-alt"></i>
                                                     GPS Signal
-                                                    <span class="label label-default pull-right gps-signal-value-@device.SerialNumber">No data</span>
+                                                    <span class="label label-default pull-right ">No data</span>
                                             </li>
                                             <li>
                                                     <i class="fa fa-map-marker"></i>
                                                     Position
-                                                    <span class="label label-primary pull-right last-position-value-@device.SerialNumber">No data</span>
+                                                    <span class="label label-primary pull-right telemetry-single-data position-text" data-device-type="drone" data-renderer="renderPositionText" data-serial="@device.SerialNumber" data-telemetry='@position_initial'>No data</span>
                                             </li>
                                         </ul>
                                     </div>
@@ -145,39 +150,6 @@
                         }
                     </div>
                 </div>
-                <!--
-                <div class="box">
-                    <div class="box-header with-border">
-                        <h3 class="box-title">Missions</h3>
-                        <div class="box-tools pull-right">
-                            <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i>
-                        </div>
-                    </div>
-                    <div class="box-body">
-                        sdas
-                    </div>
-                </div>
-                <div class="box collapsed-box">
-                    <div class="box-header with-border">
-                        <h3 class="box-title">Picture Stack</h3>
-                        <div class="box-tools pull-right">
-                            <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i>
-                        </div>
-                    </div>
-                    <div class="box-body" id="picture-stack-container">
-                        <div class="box" id="picture-box-template" style="display: none">
-                            <div class="box-header with-border">
-                                <h3 class="box-title">P1</h3>
-                                <div class="box-tools pull-right">
-                                    <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i>
-                                </div>
-                            </div>
-                            <div class="box-body">
-                                sdas
-                            </div>
-                        </div>
-                    </div>
-                </div> -->
            </div>
 
             <div class="col-md-10" id="map-collumn">
@@ -247,350 +219,23 @@
     <script src="/lib/dropbox-sdk/Dropbox-sdk.min.js"></script>
 </section>
 @section Scripts {
-    @foreach (var device in Model) {
-        @if (device.positions != null && device.positions.FirstOrDefault() != null) {
-            <script type="application/json" class="initial-position" serial="@device.SerialNumber">
-                @Html.Raw(JsonConvert.SerializeObject(@device.positions.FirstOrDefault()))
-            </script>
-        }
-        @if (device.battery_levels != null && device.battery_levels.FirstOrDefault() != null) {
-            <script type="application/json" class="initial-battery-level" serial="@device.SerialNumber">
-                @Html.Raw(JsonConvert.SerializeObject(@device.battery_levels.FirstOrDefault()))
-            </script>
-        }
-        @if (device.flying_states != null && device.flying_states.FirstOrDefault() != null) {
-            <script type="application/json" class="initial-flying-state" serial="@device.SerialNumber">
-                @Html.Raw(JsonConvert.SerializeObject(@device.flying_states.FirstOrDefault()))
-            </script>
-        }
-        @if (device.radio_signals != null && device.radio_signals.FirstOrDefault() != null) {
-            <script type="application/json" class="initial-radio-signal" serial="@device.SerialNumber">
-                @Html.Raw(JsonConvert.SerializeObject(@device.radio_signals.FirstOrDefault()))
-            </script>
-        }
-    }
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/6.4.0/adapter.min.js" ></script>
     <script type="text/javascript" src="~/js/janus.js" ></script>
     <script type="text/javascript" src="~/js/streamingtest.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?@ViewData["GoogleAPIKey"]"></script>
-    <script src="/lib/dropbox-sdk/Dropbox-sdk.min.js"></script>
+    <script src='https://maps.googleapis.com/maps/api/js?@ViewData["GoogleAPIKey"]'></script>
     <script src="/lib/signalr/dist/browser/signalr.js"></script>
-    <script src="/js/common-dropbox.js"></script>
+    <script type="text/javascript" src="~/js/dashboard.js" ></script>
     <script>
-            initJanus("@ViewData["FrontEndJanusUrl"]", "@ViewData["FrontEndStunServerUrl"]");
-            var marker_dict = {};
-            function centerMapOnDevice(device_serial_number) {
-                let device_marker = marker_dict[`@drone_marker_id_prefix${device_serial_number}`];
-                centerMapOnMarker(device_marker);
-            }
 
-            function centerMapOnMarker(marker) {
-                marker.map.panTo(marker.position);
-                marker.map.setZoom(20);
-            }
-
-            function onGoToPositionDeviceSelected() {
-                let selected_device_serial = $('#move-to-position-device-select').val();
-                let device_box = $(`#@move_to_position_box_id_prefix${selected_device_serial}`)
-                let lat = $('#modal-latitude-value').text();
-                let lng = $('#modal-longitude-value').text();
-                device_box.attr('style', 'display:initial')
-                device_box.find("input[name='Longitude']").val(lng);
-                device_box.find("input[name='Latitude']").val(lat);
-                device_box.find("input[name='Altitude']").focus();
-            }
-
-            function getCoordinate(file, coord_type) {
-                    if (typeof(file.media_info.metadata.location) != 'undefined')
-                        return eval("file.media_info.metadata.location." + coord_type)
-            }
-
-            function isPictureFile(file_response) {
-                return !(file_response[".tag"] != "file" || typeof(file_response.media_info) === 'undefined' ||
-                            file_response.media_info[".tag"] != 'metadata' ||
-                            file_response.media_info.metadata[".tag"] != 'photo' ||
-                            file_response.media_info.metadata["location"] === undefined)
-            }
-
-            function JSONMarkerPrettyPrint(name, val) {
-                return `<p>${name}: ${val}</p>`
-            }
-
-            function generateInfoWindowContent(file, thumbnail_url, exif_json) {
-                let contentString = `
-                    <p>Pic ${file.name}</p>
-                    <p>Lat:${getCoordinate(file, 'latitude')} Long ${getCoordinate(file, 'longitude')}</p>`
-
-                if (thumbnail_url)
-                    contentString += `<img src="${thumbnail_url}">`
-
-                if (exif_json) {
-                    JSON.parse(exif_json, function(k, v) {
-                        contentString += JSONMarkerPrettyPrint(k, v)
-                    })
-                }
-                return contentString;
-            }
-
-            function populateExifInfo(dbx, file) {
-                json_file = file.path_lower.substr(0, file.path_lower.lastIndexOf(".")) + ".json"
-                dbx.filesDownload({path: json_file}).then(
-                    function (json_response) {
-                        let blob = json_response.fileBlob;
-                        let reader = new FileReader();
-                        reader.addEventListener("loadend", function() {
-                            let photo_exif = JSON.parse(reader.result, JSONMarkerPrettyPrint);
-                            stringified_exif = ""
-                            let content_html = generateInfoWindowContent(file, thumbnail_url, reader.result);
-                            //setControlSideBarContent(content_html, true);
-
-                            populatePictureStack(dbx, file, content_html)
-                        })
-                        reader.readAsText(blob);
-                    }
-                )
-            }
-
-            function populateThumbnail(file, dbx, after_thumbnail_callback) {
-                dbx.filesGetThumbnail({path: file.path_lower, size : {".tag": 'w480h320'}}).then(function (thumbnail_response) {
-                    thumbnail_url = window.URL.createObjectURL(thumbnail_response.fileBlob)
-                    let content_html = generateInfoWindowContent(file, thumbnail_url, null);
-                    after_thumbnail_callback(dbx, file)
-                })
-            }
-
-            async function populateMarkerContentDropbox(dbx, file) {
-                let content_html = generateInfoWindowContent(file, null, null)
-                let populate_exif_info_cb = populateExifInfo.bind(null, dbx, file);
-                let populate_thumbnail_cb = populateThumbnail.bind(null, file, dbx, populate_exif_info_cb);
-
-                populate_thumbnail_cb()
-            }
-
-            function populatePictureStack(dbx, file, content_html) {
-                function basename(path) {
-                    return path.split('/').reverse()[0];
-                }
-                console.log(file.path_lower)
-                let new_picture = $('#picture-box-template').clone();
-                new_picture = new_picture.attr("style", "display: initial");
-                new_picture = new_picture.attr("id", `picture-box-${file.path_lower}`);
-                new_picture.find('.box-title').text(basename(file.path_lower));
-                new_picture.find('.box-body').html(content_html);
-
-                new_picture.find('.box-body').html(content_html);
-                console.log(content_html)
-                new_picture.appendTo("#picture-stack-container");
-            }
-
-            function populateMarkers(map, serial, id, latitude, longitude, marker_icon, marker_content_func) {
-                if (marker_dict.hasOwnProperty(id)) {
-                    marker_dict[id].setPosition({lat: latitude, lng: longitude});
-                    return;
-                }
-
-                let marker = new google.maps.Marker({
-                        position: {lat: latitude, lng: longitude},
-                        icon : marker_icon,
-                        map : map,
-                        serial : serial,
-                        id : id
-                });
-
-                marker_dict[id] = marker;
-
-                if (marker_content_func) {
-                    google.maps.event.addListener(marker, 'click', () => {
-                        marker_content_func.bind(null, marker)();
-                    });
-                }
-            }
-
-            function populateBatteryLevel(battery_level) {
-                $(`.battery-level-value-${battery_level.Serial}`).each(
-                    function(index, element) {
-                        $(this).removeClass('label-default');
-                        if (battery_level.BatteryLevelPercent > 75) {
-                            $(this).addClass('label-success');
-                        }
-                        else if (battery_level.BatteryLevelPercent > 35 && battery_level.BatteryLevelPercent <= 75)
-                            $(this).addClass('label-warning');
-                        else
-                            $(this).addClass('label-danger');
-                        $(this).text(battery_level.BatteryLevelPercent);
-                    }
-                );
-            }
-
-            function populateRadioSignal(radio_signal) {
-                $(`.radio-signal-value-${radio_signal.Serial}`).each(
-                    function(index, element) {
-                        if (radio_signal.__isset['rssi'] == true) {
-                            $(this).removeClass('label-default');
-                            $(this).addClass('label-primary');
-
-                            $(this).text(radio_signal.Rssi + " dbm");
-                        }
-                        else {
-                            $(this).removeClass('label-default');
-                            if (radio_signal.SignalQuality > 3) {
-                                $(this).addClass('label-success');
-                            }
-                            else if (radio_signal.SignalQuality >= 2 && radio_signal.SignalQuality <= 3)
-                                $(this).addClass('label-warning');
-                            else
-                                $(this).addClass('label-danger');
-
-                            $(this).text(radio_signal.SignalQuality + " Level");
-
-                            console.log('Received signal ')
-                        }
-                    }
-                );
-            }
-            function populateFlyingState(flying_state) {
-                function makeClassActive(element, class_to_activate, AvailableClasses) {
-                    let classes_to_delete = new Set(AvailableClasses);
-                    classes_to_delete.delete(class_to_activate)
-                    classes_to_delete.forEach(function(item) {
-                        element.removeClass(item);
-                    });
-                    element.addClass(class_to_activate);
-                }
-
-                $(`.device-state-value-${flying_state.Serial}`).each(
-                    function(index, element) {
-                        $(this).removeClass('label-default');
-                        $(this).addClass('label-primary');
-                        console.log(flying_state);
-                        switch(flying_state.State) {
-                            case 0:
-                                $(this).text("Landed");
-                                break;
-                            case 1:
-                                $(this).text("Taking Off");
-                                break;
-                            case 2:
-                                $(this).text("Hovering");
-                                break;
-                            case 3:
-                                $(this).text("Flying");
-                                break;
-                            case 4:
-                                $(this).text("Landing");
-                                break;
-                            case 5:
-                                $(this).text("Emergency");
-                                break;
-                            case 6:
-                                $(this).text("User Takeoff");
-                                break;
-                            case 7:
-                                $(this).text("Motor Ramping");
-                                break;
-                            case 8:
-                                $(this).text("Emergency Landing");
-                                break;
-                            default:
-                                console.log("")
-                        }
-                    }
-                );
-                $(`.plane-icon-${flying_state.Serial}`).each(
-                    function(index, element) {
-                        const AvailableClasses = new Set(["text-muted", 'text-warning', "text-success", "blinking"]);
-                        if (flying_state.State == 0) {
-                            makeClassActive($(this), 'text-success', AvailableClasses);
-                        }
-                        else {
-                            makeClassActive($(this), 'text-warning', AvailableClasses);
-                            $(this).addClass('blinking');
-                        }
-
-                    } 
-                );
-            }
-            function initLiveTelemetry() {
-                var connection = new signalR.HubConnectionBuilder().withUrl("/telemetryHub").
-                    configureLogging(signalR.LogLevel.Information).build();
-
-                connection.on("DronePosition", function (message) {
-                    updatePositionData(message)
-                });
-
-                connection.on("DroneBatteryLevel", function (message) {
-                    battery_level = JSON.parse(message);
-                    populateBatteryLevel(battery_level);
-                });
-
-                connection.on("DroneRadioSignal", function (message) {
-                    radio_signal = JSON.parse(message);
-                    populateRadioSignal(radio_signal);
-                });
-
-                connection.on("DroneFlyingState", function (message) {
-                    flying_state = JSON.parse(message);
-                    populateFlyingState(flying_state)
-                });
-
-                connection.on("DroneReply", function (message) {
-                    drone_reply = JSON.parse(message);
-                    //pingService
-                });
-
-                connection.start().then(function () {
-                    console.log("Notifications started SIGNALR");
-
-                }).catch(function (err) {
-                    return console.error(err.toString());
-                });
-
-            }
-            function updatePositionData(message, map) {
-                drone_coords = JSON.parse(message)
-                if (drone_coords == null)
-                    return;
-
-                let icon_url =  `${window.location.origin}/images/drone-svgrepo-com.svg`
-                let marker_icon = {
-                    url: icon_url, // url
-                    scaledSize: new google.maps.Size(50, 50), // scaled size
-                    origin: new google.maps.Point(0,0), // origin
-                    anchor: new google.maps.Point(0, 0) // anchorscaledSize: new google.maps.Size(50, 50), // scaled size
-                }
-
-                $(`.last-position-value-${drone_coords.Serial}`).each(
-                    function() {
-                        console.log(drone_coords);
-                        $(this).text(`${drone_coords.Latitude.toFixed(4)}N ${drone_coords.Longitude.toFixed(4)}W ${drone_coords.Altitude.toFixed(3)}m`);
-                    }
-                )
-
-                console.log(`Populated marker for ${drone_coords.Serial}`);
-                populate_marker_cb = populateMarkers.bind(null, map, drone_coords.Serial,
-                    `@drone_marker_id_prefix${drone_coords.Serial}`, drone_coords.Latitude, drone_coords.Longitude, marker_icon)
-                populate_marker_cb()
-            }
-
-
-            var url = '@Url.Action("GetDevicesList", "Devices", new {Area = "DHub"})'
-
-            initLiveTelemetry();
-
-            $('.initial-battery-level').each(function() {
-                    populateBatteryLevel(JSON.parse($(this).html()));
-                }
-            )
-
-            $('.initial-flying-state').each(function() {
-                    populateFlyingState(JSON.parse($(this).html()))
-                }
-            )
-
-            $('.initial-radio-signals').each(function() {
-                    populateRadioSignal(JSON.parse($(this).html()))
-                }
-            )
-
-        </script>
+    function onGoToPositionDeviceSelected() {
+        let selected_device_serial = $('#move-to-position-device-select').val();
+        let device_box = $(`#@move_to_position_box_id_prefix${selected_device_serial}`)
+        let lat = $('#modal-latitude-value').text();
+        let lng = $('#modal-longitude-value').text();
+        device_box.attr('style', 'display:initial')
+        device_box.find("input[name='Longitude']").val(lng);
+        device_box.find("input[name='Latitude']").val(lat);
+        device_box.find("input[name='Altitude']").focus();
+    }
+    </script>
 }

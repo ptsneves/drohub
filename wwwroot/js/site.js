@@ -4,67 +4,46 @@
 // Write your JavaScript code.
 
 $(function () {
+    ModalClass = function () {
+        function followActionAndDoNothing(event) {
+            var url = $(this).data('url');
+            $.get(url);
+        }
 
-    function initializeMap(index, element) {
-        let map = new google.maps.Map(element, {
-            zoom: 8,
-            center: { lat: 40.5, lng: -7 },
-            mapTypeId: 'satellite'
-        });
+        var PlaceholderElement = $('#modal-placeholder');
+        function makeModal(event) {
+            var url = $(this).data('url');
+            $.get(url).done(function (data) {
+                PlaceholderElement.html(data);
+                PlaceholderElement.find('.modal').modal({ focus: true, show: true, keyboard: true });
+            });
+        }
+        return {
+            "init": function () {
+                PlaceholderElement.on('click', '[data-save="modal"]', function (event) {
+                    event.preventDefault();
 
-        map.addListener("rightclick",
-            function (event) {
-                var lat = event.latLng.lat();
-                var lng = event.latLng.lng();
-                // populate yor box/field with lat, lng
-                console.log("Lat=" + lat + "; Lng=" + lng);
-                $('#modal-longitude-value').text(lng);
-                $('#modal-latitude-value').text(lat);
-                $('#modal-move-to-position').modal({ focus: true, show: true, keyboard: true });
+                    var form = $(this).parents('.modal').find('form');
+                    var actionUrl = form.attr('action');
+                    var dataToSend = form.serialize();
+
+                    $.post(actionUrl, dataToSend).done(function (data) {
+                        var newBody = $('.modal-body', data);
+                        PlaceholderElement.find('.modal-body').replaceWith(newBody);
+
+                        var isValid = newBody.find('[name="IsValid"]').val() == 'True';
+                        if (isValid) {
+                            PlaceholderElement.find('.modal').modal('hide');
+                        }
+                    });
+                });
+
+                $('a[data-toggle="ajax-request"]').click(followActionAndDoNothing);
+                $('button[data-toggle="ajax-request"]').click(followActionAndDoNothing);
+                $('a[data-toggle="ajax-modal"]').click(makeModal);
+                $('button[data-toggle="ajax-modal"]').click(makeModal);
             }
-        );
-
-        $('.initial-position').each(
-            function () {
-                updatePositionData($(this).html(), map);
-            }
-        );
-    }
-    $('.google-map').each(initializeMap);
-
-    function followActionAndDoNothing(event) {
-        var url = $(this).data('url');
-        $.get(url);
-    }
-    $('a[data-toggle="ajax-request"]').click(followActionAndDoNothing);
-    $('button[data-toggle="ajax-request"]').click(followActionAndDoNothing);
-
-    var placeholderElement = $('#modal-placeholder');
-    function makeModal (event) {
-        var url = $(this).data('url');
-        $.get(url).done(function (data) {
-            placeholderElement.html(data);
-            placeholderElement.find('.modal').modal({ focus: true, show: true, keyboard: true });
-        });
-    }
-    $('a[data-toggle="ajax-modal"]').click(makeModal);
-    $('button[data-toggle="ajax-modal"]').click(makeModal);
-
-    placeholderElement.on('click', '[data-save="modal"]', function (event) {
-        event.preventDefault();
-
-        var form = $(this).parents('.modal').find('form');
-        var actionUrl = form.attr('action');
-        var dataToSend = form.serialize();
-
-        $.post(actionUrl, dataToSend).done(function (data) {
-            var newBody = $('.modal-body', data);
-            placeholderElement.find('.modal-body').replaceWith(newBody);
-
-            var isValid = newBody.find('[name="IsValid"]').val() == 'True';
-            if (isValid) {
-                placeholderElement.find('.modal').modal('hide');
-            }
-        });
-    });
+        }
+    }();
+    ModalClass.init();
 });
