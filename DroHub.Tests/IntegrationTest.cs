@@ -40,6 +40,19 @@ namespace DroHub.Tests
         }
 
         [Fact]
+        public async void TestLogout() {
+            using (var http_client_helper = await HttpClientHelper.createLoggedInAdmin(_fixture))
+            {
+                var logout_url = new Uri(_fixture.SiteUri, "Identity/Account/Logout");
+
+                using(var response = await http_client_helper.Client.GetAsync(logout_url)) {
+                    response.EnsureSuccessStatusCode();
+                    Assert.Equal(new Uri(_fixture.SiteUri, "Identity/Account/Login?ReturnUrl=%2FIdentity%2FAccount%2FManage"), response.RequestMessage.RequestUri);
+                }
+            }
+        }
+
+        [Fact]
         public async void TestHashInFooter()
         {
             using (var http_client_helper = await HttpClientHelper.createLoggedInAdmin(_fixture))

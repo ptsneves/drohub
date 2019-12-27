@@ -23,11 +23,11 @@ namespace DroHub.Areas.Identity.Pages.Account
             _logger = logger;
         }
 
-        public void OnGet()
+        public async Task<IActionResult> OnGetAsync()
         {
+            return await onLogout();
         }
-
-        public async Task<IActionResult> OnPost(string returnUrl = null)
+        private async Task<IActionResult> onLogout(string returnUrl = null)
         {
             var user = _signInManager.UserManager.GetUserAsync(HttpContext.User);
             _logger.LogInformation("User {@user} logging out.", user);
@@ -38,7 +38,7 @@ namespace DroHub.Areas.Identity.Pages.Account
             }
             else
             {
-                return Page();
+                return LocalRedirect("/");
             }
         }
     }
