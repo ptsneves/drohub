@@ -53,9 +53,10 @@ namespace DroHub.IdentityClaims
             return user.Id;
         }
 
+
         public static void AddIsAdminPolicy(this AuthorizationOptions options)
         {
-            options.AddPolicy("IsAdmin", policy =>
+            options.AddPolicyEx("IsAdmin", policy =>
                                 policy.RequireClaim("Role", "Admin"));
         }
 
