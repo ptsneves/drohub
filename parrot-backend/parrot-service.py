@@ -509,7 +509,7 @@ class DroneRPC(LogHelper):
             timestamp=int(time.time()),
             result=landing.success())
 
-    def moveToPosition(self):
+    def moveToPosition(self, request):
         go_to_position = self.drone.getDrone()(moveTo(
             request.latitude, request.longitude, request.altitude,  MoveTo_Orientation_mode.HEADING_DURING, request.heading)
         ).wait()
@@ -525,10 +525,10 @@ class DroneRPC(LogHelper):
             timestamp=int(time.time()),
             result=self.drone.checkDroneConnected())
 
-    def getFileList(self, request, context):
+    def getFileList(self, request):
         self.file_list_container.getFileList()
 
-    def getFileListStream(self, request, context):
+    def getFileListStream(self, request):
         elements = self.file_list_container.getElement()
         for element in elements:
             return element
