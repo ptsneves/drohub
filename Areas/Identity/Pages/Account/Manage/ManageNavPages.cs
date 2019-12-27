@@ -21,7 +21,7 @@ namespace DroHub.Areas.Identity.Pages.Account.Manage
         public static string PersonalData => "PersonalData";
 
         public static string TwoFactorAuthentication => "TwoFactorAuthentication";
-        public static string AdminPannel => "AdminPannel";
+        public static string AdminPanel => "AdminPanel";
 
         public static string IndexNavClass(ViewContext viewContext) => PageNavClass(viewContext, Index);
 
@@ -36,7 +36,7 @@ namespace DroHub.Areas.Identity.Pages.Account.Manage
         public static string PersonalDataNavClass(ViewContext viewContext) => PageNavClass(viewContext, PersonalData);
 
         public static string TwoFactorAuthenticationNavClass(ViewContext viewContext) => PageNavClass(viewContext, TwoFactorAuthentication);
-        public static string AdminPannelUserNavClass(ViewContext viewContext) => PageNavClass(viewContext, AdminPannel);
+        public static string AdminPanelUserNavClass(ViewContext viewContext) => PageNavClass(viewContext, AdminPanel);
 
         public static string PageNavClass(ViewContext viewContext, string page)
         {
