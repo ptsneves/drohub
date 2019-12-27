@@ -1,6 +1,49 @@
+
 @page
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Identity;
+@inject IAuthorizationService AuthorizationService
+@inject IUserClaimsPrincipalFactory<DroHubUser> UserClaimsPrincipalFactory
 @model RegisterModel
 
+ <div class="bs-example" data-example-id="hoverable-table">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>User Name</th>
+          <th>Policies</th>
+          <th>Last Login</th>
+          <th>Devices Serial Numbers</th>
+          <th>Lock Out</th>
+        </tr>
+      </thead>
+      <tbody>
+        @foreach(var user in @Model.Users) {
+        <tr>
+          <td>@user.UserName</td>
+          <td>
+          @foreach(var policy in AuthorizationOptionsExtension.Policies) {
+            @if ((await AuthorizationService.AuthorizeAsync(await UserClaimsPrincipalFactory.CreateAsync(user), null, policy.Key)).Succeeded)
+            {
+                <p>@policy.Key</p>
+            }
+          }
+          </td>
+          <td>@user.LastLogin</td>
+          <td>
+          @foreach(var ud in user.UserDevices) {
+              <p>@ud.Device.SerialNumber</p>
+          }
+          </td>
+          <td>
+            @(user.LockoutEnd == null ? "Not locked" : (string)user.LockoutEnd.ToString())
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div><!-- /example -->
 <div class="register-box">
     <div class="register-logo">
         <a asp-area="" asp-controller="Home" asp-action="Index"><b>D</b>ro<b>H</b>ub</a>
@@ -37,33 +80,7 @@
                 </div>
             </div>
         </form>
-        @*<div class="social-auth-links text-center">
-            <p>- OR -</p>
-            @{
-                if ((Model.ExternalLogins?.Count ?? 0) == 0)
-                {
-                    <div>
-                        <p>
-                            There are no external authentication services configured. See <a href="https://go.microsoft.com/fwlink/?LinkID=532715">this article</a>
-                            for details on setting up this ASP.NET application to support logging in via external services.
-                        </p>
-                    </div>
-                }
-                else
-                {
-                    <form asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
-                        <div>
-                            <p>
-                                @foreach (var provider in Model.ExternalLogins)
-                                {
-                                    <button type="submit" class="btn btn-default" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
-                                }
-                            </p>
-                        </div>
-                    </form>
-                }
-            }
-        </div>*@
+
         <a asp-page="./Login">Go to Login</a>
     </div>
 </div>
