@@ -397,7 +397,7 @@ class DronePersistentConnection(DroneThreadSafe):
 
     def checkDroneConnected(self):
         if not self._checkDronePage():
-            self.log.warn("Drone is unreachable through the controller.")
+            self.log.warning("Drone is unreachable through the controller.")
             return False
         state = self.getDrone().connection_state()
         if state.OK:
@@ -406,7 +406,7 @@ class DronePersistentConnection(DroneThreadSafe):
             return False
 
     def _reconnectDrone(self):
-        self.log.warn("Trying to connect")
+        self.log.warning("Trying to connect")
         if not self.getDrone().connection():
             raise Exception("Drone is not connected")
 
