@@ -18,11 +18,13 @@ namespace DroHub.Helpers {
             AdminKey = "NOTOKEN";
             RTPPortStart = 6004;
             RTPPortEnd = 6005;
+            RecordingPath = "/tmp/";
         }
         public string Address { get; set; }
         public int Port { get; set; }
         public int RTPPortStart { get; set; }
         public int RTPPortEnd { get; set; }
+        public string RecordingPath { get; set; }
         [JsonIgnore]
         public IEnumerable<int> RTPPortRange {
             get {
@@ -92,7 +94,7 @@ namespace DroHub.Helpers {
                     public StreamListInfo Stream { get; set; }
 
                     [JsonProperty("info")]
-                    public JanusRequest.RTPMountPointInfo RTPMountPointInfo { get; set; }
+                    public JanusRequest.RTPMountPointInfoRequest RTPMountPointInfoRequest { get; set; }
 
                     [JsonProperty("error_code")]
                     public string ErrorCode { get; set; }
@@ -184,9 +186,54 @@ namespace DroHub.Helpers {
                 public ListRequest(string admin_key) : base(admin_key) { }
             }
 
+
+            internal class StartRecordingRequest : MessageWithId
+            {
+                public StartRecordingRequest(string admin_key, Int64 stream_id) : base(admin_key, stream_id)
+                {
+
+                }
+
+                public override string Request { get { return "recording"; } }
+
+                [JsonProperty("action")]
+                public string Action {get { return "start"; } }
+
+                [JsonProperty("audio", NullValueHandling = NullValueHandling.Ignore)]
+                public string AudioPath { get { return null; } }
+
+                [JsonProperty("video", NullValueHandling = NullValueHandling.Ignore)]
+                public string VideoPath { get; set; }
+
+                [JsonProperty("data", NullValueHandling = NullValueHandling.Ignore)]
+                public string DataPath { get { return null; } }
+
+            }
+            internal class StopRecordingRequest : MessageWithId
+            {
+                public StopRecordingRequest(string admin_key, Int64 stream_id) : base(admin_key, stream_id)
+                {
+
+                }
+
+                public override string Request { get { return "recording"; } }
+
+                [JsonProperty("action")]
+                public string Action { get { return "stop"; } }
+
+                [JsonProperty("audio")]
+                public bool StopAudio { get { return true; } }
+
+                [JsonProperty("video")]
+                public bool StopVideo { get { return true; } }
+
+                [JsonProperty("data")]
+                public bool StopData { get { return true; } }
+
+            }
             [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
-            internal class RTPMountPointInfo : MessageBody {
-                    public RTPMountPointInfo(string admin_key) : base(admin_key) {}
+            internal class RTPMountPointInfoRequest : MessageBody {
+                    public RTPMountPointInfoRequest(string admin_key) : base(admin_key) {}
 
                     [Required(ErrorMessage = "Id is required.")]
                     [JsonProperty("id")]
@@ -281,6 +328,21 @@ namespace DroHub.Helpers {
             return (await getJanusAnswer($"/janus/{session.Id}", handle)).Data.Id;
         }
 
+        public async Task startRecording(CreateSession session, Int64 handle, Int64 stream_id, string video_file_name) {
+            var request = new JanusRequest(session, new JanusRequest.StartRecordingRequest(_options.AdminKey, stream_id)
+            {
+                VideoPath = $"{_options.RecordingPath}/{video_file_name}"
+            });
+            _logger.LogInformation($"Started recording video to {$"{_options.RecordingPath}/{video_file_name}"}");
+            await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
+        }
+
+        public async Task stopRecording(CreateSession session, Int64 handle, Int64 stream_id)
+        {
+            var request = new JanusRequest(session, new JanusRequest.StopRecordingRequest(_options.AdminKey, stream_id));
+            await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
+        }
+
         public async Task<List<StreamListInfo>> listMountPoints(
                 CreateSession session, Int64 handle) {
             var request = new JanusRequest(session, new JanusRequest.ListRequest(_options.AdminKey));
@@ -319,7 +381,7 @@ namespace DroHub.Helpers {
                 string description, string secret, int video_pt, string rtp_map, string fmt_profile) {
             var rand = new Random();
             int video_port = rand.Next(_options.RTPPortStart, _options.RTPPortEnd);
-            var request = new JanusRequest(session, new JanusRequest.RTPMountPointInfo(_options.AdminKey)
+            var request = new JanusRequest(session, new JanusRequest.RTPMountPointInfoRequest(_options.AdminKey)
             {
                 Id = id,
                 Video = true,
@@ -352,7 +414,7 @@ namespace DroHub.Helpers {
         public async Task<RTPMountPoint> getStreamInfo(CreateSession session, Int64 handle, Int64 stream_id)
         {
             var request = new JanusRequest(session, new JanusRequest.InfoRequest(_options.AdminKey, stream_id));
-            var result =  (await getJanusAnswer($"/janus/{session.Id}/{handle}", request)).PluginData.StreamingPluginData.RTPMountPointInfo;
+            var result =  (await getJanusAnswer($"/janus/{session.Id}/{handle}", request)).PluginData.StreamingPluginData.RTPMountPointInfoRequest;
             return new JanusService.RTPMountPoint
             {
                 LiveVideoRTPMap = result.VideoRTPMap,
