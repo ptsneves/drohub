@@ -166,22 +166,29 @@ namespace DroHub.Helpers.Thrift
                 {
                     throw new ApplicationException("Cannot create video mountpoint for unregistered device {}");
                 }
-                var mountpoint = await createMountPointForDevice(device);
-                device.LiveVideoRTPUrl = mountpoint.LiveVideoRTPUrl;
-                device.LiveVideoFMTProfile = mountpoint.LiveVideoFMTProfile;
-                device.LiveVideoPt = mountpoint.LiveVideoPt;
-                device.LiveVideoRTPMap = mountpoint.LiveVideoRTPMap;
-                device.LiveVideoSecret = mountpoint.LiveVideoSecret;
-
-                send_video_request = new DroneSendVideoRequest
+                try
                 {
-                    RtpUrl = mountpoint.LiveVideoRTPUrl,
-                    VideoType = (mountpoint.LiveVideoRTPMap == "VP8/90000" ? VideoType.VP8 :
-                        VideoType.H264)
-                };
-                context.Update(device);
-                await context.SaveChangesAsync();
-                _logger.LogDebug("Saved edit information on device {}", device);
+                    var mountpoint = await createMountPointForDevice(device);
+                    device.LiveVideoRTPUrl = mountpoint.LiveVideoRTPUrl;
+                    device.LiveVideoFMTProfile = mountpoint.LiveVideoFMTProfile;
+                    device.LiveVideoPt = mountpoint.LiveVideoPt;
+                    device.LiveVideoRTPMap = mountpoint.LiveVideoRTPMap;
+                    device.LiveVideoSecret = mountpoint.LiveVideoSecret;
+
+                    send_video_request = new DroneSendVideoRequest
+                    {
+                        RtpUrl = mountpoint.LiveVideoRTPUrl,
+                        VideoType = (mountpoint.LiveVideoRTPMap == "VP8/90000" ? VideoType.VP8 :
+                            VideoType.H264)
+                    };
+                    context.Update(device);
+                    await context.SaveChangesAsync();
+                    _logger.LogDebug("Saved edit information on device {}", device);
+                }
+                catch(Exception e) {
+                    await destroyMountPointForDevice(device);
+                    throw e;
+                }
             }
 
             DeviceActionDelegate<DroneVideoStateResult> video_state_poller = (async (client, token) =>
