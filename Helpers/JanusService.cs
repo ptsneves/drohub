@@ -396,7 +396,7 @@ namespace DroHub.Helpers {
             _logger.LogDebug("Janus answer {result}", JsonConvert.SerializeObject(result.PluginData.StreamingPluginData));
             if (!String.IsNullOrEmpty(result.PluginData.StreamingPluginData.Error))
             {
-                _logger.LogDebug("Is null or empty");
+                _logger.LogDebug("Failed to create janus mountpoint");
                 throw new JanusServiceException(JsonConvert.SerializeObject(result.PluginData.StreamingPluginData.Error));
             }
 
