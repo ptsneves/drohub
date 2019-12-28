@@ -58,20 +58,23 @@ namespace DroHub.Helpers.Thrift
             return result;
         }
 
-        private async Task RecordTelemetry(IDroneTelemetry telemetry_data)
+        private async Task RecordTelemetry(IDroneTelemetry telemetry_data, CancellationToken token)
         {
+            if (token.IsCancellationRequested)
+                return;
+
             using (var scope = _services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
                 //check if the device exists before we add it to the db
-                var device = await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == telemetry_data.Serial);
-                if (device == null)
+                var device = await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == telemetry_data.Serial, token);
+                if (device == null || token.IsCancellationRequested)
                 {
                     _logger.LogDebug("Not saving received telemetry for unregistered device {telemetry_data}", telemetry_data);
                     return;
                 }
                 context.Add(telemetry_data);
-                await context.SaveChangesAsync();
+                await context.SaveChangesAsync(token);
             }
         }
         protected delegate Task<T> DeviceActionDelegate<T>(Drone.Client client,
@@ -99,9 +102,12 @@ namespace DroHub.Helpers.Thrift
                 using (var client = handler.getClient<Drone.Client>(_logger))
                 {
                     T telemetry = await del(client.Client, token);
-                    _logger.LogDebug($"received {t_name} {telemetry}", telemetry);
-                    await _hub.Clients.All.SendAsync(t_name, JsonConvert.SerializeObject(telemetry));
-                    await RecordTelemetry(telemetry);
+                    if (!token.IsCancellationRequested)
+                    {
+                        _logger.LogDebug($"received {t_name} {telemetry}", telemetry);
+                        await _hub.Clients.All.SendAsync(t_name, JsonConvert.SerializeObject(telemetry), token);
+                        await RecordTelemetry(telemetry, token);
+                    }
                 }
             }
             catch (Exception e)
