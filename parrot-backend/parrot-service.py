@@ -118,13 +118,17 @@ class DroneVideoContainer(DroneMessageContainerBase):
     Vp8_Command = "/usr/bin/ffmpeg -hwaccel vaapi   -vaapi_device /dev/dri/renderD128 -i rtsp://{source_url}/live -r 10 -c:v libvpx \
             -deadline realtime -threads 4 -speed -5 -skip_threshold 60 -vp8flags error_resilient -f rtp {rtp_url}"
 
+    Vp8_Command_Bars = "/usr/bin/ffmpeg -hwaccel vaapi -f lavfi -i smptebars -r 10 -c:v libvpx -deadline realtime \
+        -threads 4 -speed -5 -skip_threshold 60 -vp8flags error_resilient -f rtp {rtp_url}"
+
     H264_Command = '/usr/bin/ffmpeg -r 10 -threads 4 -hwaccel vaapi -i rtsp://{source_url}/live -vf format=yuv420p \
             -vaapi_device /dev/dri/renderD128 -c:v h264_vaapi -profile:v constrained_baseline -level 3.0 -bf 0 -bsf: v \
             "dump_extra=freq=keyframe" -vf "format=nv12,hwupload" -f rtp {rtp_url}?pkt_size=1300"'
 
-    def __init__(self, drone_serial):
+    def __init__(self, drone_serial, bars=False):
         super().__init__(drone_serial)
         self._processes = {}
+        self._bars = bars
         if not self._doesCommandExist("ffmpeg"):
             raise Exception(
                 "ffmpeg does not exist. And we need it to relay the video")
@@ -164,8 +168,13 @@ class DroneVideoContainer(DroneMessageContainerBase):
                 raise Exception("Request rtp server url is already in use. Choose another one")
 
             if video_type == VideoType.VP8:
-                self._processes[rtp_server_url] = self.runProcess(
-                    DroneVideoContainer.Vp8_Command.format(source_url=drone_ip, rtp_url=rtp_server_url))
+                if not self._bars:
+                    self._processes[rtp_server_url] = self.runProcess(
+                        DroneVideoContainer.Vp8_Command.format(source_url=drone_ip, rtp_url=rtp_server_url))
+                else:
+                    self._processes[rtp_server_url] = self.runProcess(
+                        DroneVideoContainer.Vp8_Command_Bars.format(rtp_url=rtp_server_url))
+
                 self.log.debug("Sending VP8 to {}".format(rtp_server_url))
             elif video_type == VideoType.H264:
                 self._processes[rtp_server_url] = self.runProcess(
@@ -420,15 +429,16 @@ class DronePersistentConnection(DroneThreadSafe):
                     self.log.warning("Reconnection failed. Trying again")
 
 class DroneRPC(LogHelper):
-    def __init__(self, drone_type, expected_serial):
+    def __init__(self, drone_type, expected_serial, video_bars):
         super(DroneRPC, self).__init__()
         self._drone_type = drone_type
         self._expected_serial = expected_serial
+        self._video_bars = video_bars
 
 
     def __enter__(self):
         self.serial = ParrotSerialNumber(self._expected_serial)
-        self.video_encoder = DroneVideoContainer(self.serial)
+        self.video_encoder = DroneVideoContainer(self.serial, self._video_bars)
         self.position_container = PositionContainer(self.serial)
         self.battery_level_container = BatteryLevelContainer(self.serial)
         self.radio_signal_container = RadioSignalContainer(self.serial)
@@ -726,8 +736,8 @@ class TMessageValidatorProtocol(TProtocolDecorator.TProtocolDecorator):
 
         return (name, msg_type, seqid)
 
-def serve(drone_type, drohub_url, expected_serial):
-    with DroneRPC(drone_type, expected_serial) as handler:
+def serve(drone_type, drohub_url, expected_serial, video_bars):
+    with DroneRPC(drone_type, expected_serial, video_bars) as handler:
         transport = None
         while True:
             try:
@@ -766,6 +776,8 @@ if __name__ == '__main__':
     parser.add_argument('--simulator', dest='drone_type', action='store_const',
                         const='simulator', default='anafi',
                         help='Connect to a simulator. (Default connect to real ANAFI')
+    parser.add_argument('--generate-video-bars', dest='video_bars', action='store_true',
+                        help="Instead of a real video show only a color bar video test. Useful for debugging.")
     parser.add_argument('--verbose', dest="verbosity", action="store_const",
                         const=logging.DEBUG, default = logging.INFO,
                         help="Whether to print debugging information")
@@ -783,4 +795,4 @@ if __name__ == '__main__':
         logging.INFO, "\033[1;36m%s\033[0m" % logging.getLevelName(logging.INFO))
     logging.addLevelName(
         logging.DEBUG, "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.DEBUG))
-    serve(args.drone_type, args.url[0], args.serial[0])
+    serve(args.drone_type, args.url[0], args.serial[0], args.video_bars)
