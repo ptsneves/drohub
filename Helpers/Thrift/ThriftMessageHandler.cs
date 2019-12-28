@@ -18,7 +18,6 @@ namespace DroHub.Helpers.Thrift
     public class ThriftMessageHandler
     {
         private readonly ILogger<ThriftMessageHandler> _logger;
-        private readonly TaskCompletionSource<bool> _task_completion_src;
         private string _serial_number;
         private CancellationTokenSource _cancellation_token_src;
         private readonly List<Task> _task_list;
@@ -91,7 +90,6 @@ namespace DroHub.Helpers.Thrift
             CancellationTokenSource _cn_src;
             private readonly ILogger _logger;
             private readonly string _serial_number;
-            public string SerialNumber { get { return _serial_number; } }
             public ThriftClient(ThriftMessageHandler th, CancellationToken tkn, ILogger logger)
             {
                 _cn_src = CancellationTokenSource.CreateLinkedTokenSource(tkn);
@@ -140,7 +138,6 @@ namespace DroHub.Helpers.Thrift
         public ThriftMessageHandler(ConnectionManager connection_manager, ILogger<ThriftMessageHandler> logger)
         {
             _is_disposed = false;
-            _task_completion_src = new TaskCompletionSource<bool>();
             _logger = logger;
             _task_list = new List<Task>();
             _input_streams = new List<EchoStream>();
@@ -181,20 +178,25 @@ namespace DroHub.Helpers.Thrift
                 if (!new_tasks.Any())
                 {
                     _logger.LogInformation("No tasks were given for this socket. Closing.");
-                    context.Response.StatusCode = 400;
+
                     return;
                 }
-                await _task_completion_src.Task;
+
+                await Task.WhenAll(_task_list.ToArray());
+                _logger.LogDebug("Finished all tasks.");
             }
             finally
             {
                 try
                 {
-                    _cancellation_token_src.Cancel();
                     _connection_manager.RemoveSocket(_socket_id);
-                    _logger.LogDebug($"Stopping all tasks for disconnect ${_cancellation_token_src.IsCancellationRequested}");
-                    await Task.WhenAll(_task_list.ToArray());
-                    _logger.LogDebug("Finished Stopping all tasks for disconnect");
+                    if (!_cancellation_token_src.IsCancellationRequested)
+                        _cancellation_token_src.Cancel();
+
+                    // don't leave the socket in any potentially connected state
+                    if (_socket.State != WebSocketState.Closed)
+                        _socket.Abort();
+
                 }
                 catch (Exception e)
                 {
@@ -235,37 +237,40 @@ namespace DroHub.Helpers.Thrift
 
         private async Task ReceiveFromWebSocket(WebSocket socket)
         {
+            WebSocketReceiveResult result = null;
+            var buffer = new byte[1024 * 4];
             try
             {
-                var buffer = new byte[1024 * 4];
-                WebSocketReceiveResult result = null;
-                while (socket.State == WebSocketState.Open)
+                while (socket.State != WebSocketState.Closed && socket.State != WebSocketState.Aborted
+                    && !_cancellation_token_src.Token.IsCancellationRequested)
                 {
                     result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), _cancellation_token_src.Token);
-
-                    if (result.MessageType == WebSocketMessageType.Binary)
+                    if (!_cancellation_token_src.Token.IsCancellationRequested)
                     {
-                        populateInputStreams(buffer, 0, result.Count);
+                        if (socket.State == WebSocketState.CloseReceived && result.MessageType == WebSocketMessageType.Close)
+                        {
+                            _logger.LogDebug("Acknowledging Close frame received from client");
+                            _cancellation_token_src.Cancel();
+                            await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", CancellationToken.None);
+                        }
+
+                        if (socket.State == WebSocketState.Open)
+                        {
+                            if (result.MessageType == WebSocketMessageType.Binary)
+                            {
+                                populateInputStreams(buffer, 0, result.Count);
+                            }
+                        }
                     }
                 }
-                if (result != null)
-                    await socket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
-                if (_cancellation_token_src.Token.IsCancellationRequested)
-                {
-                    _logger.LogDebug("Receive was canceled");
-                    _task_completion_src.SetCanceled();
-                }
-                else
-                {
-                    _logger.LogDebug("Receive was successful");
-                    _task_completion_src.SetResult(true);
-                }
-                _logger.LogDebug("Finished Receive");
+                await socket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
             }
-            catch (Exception e)
+            finally
             {
-                _task_completion_src.TrySetException(e);
-            }
+                if (!_cancellation_token_src.IsCancellationRequested)
+                    _cancellation_token_src.Cancel();
+                _logger.LogDebug($"Finished processing received loop in state {socket.State}");
+           }
         }
     }
 }
