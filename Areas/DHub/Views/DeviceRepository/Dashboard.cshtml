@@ -102,10 +102,6 @@
                                         <span class="label label-primary pull-right telemetry-single-data position-text" data-device-type="drone" data-renderer="renderPositionText" data-serial="@device.SerialNumber" data-telemetry='@position_initial'>No data</span>
                                 </li>
                             </ul>
-
-                            <div class="embed-responsive embed-responsive-16by9">
-                                <div class="google-map embed-responsive-item" data-serial="@device.SerialNumber" style="border: 1px solid black"></div>
-                            </div>
                         </div>
 
                         <div class="box box-solid">
@@ -139,33 +135,42 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="box collapsed-box" id="box-stream-@device.Id">
-                            <div class="box-header with-border">
-                                <h3 class="box-title">
-                                    Stream
-                                </h3>
-                                <div class="box-tools pull-right">
-                                    <button type="button" class="btn btn-box-tool video-play" device-id="@device.Id"><i class="fa fa-play"></i></button>
-                                    <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-plus"></i></button>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="embed-responsive embed-responsive-16by9">
+                                    <div class="google-map embed-responsive-item" data-serial="@device.SerialNumber" style="border: 1px solid black"></div>
                                 </div>
                             </div>
-                            <div class="box-body" id="box-body-@device.Id">
-                                <div class="webrtc-video hide">
-                                    <div class="embed-responsive embed-responsive-16by9" id="stream-@device.Id">
-                                        <video class="rounded centered embed-responsive-item controls" id="remotevideo-@device.Id" autoplay playsinline>
-                                        </video>
+                            <div class="col-md-8">
+                                <div class="box collapsed-box" id="box-stream-@device.Id">
+                                    <div class="box-header with-border">
+                                        <h3 class="box-title">
+                                            Stream
+                                        </h3>
+                                        <div class="box-tools pull-right">
+                                            <button type="button" class="btn btn-box-tool video-play" device-id="@device.Id"><i class="fa fa-play"></i></button>
+                                            <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-plus"></i></button>
+                                        </div>
                                     </div>
-                                    <div class="box-tools pull-right box-solid">
-                                        <span class="label label-primary" id="status-@device.Id"></span>
-                                        <span class="label label-primary" id="curres-@device.Id"></span>
-                                        <span class="label label-info" id="curbitrate-@device.Id"></span>
-                                        <span class="label label-info" id="datarecv-@device.Id"></span>
+                                    <div class="box-body" id="box-body-@device.Id">
+                                        <div class="webrtc-video hide">
+                                            <div class="embed-responsive embed-responsive-16by9" id="stream-@device.Id">
+                                                <video class="rounded centered embed-responsive-item controls" id="remotevideo-@device.Id" autoplay playsinline>
+                                                </video>
+                                            </div>
+                                            <div class="box-tools pull-right box-solid">
+                                                <span class="label label-primary" id="status-@device.Id"></span>
+                                                <span class="label label-primary" id="curres-@device.Id"></span>
+                                                <span class="label label-info" id="curbitrate-@device.Id"></span>
+                                                <span class="label label-info" id="datarecv-@device.Id"></span>
+                                            </div>
+                                        </div>
+                                        <div class='no-video-placeholder'>
+                                            <h4>
+                                                Video is not started. Press play to Start.
+                                            </h4>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class='no-video-placeholder'>
-                                    <h4>
-                                        Video is not started. Press play to Start.
-                                    </h4>
                                 </div>
                             </div>
                         </div>
