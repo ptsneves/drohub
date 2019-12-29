@@ -49,7 +49,6 @@
 
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-2" id="sidebar-collumn">
                 <div class="box">
                     <div class="box-header with-border">
                         <h3 class="box-title">Devices</h3>
@@ -111,6 +110,10 @@
                                                     <span class="label label-primary pull-right telemetry-single-data position-text" data-device-type="drone" data-renderer="renderPositionText" data-serial="@device.SerialNumber" data-telemetry='@position_initial'>No data</span>
                                             </li>
                                         </ul>
+
+                                        <div class="embed-responsive embed-responsive-16by9">
+                                            <div class="google-map embed-responsive-item" data-serial="@device.SerialNumber" style="border: 1px solid black"></div>
+                                        </div>
                                     </div>
 
                                     <div class="box box-solid">
@@ -150,15 +153,6 @@
                         }
                     </div>
                 </div>
-           </div>
-
-            <div class="col-md-10" id="map-collumn">
-                <div class="box">
-                    <div class="embed-responsive embed-responsive-16by9">
-                        <div class="google-map embed-responsive-item" style="border: 1px solid black"></div>
-                    </div>
-                </div>
-            </div>
         </div>
 
     </div>

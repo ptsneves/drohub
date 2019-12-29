@@ -1,13 +1,14 @@
 $(async function () {
     var MapClass = function () {
         let data_function_table = {};
-        let map = null;
+        let maps = {};
 
         let _MarkerStoreClass = function () {
             marker_dict = {};
             function getDictKey(device_type, device_serial) {
                 return `${device_type}-${device_serial}`;
             }
+
             function _getMarker(device_type, device_serial) {
                 let key = getDictKey(device_type, device_serial);
                 if (marker_dict.hasOwnProperty(key))
@@ -23,8 +24,8 @@ $(async function () {
             }
 
             return {
-                init: function(map_to_to_attach) {
-                    map = map_to_to_attach
+                init: function (maps_to_to_attach) {
+                    maps = maps_to_to_attach
                 },
                 getMarker: _getMarker,
                 setMarker: _setMarker,
@@ -58,7 +59,7 @@ $(async function () {
                         let marker = new google.maps.Marker({
                             position: { lat: device_coords.Latitude, lng: device_coords.Longitude },
                             icon: marker_icon,
-                            map: map,
+                            map: maps[device_serial],
                             serial: device_serial,
                             device_type: device_type
                         });
@@ -67,8 +68,7 @@ $(async function () {
                 }
             }
         }();
-
-        _MarkerStoreClass.init(map);
+        _MarkerStoreClass.init(maps);
 
         function _centerMapOnDevice(index, element) {
             element = $(element);
@@ -100,14 +100,16 @@ $(async function () {
                         element = $(element);
                         element.click(data_function_table[element.data('toggle')].bind(null, index, element));
                     }
-
-                    map = new google.maps.Map(element, {
+                    jquery_element = $(element);
+                    serial_number = jquery_element.data('serial');
+                    maps[serial_number] = new google.maps.Map(element, {
                         zoom: 8,
+                        serial: serial_number,
                         center: { lat: 40.5, lng: -7 },
                         mapTypeId: 'satellite'
                     });
 
-                    map.addListener("rightclick",
+                    maps[serial_number].addListener("rightclick",
                         function (event) {
                             var lat = event.latLng.lat();
                             var lng = event.latLng.lng();
@@ -126,7 +128,7 @@ $(async function () {
                 $('.google-map').each(perElementInit);
             },
             getMap: function(device_serial) {
-                return map;
+                return maps[device_serial];
             }
         }
     }();
