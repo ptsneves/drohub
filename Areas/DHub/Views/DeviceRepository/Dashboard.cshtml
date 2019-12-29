@@ -49,110 +49,101 @@
 
     <div class="container-fluid">
         <div class="row">
-                <div class="box">
+            <input type="text" name="drone_search" class="form-control" placeholder="Search device by name or serial...">
+            @foreach(var device in @Model)
+            {
+                var takeoff_action_url = Url.Action("TakeOff", "Devices", new {id = device.Id});
+                var landing_action_url = Url.Action("Land", "Devices", new {id = device.Id});
+                var return_to_home_action_url = Url.Action("ReturnToHome", "Devices", new {id = device.Id});
+                var move_to_position_action_url = Url.Action("MoveToPosition", "Devices", new {id = device.Id});
+                var move_to_position_box_id = move_to_position_box_id_prefix + device.Id;
+                var radio_signals_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.radio_signals?.FirstOrDefault()) as String);
+                var position_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.positions?.FirstOrDefault()) as String);
+                var battery_level_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.battery_levels?.FirstOrDefault()) as String);
+                var flying_state_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.flying_states?.FirstOrDefault()) as String);
+
+                <div class="box" id="devices-box-@device.Name">
                     <div class="box-header with-border">
-                        <h3 class="box-title">Devices</h3>
+                        <h3 class="box-title">
+                            <i class="fa fa-paper-plane text-muted blinking telemetry-single-data flying-state-text" data-renderer="renderPlaneIcon" data-serial="@device.SerialNumber" data-telemetry='@flying_state_initial'></i>
+                            @device.Name</h3>
                         <div class="box-tools pull-right">
-                            <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i>
+                            <button type="button" class="btn btn-box-tool map-marker-action-button" title="Center map in device" data-serial='@device.SerialNumber' data-device-type="drone" data-toggle="centerMapOnDevice"><i class="fa fa-map"></i></button>
+                            <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
                         </div>
                     </div>
                     <div class="box-body">
-                        <input type="text" name="drone_search" class="form-control" placeholder="Search device by name or serial...">
-                        @foreach(var device in @Model) {
-                            var takeoff_action_url = Url.Action("TakeOff", "Devices", new {id = device.Id});
-                            var landing_action_url = Url.Action("Land", "Devices", new {id = device.Id});
-                            var return_to_home_action_url = Url.Action("ReturnToHome", "Devices", new {id = device.Id});
-                            var move_to_position_action_url = Url.Action("MoveToPosition", "Devices", new {id = device.Id});
-                            var move_to_position_box_id = move_to_position_box_id_prefix + device.Id;
-                            var radio_signals_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.radio_signals?.FirstOrDefault()) as String);
-                            var position_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.positions?.FirstOrDefault()) as String);
-                            var battery_level_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.battery_levels?.FirstOrDefault()) as String);
-                            var flying_state_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.flying_states?.FirstOrDefault()) as String);
+                        <div class="box box-solid">
+                            <ul class="nav nav-pills nav-stacked">
+                                <li>
+                                        <i class="fa fa-info"></i>
+                                        Device State
+                                        <span class="label label-default pull-right telemetry-single-data flying-state-text" data-renderer="renderFlyingState" data-serial="@device.SerialNumber" data-telemetry='@flying_state_initial'>No data</span>
+                                </li>
+                                <li>
+                                        <i class="fa fa-signal"></i>
+                                        Telemetry Signal
+                                        <span class="label label-default pull-right telemetry-single-data radio-signal-text" data-renderer="renderRadioSignal" data-serial="@device.SerialNumber" data-telemetry='@radio_signals_initial'>
+                                            No data
+                                        </span>
+                                </li>
+                                <li>
+                                        <i class="fa fa-battery"></i>
+                                        Battery
+                                        <span class="label label-default pull-right telemetry-single-data battery-level-text" data-renderer="renderBatteryLevel" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>No data</span>
+                                </li>
+                                <li>
+                                        <i class="fa fa-arrows-alt"></i>
+                                        GPS Signal
+                                        <span class="label label-default pull-right ">No data</span>
+                                </li>
+                                <li>
+                                        <i class="fa fa-map-marker"></i>
+                                        Position
+                                        <span class="label label-primary pull-right telemetry-single-data position-text" data-device-type="drone" data-renderer="renderPositionText" data-serial="@device.SerialNumber" data-telemetry='@position_initial'>No data</span>
+                                </li>
+                            </ul>
 
-                            <div class="box" id="devices-box-@device.Name">
+                            <div class="embed-responsive embed-responsive-16by9">
+                                <div class="google-map embed-responsive-item" data-serial="@device.SerialNumber" style="border: 1px solid black"></div>
+                            </div>
+                        </div>
+
+                        <div class="box box-solid">
+                            <button data-url="@takeoff_action_url" data-toggle="ajax-request" class="btn btn-danger" title="Take off this device">
+                                TakeOff
+                            </button>
+                            <button data-url="@landing_action_url" data-toggle="ajax-request" class="btn btn-danger" title="Land this device">
+                                Land
+                            </button>
+                            <button type='button btn btn-danger' data-toggle="ajax-request" data-url="@return_to_home_action_url" class="btn btn-danger">
+                                Return to Home
+                            </button>
+
+                            <div class="box" id="@move_to_position_box_id" style="display: none">
                                 <div class="box-header with-border">
-                                    <h3 class="box-title">
-                                        <i class="fa fa-paper-plane text-muted blinking telemetry-single-data flying-state-text" data-renderer="renderPlaneIcon" data-serial="@device.SerialNumber" data-telemetry='@flying_state_initial'></i>
-                                        @device.Name</h3>
+                                    <h3 class="box-title">Move To Position</h3>
                                     <div class="box-tools pull-right">
-                                        <button type="button" class="btn btn-box-tool map-marker-action-button" title="Center map in device" data-serial='@device.SerialNumber' data-device-type="drone" data-toggle="centerMapOnDevice"><i class="fa fa-map"></i></button>
                                         <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
                                     </div>
                                 </div>
                                 <div class="box-body">
-                                    <div class="box box-solid">
-                                        <ul class="nav nav-pills nav-stacked">
-                                            <li>
-                                                    <i class="fa fa-info"></i>
-                                                    Device State
-                                                    <span class="label label-default pull-right telemetry-single-data flying-state-text" data-renderer="renderFlyingState" data-serial="@device.SerialNumber" data-telemetry='@flying_state_initial'>No data</span>
-                                            </li>
-                                            <li>
-                                                    <i class="fa fa-signal"></i>
-                                                    Telemetry Signal
-                                                    <span class="label label-default pull-right telemetry-single-data radio-signal-text" data-renderer="renderRadioSignal" data-serial="@device.SerialNumber" data-telemetry='@radio_signals_initial'>
-                                                        No data
-                                                    </span>
-                                            </li>
-                                            <li>
-                                                    <i class="fa fa-battery"></i>
-                                                    Battery
-                                                    <span class="label label-default pull-right telemetry-single-data battery-level-text" data-renderer="renderBatteryLevel" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>No data</span>
-                                            </li>
-                                            <li>
-                                                    <i class="fa fa-arrows-alt"></i>
-                                                    GPS Signal
-                                                    <span class="label label-default pull-right ">No data</span>
-                                            </li>
-                                            <li>
-                                                    <i class="fa fa-map-marker"></i>
-                                                    Position
-                                                    <span class="label label-primary pull-right telemetry-single-data position-text" data-device-type="drone" data-renderer="renderPositionText" data-serial="@device.SerialNumber" data-telemetry='@position_initial'>No data</span>
-                                            </li>
-                                        </ul>
-
-                                        <div class="embed-responsive embed-responsive-16by9">
-                                            <div class="google-map embed-responsive-item" data-serial="@device.SerialNumber" style="border: 1px solid black"></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="box box-solid">
-                                        <button data-url="@takeoff_action_url" data-toggle="ajax-request" class="btn btn-danger" title="Take off this device">
-                                            TakeOff
-                                        </button>
-                                        <button data-url="@landing_action_url" data-toggle="ajax-request" class="btn btn-danger" title="Land this device">
-                                            Land
-                                        </button>
-                                        <button type='button btn btn-danger' data-toggle="ajax-request" data-url="@return_to_home_action_url" class="btn btn-danger">
-                                            Return to Home
-                                        </button>
-
-                                        <div class="box" id="@move_to_position_box_id" style="display: none">
-                                            <div class="box-header with-border">
-                                                <h3 class="box-title">Move To Position</h3>
-                                                <div class="box-tools pull-right">
-                                                    <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
-                                                </div>
-                                            </div>
-                                            <div class="box-body">
-                                                <iframe name="fake-submit" style="display:none;"></iframe>
-                                                <form method="get" action="@move_to_position_action_url" target="fake-submit">
-                                                    <input type="hidden" name="Id" class="form-control" value="@device.Id">
-                                                    <input type="text" name="Longitude" class="form-control" placeholder="Longitude in decimal">
-                                                    <input type="text" name="Latitude" class="form-control" placeholder="Latitude in decimal">
-                                                    <input type="text" name="Altitude" class="form-control" placeholder="Altitude in decimal">
-                                                    <input type="text" name="Heading" class="form-control" placeholder="Heading in degrees">
-                                                    <button type="submit" name="goto-position" class="btn pull-right">Go!</button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @await Component.InvokeAsync("Video", device)
+                                    <iframe name="fake-submit" style="display:none;"></iframe>
+                                    <form method="get" action="@move_to_position_action_url" target="fake-submit">
+                                        <input type="hidden" name="Id" class="form-control" value="@device.Id">
+                                        <input type="text" name="Longitude" class="form-control" placeholder="Longitude in decimal">
+                                        <input type="text" name="Latitude" class="form-control" placeholder="Latitude in decimal">
+                                        <input type="text" name="Altitude" class="form-control" placeholder="Altitude in decimal">
+                                        <input type="text" name="Heading" class="form-control" placeholder="Heading in degrees">
+                                        <button type="submit" name="goto-position" class="btn pull-right">Go!</button>
+                                    </form>
                                 </div>
                             </div>
-                        }
+                        </div>
+                        @await Component.InvokeAsync("Video", device)
                     </div>
                 </div>
+            }
         </div>
 
     </div>
