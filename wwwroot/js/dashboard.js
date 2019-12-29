@@ -290,22 +290,22 @@ $(async function () {
 
                 _signalr_connection.on("DronePosition", function (message) {
                     console.warn("hello");
-                    updateTelemetry('.position-text', message);
+                    _updateTelemetry('.position-text', message);
                     _map_class_instance.updatePositionMapMarker();
                 });
 
                 _signalr_connection.on("DroneBatteryLevel", function (message) {
-                    updateTelemetry('.battery-level-text', message);
+                    _updateTelemetry('.battery-level-text', message);
                 });
 
                 _signalr_connection.on("DroneRadioSignal", function (message) {
                     radio_signal = JSON.parse(message);
-                    updateTelemetry('.radio-signal-text', message);
+                    _updateTelemetry('.radio-signal-text', message);
                 });
 
                 _signalr_connection.on("DroneFlyingState", function (message) {
                     flying_state = JSON.parse(message);
-                    updateTelemetry('.flying-state-text', message);
+                    _updateTelemetry('.flying-state-text', message);
                 });
 
                 _signalr_connection.on("DroneReply", function (message) {
