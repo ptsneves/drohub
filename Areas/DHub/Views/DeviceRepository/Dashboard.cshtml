@@ -33,6 +33,10 @@
             width: 100%;
             height: 100%;
         }
+
+        .device-video {
+            background: black;
+        }
         </style>
 
     <div class="container-fluid">
@@ -138,7 +142,7 @@
                                 <div id="box-body-@device.Id">
                                     <div class="webrtc-video">
                                         <div class="embed-responsive embed-responsive-16by9" id="stream-@device.Id">
-                                            <video class="rounded centered embed-responsive-item controls" id="remotevideo-@device.Id" autoplay playsinline>
+                                            <video class="rounded centered embed-responsive-item controls device-video" id="remotevideo-@device.Id" autoplay playsinline>
                                             </video>
                                         </div>
                                     </div>
