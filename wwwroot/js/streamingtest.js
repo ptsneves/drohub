@@ -226,7 +226,7 @@ function startStream(element, selected_stream) {
 	streaming.send({ "message": body });
 
 	element.children().toggleClass("fa-play fa-stop");
-	box_stream_element = $(`#box-stream-${selected_stream}`);
+	box_stream_element = $(`#devices-box-${selected_stream}`);
 	box_stream_element.boxWidget('expand');
 	box_stream_element.find('.no-video-placeholder').each(function () {
 		$(this).toggleClass('hide');
