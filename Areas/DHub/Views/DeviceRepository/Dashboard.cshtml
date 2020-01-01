@@ -45,6 +45,19 @@
             width:100%;
             z-index:300000;
         }
+
+        .container-action-overlay {
+            color: white;
+            background: rgba(0,0,0,0.4);
+            font-size: large;
+        }
+
+        .btn-transparent-bg {
+            background-color: transparent;
+            border-color: transparent;
+            box-shadow: none;
+        }
+
         </style>
 
     <div class="container-fluid">
@@ -144,15 +157,17 @@
                                     <div class="webrtc-video">
                                         <div class="embed-responsive embed-responsive-16by9" id="stream-@device.Id">
                                             <div class=device-video-overlay>
-                                                <button data-url="@takeoff_action_url" data-toggle="ajax-request" class="btn btn-danger" title="Take off this device">
-                                                   <i class="fas fa-plane-departure"></i>
-                                                </button>
-                                                <button data-url="@landing_action_url" data-toggle="ajax-request" class="btn btn-danger" title="Land this device">
-                                                     <i class="fas fa-plane-arrival"></i>
-                                                </button>
-                                                <button type='button btn btn-danger' data-toggle="ajax-request" data-url="@return_to_home_action_url" class="btn btn-danger">
-                                                    <i class="fas fa-home"></i>
-                                                </button>
+                                                <div class="container-action-overlay">
+                                                    <button class="btn-transparent-bg" data-url="@takeoff_action_url" data-toggle="ajax-request" title="Take off this device">
+                                                    <i class="fas fa-plane-departure"></i>
+                                                    </button>
+                                                    <button class="btn-transparent-bg" data-url="@landing_action_url" data-toggle="ajax-request" title="Land this device">
+                                                        <i class="fas fa-plane-arrival"></i>
+                                                    </button>
+                                                    <button class="btn-transparent-bg" data-toggle="ajax-request" data-url="@return_to_home_action_url">
+                                                        <i class="fas fa-home"></i>
+                                                    </button>
+                                                </div>
                                             </div>
                                             <video class="rounded centered embed-responsive-item controls device-video" id="remotevideo-@device.Id" autoplay playsinline>
                                             </video>
