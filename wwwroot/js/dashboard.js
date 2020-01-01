@@ -137,6 +137,7 @@ $(async function () {
     TelemetryClass = function () {
         var _FunctionTable = {};
         _FunctionTable["renderBatteryLevel"] = _renderBatteryLevel;
+        _FunctionTable["renderBatteryLevelIcon"] = _renderBatteryLevelIcon;
         _FunctionTable["renderRadioSignal"] = _renderRadioSignal;
         _FunctionTable["renderFlyingState"] = _renderFlyingState;
         _FunctionTable["renderPlaneIcon"] = _renderPlaneIcon;
@@ -240,6 +241,37 @@ $(async function () {
             else {
                 _makeClassActive(element, 'text-warning', AvailableClasses);
                 element.addClass('blinking');
+            }
+        }
+
+        function _renderBatteryLevelIcon(_, element) {
+            element = $(element);
+            battery_level = JSON.parse(element.attr('data-telemetry'));
+            if (!battery_level)
+                return;
+
+            let current_fa = element.data('current-fa');
+            element.removeClass(current_fa);
+            if (battery_level.BatteryLevelPercent > 90) {
+                element.addClass('fas fa-battery-full');
+                element.data('current-fa', 'fas fa-battery-full');
+            }
+
+            else if (battery_level.BatteryLevelPercent > 75) {
+                element.addClass('fas fa-battery-three-quarters');
+                element.data('current-fa', 'fas fa-battery-three-quarters');
+            }
+            else if (battery_level.BatteryLevelPercent > 45 && battery_level.BatteryLevelPercent <= 75) {
+                element.addClass('fas fa-battery-half');
+                element.data('current-fa', 'fas fa-battery-half');
+            }
+            else if (battery_level.BatteryLevelPercent > 35 && battery_level.BatteryLevelPercent <= 45) {
+                element.addClass('fas fa-battery-quarter');
+                element.data('current-fa', 'fas fa-battery-quarter');
+            }
+            else {
+                element.addClass('fas fa-battery-empty');
+                element.data('current-fa', 'fas fa-battery-empty`');
             }
         }
 
@@ -360,7 +392,7 @@ $(async function () {
     JanusVideoClass.init();
     MapClass.init();
     TelemetryClass.init(SignalRConnectionClass.getConnection(), MapClass);
-    
+
     //test
     // test_connection = SignalRConnectionClass.getConnection();
     // for (i = 0; i < 10; i++) {
