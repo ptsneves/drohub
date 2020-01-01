@@ -39,11 +39,12 @@ $(async function () {
                     let device_coords = JSON.parse(element.attr('data-telemetry'));
                     let device_type = element.data('device-type');
                     let device_serial = element.data('serial');
+                    let device_svg_marker = element.data('marker-svg-path');
 
                     if (device_coords == null || device_type == null || device_serial == null)
                         return;
 
-                    let icon_url = `${window.location.origin}/images/drone-svgrepo-com.svg`
+                    let icon_url = `${window.location.origin}/${device_svg_marker}`
                     let marker_icon = {
                         url: icon_url, // url
                         scaledSize: new google.maps.Size(50, 50), // scaled size
