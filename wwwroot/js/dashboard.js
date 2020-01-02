@@ -353,15 +353,58 @@ $(async function () {
     }();
 
     JanusVideoClass = function () {
-        function _init(index, element) {
+        function _initJanus(index, element) {
             if (index > 1)
                 throw new Error("Cannot have multiple elements with janus");
             element = $(element);
             initJanus(element.data('janus-url'), element.data('stun-server-url'));
         }
+
+        function makeElementFullScreen(webrtc_video_element) {
+            if (document.fullscreenElement
+                || document.webkitFullscreenElement
+                || document.mozFullScreenElement
+                || document.msFullscreenElement)
+            {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+            else
+            {
+                if (webrtc_video_element.requestFullscreen) {
+                    webrtc_video_element.requestFullscreen();
+                } else if (webrtc_video_element.mozRequestFullScreen) {
+                    webrtc_video_element.mozRequestFullScreen();
+                } else if (webrtc_video_element.webkitRequestFullscreen) {
+                    webrtc_video_element.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+                } else if (webrtc_video_element.msRequestFullscreen) {
+                    webrtc_video_element.msRequestFullscreen();
+                }
+            }
+        }
+
+        function _initFullscreenButton(index, element) {
+            element = $(element);
+            fullscreen_serial = element.data('serial');
+            if (!fullscreen_serial)
+                throw Error("Fullscreen does not hava data about which device it refers to");
+
+            let webrtc_video_element = $(`.webrtc-video[data-serial="${fullscreen_serial}"]`).first();
+            element.on('click', makeElementFullScreen.bind(null, webrtc_video_element.get(0)));
+        }
+
         return {
             init: function () {
-                $('.janus-section').each(_init);
+                $('.janus-section').each(_initJanus);
+                $('button[data-toggle="video-fullscreen"]').each(_initFullscreenButton)
+                $('a[data-toggle="video-fullscreen"]').each(_initFullscreenButton)
             }
         }
     }();
