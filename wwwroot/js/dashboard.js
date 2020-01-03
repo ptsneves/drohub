@@ -324,13 +324,13 @@ $(async function () {
                 _signalr_connection = signalr_connection;
 
                 _signalr_connection.on("DronePosition", function (message) {
-                    console.warn("hello");
                     _updateTelemetry('.position-text', message);
                     _map_class_instance.updatePositionMapMarker();
                 });
 
                 _signalr_connection.on("DroneBatteryLevel", function (message) {
                     _updateTelemetry('.battery-level-text', message);
+                    _updateTelemetry('.battery-level-icon', message);
                 });
 
                 _signalr_connection.on("DroneRadioSignal", function (message) {
@@ -445,7 +445,8 @@ $(async function () {
     //     test_connection.invoke("DronePosition", position)
     //     MapClass.updatePositionMapMarker();
     // }
-    // TelemetryClass.updateTelemetry('.battery-level-text', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 50, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
+    TelemetryClass.updateTelemetry('.battery-level-text', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 50, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
+    TelemetryClass.updateTelemetry('.battery-level-icon', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 50, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
     // TelemetryClass.updateTelemetry('.radio-signal-text', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "SignalQuality": 5, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
     // TelemetryClass.updateTelemetry('.flying-state-text', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "State": 0, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
 })
