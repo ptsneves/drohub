@@ -134,6 +134,39 @@ $(async function () {
         }
     }();
 
+    ElementClassRangeClass = function () {
+        let _available_classes = new Set();
+        let _classes = [];
+        function _makeClassActive(element, classes_to_activate) {
+            //TODO consolidate this with a filter. What a mess..
+            _available_classes.forEach(function (item) {
+                element.removeClass(item);
+            });
+            element.addClass(classes_to_activate.join(' '));
+        }
+        return {
+            addStep: function (min, max, element_classes) {
+                split_classes = element_classes.split(/\s+/).filter(Boolean);
+                _classes.push({ min: min, max: max, class: split_classes });
+                split_classes.forEach(item => _available_classes.add(item));
+            },
+            addRegularSteps: function (min, max, classes) {
+                let step_size = (max - min) / classes.length;
+                for (i = 0; i < classes.length; i++) {
+                    this.addStep(min + step_size * i, min + step_size * (i + 1), classes[i]);
+                }
+            },
+            addClassToElement: function (element, value) {
+                for (i = 0; i < _classes.length; i++) {
+                    if (value >= _classes[i].min && value < _classes[i].max) {
+                        _makeClassActive(element, _classes[i].class);
+                        return;
+                    }
+                }
+            }
+        }
+    };
+
     TelemetryClass = function () {
         var _FunctionTable = {};
         _FunctionTable["renderBatteryLevel"] = _renderBatteryLevel;
@@ -144,15 +177,6 @@ $(async function () {
         _FunctionTable["renderPositionText"] = _renderPositionText;
         _signalr_connection = null;
         _map_class_instance = null;
-
-        function _makeClassActive(element, class_to_activate, AvailableClasses) {
-            let classes_to_delete = new Set(AvailableClasses);
-            classes_to_delete.delete(class_to_activate)
-            classes_to_delete.forEach(function (item) {
-                element.removeClass(item);
-            });
-            element.addClass(class_to_activate);
-        }
 
         function _renderTelemetry(index, element) {
             element = $(element);
@@ -234,45 +258,29 @@ $(async function () {
             if (!flying_state)
                 return;
 
-            const AvailableClasses = new Set(["text-muted", 'text-warning', "text-success", "blinking"]);
-            if (flying_state.State == 0) {
-                _makeClassActive(element, 'text-success', AvailableClasses);
-            }
-            else {
-                _makeClassActive(element, 'text-warning', AvailableClasses);
-                element.addClass('blinking');
-            }
+            flying_state_class_range = ElementClassRangeClass();
+            flying_state_class_range.addStep(0, 1, "text-success");
+            flying_state_class_range.addStep(1, 8, "text-warning blinking");
+            flying_state_class_range.addClassToElement(element, flying_state.State);
         }
 
         function _renderBatteryLevelIcon(_, element) {
             element = $(element);
             battery_level = JSON.parse(element.attr('data-telemetry'));
+
             if (!battery_level)
                 return;
+            battery_level_class_range = ElementClassRangeClass();
+            battery_level_class_range.addRegularSteps(0, 100, [
+                    'fas fa-battery-empty blinking',
+                    'fas fa-battery-quarter',
+                    'fas fa-battery-half',
+                    'fas fa-battery-three-quarters',
+                    'fas fa-battery-full',
+                ]
+            );
 
-            let current_fa = element.data('current-fa');
-            element.removeClass(current_fa);
-            if (battery_level.BatteryLevelPercent > 90) {
-                element.addClass('fas fa-battery-full');
-                element.data('current-fa', 'fas fa-battery-full');
-            }
-
-            else if (battery_level.BatteryLevelPercent > 75) {
-                element.addClass('fas fa-battery-three-quarters');
-                element.data('current-fa', 'fas fa-battery-three-quarters');
-            }
-            else if (battery_level.BatteryLevelPercent > 45 && battery_level.BatteryLevelPercent <= 75) {
-                element.addClass('fas fa-battery-half');
-                element.data('current-fa', 'fas fa-battery-half');
-            }
-            else if (battery_level.BatteryLevelPercent > 35 && battery_level.BatteryLevelPercent <= 45) {
-                element.addClass('fas fa-battery-quarter');
-                element.data('current-fa', 'fas fa-battery-quarter');
-            }
-            else {
-                element.addClass('fas fa-battery-empty');
-                element.data('current-fa', 'fas fa-battery-empty`');
-            }
+            battery_level_class_range.addClassToElement(element, battery_level.BatteryLevelPercent);
         }
 
         function _renderBatteryLevel(_, element) {
@@ -280,15 +288,11 @@ $(async function () {
             battery_level = JSON.parse(element.attr('data-telemetry'));
             if (!battery_level)
                 return;
-            console.log(battery_level)
-            element.removeClass('label-default');
-            if (battery_level.BatteryLevelPercent > 75) {
-                element.addClass('label-success');
-            }
-            else if (battery_level.BatteryLevelPercent > 35 && battery_level.BatteryLevelPercent <= 75)
-                element.addClass('label-warning');
-            else
-                element.addClass('label-danger');
+            battery_level_class_range = ElementClassRangeClass();
+            battery_level_class_range.addStep(0, 35, 'label-danger');
+            battery_level_class_range.addStep(35, 75, 'label-warning');
+            battery_level_class_range.addStep(75, 100, 'label-success');
+            battery_level_class_range.addClassToElement(element, battery_level.BatteryLevelPercent);
             element.text(battery_level.BatteryLevelPercent);
         }
 
