@@ -273,11 +273,11 @@ $(async function () {
                 return;
             battery_level_class_range = ElementClassRangeClass();
             battery_level_class_range.addRegularSteps(0, 100, [
-                    'fas fa-battery-empty blinking',
-                    'fas fa-battery-quarter',
-                    'fas fa-battery-half',
-                    'fas fa-battery-three-quarters',
-                    'fas fa-battery-full',
+                    'fas fa-battery-empty blinking text-danger blinking',
+                    'fas fa-battery-quarter text-warning blinking',
+                    'fas fa-battery-half text-warning',
+                    'fas fa-battery-three-quarters text-success',
+                    'fas fa-battery-full text-success',
                 ]
             );
 
