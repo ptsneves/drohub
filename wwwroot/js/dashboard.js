@@ -172,6 +172,7 @@ $(async function () {
         _FunctionTable["renderBatteryLevel"] = _renderBatteryLevel;
         _FunctionTable["renderBatteryLevelIcon"] = _renderBatteryLevelIcon;
         _FunctionTable["renderRadioSignal"] = _renderRadioSignal;
+        _FunctionTable["renderRadioSignalIcon"] = _renderRadioSignalIcon;
         _FunctionTable["renderFlyingState"] = _renderFlyingState;
         _FunctionTable["renderPlaneIcon"] = _renderPlaneIcon;
         _FunctionTable["renderPositionText"] = _renderPositionText;
@@ -281,6 +282,31 @@ $(async function () {
             );
 
             battery_level_class_range.addClassToElement(element, battery_level.BatteryLevelPercent);
+        }
+
+        function _renderRadioSignalIcon(_, element) {
+            element = $(element);
+
+            let rssi_class_range = ElementClassRangeClass();
+            rssi_class_range.addRegularSteps(-96, -40, ["fas fa-wifi-1", "fas fa-wifi-2", "fas fa-wifi"]);
+
+            let signal_quality_class_range = ElementClassRangeClass();
+            signal_quality_class_range.addStep(1, 2, "text-danger");
+            signal_quality_class_range.addStep(2, 3, "text-warning");
+            signal_quality_class_range.addStep(3, 5, "text-success");
+
+            let radio_signal = JSON.parse(element.attr('data-telemetry'));
+            if (!radio_signal)
+                return;
+
+            if (radio_signal.__isset.rssi == true && radio_signal.Rssi) {
+                console.warn(radio_signal.Rssi)
+                rssi_class_range.addClassToElement(element, radio_signal.Rssi);
+            }
+
+            if (radio_signal.__isset.signal_quality && radio_signal.SignalQuality) {
+                signal_quality_class_range.addClassToElement(element, radio_signal.SignalQuality);
+            }
         }
 
         function _renderBatteryLevel(_, element) {
