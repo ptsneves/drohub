@@ -189,6 +189,10 @@
                                                         <i class="fas fa-home"></i>
                                                     </button>
                                                 </div>
+                                                <div class="container-action-overlay video-overlay-right video-overlay-top">
+                                                    <i class="telemetry-single-data radio-signal-text" data-renderer="renderRadioSignalIcon" data-serial="@device.SerialNumber" data-telemetry='@radio_signals_initial'></i>
+                                                    <i class="telemetry-single-data battery-level-icon" data-renderer="renderBatteryLevelIcon" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'></i>
+                                                </div>
                                                 <div class="video-overlay-bottom video-overlay-right">
                                                     <button class="btn-transparent-bg " data-serial="@device.SerialNumber" data-toggle="video-fullscreen">
                                                         <i class="fas fa-compress"></i>
