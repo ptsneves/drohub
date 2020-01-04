@@ -29,13 +29,13 @@ $(async function () {
                 },
                 getMarker: _getMarker,
                 setMarker: _setMarker,
-                setListener: function(device_type, device_serial, event_name, listener_func) {
+                setListener: function (device_type, device_serial, event_name, listener_func) {
                     let marker = getMarker(device_type, device_serial);
                     if (!marker)
                         throw new Error("Cannot set a listener on non-existing marker");
                     google.maps.event.addListener(marker, event_name, listener_func);
                 },
-                renderPositionMarker: function(_, element) {
+                renderPositionMarker: function (_, element) {
                     let device_coords = JSON.parse(element.attr('data-telemetry'));
                     let device_type = element.data('device-type');
                     let device_serial = element.data('serial');
@@ -95,8 +95,8 @@ $(async function () {
 
         return {
             updatePositionMapMarker: _updatePositionMapMarker,
-            init: function() {
-                function perElementInit (index, element) {
+            init: function () {
+                function perElementInit(index, element) {
                     function _initializeMapMarkerActionButton(index, element) {
                         element = $(element);
                         element.click(data_function_table[element.data('toggle')].bind(null, index, element));
@@ -128,7 +128,7 @@ $(async function () {
                 }
                 $('.google-map').each(perElementInit);
             },
-            getMap: function(device_serial) {
+            getMap: function (device_serial) {
                 return maps[device_serial];
             }
         }
