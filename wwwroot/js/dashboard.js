@@ -137,6 +137,7 @@ $(async function () {
     ElementClassRangeClass = function () {
         let _available_classes = new Set();
         let _classes = [];
+
         function _makeClassActive(element, classes_to_activate) {
             //TODO consolidate this with a filter. What a mess..
             _available_classes.forEach(function (item) {
@@ -144,25 +145,35 @@ $(async function () {
             });
             element.addClass(classes_to_activate.join(' '));
         }
+
+        function _addStep (min, max, element_classes) {
+            split_classes = element_classes.split(/\s+/).filter(Boolean);
+            _classes.push({ min: min, max: max, class: split_classes });
+            split_classes.forEach(item => _available_classes.add(item));
+        }
+
+        _addStep(null, null, "fad fa-empty-set");
+
         return {
-            addStep: function (min, max, element_classes) {
-                split_classes = element_classes.split(/\s+/).filter(Boolean);
-                _classes.push({ min: min, max: max, class: split_classes });
-                split_classes.forEach(item => _available_classes.add(item));
-            },
+            addStep: _addStep,
             addRegularSteps: function (min, max, classes) {
                 let step_size = (max - min) / classes.length;
                 for (i = 0; i < classes.length; i++) {
                     this.addStep(min + step_size * i, min + step_size * (i + 1), classes[i]);
                 }
             },
-            addClassToElement: function (element, value) {
-                for (i = 0; i < _classes.length; i++) {
+            addClassToElement: function (element, value = null) {
+                if (!value) {
+                    _makeClassActive(element, _classes[0].class);
+                    return;
+                }
+                for (i = 1; i < _classes.length; i++) {
                     if (value >= _classes[i].min && value < _classes[i].max) {
                         _makeClassActive(element, _classes[i].class);
                         return;
                     }
                 }
+                throw Error("Unreachable situation. The range has been violated");
             }
         }
     };
@@ -255,40 +266,41 @@ $(async function () {
 
         function _renderPlaneIcon(_, element) {
             element = $(element);
-            flying_state = JSON.parse(element.attr('data-telemetry'));
-            if (!flying_state)
-                return;
 
             flying_state_class_range = ElementClassRangeClass();
             flying_state_class_range.addStep(0, 1, "text-success");
             flying_state_class_range.addStep(1, 8, "text-warning blinking");
-            flying_state_class_range.addClassToElement(element, flying_state.State);
+
+            flying_state = JSON.parse(element.attr('data-telemetry'));
+            if (!flying_state)
+                flying_state_class_range.addClassToElement(element);
+            else
+                flying_state_class_range.addClassToElement(element, flying_state.State);
         }
 
         function _renderBatteryLevelIcon(_, element) {
             element = $(element);
+            battery_level_class_range = ElementClassRangeClass();
+            battery_level_class_range.addRegularSteps(0, 100, [
+                'fas fa-battery-empty blinking text-danger blinking',
+                'fas fa-battery-quarter text-warning blinking',
+                'fas fa-battery-half text-warning',
+                'fas fa-battery-three-quarters text-success',
+                'fas fa-battery-full text-success',
+            ]);
             battery_level = JSON.parse(element.attr('data-telemetry'));
 
             if (!battery_level)
-                return;
-            battery_level_class_range = ElementClassRangeClass();
-            battery_level_class_range.addRegularSteps(0, 100, [
-                    'fas fa-battery-empty blinking text-danger blinking',
-                    'fas fa-battery-quarter text-warning blinking',
-                    'fas fa-battery-half text-warning',
-                    'fas fa-battery-three-quarters text-success',
-                    'fas fa-battery-full text-success',
-                ]
-            );
-
-            battery_level_class_range.addClassToElement(element, battery_level.BatteryLevelPercent);
+                battery_level_class_range.addClassToElement(element);
+            else
+                battery_level_class_range.addClassToElement(element, battery_level.BatteryLevelPercent);
         }
 
         function _renderRadioSignalIcon(_, element) {
             element = $(element);
 
             let rssi_class_range = ElementClassRangeClass();
-            rssi_class_range.addRegularSteps(-96, -40, ["fas fa-wifi-1", "fas fa-wifi-2", "fas fa-wifi"]);
+            rssi_class_range.addRegularSteps(-96, -40, ["fad fa-wifi-1", "fad fa-wifi-2", "fad fa-wifi"]);
 
             let signal_quality_class_range = ElementClassRangeClass();
             signal_quality_class_range.addStep(1, 2, "text-danger");
@@ -296,15 +308,12 @@ $(async function () {
             signal_quality_class_range.addStep(3, 5, "text-success");
 
             let radio_signal = JSON.parse(element.attr('data-telemetry'));
-            if (!radio_signal)
-                return;
-
-            if (radio_signal.__isset.rssi == true && radio_signal.Rssi) {
-                console.warn(radio_signal.Rssi)
-                rssi_class_range.addClassToElement(element, radio_signal.Rssi);
+            if (!radio_signal) {
+                rssi_class_range.addClassToElement(element);
+                signal_quality_class_range.addClassToElement(element);
             }
-
-            if (radio_signal.__isset.signal_quality && radio_signal.SignalQuality) {
+            else {
+                rssi_class_range.addClassToElement(element, radio_signal.Rssi);
                 signal_quality_class_range.addClassToElement(element, radio_signal.SignalQuality);
             }
         }
@@ -312,14 +321,16 @@ $(async function () {
         function _renderBatteryLevel(_, element) {
             element = $(element);
             battery_level = JSON.parse(element.attr('data-telemetry'));
-            if (!battery_level)
-                return;
             battery_level_class_range = ElementClassRangeClass();
             battery_level_class_range.addStep(0, 35, 'label-danger');
             battery_level_class_range.addStep(35, 75, 'label-warning');
             battery_level_class_range.addStep(75, 100, 'label-success');
-            battery_level_class_range.addClassToElement(element, battery_level.BatteryLevelPercent);
-            element.text(battery_level.BatteryLevelPercent);
+            if (!battery_level)
+                battery_level_class_range.addClassToElement(element, null);
+            else {
+                battery_level_class_range.addClassToElement(element, battery_level.BatteryLevelPercent);
+                element.text(battery_level.BatteryLevelPercent);
+            }
         }
 
         function _renderPositionText(_, element) {
