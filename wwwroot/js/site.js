@@ -71,5 +71,29 @@ $(async function () {
 
     await SignalRConnectionClass.init();
 
+    TimePresenterClass = function () {
+        function _convertUnixToLocalTime(unix_timestamp) {
+            // https://stackoverflow.com/a/847196/227990
+            // Create a new JavaScript Date object based on the timestamp
+            // multiplied by 1000 so that the argument is in milliseconds, not seconds.
+            var date = new Date(unix_timestamp);
+            return date.toLocaleString();
+        }
+
+        function _initElement(index, element) {
+            element = $(element);
+            let unix_time = element.data('unix-time');
+            if (!unix_time)
+                return;
+            element.text(_convertUnixToLocalTime(unix_time));
+        }
+
+        $('.local-time-text').each(_initElement);
+
+        return {
+            convertUnixToLocalTime: _convertUnixToLocalTime,
+        }
+    }();
+
     ModalClass.init();
 });

@@ -1,5 +1,11 @@
 version: "3"
 services:
+    mjr-converter:
+        build:
+            context: ./MJR-Converter
+        image: "ptsneves/airborneprojects:mjr-converter"
+        volumes:
+            - live-video-storage:/var/live-video-storage
     janus:
         build:
             context: ./docker-janus
