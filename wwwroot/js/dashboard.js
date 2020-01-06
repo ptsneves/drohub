@@ -1,4 +1,4 @@
-$(async function () {
+$(function () {
     var MapClass = function () {
         let data_function_table = {};
         let maps = {};
@@ -449,34 +449,9 @@ $(async function () {
             }
         }
     }();
-
-    SignalRConnectionClass = function () {
-        _connection = null
-        return {
-            init: async function () {
-                _connection = new signalR.HubConnectionBuilder().withUrl("/telemetryHub").
-                    configureLogging(signalR.LogLevel.Information).build();
-
-                await _connection.start().then(function () {
-                    console.log("Notifications started SIGNALR");
-
-                }).catch(function (err) {
-                    return console.error(err.toString());
-                });
-            },
-            getConnection: function () {
-                if (!_connection)
-                    throw new Error("Cannot get a connection that does not exist");
-                return _connection;
-            }
-        }
-    }();
-
-    await SignalRConnectionClass.init();
     JanusVideoClass.init();
     MapClass.init();
     TelemetryClass.init(SignalRConnectionClass.getConnection(), MapClass);
-
     //test
     // test_connection = SignalRConnectionClass.getConnection();
     // for (i = 0; i < 10; i++) {
