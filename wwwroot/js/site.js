@@ -5,11 +5,6 @@
 
 $(async function () {
     ModalClass = function () {
-        function followActionAndDoNothing(event) {
-            var url = $(this).data('url');
-            $.get(url);
-        }
-
         var PlaceholderElement = $('#modal-placeholder');
         function makeModal(event) {
             var url = $(this).data('url');
@@ -38,12 +33,26 @@ $(async function () {
                     });
                 });
 
-                $('a[data-toggle="ajax-request"]').click(followActionAndDoNothing);
-                $('button[data-toggle="ajax-request"]').click(followActionAndDoNothing);
                 $('a[data-toggle="ajax-modal"]').click(makeModal);
                 $('button[data-toggle="ajax-modal"]').click(makeModal);
             }
         }
+    }();
+
+    AJAXRequestClass = function () {
+        function _followActionAndDoNothing(event) {
+
+            if ($(this).is("form")) {
+                var url = $(this).attr('action');
+                $.post($(this).attr('action'), $(this).serialize());
+                return false;
+            }
+            else
+                $.get($(this).data('url'));
+        }
+        $('form[data-toggle="ajax-request"]').submit(_followActionAndDoNothing);
+        $('a[data-toggle="ajax-request"]').click(_followActionAndDoNothing);
+        $('button[data-toggle="ajax-request"]').click(_followActionAndDoNothing);
     }();
 
 

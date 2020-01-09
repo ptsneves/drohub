@@ -255,7 +255,8 @@ $(function () {
                         return;
                     }
                 }
-                throw Error("Unreachable situation. The range has been violated");
+                throw Error(`Unreachable situation. The range has been violated\
+    Value: ${value} and classes ${JSON.stringify(_classes)}`);
             }
         }
     };
@@ -269,8 +270,14 @@ $(function () {
         _FunctionTable["renderFlyingState"] = _renderFlyingState;
         _FunctionTable["renderPlaneIcon"] = _renderPlaneIcon;
         _FunctionTable["renderPositionText"] = _renderPositionText;
+        _FunctionTable["renderFlightTimeText"] = _renderFlightTimeText;
+
         _signalr_connection = null;
         _map_class_instance = null;
+
+        function _renderFlightTimeText(index, element) {
+
+        }
 
         function _renderTelemetry(index, element) {
             element = $(element);
@@ -363,7 +370,7 @@ $(function () {
         function _renderBatteryLevelIcon(_, element) {
             element = $(element);
             battery_level_class_range = ElementClassRangeClass();
-            battery_level_class_range.addRegularSteps(0, 100, [
+            battery_level_class_range.addRegularSteps(0, 101, [
                 'fas fa-battery-empty blinking text-danger blinking',
                 'fas fa-battery-quarter text-warning blinking',
                 'fas fa-battery-half text-warning',
@@ -382,7 +389,7 @@ $(function () {
             element = $(element);
 
             let rssi_class_range = ElementClassRangeClass();
-            rssi_class_range.addRegularSteps(-96, -40, ["fad fa-wifi-1", "fad fa-wifi-2", "fad fa-wifi"]);
+            rssi_class_range.addRegularSteps(-96, -20, ["fad fa-signal-1", "fad fa-signal-2", "fad fa-signal"]);
 
             let signal_quality_class_range = ElementClassRangeClass();
             signal_quality_class_range.addStep(1, 2, "text-danger");
@@ -403,16 +410,7 @@ $(function () {
         function _renderBatteryLevel(_, element) {
             element = $(element);
             battery_level = JSON.parse(element.attr('data-telemetry'));
-            battery_level_class_range = ElementClassRangeClass();
-            battery_level_class_range.addStep(0, 35, 'label-danger');
-            battery_level_class_range.addStep(35, 75, 'label-warning');
-            battery_level_class_range.addStep(75, 100, 'label-success');
-            if (!battery_level)
-                battery_level_class_range.addClassToElement(element, null);
-            else {
-                battery_level_class_range.addClassToElement(element, battery_level.BatteryLevelPercent);
-                element.text(battery_level.BatteryLevelPercent);
-            }
+            element.text(`${battery_level.BatteryLevelPercent}%`);
         }
 
         function _renderPositionText(_, element) {
@@ -543,8 +541,9 @@ $(function () {
     //     test_connection.invoke("DronePosition", position)
     //     MapClass.updatePositionMapMarker();
     // }
-    TelemetryClass.updateTelemetry('.battery-level-text', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 50, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
-    TelemetryClass.updateTelemetry('.battery-level-icon', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 50, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
-    // TelemetryClass.updateTelemetry('.radio-signal-text', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "SignalQuality": 5, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
+    // TelemetryClass.updateTelemetry('.battery-level-text', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 99, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
+    // TelemetryClass.updateTelemetry('.battery-level-icon', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 99, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
+    // TelemetryClass.updateTelemetry('.battery-level-icon', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 29, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
+    // TelemetryClass.updateTelemetry('.radio-signal-text', '{ "__isset": { "rssi": true, "signal_quality": true, "serial": false, "timestamp": false }, "Id": 12, "Rssi": -85, "SignalQuality": 2, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
     // TelemetryClass.updateTelemetry('.flying-state-text', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "State": 0, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
 })

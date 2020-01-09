@@ -37,6 +37,10 @@
         .container-action-overlay {
 
         }
+
+        .iradio_square-blue {
+            display: none !important;
+        }
         </style>
 
     <div class="container-fluid">
@@ -45,6 +49,8 @@
             {
             var takeoff_action_url = Url.Action("TakeOff", "Devices", new {id = device.Id});
             var landing_action_url = Url.Action("Land", "Devices", new {id = device.Id});
+            var toggle_record_video_action_url = Url.Action("RecordVideo", "Devices", new {id = device.Id});
+            var take_picture_action_url = Url.Action("TakePicture", "Devices", new {id = device.Id});
             var return_to_home_action_url = Url.Action("ReturnToHome", "Devices", new {id = device.Id});
             var move_to_position_action_url = Url.Action("MoveToPosition", "Devices", new {id = device.Id});
             var move_to_position_box_id = move_to_position_box_id_prefix + device.Id;
@@ -52,7 +58,6 @@
             var position_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.positions?.FirstOrDefault()) as String);
             var battery_level_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.battery_levels?.FirstOrDefault()) as String);
             var flying_state_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.flying_states?.FirstOrDefault()) as String);
-
 
             string[] ColourValues = new string[] {
                 "3c8dbc", "00c0ef", "dd4b39", "f39c12", "00a65a"
@@ -74,36 +79,6 @@
                     </div>
                 </div>
                 <div class="box-body">
-                    <ul class="nav nav-pills nav-stacked">
-                        <li>
-                                <i class="fa fa-info"></i>
-                                Device State
-                                <span class="label label-default pull-right telemetry-single-data flying-state-text" data-renderer="renderFlyingState" data-serial="@device.SerialNumber" data-telemetry='@flying_state_initial'>No data</span>
-                        </li>
-                        <li>
-                                <i class="telemetry-single-data radio-signal-text" data-renderer="renderRadioSignalIcon" data-serial="@device.SerialNumber" data-telemetry='@radio_signals_initial'></i>
-                                Telemetry Signal
-                                <span class="label label-default pull-right telemetry-single-data radio-signal-text" data-renderer="renderRadioSignal" data-serial="@device.SerialNumber" data-telemetry='@radio_signals_initial'>
-                                    No data
-                                </span>
-                        </li>
-                        <li>
-                                <i class="telemetry-single-data battery-level-icon" data-renderer="renderBatteryLevelIcon" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'></i>
-                                Battery
-                                <span class="label label-default pull-right telemetry-single-data battery-level-text" data-renderer="renderBatteryLevel" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>No data</span>
-                        </li>
-                        <li>
-                                <i class="fa fa-arrows-alt"></i>
-                                GPS Signal
-                                <span class="label label-default pull-right ">No data</span>
-                        </li>
-                        <li>
-                                <i class="fa fa-map-marker"></i>
-                                Position
-                                <span class="label label-primary pull-right telemetry-single-data position-text" data-device-type="drone" data-marker-svg-path="images/drone-svgrepo-com.svg" data-renderer="renderPositionText" data-serial="@device.SerialNumber" data-telemetry='@position_initial'>No data</span>
-                        </li>
-                    </ul>
-
                     <div class="box" id="@move_to_position_box_id" style="display: none">
                         <div class="box-header with-border">
                             <h3 class="box-title">Move To Position</h3>
@@ -135,26 +110,69 @@
                                 <div id="box-body-@device.Id">
                                     <div class="webrtc-video" data-serial="@device.SerialNumber">
                                         <div class="embed-responsive embed-responsive-16by9" id="stream-@device.Id">
-                                            <div class=device-video-overlay>
-                                                <div class="container-action-overlay video-overlay-left video-overlay-top">
-                                                    <button class="btn-transparent-bg" data-url="@takeoff_action_url" data-toggle="ajax-request" title="Take off this device">
-                                                    <i class="fas fa-plane-departure"></i>
-                                                    </button>
-                                                    <button class="btn-transparent-bg" data-url="@landing_action_url" data-toggle="ajax-request" title="Land this device">
-                                                        <i class="fas fa-plane-arrival"></i>
-                                                    </button>
-                                                    <button class="btn-transparent-bg" data-toggle="ajax-request" data-url="@return_to_home_action_url">
-                                                        <i class="fas fa-home"></i>
-                                                    </button>
+                                            <div class="device-video-overlay container">
+                                                <div class="video-overlay-top row vertical-align">
+                                                    <div class="col-md-4">
+                                                        <i class="telemetry-single-data radio-signal-text" data-renderer="renderRadioSignalIcon" data-serial="@device.SerialNumber" data-telemetry='@radio_signals_initial'></i>
+                                                        <i class="telemetry-single-data battery-level-icon" data-renderer="renderBatteryLevelIcon" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'><span class=" telemetry-single-data battery-level-text" data-renderer="renderBatteryLevel" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>No data</span></i>
+                                                        <i>|</i>
+                                                        <span class=" telemetry-single-data battery-level-text" data-renderer="renderFlightTimeText" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>Not flying</span>
+                                                    </div>
+                                                    <div class="container-action-overlay col-md-4">
+
+                                                        <button class="btn-transparent-bg" data-url="@takeoff_action_url" data-toggle="ajax-request" title="Take off this device">
+                                                        <i class="fas fa-plane-departure"></i>
+                                                        </button>
+                                                        <button class="btn-transparent-bg" data-url="@landing_action_url" data-toggle="ajax-request" title="Land this device">
+                                                            <i class="fas fa-plane-arrival"></i>
+                                                        </button>
+                                                        <button class="btn-transparent-bg" data-toggle="ajax-request" data-url="@return_to_home_action_url">
+                                                            <i class="fas fa-home"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div class="text-right col-md-4">
+                                                        <i class="far fa-external-link-alt"></i>
+                                                    </div>
                                                 </div>
-                                                <div class="container-action-overlay video-overlay-right video-overlay-top">
-                                                    <i class="telemetry-single-data radio-signal-text" data-renderer="renderRadioSignalIcon" data-serial="@device.SerialNumber" data-telemetry='@radio_signals_initial'></i>
-                                                    <i class="telemetry-single-data battery-level-icon" data-renderer="renderBatteryLevelIcon" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'></i>
-                                                </div>
-                                                <div class="video-overlay-bottom video-overlay-right">
+                                                @* <div class="video-overlay-bottom">
                                                     <button class="btn-transparent-bg " data-serial="@device.SerialNumber" data-toggle="video-fullscreen">
                                                         <i class="fas fa-compress"></i>
                                                     </button>
+                                                </div> *@
+                                                <div class="video-overlay-bottom">
+                                                    <div class="row">
+                                                        <div class="col-md-3">
+                                                            <div class="">
+                                                                <form method="post" action="@toggle_record_video_action_url" data-toggle="ajax-request" autocomplete="off">
+                                                                <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.START" checked>
+                                                                <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.STOP">
+                                                                <button type="submit" class="btn-transparent-bg video-overlay-record-icon" title="Toggle Video Recording">
+                                                                    <i class="fad fa-hospital-symbol" style="--fa-secondary-opacity: 0.4;  "></i>
+                                                                </button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-3"></div>
+                                                        <div class="col-md-3"></div>
+                                                        <div class="col-md-3">
+                                                            <div class="video-overlay-record-rectangle">
+                                                                <form method="post" action="@take_picture_action_url" data-toggle="ajax-request" autocomplete="off">
+                                                                    <input type="radio" name="@nameof(DroneTakePictureRequest.ActionType)" value="@ActionType.START" checked>
+                                                                    <input type="radio" name="@nameof(DroneTakePictureRequest.ActionType)" value="@ActionType.STOP">
+                                                                    <button type="submit" class="btn-transparent-bg video-overlay-photo-icon" title="Take Picture">
+                                                                        <i class="fad fa-camera" style="--fa-secondary-color:red;--fa-secondary-opacity: 1.0;  "></i>
+                                                                    </button>
+                                                                </form>
+                                                                <form method="post" action="@toggle_record_video_action_url" data-toggle="ajax-request" autocomplete="off">
+                                                                <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.START" checked>
+                                                                <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.STOP">
+                                                                <button type="submit" class="btn-transparent-bg video-overlay-record-icon" title="Toggle Video Recording">
+                                                                    <i class="fad fa-record-vinyl" style="--fa-secondary-color:red;--fa-secondary-opacity: 1.0;  "></i>
+                                                                </button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <video class="rounded centered embed-responsive-item controls device-video" id="remotevideo-@device.Id" autoplay playsinline></video>
@@ -227,7 +245,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/6.4.0/adapter.min.js" ></script>
     <script type="text/javascript" src="~/js/janus.js" ></script>
     <script type="text/javascript" src="~/js/streamingtest.js"></script>
-    <script src='https://maps.googleapis.com/maps/api/js?@ViewData["GoogleAPIKey"]'></script>
+    <script src='https://maps.googleapis.com/maps/api/js?@ViewData["GoogleAPIKey"]s'></script>
     <script src="/lib/signalr/dist/browser/signalr.js"></script>
     <script type="text/javascript" src="~/js/dashboard.js" ></script>
     <script>

@@ -25,9 +25,13 @@ for details on configuring this project to bundle and minify static web assets. 
 }
 
 .device-video {
-    background: black;
+    background: rgba(120,120,120,0.4);
     width: 100%;
     display: block;
+}
+
+.telemetry-single-data {
+    padding: 5px;
 }
 
 .device-video-overlay {
@@ -37,7 +41,12 @@ for details on configuring this project to bundle and minify static web assets. 
     z-index: 1;
     color: white;
     background: rgba(0,0,0,0.4);
-    font-size: 25px;
+    font-size: 16px;
+}
+
+.vertical-align {
+    display: flex;
+    align-items: center;
 }
 
 .btn-transparent-bg {
@@ -49,11 +58,50 @@ for details on configuring this project to bundle and minify static web assets. 
 .video-overlay-bottom {
     position: absolute;
     bottom: 0;
+    width: 100%;
 }
 
 .video-overlay-top {
     position: absolute;
     top: 0;
+    height: 40px;
+    width: 100%;
+    border-radius: 4px;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.video-overlay-slightly-raised {
+    bottom: 50px
+}
+
+.video-overlay-circle {
+  height: 78px;
+  width: 148px;
+  font-size: 50px;
+  border-bottom-right-radius: 100px;
+  border-top-right-radius: 100px;
+  float: right;
+  background-color: rgba(0,0,0,0.5);
+  display: inline-flex;
+}
+
+.video-overlay-record-rectangle {
+  height: 78px;
+  width: 148px;
+  font-size: 50px;
+  border-bottom-left-radius: 100px;
+  border-top-left-radius: 100px;
+  float: right;
+  background-color: rgba(0,0,0,0.5);
+  display: inline-flex;
+}
+
+.video-overlay-photo-icon {
+    font-size: 35px;
+}
+
+.video-overlay-record-icon {
+    font-size: 45px;
 }
 
 .video-overlay-left {
@@ -61,9 +109,9 @@ for details on configuring this project to bundle and minify static web assets. 
     left: 0;
 }
 
-.video-overlay-right {
+.video-overlay-horizontal-centered {
     position: absolute;
-    right: 0;
+    left: 50%;
 }
 
 .video-overlay-centered {

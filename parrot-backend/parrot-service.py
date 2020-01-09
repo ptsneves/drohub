@@ -40,11 +40,14 @@ import olympe_deps
 from olympe.messages.ardrone3.Piloting import TakeOff, moveBy, Landing, moveTo, NavigateHome
 from olympe.messages.ardrone3.PilotingState import FlyingStateChanged, NavigateHomeStateChanged
 from olympe.messages.common.SettingsState import ProductSerialHighChanged, ProductSerialLowChanged
-from olympe.messages.common.CommonState import LinkSignalQuality
+from olympe.messages.common.Common import AllStates
 from olympe.enums.drone_manager import connection_state
 from olympe.enums.ardrone3.Piloting import MoveTo_Orientation_mode
 from olympe.messages.ardrone3.PilotingSettingsState import MaxTiltChanged
 from olympe.messages.skyctrl.CoPiloting import setPilotingSource
+
+from olympe.enums.camera import camera_mode
+from olympe.messages.camera import take_photo, set_camera_mode
 
 from olympe.tools.logger import TraceLogger, DroneLogger, ErrorCodeDrone
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -75,7 +78,7 @@ class ParrotSerialNumber():
         self._MSB_set = True
         if self._LSB_set:
             self.serial = msb + self._LSB
-            
+
 
     def setLSB(self, lsb):
         if self._LSB_set:
@@ -300,6 +303,17 @@ class RadioSignalContainer(DroneMessageContainerBase):
         self.log.debug(new_signal_quality)
         super().append(new_signal_quality)
 
+class CameraModeContainer(DroneMessageContainerBase):
+    def __init__(self, drone_serial):
+        super().__init__(drone_serial)
+        self._camera_mode = None
+
+    def append(self, new_mode):
+        self._camera_mode = new_mode
+
+    def getElement(self):
+        self._camera_mode
+
 class FileListContainer(DroneMessageContainerBase):
     def __init__(self, drone_serial):
         super().__init__(drone_serial)
@@ -444,8 +458,14 @@ class DroneRPC(LogHelper):
         self.radio_signal_container = RadioSignalContainer(self.serial)
         self.flying_state_container = FlyingStateContainer(self.serial)
         self.file_list_container = FileListContainer(self.serial)
+        self.camera_mode_container = CameraModeContainer(self.serial)
         self.drone = DronePersistentConnection(self._drone_type, callbacks=[self.cb1])
         self.log.info("DroneRPC initialized")
+
+        self.drone.getDrone()(AllStates())
+        self.drone.getDrone()(set_camera_mode(0, camera_mode.photo))
+        self.camera_mode_container.append(camera_mode.photo)
+
         return self
 
     def __exit__(self, type, value, traceback):
@@ -468,6 +488,12 @@ class DroneRPC(LogHelper):
             self.flying_state_container.dispatchFlyingState(message)
         elif message.Full_Name == " Common_CommonState_MassStorageContent":
             self.file_list_container.dispatchFileList(message)
+        elif message.Full_Name == "Camera_Camera_states":
+            self.log.warning(message.state())
+        elif "Camera" in message.Full_Name or "camera" in message.Full_Name:
+            self.log.warning(message.Full_Name)
+            self.log.warning(message.state())
+
 
     def sendVideoTo(self, request):
         return self.video_encoder.sendVideoTo(self.drone.getIP(), request.rtp_url, request.video_type)
@@ -511,7 +537,7 @@ class DroneRPC(LogHelper):
 
     def doReturnToHome(self):
         self.log.warning("Returning to Home")
-        landing = self.drone.getDrone()(NavigateHome(start=1)
+        landing = self.drone.getDrone()(NavigateHome(start=0)
                                         >> NavigateHomeStateChanged(state='inProgress')
                                         ).wait()
         return DroneReply(
@@ -535,8 +561,58 @@ class DroneRPC(LogHelper):
             timestamp=int(time.time()),
             result=self.drone.checkDroneConnected())
 
+    def takePicture(self, request):
+        if request.action_type == ActionType.START:
+            self.log.info("Take picture start")
+            if self.camera_mode_container.getElement() != camera_mode.photo:
+                self.drone.getDrone()(set_camera_mode(0, camera_mode.photo) & take_photo(0))
+            else:
+                self.drone.getDrone()(take_photo(0))
+        elif request.action_type == ActionType.STOP:
+            self.log.info("Take picture stop")
+            self.log.info("Take picture start")
+            if self.camera_mode_container.getElement() != camera_mode.photo:
+                self.drone.getDrone()(set_camera_mode(0, camera_mode.photo) & stop_photo(0))
+            else:
+                self.drone.getDrone()(stop_photo(0))
+        else:
+            self.log.info("No action {}".format(request))
+            return DroneReply(
+                serial=self.serial.Get(),
+                timestamp=int(time.time()),
+                result=False)
+
+        return DroneReply(
+            serial=self.serial.Get(),
+            timestamp=int(time.time()),
+            result=True)
+
+    def recordVideo(self, request):
+        if request.action_type == ActionType.START:
+            self.log.info("Toggling video recording start")
+            if self.camera_mode_container.getElement() != camera_mode.recording:
+                self.drone.getDrone()(set_camera_mode(0, camera_mode.recording) & start_recording(0))
+            else:
+                self.drone.getDrone()(start_recording(0))
+        elif request.action_type == ActionType.STOP:
+            self.log.info("Toggling video recording stop")
+            if self.camera_mode_container.getElement() != camera_mode.recording:
+                self.drone.getDrone()(set_camera_mode(0, camera_mode.recording) & stop_recording(0))
+            else:
+                self.drone.getDrone()(stop_recording(0))
+        else:
+            return DroneReply(
+                serial = self.serial.Get(),
+                timestamp=int(time.time()),
+                result=False)
+
+        return DroneReply(
+            serial=self.serial.Get(),
+            timestamp=int(time.time()),
+            result=True)
+
     def getFileList(self, request):
-        self.file_list_container.getFileList()
+        return self.file_list_container.getFileList()
 
     def getFileListStream(self, request):
         elements = self.file_list_container.getElement()

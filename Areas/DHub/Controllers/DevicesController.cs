@@ -340,6 +340,37 @@ namespace DroHub.Areas.DHub.Controllers
             }
             return Ok(); ;
         }
+
+        [HttpPost]
+        public async Task<IActionResult> TakePicture(int id, [Bind("ActionType")]DroneTakePictureRequest request) {
+            var device = await getDeviceById(id);
+            var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
+            if (rpc_session != null && request != null)
+            {
+                using (var client = rpc_session.getClient<Drone.Client>(_logger))
+                {
+                    await client.Client.takePictureAsync(request, CancellationToken.None);
+                }
+                return Ok();
+            }
+            return Ok();
+        }
+
+        public async Task<IActionResult> RecordVideo(int id, [Bind("ActionType")]DroneRecordVideoRequest request)
+        {
+            var device = await getDeviceById(id);
+            var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
+            if (rpc_session != null && request != null)
+            {
+                using (var client = rpc_session.getClient<Drone.Client>(_logger))
+                {
+                    await client.Client.recordVideoAsync(request, CancellationToken.None);
+                }
+                return Ok();
+            }
+            return Ok();
+        }
+
         public async Task<IActionResult> GetFileList(int id) {
             var device = await getDeviceById(id);
             var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
