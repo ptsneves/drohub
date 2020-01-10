@@ -532,6 +532,18 @@ $(function () {
     JanusVideoClass.init();
     MapClass.init();
     TelemetryClass.init(SignalRConnectionClass.getConnection(), MapClass);
+
+    $('a[data-toggle="drone-control-box"]').each(function () {
+        $(this).click(function () {
+            $(this).toggleClass('plus-right');
+            $(this).toggleClass('minus-right');
+            $(`div.drone-control-box[data-serial="${$(this).data('serial')}"]`).each(
+                function () {
+                    $(this).boxWidget('toggle');
+                }
+            )
+        });
+    })
     //test
     // test_connection = SignalRConnectionClass.getConnection();
     // for (i = 0; i < 10; i++) {

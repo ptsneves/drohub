@@ -66,7 +66,7 @@
             <div class="box" style="border-top: 4px solid #@ColourValues[device.Id % ColourValues.Length]" id="devices-box-@device.Name">
                 <div class="box-header with-border">
                     <h3 class="box-title">
-                        <i class="fa fa-paper-plane text-muted blinking telemetry-single-data flying-state-text" data-renderer="renderPlaneIcon" data-serial="@device.SerialNumber" data-telemetry='@flying_state_initial'></i>
+                        <i class="fas fa-drone-alt text-muted blinking telemetry-single-data flying-state-text" data-renderer="renderPlaneIcon" data-serial="@device.SerialNumber" data-telemetry='@flying_state_initial'></i>
                         @device.Name</h3>
                     <div class="box-tools pull-right">
                         <span class="label label-primary" id="status-@device.Id"></span>
@@ -100,13 +100,13 @@
                     </div>
 
                         <div class="row body">
-                        <div class="col-md-4">
-                            <div class="google-map" data-serial="@device.SerialNumber" style="border: 1px solid black"></div>
-                            <select class="js-example-basic-single " style="width: 100%;">
-                                <option title="Move to Position">Move To Position</option>
-                            </select>
-                        </div>
-                            <div class="col-md-8">
+                            <div class="col-md-4 small-gutter">
+                                <div class="google-map" data-serial="@device.SerialNumber" style="border: 1px solid black"></div>
+                                <select class="js-example-basic-single " style="width: 100%;">
+                                    <option title="Move to Position">Move To Position</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8 small-gutter">
                                 <div id="box-body-@device.Id">
                                     <div class="webrtc-video" data-serial="@device.SerialNumber">
                                         <div class="embed-responsive embed-responsive-16by9" id="stream-@device.Id">
@@ -140,7 +140,7 @@
                                                     </button>
                                                 </div> *@
                                                 <div class="video-overlay-bottom">
-                                                    <div class="row">
+                                                    <div class="row" style="bottom: 15px; position:relative">
                                                         <div class="col-md-3">
                                                             <div class="">
                                                                 <form method="post" action="@toggle_record_video_action_url" data-toggle="ajax-request" autocomplete="off">
@@ -173,9 +173,24 @@
                                                             </div>
                                                         </div>
                                                     </div>
+                                                    <div class="row video-overlay-centered">
+                                                        <a href="#" data-toggle="drone-control-box" class="btn-transparent-bg link-unstyled video-overlay-controls-toggle plus-right" data-serial="@device.SerialNumber" >
+                                                                Open Controls
+                                                        </a>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <video class="rounded centered embed-responsive-item controls device-video" id="remotevideo-@device.Id" autoplay playsinline></video>
+                                        </div>
+                                        <div class="box collapsed-box drone-control-box" data-serial="@device.SerialNumber">
+                                            <div class="box-body">
+                                                <div class="row">
+                                                    <div class="col-md-3">1</div>
+                                                    <div class="col-md-3">1</div>
+                                                    <div class="col-md-3">1</div>
+                                                    <div class="col-md-3">1</div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -245,7 +260,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/6.4.0/adapter.min.js" ></script>
     <script type="text/javascript" src="~/js/janus.js" ></script>
     <script type="text/javascript" src="~/js/streamingtest.js"></script>
-    <script src='https://maps.googleapis.com/maps/api/js?@ViewData["GoogleAPIKey"]s'></script>
+    <script src='https://maps.googleapis.com/maps/api/js?@ViewData["GoogleAPIKey"]'></script>
     <script src="/lib/signalr/dist/browser/signalr.js"></script>
     <script type="text/javascript" src="~/js/dashboard.js" ></script>
     <script>

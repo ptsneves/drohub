@@ -24,6 +24,10 @@ for details on configuring this project to bundle and minify static web assets. 
     }
 }
 
+.small-gutter {
+    padding:7px;
+}
+
 .device-video {
     background: rgba(120,120,120,0.4);
     width: 100%;
@@ -66,7 +70,7 @@ for details on configuring this project to bundle and minify static web assets. 
     top: 0;
     height: 40px;
     width: 100%;
-    border-radius: 4px;
+    border-radius: 6px;
     background-color: rgba(0,0,0,0.5);
 }
 
@@ -114,8 +118,37 @@ for details on configuring this project to bundle and minify static web assets. 
     left: 50%;
 }
 
+.video-overlay-controls-toggle {
+    background-color: rgba(0,0,0,0.5);
+    display: inline-block;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    padding-block: 10px;
+    padding-inline: 45px;
+
+}
+
 .video-overlay-centered {
-    position: absolute;
-    top: 50%;
-    left: 50%;
+    text-align: center;
+}
+
+.plus-right::after {
+    content: '\f067';
+    padding-left: 10px;
+    font-weight: 900;
+    font-size: 16px;
+    font-family: "Font Awesome 5 Pro";
+}
+
+.minus-right::after {
+    content: '\f068';
+    padding-left: 10px;
+    font-weight: 900;
+    font-size: 16px;
+    font-family: "Font Awesome 5 Pro";
+}
+
+.link-unstyled, .link-unstyled:link, .link-unstyled:hover {
+  color: inherit;
+  visibility: visible;
 }
