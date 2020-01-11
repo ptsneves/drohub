@@ -21,8 +21,8 @@ public class MainActivity extends GroundSdkActivityBase {
         _web_view = findViewById(R.id.webview);
         WebSettings webSettings = _web_view.getSettings();
         webSettings.setJavaScriptEnabled(true);
-        webSettings.setAppCacheEnabled(false);
-        _web_view.loadUrl("https://drohub.airborneprojects.com");
+        _web_view.setWebContentsDebuggingEnabled(true);
+        _web_view.loadUrl("http://192.168.1.106:5000");
         _web_view.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url){
