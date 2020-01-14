@@ -12,42 +12,6 @@ namespace DroHub.Tests.TestInfrastructure
 {
    class DroneDeviceHelper
     {
-        static void hack()
-        {
-            // use reflection to remove IsRequestRestricted from headerInfo hash table
-            Assembly a = typeof(WebHeaderCollection).Assembly;
-            Console.WriteLine(a.GetType("System.Net.HeaderInfoTable", true, true) == null);
-            foreach (FieldInfo f in a.GetType("System.Net.HeaderInfoTable").GetFields(BindingFlags.NonPublic | BindingFlags.Static))
-            {
-                Console.WriteLine(f.Name);
-                if (f.Name == "s_headerHashTable")
-                {
-                    Console.WriteLine("Hey1");
-                    Hashtable hashTable = f.GetValue(null) as Hashtable;
-                    foreach (string sKey in hashTable.Keys)
-                    {
-
-                        object headerInfo = hashTable[sKey];
-                        Console.WriteLine(String.Format("{0}: {1}", sKey, hashTable[sKey]));
-                        foreach (FieldInfo g in a.GetType("System.Net.HeaderInfo").GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
-                        {
-
-                            if (g.Name == "IsRequestRestricted")
-                            {
-                                bool b = (bool)g.GetValue(headerInfo);
-                                if (b)
-                                {
-                                    g.SetValue(headerInfo, false);
-                                    Console.WriteLine(sKey + "." + g.Name + " changed to false");
-                                }
-
-                            }
-                        }
-
-                    }
-                }
-            }
-        }
         public delegate Task DroneTestDelegate();
         public static async Task mockDrone(DroHubFixture fixture, DroneRPC drone_rpc, string device_serial, DroneTestDelegate test_delegate)
         {
