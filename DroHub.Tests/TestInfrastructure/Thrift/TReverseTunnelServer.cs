@@ -40,7 +40,6 @@ public class TReverseTunnelServer : Thrift.Transport.TServerTransport, IDisposab
         {
 
             var r = await _parent._transport.ReadAsync(buffer, offset, length, cancellationToken);
-            _parent.fileStream.Write(buffer, offset, r);
             // UTF8Encoding utf8 = new UTF8Encoding();
             // Console.WriteLine($"Tunnel Read {string.Format("0x{0:X}", buffer[0])} !! {utf8.GetString(buffer, offset, length)}");
             // if (buffer[0] == 0x1)
@@ -63,11 +62,8 @@ public class TReverseTunnelServer : Thrift.Transport.TServerTransport, IDisposab
     internal bool _is_accepting;
     private bool _is_disposed;
 
-    private readonly FileStream fileStream;
     public TReverseTunnelServer(TTransport transport, int acceptable_clients = 10)
     {
-        
-        fileStream = new FileStream("/tmp/tunnel", FileMode.Create, FileAccess.Write);
         _transport = transport;
         _accepted_workers = new BlockingCollection<object>(acceptable_clients);
         _is_accepting = false;
@@ -107,7 +103,6 @@ public class TReverseTunnelServer : Thrift.Transport.TServerTransport, IDisposab
     {
         if (!_is_disposed)
         {
-            fileStream.Dispose();
             _is_accepting = false;
             _accepted_workers.Dispose();
             _is_disposed = true;
