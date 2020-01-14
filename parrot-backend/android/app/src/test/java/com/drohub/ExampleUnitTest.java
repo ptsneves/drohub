@@ -1,5 +1,8 @@
 package com.drohub;
 
+
+import com.drohub.thrift.ThriftConnection;
+
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -11,7 +14,11 @@ import static org.junit.Assert.*;
  */
 public class ExampleUnitTest {
     @Test
-    public void addition_isCorrect() {
-        assertEquals(4, 2 + 2);
+    public void addition_isCorrect() throws InterruptedException {
+        ThriftConnection c = new ThriftConnection();
+        System.out.println("Hello workd");
+        c.onStart("PI040416BA8H083705", "ws://localhost:5000/ws");
+        Thread.sleep(20000);
+        c.onStop();
     }
 }

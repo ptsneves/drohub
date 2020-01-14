@@ -25,7 +25,16 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    sourceSets {
+        main.java.srcDirs += '/home/pneves/Projects/drohub/DroHub/RPCInterfaces/gen-java'
+    }
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+    }
 }
+
+
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -37,4 +46,6 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
     implementation 'com.parrot.drone.groundsdk:groundsdk:1.1.2'
     runtimeOnly 'com.parrot.drone.groundsdk:arsdkengine:1.1.2'
+    implementation 'org.apache.thrift:libthrift:0.13.0'
+    implementation 'org.java-websocket:Java-WebSocket:1.4.0'
 }

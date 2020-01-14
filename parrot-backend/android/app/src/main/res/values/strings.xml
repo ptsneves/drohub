@@ -1,2 +1,4 @@
 <resources>
+    <string name="drohub_ws_url">ws://192.168.1.106:5000/ws</string>
+    <string name="drohub_url">http://192.168.1.106:5000</string>
 </resources>

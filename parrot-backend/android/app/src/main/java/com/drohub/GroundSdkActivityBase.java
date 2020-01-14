@@ -49,6 +49,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import com.drohub.thrift.ThriftConnection;
 import com.google.android.material.snackbar.Snackbar;
 import com.parrot.drone.groundsdk.GroundSdk;
 import com.parrot.drone.groundsdk.ManagedGroundSdk;
@@ -89,6 +90,7 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
 
     /** Ground SDK interface. */
     private GroundSdk mGroundSdk;
+    private ThriftConnection _thrift_connection;
 
     /**
      * Gets GroundSDK interface.
@@ -101,9 +103,11 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
     }
     private Drone _drone;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        _thrift_connection = new ThriftConnection();
 
         mGroundSdk = ManagedGroundSdk.obtainSession(this);
         if (mGroundSdk == null) {
@@ -151,8 +155,12 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
             if (temp_drone == null)
                 return;
 
-            _drone = temp_drone;
-            ULog.w(TAG, "Drone UID " + _drone.getUid());
+            if (auto_connection.getStatus() == AutoConnection.Status.STARTED) {
+                _drone = temp_drone;
+
+                ULog.w(TAG, "Drone UID " + _drone.getUid());
+                _thrift_connection.onStart(_drone.getUid(), this.getString(R.string.drohub_ws_url));
+            }
         });
     }
 
@@ -180,6 +188,7 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
     @Override
     protected void onStop() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mGamepadEventReceiver);
+        _thrift_connection.onStop();
         ULog.w(TAG, "Stopping activity");
         super.onStop();
     }

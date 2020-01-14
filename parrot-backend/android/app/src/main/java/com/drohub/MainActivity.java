@@ -22,7 +22,7 @@ public class MainActivity extends GroundSdkActivityBase {
         WebSettings webSettings = _web_view.getSettings();
         webSettings.setJavaScriptEnabled(true);
         _web_view.setWebContentsDebuggingEnabled(true);
-        _web_view.loadUrl("http://192.168.1.106:5000");
+        _web_view.loadUrl(this.getString(R.string.drohub_url));
         _web_view.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url){
