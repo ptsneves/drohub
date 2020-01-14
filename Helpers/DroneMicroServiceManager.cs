@@ -81,13 +81,15 @@ namespace DroHub.Helpers.Thrift
             CancellationToken token);
 
         protected async Task doDroneActionForEver<T>(ThriftMessageHandler handler,
-                    DeviceActionDelegate<T> del) where T : IDroneTelemetry
+                    DeviceActionDelegate<T> del, TimeSpan? delay_between_action = null) where T : IDroneTelemetry
         {
             string t_name = typeof(T).FullName;
             var token = _cancellation_token_source.Token;
             while (!token.IsCancellationRequested)
             {
                 await doDroneAction<T>(handler, del, token);
+                if (delay_between_action.HasValue)
+                    await Task.Delay(delay_between_action.Value, token);
             }
             _logger.LogInformation($"Stopping {t_name} service because we received a cancellation request");
         }
@@ -122,10 +124,9 @@ namespace DroHub.Helpers.Thrift
             {
                 var result = await client.pingServiceAsync(token);
                 result.ActionName = "ping service";
-                await Task.Delay(5000);
                 return result;
             });
-            await doDroneActionForEver<DroneReply>(handler, del);
+            await doDroneActionForEver<DroneReply>(handler, del, TimeSpan.FromSeconds(5));
         }
 
         private async Task GatherPosition(ThriftMessageHandler handler) {
@@ -207,7 +208,7 @@ namespace DroHub.Helpers.Thrift
 
             try
             {
-                await doDroneActionForEver<DroneVideoStateResult>(handler, video_state_poller);
+                await doDroneActionForEver<DroneVideoStateResult>(handler, video_state_poller, TimeSpan.FromSeconds(5));
             }
             finally
             {
