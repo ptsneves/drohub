@@ -32,8 +32,35 @@
   ~
   -->
 
-<resources>
-    <color name="color_primary">#3F51B5</color>
-    <color name="color_primary_dark">#303F9F</color>
-    <color name="color_accent">#FF4081</color>
-</resources>
+<vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="2dp"
+    android:height="22dp"
+    android:viewportWidth="10.124996"
+    android:viewportHeight="78.36488">
+    <path
+        android:fillAlpha="1"
+        android:fillColor="#a8a8a8"
+        android:pathData="m11.159,0.014c0.119,8.51 -10.243,11.013 -10.126,22.299l0.126,16.02 -0.159,15.938c0.044,9.817 10.492,13.495 10.159,24.063"
+        android:strokeWidth="2"
+        android:strokeAlpha="1"
+        android:strokeColor="#808080"
+        android:strokeLineCap="butt"
+        android:strokeLineJoin="miter"/>
+    <path
+        android:fillColor="#00000000"
+        android:pathData="m7.575,30.583c0,15.75 0,15.75 0,15.75"
+        android:strokeWidth="1"
+        android:strokeAlpha="1"
+        android:strokeColor="#808080"
+        android:strokeLineCap="butt"
+        android:strokeLineJoin="miter"/>
+    <path
+        android:fillColor="#00000000"
+        android:pathData="m4.9,30.583c0,15.75 0,15.75 0,15.75"
+        android:strokeWidth="1"
+        android:strokeAlpha="1"
+        android:strokeColor="#808080"
+        android:strokeLineCap="butt"
+        android:strokeLineJoin="miter"/>
+</vector>

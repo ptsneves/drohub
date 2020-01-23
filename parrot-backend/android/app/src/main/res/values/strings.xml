@@ -1,4 +1,94 @@
-<resources>
-    <string name="drohub_ws_url">ws://192.168.1.106:5000/ws</string>
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  ~     Copyright (C) 2019 Parrot Drones SAS
+  ~
+  ~     Redistribution and use in source and binary forms, with or without
+  ~     modification, are permitted provided that the following conditions
+  ~     are met:
+  ~     * Redistributions of source code must retain the above copyright
+  ~       notice, this list of conditions and the following disclaimer.
+  ~     * Redistributions in binary form must reproduce the above copyright
+  ~       notice, this list of conditions and the following disclaimer in
+  ~       the documentation and/or other materials provided with the
+  ~       distribution.
+  ~     * Neither the name of the Parrot Company nor the names
+  ~       of its contributors may be used to endorse or promote products
+  ~       derived from this software without specific prior written
+  ~       permission.
+  ~
+  ~     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  ~     "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  ~     LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+  ~     FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+  ~     PARROT COMPANY BE LIABLE FOR ANY DIRECT, INDIRECT,
+  ~     INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+  ~     BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+  ~     OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+  ~     AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  ~     OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  ~     OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  ~     SUCH DAMAGE.
+  ~
+  -->
+
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="drohub_url">http://192.168.1.106:5000</string>
+    <string name="title_dialog_animation_choice">Choose animation</string>
+    <string name="title_dialog_flip_direction_choice">Choose flip direction</string>
+    <string name="no_value">--</string>
+    <string name="distance_format">%1$.2f m</string>
+    <string name="battery_level_format">%1$d %%</string>
+    <string name="animation_candle_format">
+        CANDLE [speed: %1$.2f m/s, vertical-distance: %2$.2f m, mode: %3$s]
+    </string>
+    <string name="animation_dolly_slide_format">
+        DOLLY_SLIDE [speed: %1$.2f m/s, angle: %2$.1f °, horizontal-distance: %3$.2f m, mode: %4$s]
+    </string>
+    <string name="animation_dronie_format">
+        DRONIE [speed: %1$.2f m/s, distance: %2$.2f m, mode: %3$s]
+    </string>
+    <string name="animation_flip_format">
+        FLIP [direction: %1$s]
+    </string>
+    <string name="animation_horizontal_panorama_format">
+        HORIZONTAL PANORAMA [angle: %1$.1f °, speed: %2$.2f °/s]
+    </string>
+    <string name="animation_horizontal_reveal_format">
+        HORIZONTAL REVEAL [speed: %1$.2f m/s, distance: %2$.2f m, mode: %3$s]
+    </string>
+    <string name="animation_parabola_format">
+        PARABOLA [speed: %1$.2f m/s, vertical-distance: %2$.2f m, mode: %3$s]
+    </string>
+    <string name="animation_spiral_format">
+        SPIRAL [speed: %1$.2f m/s, radius-variation: %2$.1f, vertical-distance: %3$.2f m, revolution-amount: %4$.1f
+        , mode: %5$s]
+    </string>
+    <string name="animation_vertical_reveal_format">
+        VERTICAL_REVEAL [vertical-speed: %1$.2f m/s, vertical_distance: %2$.2f m, rotation-angle: %3$.1f °
+        , rotation_speed: %4$.2f °/s, mode: %5$s]
+    </string>
+    <string name="animation_vertigo_format">
+        VERTIGO [duration: %1$d s, max-zoom: %2$.2f, finish-action: %3$s, mode: %4$s]
+    </string>
+    <string name="animation_twist_up_format">
+        TWIST_UP [vertical-speed: %1$.2f m/s, vertical_distance: %2$.2f m, rotation-angle: %3$.1f °
+        , rotation_speed: %4$.2f °/s, mode: %5$s]
+    </string>
+    <string name="animation_position_twist_up_format">
+        POSITION_TWIST_UP [vertical-speed: %1$.2f m/s, vertical_distance: %2$.2f m, rotation-angle: %3$.1f °
+        , rotation_speed: %4$.2f °/s, mode: %5$s]
+    </string>
+    <string name="animation_horizontal_180_photo_panorama_format">
+        HORIZONTAL_180_PHOTO_PANORAMA
+    </string>
+    <string name="animation_vertical_180_photo_panorama_format">
+        VERTICAL_180_PHOTO_PANORAMA
+    </string>
+    <string name="animation_spherical_photo_panorama_format">
+        SPHERICAL_PHOTO_PANORAMA
+    </string>
+    <string name="zoom_level_format">x%1$.2f</string>
+    <string name="zoom_velocity_format">%1$.2f tan(deg)/sec</string>
 </resources>
+

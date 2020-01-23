@@ -33,7 +33,20 @@
   -->
 
 <resources>
-    <color name="color_primary">#3F51B5</color>
-    <color name="color_primary_dark">#303F9F</color>
-    <color name="color_accent">#FF4081</color>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="throttle_line_half_thickness">1.5dp</dimen>
+    <dimen name="altimeter_step">8dp</dimen>
+    <dimen name="altimeter_corners">8dp</dimen>
+    <dimen name="altimeter_text_offset">2dp</dimen>
+    <dimen name="altimeter_line_radius">8dp</dimen>
+    <dimen name="altimeter_line_thickness">1.5dp</dimen>
+    <dimen name="altimeter_text_size">10sp</dimen>
+    <dimen name="attitude_line_thickness">1.5dp</dimen>
+    <dimen name="attitude_bank_index_offset">6dp</dimen>
+    <dimen name="attitude_big_bank_index_length">8dp</dimen>
+    <dimen name="attitude_small_bank_index_length">4dp</dimen>
+    <dimen name="attitude_pitch_index_thickness">0.5dp</dimen>
+    <dimen name="attitude_text_size">10sp</dimen>
+    <dimen name="attitude_pitch_text_offset">4dp</dimen>
+    <dimen name="debug_settings_drawer_width">240dp</dimen>
 </resources>

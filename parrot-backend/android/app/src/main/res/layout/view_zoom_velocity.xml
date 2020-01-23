@@ -10,7 +10,7 @@
   ~       notice, this list of conditions and the following disclaimer.
   ~     * Redistributions in binary form must reproduce the above copyright
   ~       notice, this list of conditions and the following disclaimer in
-  ~       the documentation and/or other materials provided with the
+  ~       the documentation and/or other materials provided with the 
   ~       distribution.
   ~     * Neither the name of the Parrot Company nor the names
   ~       of its contributors may be used to endorse or promote products
@@ -24,7 +24,7 @@
   ~     PARROT COMPANY BE LIABLE FOR ANY DIRECT, INDIRECT,
   ~     INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
   ~     BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-  ~     OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+  ~     OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
   ~     AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
   ~     OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
   ~     OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
@@ -32,8 +32,30 @@
   ~
   -->
 
-<resources>
-    <color name="color_primary">#3F51B5</color>
-    <color name="color_primary_dark">#303F9F</color>
-    <color name="color_accent">#FF4081</color>
-</resources>
+<merge
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    tools:parentTag="android.widget.RelativeLayout">
+
+    <TextView
+        android:id="@android:id/summary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:gravity="center_vertical|end"
+        tools:text="0.0 tan(deg)/sec"/>
+
+    <SeekBar
+        android:id="@android:id/progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@android:id/summary"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:max="100"
+        android:progress="50"/>
+</merge>

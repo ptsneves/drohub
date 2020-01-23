@@ -43,12 +43,7 @@ public class ThriftConnection {
         args.inputProtocolFactory(message_validator_factory);
         args.outputProtocolFactory(message_validator_factory);
         server_engine = new TSimpleServer(args);
-        _server_thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                server_engine.serve();
-            }
-        });
+        _server_thread = new Thread(() -> server_engine.serve());
         _server_thread.start();
     }
 
