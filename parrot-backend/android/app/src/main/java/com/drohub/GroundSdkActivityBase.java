@@ -44,6 +44,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -78,6 +79,7 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
 
     /** List of runtime permission we need. */
     private static final String[] PERMISSIONS_NEEDED = new String[] {
+            Manifest.permission.ACCESS_NETWORK_STATE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE, /* for ULog Recorder. */
             Manifest.permission.ACCESS_COARSE_LOCATION, /* to access BLE discovery results. */
             Manifest.permission.ACCESS_FINE_LOCATION,   /* for GPS location updates. */
@@ -103,6 +105,17 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
     }
     private Drone _drone;
 
+    protected void alertBox(String reason_to_finish) {
+        AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+        alertDialog.setTitle("Alert");
+        alertDialog.setMessage(reason_to_finish);
+        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                (dialog, which) -> {
+                    dialog.dismiss();
+                    finish();
+                });
+        alertDialog.show();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

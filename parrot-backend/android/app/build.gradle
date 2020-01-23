@@ -48,4 +48,5 @@ dependencies {
     runtimeOnly 'com.parrot.drone.groundsdk:arsdkengine:1.1.2'
     implementation 'org.apache.thrift:libthrift:0.13.0'
     implementation 'org.java-websocket:Java-WebSocket:1.4.0'
+    implementation 'org.webrtc:google-webrtc:1.0.30039'
 }

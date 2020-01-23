@@ -33,10 +33,14 @@
 package com.drohub;
 
 import android.animation.ObjectAnimator;
+import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.location.Location;
+import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.widget.ImageButton;
@@ -49,8 +53,8 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 
-import com.drohub.GroundSdkActivityBase;
-import com.drohub.R;
+import com.drohub.Janus.PeerConnectionClient;
+import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
 import com.drohub.hud.AltimeterView;
 import com.drohub.hud.Animations;
 import com.drohub.hud.AttitudeView;
@@ -86,12 +90,17 @@ import com.parrot.drone.groundsdk.facility.UserLocation;
 import com.parrot.drone.groundsdk.stream.GsdkStreamView;
 import com.parrot.drone.groundsdk.value.OptionalDouble;
 
+import org.webrtc.EglBase;
 
 
 /** Activity to pilot a copter. */
 public class CopterHudActivity extends GroundSdkActivityBase
         implements PickAnimationDialog.Listener, PickFlipDirectionDialog.Listener {
 
+    private static final String TAG = "CopterHudActivity";
+    private static final int CAPTURE_PERMISSION_REQUEST_CODE = 1;
+
+    private PeerConnectionClient peerConnectionClient;
     private View mDrawer;
 
     private View mContent;
@@ -537,6 +546,11 @@ public class CopterHudActivity extends GroundSdkActivityBase
                 mPilotingItf.setVerticalSpeed(speed);
             }
         });
+        MediaProjectionManager mediaProjectionManager =
+                (MediaProjectionManager) getApplication().getSystemService(
+                        Context.MEDIA_PROJECTION_SERVICE);
+        startActivityForResult(
+                mediaProjectionManager.createScreenCaptureIntent(), CAPTURE_PERMISSION_REQUEST_CODE);
     }
 
     @Override
@@ -612,4 +626,33 @@ public class CopterHudActivity extends GroundSdkActivityBase
         public void onDrawerStateChanged(int newState) {
         }
     };
+
+    public void init(Intent permission_data, int permission_code) {
+        try {
+            EglBase rootEglBase = EglBase.create();
+            PeerConnectionScreenShareParameters peerConnectionParameters = new PeerConnectionScreenShareParameters(
+                    getString(R.string.janus_websocket_uri), this, 360, 480, 30,
+                    "H264",
+                    0, "opus", false,
+                    permission_data,
+                    permission_code);
+            peerConnectionClient = new PeerConnectionClient(this, rootEglBase.getEglBaseContext(),
+                    peerConnectionParameters,  null, null);
+
+
+
+        }
+        catch (Exception e) {
+            Log.e(TAG, e.getStackTrace().toString());
+            alertBox(e.getMessage());
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode != CAPTURE_PERMISSION_REQUEST_CODE)
+            return;
+        init(data, resultCode);
+        Log.e(TAG, "Was called");
+    }
 }
