@@ -19,12 +19,10 @@ public class ThriftConnection {
     private TWebSocketClient tws;
     private TFramedTransport ft;
     private TReverseTunnelServer trts;
-    private Boolean is_started;
-    private TSimpleServer server_engine;
+    private TSimpleServer _server_engine;
     private Thread _server_thread;
 
     public void onStart(String drone_serial, String ws_url) {
-        is_started = true;
         HashMap<String, String> http_headers = new HashMap<>();
         http_headers.put("User-Agent", "AirborneProjects");
         http_headers.put("Content-Type", "application/x-thrift");
@@ -42,13 +40,24 @@ public class ThriftConnection {
         args.processor(new Drone.Processor(handler));
         args.inputProtocolFactory(message_validator_factory);
         args.outputProtocolFactory(message_validator_factory);
-        server_engine = new TSimpleServer(args);
-        _server_thread = new Thread(() -> server_engine.serve());
+        _server_engine = new TSimpleServer(args);
+        _server_thread = new Thread(() -> {
+            _server_engine.serve();
+        });
         _server_thread.start();
     }
 
     public void onStop() {
-        server_engine.stop();
+        if (_server_engine != null) {
+            _server_engine.stop();
+        }
+        if (_server_thread != null) {
+            try {
+                _server_thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         Log.w("ThriftConnection", "Stopped thrift connection");
     }
 }

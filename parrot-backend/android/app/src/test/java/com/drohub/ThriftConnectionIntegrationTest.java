@@ -12,13 +12,12 @@ import static org.junit.Assert.*;
  *
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
-public class ExampleUnitTest {
+public class ThriftConnectionIntegrationTest {
     @Test
-    public void addition_isCorrect() throws InterruptedException {
+    public void SimpleTest() throws InterruptedException {
         ThriftConnection c = new ThriftConnection();
-        System.out.println("Hello workd");
         c.onStart("PI040416BA8H083705", "ws://localhost:5000/ws");
-        Thread.sleep(20000);
+        Thread.sleep(5000);
         c.onStop();
     }
 }

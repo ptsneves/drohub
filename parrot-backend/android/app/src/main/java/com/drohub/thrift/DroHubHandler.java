@@ -13,7 +13,6 @@ public class DroHubHandler implements Drone.Iface {
     public DroHubHandler(String serial) {
         serial_number = serial;
         drone_reply = new ArrayBlockingQueue<DroneReply>(2);
-
     }
 
     @Override

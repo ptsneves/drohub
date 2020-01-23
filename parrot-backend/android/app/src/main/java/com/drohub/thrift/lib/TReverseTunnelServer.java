@@ -10,23 +10,22 @@ import java.nio.ByteBuffer;
 
 public class TReverseTunnelServer extends TServerTransport {
     private static final String TAG = "TReverseTunnel";
-    TTransport _transport;
-    ArrayBlockingQueue<Object> _accepted_workers;
-    Boolean _is_accepting;
+    private TTransport _transport;
+    private ArrayBlockingQueue<Object> _accepted_workers;
+    private boolean _is_stopped;
 
     public TReverseTunnelServer(TTransport transport, int acceptable_clients) {
         _transport = transport;
         _accepted_workers = new ArrayBlockingQueue<>(2);
-        _is_accepting = false;
+        _is_stopped = false;
 
     }
 
     @Override
     protected TTransport acceptImpl() throws TTransportException {
-        if (_is_accepting) {
+        if (!_is_stopped) {
             try {
-                _accepted_workers.put(new Boolean(true));
-//                _is_accepting = false;
+                _accepted_workers.put(true);
                 System.out.println("Accepted connection");
                 return _transport;
             }
@@ -43,8 +42,16 @@ public class TReverseTunnelServer extends TServerTransport {
     }
 
     @Override
+    public void interrupt() {
+        _is_stopped = true;
+        _transport.close();
+        super.interrupt();
+    }
+
+    @Override
     public void listen() throws TTransportException {
-        _transport.open();
-        _is_accepting = true;
+        if (!_is_stopped) {
+            _transport.open();
+        }
     }
 }

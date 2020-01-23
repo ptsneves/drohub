@@ -173,7 +173,7 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
 
                 ULog.w(TAG, "Drone UID " + _drone.getUid());
                 if (this instanceof MainActivity) {
-//                _thrift_connection.onStart(_drone.getUid(), this.getString(R.string.drohub_ws_url));
+                    _thrift_connection.onStart(_drone.getUid(), this.getString(R.string.drohub_ws_url));
                     Intent intent = new Intent(this, CopterHudActivity.class);
                     intent.putExtra(EXTRA_DEVICE_UID, _drone.getUid());
                     this.startActivity(intent);
@@ -207,7 +207,8 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
     @Override
     protected void onStop() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mGamepadEventReceiver);
-//        _thrift_connection.onStop();
+        if (_thrift_connection != null)
+            _thrift_connection.onStop();
         ULog.w(TAG, "Stopping activity");
         super.onStop();
     }
