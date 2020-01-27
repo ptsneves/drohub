@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Newtonsoft.Json;
 using DroHub.Areas.DHub.Models;
-public sealed partial class DroneVideoStateResult : IDroneTelemetry
+public sealed partial class DroneLiveVideoStateResult : IDroneTelemetry
 {
     public int Id { get; set; }
     [JsonIgnore]

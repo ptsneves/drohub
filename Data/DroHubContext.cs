@@ -25,7 +25,7 @@ namespace DroHub.Data
 
         public DbSet<DroneFlyingState> DroneFlyingStates { get; set; }
         public DbSet<DroneReply> DroneReplies { get; set; }
-        public DbSet<DroneVideoStateResult> DroneVideoStatesResults { get; set; }
+        public DbSet<DroneLiveVideoStateResult> DroneVideoStatesResults { get; set; }
         public DbSet<UserDevice> UserDevices { get; set; }
         //public DbSet<DeviceSettings> DeviceSettings { get; set; }
 
@@ -82,7 +82,7 @@ namespace DroHub.Data
             builder.Entity<DroneReply>()
                 .HasIndex(d => d.Serial);
 
-            builder.Entity<DroneVideoStateResult>()
+            builder.Entity<DroneLiveVideoStateResult>()
                 .HasIndex(d => d.Serial);
 
             builder.Entity<LogEntry>()
@@ -123,7 +123,7 @@ namespace DroHub.Data
                 .HasForeignKey(p => p.Serial)
                 .HasPrincipalKey(d => d.SerialNumber);
 
-            builder.Entity<DroneVideoStateResult>()
+            builder.Entity<DroneLiveVideoStateResult>()
                 .HasOne(p => p.Device)
                 .WithMany(d => d.drone_video_states)
                 .HasForeignKey(p => p.Serial)

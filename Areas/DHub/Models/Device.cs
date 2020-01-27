@@ -25,11 +25,6 @@ namespace DroHub.Areas.DHub.Models
         [Display(Name = "Registration Date")]
         public DateTime CreationDate { get; set; }
         public string LiveVideoSecret { get; set; }
-        public string LiveVideoRTPUrl { get; set; }
-        public int LiveVideoPt { get; set; }
-        public string LiveVideoRTPMap { get; set; }
-        public string LiveVideoFMTProfile { get; set; }
-
         public IList<UserDevice> UserDevices { get; set; }
 
         public ICollection<DronePosition> positions { get; set; }
@@ -37,7 +32,7 @@ namespace DroHub.Areas.DHub.Models
         public ICollection<DroneRadioSignal> radio_signals { get; set; }
         public ICollection<DroneFlyingState> flying_states { get; set; }
         public ICollection<DroneReply> drone_replies { get; set; }
-        public ICollection<DroneVideoStateResult> drone_video_states { get; set; }
+        public ICollection<DroneLiveVideoStateResult> drone_video_states { get; set; }
 
     }
 }

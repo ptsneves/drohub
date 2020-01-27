@@ -1,7 +1,9 @@
 package com.drohub.thrift;
 
+import android.content.Intent;
 import android.util.Log;
 
+import com.drohub.GroundSdkActivityBase;
 import com.drohub.thift.gen.Drone;
 import com.drohub.thrift.lib.TMessageValidatorProtocol;
 import com.drohub.thrift.lib.TReverseTunnelServer;
@@ -9,45 +11,56 @@ import com.drohub.thrift.lib.TWebSocketClient;
 
 import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
-import org.apache.thrift.server.TServer;
-import org.apache.thrift.server.TSimpleServer;
+import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TFramedTransport;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 public class ThriftConnection {
     private TWebSocketClient tws;
     private TFramedTransport ft;
     private TReverseTunnelServer trts;
-    private TSimpleServer _server_engine;
+    private TThreadPoolServer _server_engine;
+    private  DroHubHandler drohub_handler;
     private Thread _server_thread;
 
-    public void onStart(String drone_serial, String ws_url) {
+    public void onStart(String drone_serial, String thrift_ws_url, String janus_websocket_uri,
+                        GroundSdkActivityBase activity) throws IOException {
+
         HashMap<String, String> http_headers = new HashMap<>();
         http_headers.put("User-Agent", "AirborneProjects");
         http_headers.put("Content-Type", "application/x-thrift");
         http_headers.put("x-device-expected-serial", drone_serial);
-        tws = new TWebSocketClient(ws_url, http_headers);
-        ft = new TFramedTransport(tws);
-        trts = new TReverseTunnelServer(ft, 1);
-        TProtocolFactory message_validator_factory = new TMessageValidatorProtocol.Factory(new TJSONProtocol.Factory(),
+        tws = new TWebSocketClient(thrift_ws_url, http_headers);
+        trts = new TReverseTunnelServer(tws, 6);
+        TProtocolFactory message_validator_factory = new TMessageValidatorProtocol.Factory(
+                new TJSONProtocol.Factory(),
                 TMessageValidatorProtocol.ValidationModeEnum.KEEP_READING,
                 TMessageValidatorProtocol.OperationModeEnum.SEQID_SLAVE);
 
-        DroHubHandler handler = new DroHubHandler(drone_serial);
-        TServer.AbstractServerArgs args = new TServer.Args(trts);
+        drohub_handler = new DroHubHandler(drone_serial, janus_websocket_uri, activity);
+        TThreadPoolServer.Args args = new TThreadPoolServer.Args(trts);
+        args.minWorkerThreads(6);
+        args.maxWorkerThreads(6);
 
-        args.processor(new Drone.Processor(handler));
+        args.processor(new Drone.Processor(drohub_handler));
         args.inputProtocolFactory(message_validator_factory);
         args.outputProtocolFactory(message_validator_factory);
-        _server_engine = new TSimpleServer(args);
+        _server_engine = new TThreadPoolServer(args);
         _server_thread = new Thread(() -> {
             _server_engine.serve();
         });
         _server_thread.start();
     }
 
+    public void handleActivityResult(int requestCode, int resultCode, Intent data) {
+        if (drohub_handler != null)
+            drohub_handler.handleCapturePermissionCallback(requestCode, resultCode, data);
+    }
+
     public void onStop() {
+        Log.w("ThriftConnection", "Stoping thrift connection");
         if (_server_engine != null) {
             _server_engine.stop();
         }

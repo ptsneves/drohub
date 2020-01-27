@@ -54,7 +54,6 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 
 import com.drohub.Janus.PeerConnectionClient;
-import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
 import com.drohub.hud.AltimeterView;
 import com.drohub.hud.Animations;
 import com.drohub.hud.AttitudeView;
@@ -65,6 +64,8 @@ import com.drohub.hud.PickAnimationDialog;
 import com.drohub.hud.PickFlipDirectionDialog;
 import com.drohub.hud.ZoomLevelView;
 import com.drohub.hud.ZoomVelocityView;
+import com.drohub.thrift.DroHubHandler;
+import com.drohub.thrift.ThriftConnection;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.instrument.Alarms;
 import com.parrot.drone.groundsdk.device.instrument.Altimeter;
@@ -89,8 +90,11 @@ import com.parrot.drone.groundsdk.device.pilotingitf.animation.Flip;
 import com.parrot.drone.groundsdk.facility.UserLocation;
 import com.parrot.drone.groundsdk.stream.GsdkStreamView;
 import com.parrot.drone.groundsdk.value.OptionalDouble;
+import com.parrot.drone.sdkcore.ulog.ULog;
 
 import org.webrtc.EglBase;
+
+import java.io.IOException;
 
 
 /** Activity to pilot a copter. */
@@ -98,9 +102,7 @@ public class CopterHudActivity extends GroundSdkActivityBase
         implements PickAnimationDialog.Listener, PickFlipDirectionDialog.Listener {
 
     private static final String TAG = "CopterHudActivity";
-    private static final int CAPTURE_PERMISSION_REQUEST_CODE = 1;
 
-    private PeerConnectionClient peerConnectionClient;
     private View mDrawer;
 
     private View mContent;
@@ -546,11 +548,18 @@ public class CopterHudActivity extends GroundSdkActivityBase
                 mPilotingItf.setVerticalSpeed(speed);
             }
         });
-        MediaProjectionManager mediaProjectionManager =
-                (MediaProjectionManager) getApplication().getSystemService(
-                        Context.MEDIA_PROJECTION_SERVICE);
-        startActivityForResult(
-                mediaProjectionManager.createScreenCaptureIntent(), CAPTURE_PERMISSION_REQUEST_CODE);
+
+        try {
+            _thrift_connection = new ThriftConnection();
+            _thrift_connection.onStart(mDrone.getUid(),
+                    getString(R.string.drohub_ws_url),
+                    getString(R.string.janus_websocket_uri),
+                    this);
+            Log.w("COPTER", "Started thrift connection");
+        }
+        catch (IOException e) {
+            Log.e("COPTER", e.getMessage());
+        }
     }
 
     @Override
@@ -558,6 +567,11 @@ public class CopterHudActivity extends GroundSdkActivityBase
         if (mStreamView != null) {
             mStreamView.setStream(null);
         }
+        if (_thrift_connection != null) {
+            _thrift_connection.onStop();
+            _thrift_connection = null;
+        }
+        Log.w(TAG, "Stopping activity");
         super.onDestroy();
     }
 
@@ -626,33 +640,4 @@ public class CopterHudActivity extends GroundSdkActivityBase
         public void onDrawerStateChanged(int newState) {
         }
     };
-
-    public void init(Intent permission_data, int permission_code) {
-        try {
-            EglBase rootEglBase = EglBase.create();
-            PeerConnectionScreenShareParameters peerConnectionParameters = new PeerConnectionScreenShareParameters(
-                    getString(R.string.janus_websocket_uri), this, 360, 480, 30,
-                    "H264",
-                    0, "opus", false,
-                    permission_data,
-                    permission_code);
-            peerConnectionClient = new PeerConnectionClient(this, rootEglBase.getEglBaseContext(),
-                    peerConnectionParameters,  null, null);
-
-
-
-        }
-        catch (Exception e) {
-            Log.e(TAG, e.getStackTrace().toString());
-            alertBox(e.getMessage());
-        }
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode != CAPTURE_PERMISSION_REQUEST_CODE)
-            return;
-        init(data, resultCode);
-        Log.e(TAG, "Was called");
-    }
 }

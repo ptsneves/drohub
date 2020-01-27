@@ -180,7 +180,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <video class="rounded centered embed-responsive-item controls device-video" id="remotevideo-@device.Id" autoplay playsinline></video>
+                                            <video class="rounded centered embed-responsive-item controls janus-video device-video" data-room-id="@device.Id" data-display-name="@device.SerialNumber" autoplay playsinline></video>
                                         </div>
                                         <div class="box collapsed-box drone-control-box" data-serial="@device.SerialNumber">
                                             <div class="box-body">
@@ -259,7 +259,7 @@
 @section Scripts {
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/6.4.0/adapter.min.js" ></script>
     <script type="text/javascript" src="~/js/janus.js" ></script>
-    <script type="text/javascript" src="~/js/streamingtest.js"></script>
+    <script type="text/javascript" src="~/js/videoroomtest.js"></script>
     <script src='https://maps.googleapis.com/maps/api/js?@ViewData["GoogleAPIKey"]'></script>
     <script type="text/javascript" src="~/js/dashboard.js" ></script>
     <script>

@@ -94,7 +94,7 @@ public class TReverseTunnelServer : Thrift.Transport.TServerTransport, IDisposab
             _accepted_workers.Add(null, cancellationToken);
             Console.WriteLine("accepting");
             var wrapper = new WrappedTransportForTunnel(this);
-            return new ValueTask<TTransport>(_transport);
+            return new ValueTask<TTransport>(wrapper);
         }
         throw new TTransportException(TTransportException.ExceptionType.NotOpen);
     }

@@ -207,7 +207,7 @@ namespace DroHub.Areas.DHub.Controllers
 
         public async Task<IActionResult> GetDroneVideoStateResults(int? id, int start_index, int end_index)
         {
-            LinqExtensions.IncludeTelemetryDelegate<DroneVideoStateResult> del = (source =>
+            LinqExtensions.IncludeTelemetryDelegate<DroneLiveVideoStateResult> del = (source =>
             {
                 return source.Select(d => d.drone_video_states);
             });

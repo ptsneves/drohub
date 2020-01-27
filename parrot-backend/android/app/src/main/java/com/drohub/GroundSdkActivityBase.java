@@ -39,6 +39,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
@@ -61,6 +62,7 @@ import com.parrot.drone.groundsdk.facility.AutoConnection;
 import com.parrot.drone.sdkcore.ulog.ULog;
 import com.parrot.drone.sdkcore.ulog.ULogTag;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -92,7 +94,7 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
 
     /** Ground SDK interface. */
     private GroundSdk mGroundSdk;
-    private ThriftConnection _thrift_connection;
+    protected ThriftConnection _thrift_connection;
 
     /**
      * Gets GroundSDK interface.
@@ -105,7 +107,7 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
     }
     private Drone _drone;
 
-    protected void alertBox(String reason_to_finish) {
+    public void alertBox(String reason_to_finish) {
         AlertDialog alertDialog = new AlertDialog.Builder(this).create();
         alertDialog.setTitle("Alert");
         alertDialog.setMessage(reason_to_finish);
@@ -120,7 +122,6 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        _thrift_connection = new ThriftConnection();
 
         mGroundSdk = ManagedGroundSdk.obtainSession(this);
         if (mGroundSdk == null) {
@@ -170,15 +171,15 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
 
             if (auto_connection.getStatus() == AutoConnection.Status.STARTED) {
                 _drone = temp_drone;
-
                 ULog.w(TAG, "Drone UID " + _drone.getUid());
                 if (this instanceof MainActivity) {
-                    _thrift_connection.onStart(_drone.getUid(), this.getString(R.string.drohub_ws_url));
                     Intent intent = new Intent(this, CopterHudActivity.class);
                     intent.putExtra(EXTRA_DEVICE_UID, _drone.getUid());
                     this.startActivity(intent);
                 }
-
+                else if (this instanceof CopterHudActivity && _thrift_connection == null) {
+                    ;
+                }
             }
         });
     }
@@ -207,17 +208,20 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
     @Override
     protected void onStop() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mGamepadEventReceiver);
-        if (_thrift_connection != null)
-            _thrift_connection.onStop();
-        ULog.w(TAG, "Stopping activity");
         super.onStop();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        System.out.println("Activity triggerdd");
+        _thrift_connection.handleActivityResult(requestCode, resultCode, data);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
         boolean denied = false;
         if (permissions.length == 0) {
             // canceled, finish

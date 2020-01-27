@@ -163,7 +163,7 @@ namespace DroHub.Helpers.Thrift
 
         protected async Task GatherVideoSource(ThriftMessageHandler handler)
         {
-            DroneSendVideoRequest send_video_request;
+            DroneSendLiveVideoRequest send_video_request;
             Device device;
             using (var scope = _services.CreateScope())
             {
@@ -175,21 +175,12 @@ namespace DroHub.Helpers.Thrift
                 }
                 try
                 {
-                    var mountpoint = await createMountPointForDevice(device);
-                    device.LiveVideoRTPUrl = mountpoint.LiveVideoRTPUrl;
-                    device.LiveVideoFMTProfile = mountpoint.LiveVideoFMTProfile;
-                    device.LiveVideoPt = mountpoint.LiveVideoPt;
-                    device.LiveVideoRTPMap = mountpoint.LiveVideoRTPMap;
-                    device.LiveVideoSecret = mountpoint.LiveVideoSecret;
-
-                    send_video_request = new DroneSendVideoRequest
+                    var video_room = await createVideoRoomForDevice(device);
+                    send_video_request = new DroneSendLiveVideoRequest
                     {
-                        RtpUrl = mountpoint.LiveVideoRTPUrl,
-                        VideoType = (mountpoint.LiveVideoRTPMap == "VP8/90000" ? VideoType.VP8 :
-                            VideoType.H264)
+                        // RoomSecret = video_room.Secret,
+                        RoomId = video_room.Id
                     };
-                    context.Update(device);
-                    await context.SaveChangesAsync();
                     _logger.LogDebug("Saved edit information on device {}", device);
                 }
                 catch(Exception e) {
@@ -198,17 +189,17 @@ namespace DroHub.Helpers.Thrift
                 }
             }
 
-            DeviceActionDelegate<DroneVideoStateResult> video_state_poller = (async (client, token) =>
+            DeviceActionDelegate<DroneLiveVideoStateResult> video_state_poller = (async (client, token) =>
             {
-                var result = await client.getVideoStateAsync(send_video_request, token);
-                if (result.State != DroneVideoState.LIVE)
-                    return await client.sendVideoToAsync(send_video_request, token);
+                var result = await client.getLiveVideoStateAsync(send_video_request, token);
+                if (result.State != DroneLiveVideoState.LIVE)
+                    return await client.sendLiveVideoToAsync(send_video_request, token);
                 return result;
             });
 
             try
             {
-                await doDroneActionForEver<DroneVideoStateResult>(handler, video_state_poller, TimeSpan.FromSeconds(5));
+                await doDroneActionForEver<DroneLiveVideoStateResult>(handler, video_state_poller, TimeSpan.FromSeconds(5));
             }
             finally
             {
@@ -216,12 +207,12 @@ namespace DroHub.Helpers.Thrift
             }
         }
 
-        private async Task<JanusService.RTPMountPoint> createMountPointForDevice(Device device)
+        private async Task<JanusService.VideoRoomEndPoint> createVideoRoomForDevice(Device device)
         {
             var session = await _janus_service.createSession();
             var handle = await _janus_service.createStreamerPluginHandle(session);
-            var mountpoint = await _janus_service.createRTPVideoMountPoint(session, handle, device.Id, device.SerialNumber,
-                    "mysecret", 100, "VP8/90000", null);
+            var mountpoint = await _janus_service.createVideoRoom(session, handle, device.Id, device.SerialNumber,
+                    "mysecret", 10);
             var date_now = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds().ToString();
             await _janus_service.startRecording(session, handle, device.Id, $"drone-{device.SerialNumber}-{date_now}" );
             return mountpoint;
@@ -232,7 +223,7 @@ namespace DroHub.Helpers.Thrift
             var session = await _janus_service.createSession();
             var handle = await _janus_service.createStreamerPluginHandle(session);
             await _janus_service.stopRecording(session, handle, device.Id);
-            await _janus_service.destroyMountPoint(session, handle, device.Id);
+            await _janus_service.destroyVideoRoom(session, handle, device.Id);
         }
 
 

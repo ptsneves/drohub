@@ -50,6 +50,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
   private static final String AUDIO_HIGH_PASS_FILTER_CONSTRAINT = "googHighpassFilter";
   private static final String AUDIO_NOISE_SUPPRESSION_CONSTRAINT = "googNoiseSuppression";
 
+  final private String displayName;
   final private Context context;
   final private PeerConnectionFactory factory;
   final private WebSocketChannel _webSocketChannel;
@@ -66,7 +67,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
   private MediaStream mediaStream;
   private VideoCapturer videoCapturer;
 
-  public PeerConnectionClient(final Context context,
+  public PeerConnectionClient(long room_id, String displayName, final Context context,
                                final EglBase.Context renderEGLContext,
                                final PeerConnectionParameters peerConnectionParameters,
                                final VideoSink localRender,
@@ -82,6 +83,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
       this.viewRenderer = viewRenderer;
       this.context = context;
       this.renderEGLContext = renderEGLContext;
+      this.displayName = displayName;
 
       Log.d(TAG, "Capturing format: " + peerConnectionParameters.videoWidth +
               "x" + peerConnectionParameters.videoHeight + "@" + peerConnectionParameters.videoFps);
@@ -104,7 +106,10 @@ public class PeerConnectionClient implements JanusRTCInterface {
               .setVideoEncoderFactory(new DefaultVideoEncoderFactory(renderEGLContext, true, true))
               .createPeerConnectionFactory();
 
-      _webSocketChannel = WebSocketChannel.createWebSockeChannel(peerConnectionParameters.activity,
+      _webSocketChannel = WebSocketChannel.createWebSockeChannel(
+              room_id,
+              displayName,
+              peerConnectionParameters.activity,
               this,
               peerConnectionParameters.janusWebSocketURL);
     }
@@ -112,6 +117,10 @@ public class PeerConnectionClient implements JanusRTCInterface {
       close();
       throw e;
     }
+  }
+
+  public boolean isAudioEnabled() {
+    return peerConnectionParameters.audioCodec != null;
   }
 
 
@@ -128,10 +137,12 @@ public class PeerConnectionClient implements JanusRTCInterface {
 
     // Create SDP constraints.
     sdpMediaConstraints = new MediaConstraints();
-    sdpMediaConstraints.mandatory.add(
-            new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
-    sdpMediaConstraints.mandatory.add(
-            new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
+    if (isAudioEnabled()) {
+      sdpMediaConstraints.mandatory.add(
+              new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
+    }
+//    sdpMediaConstraints.mandatory.add(
+//            new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
 
     PeerConnection peerConnection = createPeerConnection(handleId, JanusConnection.ConnectionType.LOCAL);
 
@@ -154,7 +165,9 @@ public class PeerConnectionClient implements JanusRTCInterface {
       e.printStackTrace();
     }
     mediaStream.addTrack(createVideoTrack(videoSource));
-    mediaStream.addTrack(createAudioTrack(peerConnectionParameters.noAudioProcessing));
+    if (isAudioEnabled()) {
+      mediaStream.addTrack(createAudioTrack(peerConnectionParameters.noAudioProcessing));
+    }
     peerConnection.addStream(mediaStream);
   }
 

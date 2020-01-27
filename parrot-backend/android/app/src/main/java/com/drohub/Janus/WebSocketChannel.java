@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 public class WebSocketChannel extends WebSocketClient {
     private static final String TAG = "WebSocketChannel";
+    private String displayName;
     private JanusTransactions janusTransactions = new JanusTransactions();
     private ConcurrentHashMap<BigInteger, JanusHandle> handles = new ConcurrentHashMap<>();
     private ConcurrentHashMap<BigInteger, JanusHandle> feeds = new ConcurrentHashMap<>();
@@ -35,18 +36,21 @@ public class WebSocketChannel extends WebSocketClient {
     private BigInteger mSessionId;
     private JanusRTCInterface delegate;
     private Activity _activity;
+    private long _room_id;
 
-    public static WebSocketChannel createWebSockeChannel(Activity activity, JanusRTCInterface delegate, String url) throws URISyntaxException, InterruptedException, InvalidObjectException {
+    public static WebSocketChannel createWebSockeChannel(long room_id, String displayName, Activity activity, JanusRTCInterface delegate, String url) throws URISyntaxException, InterruptedException, InvalidObjectException {
         Draft_6455 janus_draft = new Draft_6455(Collections.<IExtension>emptyList(),
                 Collections.<IProtocol>singletonList(new Protocol("janus-protocol")));
-        return new WebSocketChannel(activity, delegate, url, janus_draft);
+        return new WebSocketChannel(room_id, displayName, activity, delegate, url, janus_draft);
     }
 
-    private WebSocketChannel(Activity activity, JanusRTCInterface delegate, String url, Draft_6455 janus_draft) throws URISyntaxException, InterruptedException, InvalidObjectException {
+    private WebSocketChannel(long room_id, String displayName, Activity activity, JanusRTCInterface delegate, String url, Draft_6455 janus_draft) throws URISyntaxException, InterruptedException, InvalidObjectException {
         super(new URI(url), janus_draft);
+        this.displayName = displayName;
         keepaliveHandler = new Handler();
         this.delegate = delegate;
         _activity = activity;
+        _room_id = room_id;
         if (!connectBlocking(10, TimeUnit.SECONDS))
             throw new InvalidObjectException("Could not connect to janus");
     }
@@ -155,9 +159,9 @@ public class WebSocketChannel extends WebSocketClient {
         JSONObject body = new JSONObject();
         try {
             body.putOpt("request", "join");
-            body.putOpt("room", 1234);
+            body.putOpt("room", _room_id);
             body.putOpt("ptype", "publisher");
-            body.putOpt("display", "Android webrtc");
+            body.putOpt("display", displayName);
 
             msg.putOpt("janus", "message");
             msg.putOpt("body", body);
@@ -201,7 +205,7 @@ public class WebSocketChannel extends WebSocketClient {
 
         try {
             body.putOpt("request", "start");
-            body.putOpt("room", 1234);
+            body.putOpt("room", _room_id);
 
             jsep.putOpt("type", sdp.type);
             jsep.putOpt("sdp", sdp.description);
@@ -289,7 +293,7 @@ public class WebSocketChannel extends WebSocketClient {
         JSONObject body = new JSONObject();
         try {
             body.putOpt("request", "join");
-            body.putOpt("room", 1234);
+            body.putOpt("room", _room_id);
             body.putOpt("ptype", "listener");
             body.putOpt("feed", handle.feedId);
 

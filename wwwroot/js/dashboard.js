@@ -478,7 +478,12 @@ $(function () {
             if (index > 1)
                 throw new Error("Cannot have multiple elements with janus");
             element = $(element);
-            initJanus(element.data('janus-url'), element.data('stun-server-url'));
+            room_ids = [];
+            element.find('video.janus-video').each(function () {
+                room_ids.push($(this).data('room-id'));
+            });
+            
+            initJanus(element.data('janus-url'), element.data('stun-server-url'), room_ids);
         }
 
         function makeElementFullScreen(webrtc_video_element) {

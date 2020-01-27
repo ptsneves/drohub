@@ -1,5 +1,7 @@
 package com.drohub.thrift.lib;
 
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.util.concurrent.LinkedBlockingDeque;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
@@ -13,11 +15,13 @@ import java.util.Map;
 
 import org.java_websocket.handshake.ServerHandshake;
 
+import static java.lang.Integer.min;
+
 
 public class TWebSocketClient extends TTransport {
 
     private class ExampleClient extends WebSocketClient {
-        LinkedBlockingDeque<Byte> input;
+        LinkedBlockingDeque<ByteBuffer> input;
 
         ExampleClient( URI serverUri, Map<String, String> httpHeaders ) {
             super(serverUri, httpHeaders);
@@ -32,33 +36,26 @@ public class TWebSocketClient extends TTransport {
 
         @Override
         public void onMessage( String message ) {
-            try {
-                byte a[] = message.getBytes(StandardCharsets.UTF_8 );
-                for(Byte e : a) {
-                    System.out.print(e);
-                    input.put(e);
-                }
-            }
-            catch (InterruptedException e){
-                ;
-            }
-
+            ;
+//            try {
+//                input.put(message);
+//            }
+//            catch (InterruptedException e){
+//                ;
+//            }
+//
             System.out.println( "received1: " + message);
         }
 
         @Override
-        public void onMessage( ByteBuffer message ) {
+        public void onMessage(ByteBuffer message) {
             try {
-                byte a[] = message.array();
-                for (Byte e: a) {
-                    input.put(e);
-                }
+                input.put(message);
             }
             catch (InterruptedException e){
                 ;
             }
-
-            System.out.println( "received2: " + StandardCharsets.UTF_8.decode(message).toString() );
+//            System.out.println( "received2: " + StandardCharsets.UTF_8.decode(message).toString() );
         }
 
         @Override
@@ -75,6 +72,7 @@ public class TWebSocketClient extends TTransport {
 
     }
     private ExampleClient _client;
+
     private String host_uri;
     private  Map<String, String> http_headers;
 
@@ -111,20 +109,29 @@ public class TWebSocketClient extends TTransport {
     }
 
     @Override
-    public int read(byte[] buf, int off, int len) throws TTransportException {
+    public synchronized int read(byte[] buf, int off, int len) throws TTransportException {
         try {
-            for (int i = 0; i < len;i++)
-                buf[off+i] = _client.input.take();
+            ByteBuffer res = _client.input.take();
+            res.rewind();
+            int remaining = res.remaining();
+            if (remaining > len) {
+                System.out.println("Error too short");
+                throw new TTransportException("This transport can only read whole messages. Increase your buffer size to fit the whole message");
+            }
 
-            return len;
+//            System.out.println("read: " + res.remaining() + " " + len + " : " + StandardCharsets.UTF_8.decode(res).toString());          res.rewind();
+            res.get(buf, off, remaining);
+
+            return remaining;
         }catch (InterruptedException e) {
-            System.out.println("Failed reading");
+            System.out.println("error in taking");
             throw new TTransportException(TTransportException.UNKNOWN, e.getMessage());
         }
     }
 
     @Override
     public void write(byte[] buf, int off, int len) throws TTransportException {
+//        System.out.println("send: " + StandardCharsets.UTF_8.decode(ByteBuffer.wrap(buf, off, len)).toString() );
         _client.send(ByteBuffer.wrap(buf, off, len));
     }
 }

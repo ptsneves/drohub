@@ -103,7 +103,7 @@ namespace DroHub.Helpers.Thrift
                     th._input_streams.Add(_stream.Input);
                 }
                 TTransport transport = new TWebSocketStream(_stream.Input, _stream.Output, th._socket, logger);
-                transport = new TFramedTransport(transport);
+                // transport = new TFramedTransport(transport);
                 TProtocol protocol = new TJsonProtocol(transport);
                 protocol = new TAMessageValidatorProtocol(protocol, TAMessageValidatorProtocol.ValidationModeEnum.KEEP_READING,
                     TAMessageValidatorProtocol.OperationModeEnum.SEQID_MASTER);
@@ -224,7 +224,7 @@ namespace DroHub.Helpers.Thrift
             lock (_input_streams)
             {
                 UTF8Encoding utf8 = new UTF8Encoding();
-                _logger.LogDebug("{ascii}", utf8.GetString(buffer, 0, count));
+                _logger.LogDebug("Received {ascii}", utf8.GetString(buffer, 0, count));
                 foreach (var input_stream in _input_streams)
                 {
                     if (input_stream.CanWrite)

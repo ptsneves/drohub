@@ -39,27 +39,10 @@ namespace DroHub.Helpers {
         {
             public JanusServiceException(string message): base(message) { }
         }
-        public class RTPMountPoint
+        public class VideoRoomEndPoint
         {
-            public string LiveVideoSecret { get; set; }
-            public string LiveVideoRTPUrl { get; set; }
-            public int LiveVideoPt { get; set; }
-            public string LiveVideoRTPMap { get; set; }
-            public string LiveVideoFMTProfile { get; set; }
-        }
-
-        public class StreamListInfo
-        {
-            [JsonProperty("id")]
             public Int64 Id { get; set; }
-            [JsonProperty("description")]
-            public string Description { get; set; }
-            [JsonProperty("type")]
-            public string Type { get; set; }
-            private TimeSpan _video_age;
-            public TimeSpan VideoAge { get; set; }
-            [JsonProperty("video_age_ms")]
-            public Int64 VideoAgeInMs { set { _video_age = TimeSpan.FromMilliseconds(value); } }
+            public String Secret { get; set; }
         }
 
         public class JanusBasicSession
@@ -86,15 +69,8 @@ namespace DroHub.Helpers {
             internal class JanusPluginData {
                 internal class JanusStreamingPluginData{
 
-                    [JsonProperty("streaming")]
-                    public string Streaming { get; set; }
-                    [JsonProperty("list")]
-                    public List<StreamListInfo> Streams { get; set; }
-                    [JsonProperty("stream")]
-                    public StreamListInfo Stream { get; set; }
-
-                    [JsonProperty("info")]
-                    public JanusRequest.RTPMountPointInfoRequest RTPMountPointInfoRequest { get; set; }
+                    [JsonProperty("videoroom")]
+                    public string PluginName { get; set; }
 
                     [JsonProperty("error_code")]
                     public string ErrorCode { get; set; }
@@ -153,11 +129,57 @@ namespace DroHub.Helpers {
                 public MessageBody(string admin_key) { AdminKey = admin_key; }
             }
 
+
             internal class MessageWithId : MessageBody {
                 public MessageWithId(string admin_key, Int64 stream_id) : base(admin_key) { StreamId = stream_id; }
-                [JsonProperty("id")]
+                [JsonProperty("room")]
                 public Int64 StreamId { get; set; }
             }
+
+            [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
+            internal class CreateVideoRoomRequest : MessageWithId
+            {
+                public CreateVideoRoomRequest(string admin_key, Int64 stream_id, Int64 max_publishers) : base(admin_key, stream_id) {
+                    Publishers = max_publishers;
+                }
+                public override string Request { get { return "create"; } }
+
+                [JsonProperty("permanent")]
+                public bool Permanent { get; set; }
+
+                [JsonProperty("description")]
+                public string Description { get; set; }
+
+                [JsonProperty("secret")]
+                public string Secret { get; set; }
+
+                [JsonProperty("pin")]
+                public string Pin { get; set; }
+
+                [JsonProperty("is_private")]
+                public bool IsPrivate { get; set; }
+
+                [JsonProperty("require_pvtid")]
+                public bool RequirePvtId { get; set; }
+
+                [JsonProperty("publishers")]
+                public Int64 Publishers { get; set; }
+
+                [JsonProperty("bitrate")]
+
+                //...
+                public Int64 Bitrate { get; set; }
+
+                [JsonProperty("record")]
+                public bool Record { get; set; }
+
+                [JsonProperty("rec_dir")]
+                public string RecordingDir { get; set; }
+
+                [JsonProperty("notify_joining")]
+                public bool NotifyJoining { get; set; }
+            }
+
 
             internal class DestroyRequest : MessageWithId {
                 public DestroyRequest(string admin_key, Int64 stream_id) : base(admin_key, stream_id) { }
@@ -191,7 +213,6 @@ namespace DroHub.Helpers {
             {
                 public StartRecordingRequest(string admin_key, Int64 stream_id) : base(admin_key, stream_id)
                 {
-
                 }
 
                 public override string Request { get { return "recording"; } }
@@ -207,8 +228,8 @@ namespace DroHub.Helpers {
 
                 [JsonProperty("data", NullValueHandling = NullValueHandling.Ignore)]
                 public string DataPath { get { return null; } }
-
             }
+
             internal class StopRecordingRequest : MessageWithId
             {
                 public StopRecordingRequest(string admin_key, Int64 stream_id) : base(admin_key, stream_id)
@@ -229,61 +250,19 @@ namespace DroHub.Helpers {
 
                 [JsonProperty("data")]
                 public bool StopData { get { return true; } }
-
-            }
-            [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
-            internal class RTPMountPointInfoRequest : MessageBody {
-                    public RTPMountPointInfoRequest(string admin_key) : base(admin_key) {}
-
-                    [Required(ErrorMessage = "Id is required.")]
-                    [JsonProperty("id")]
-                    public Int64 Id{ get; set; }
-
-                    // [Required(ErrorMessage = "Secret is required.")]
-                    [JsonProperty("secret")]
-                    public string Secret { get; set; }
-
-                    [JsonProperty("type")]
-                    public string Type { get { return "rtp"; } }
-                    [JsonProperty("audio")]
-                    public bool Audio { get; set; }
-                    [JsonProperty("audioport")]
-                    public int AudioPort { get; set; }
-                    [JsonProperty("audiopt")]
-                    public int AudioPt { get; set; }
-
-                    [JsonProperty("audiortpmap")]
-                    public string AudioRTPMap { get; set; }
-
-                    [JsonProperty("video")]
-                    public bool Video { get; set; }
-                    [JsonProperty("videoport")]
-                    public int VideoPort { get; set; }
-                    [JsonProperty("videopt")]
-                    public int VideoPt { get; set; }
-
-                    [JsonProperty("videortpmap")]
-                    public string VideoRTPMap { get; set; }
-                    [JsonProperty("videofmtp")]
-                    public string VideoFMTProfile { get; set; }
-
-                    public override string Request { get { return "create"; } }
-
-                    [Required(ErrorMessage = "Description is required.")]
-                    [JsonProperty("description")]
-                    public string Description { get; set; }
             }
 
             public override string JanusAction {get { return "message"; } }
             [JsonProperty("body")]
             public IBody Body { get; set; }
         }
-        internal class CreateStreamerPluginHandler : JanusBasicSession {
+
+        internal class CreateVideoRoomPluginHandler : JanusBasicSession {
             [JsonProperty("plugin")]
-            public string Plugin { get { return "janus.plugin.streaming"; } }
+            public string Plugin { get { return "janus.plugin.videoroom"; } }
             public override string JanusAction {get {return "attach"; } }
 
-            public CreateStreamerPluginHandler(CreateSession session) {
+            public CreateVideoRoomPluginHandler(CreateSession session) {
                 TransactionId = session.TransactionId;
             }
         }
@@ -324,7 +303,7 @@ namespace DroHub.Helpers {
         }
 
         public async Task<Int64> createStreamerPluginHandle(CreateSession session) {
-            var handle = new CreateStreamerPluginHandler(session);
+            var handle = new CreateVideoRoomPluginHandler(session);
             return (await getJanusAnswer($"/janus/{session.Id}", handle)).Data.Id;
         }
 
@@ -337,18 +316,7 @@ namespace DroHub.Helpers {
             await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
-        public async Task stopRecording(CreateSession session, Int64 handle, Int64 stream_id)
-        {
-            var request = new JanusRequest(session, new JanusRequest.StopRecordingRequest(_options.AdminKey, stream_id));
-            await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
-        }
-
-        public async Task<List<StreamListInfo>> listMountPoints(
-                CreateSession session, Int64 handle) {
-            var request = new JanusRequest(session, new JanusRequest.ListRequest(_options.AdminKey));
-            return (await getJanusAnswer($"/janus/{session.Id}/{handle}", request)).PluginData.StreamingPluginData.Streams;
-        }
-        public async Task destroyMountPoint(CreateSession session, Int64 handle, Int64 stream_id) {
+        public async Task destroyVideoRoom(CreateSession session, Int64 handle, Int64 stream_id) {
             var request = new JanusRequest(session, new JanusRequest.DestroyRequest(_options.AdminKey, stream_id));
             await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
@@ -358,37 +326,18 @@ namespace DroHub.Helpers {
             await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
-        public async Task stopStream(CreateSession session, Int64 handle, Int64 stream_id) {
-            var request = new JanusRequest(session, new JanusRequest.StopRequest(_options.AdminKey, stream_id));
+        public async Task stopRecording(CreateSession session, Int64 handle, Int64 stream_id)
+        {
+            var request = new JanusRequest(session, new JanusRequest.StopRecordingRequest(_options.AdminKey, stream_id));
             await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
 
-        public async Task watchStream(CreateSession session, Int64 handle, Int64 stream_id) {
-            var request = new JanusRequest(session, new JanusRequest.WatchRequest(_options.AdminKey, stream_id));
-            await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
-        }
-
-        public async Task destroyMountPoints(CreateSession session, Int64 handle, Int64[] ids) {
-            var list = await listMountPoints(session, handle);
-            foreach (var stream in list) {
-                if (ids.Contains(stream.Id)) {
-                    await destroyMountPoint(session, handle, stream.Id);
-                }
-            }
-        }
-
-        public async Task<JanusService.RTPMountPoint> createRTPVideoMountPoint(CreateSession session, Int64 handle, Int64 id,
-                string description, string secret, int video_pt, string rtp_map, string fmt_profile) {
+        public async Task<JanusService.VideoRoomEndPoint> createVideoRoom(CreateSession session, Int64 handle, Int64 id,
+                string description, string secret, Int64 max_publishers) {
             var rand = new Random();
             int video_port = rand.Next(_options.RTPPortStart, _options.RTPPortEnd);
-            var request = new JanusRequest(session, new JanusRequest.RTPMountPointInfoRequest(_options.AdminKey)
+            var request = new JanusRequest(session, new JanusRequest.CreateVideoRoomRequest(_options.AdminKey, id, max_publishers)
             {
-                Id = id,
-                Video = true,
-                VideoPort = video_port,
-                VideoPt = video_pt,
-                VideoRTPMap = rtp_map,
-                VideoFMTProfile = fmt_profile,
                 Description = description,
                 // Secret = secret
             });
@@ -396,32 +345,14 @@ namespace DroHub.Helpers {
             _logger.LogDebug("Janus answer {result}", JsonConvert.SerializeObject(result.PluginData.StreamingPluginData));
             if (!String.IsNullOrEmpty(result.PluginData.StreamingPluginData.Error))
             {
-                _logger.LogDebug("Failed to create janus mountpoint");
+                _logger.LogDebug("Failed to create janus video room");
                 throw new JanusServiceException(JsonConvert.SerializeObject(result.PluginData.StreamingPluginData.Error));
             }
 
-            var stream = result.PluginData.StreamingPluginData.Stream;
-            return new JanusService.RTPMountPoint
+            return new JanusService.VideoRoomEndPoint
             {
-                LiveVideoRTPMap = rtp_map,
-                LiveVideoPt = video_pt,
-                LiveVideoFMTProfile = fmt_profile,
-                LiveVideoRTPUrl = $"rtp://{new Uri(_options.Address).Host}:{video_port}",
-                LiveVideoSecret = secret
-            };
-        }
-
-        public async Task<RTPMountPoint> getStreamInfo(CreateSession session, Int64 handle, Int64 stream_id)
-        {
-            var request = new JanusRequest(session, new JanusRequest.InfoRequest(_options.AdminKey, stream_id));
-            var result =  (await getJanusAnswer($"/janus/{session.Id}/{handle}", request)).PluginData.StreamingPluginData.RTPMountPointInfoRequest;
-            return new JanusService.RTPMountPoint
-            {
-                LiveVideoRTPMap = result.VideoRTPMap,
-                LiveVideoPt = result.VideoPt,
-                LiveVideoFMTProfile = result.VideoFMTProfile,
-                LiveVideoRTPUrl = $"rtp://{new Uri(_options.Address).Host}:{result.VideoPort}",
-                LiveVideoSecret = result.Secret
+                Id = id,
+                Secret = null
             };
         }
     }
