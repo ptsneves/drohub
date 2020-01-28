@@ -12,28 +12,23 @@ import com.drohub.thrift.lib.TWebSocketClient;
 import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.thrift.server.TThreadPoolServer;
-import org.apache.thrift.transport.TFramedTransport;
-
-import java.io.IOException;
 import java.util.HashMap;
 
 public class ThriftConnection {
-    private TWebSocketClient tws;
-    private TFramedTransport ft;
-    private TReverseTunnelServer trts;
     private TThreadPoolServer _server_engine;
-    private  DroHubHandler drohub_handler;
+    private DroHubHandler drohub_handler;
     private Thread _server_thread;
 
     public void onStart(String drone_serial, String thrift_ws_url, String janus_websocket_uri,
-                        GroundSdkActivityBase activity) throws IOException {
+                        GroundSdkActivityBase activity) {
 
         HashMap<String, String> http_headers = new HashMap<>();
         http_headers.put("User-Agent", "AirborneProjects");
         http_headers.put("Content-Type", "application/x-thrift");
         http_headers.put("x-device-expected-serial", drone_serial);
-        tws = new TWebSocketClient(thrift_ws_url, http_headers);
-        trts = new TReverseTunnelServer(tws, 6);
+        TWebSocketClient tws = new TWebSocketClient(thrift_ws_url, http_headers);
+
+        TReverseTunnelServer trts = new TReverseTunnelServer(tws);
         TProtocolFactory message_validator_factory = new TMessageValidatorProtocol.Factory(
                 new TJSONProtocol.Factory(),
                 TMessageValidatorProtocol.ValidationModeEnum.KEEP_READING,
@@ -44,13 +39,11 @@ public class ThriftConnection {
         args.minWorkerThreads(6);
         args.maxWorkerThreads(6);
 
-        args.processor(new Drone.Processor(drohub_handler));
+        args.processor(new Drone.Processor<>(drohub_handler));
         args.inputProtocolFactory(message_validator_factory);
         args.outputProtocolFactory(message_validator_factory);
         _server_engine = new TThreadPoolServer(args);
-        _server_thread = new Thread(() -> {
-            _server_engine.serve();
-        });
+        _server_thread = new Thread(() -> _server_engine.serve());
         _server_thread.start();
     }
 
