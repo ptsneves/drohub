@@ -124,8 +124,9 @@ public class DroHubHandler implements Drone.Iface {
 
         _activity.startActivityForResult(
                 mediaProjectionManager.createScreenCaptureIntent(), _CAPTURE_PERMISSION_REQUEST_CODE);
-
-        return new DroneLiveVideoStateResult(DroneLiveVideoState.STOPPED, _serial_number,
+        //TODO: We need to notify that if he does not accept the permissions he will not be
+        //able to broadcast the video...THis requirement may change if we stop using screen capture.
+        return new DroneLiveVideoStateResult(_video_state, _serial_number,
                 (new Date()).getTime());
     }
 

@@ -192,7 +192,7 @@ namespace DroHub.Helpers.Thrift
             DeviceActionDelegate<DroneLiveVideoStateResult> video_state_poller = (async (client, token) =>
             {
                 var result = await client.getLiveVideoStateAsync(send_video_request, token);
-                if (result.State != DroneLiveVideoState.LIVE)
+                if (result.State != DroneLiveVideoState.LIVE && result.State != DroneLiveVideoState.STOPPED)
                     return await client.sendLiveVideoToAsync(send_video_request, token);
                 return result;
             });
