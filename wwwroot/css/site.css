@@ -44,7 +44,6 @@ for details on configuring this project to bundle and minify static web assets. 
     height: 100%;
     z-index: 1;
     color: white;
-    background: rgba(0,0,0,0.4);
     font-size: 16px;
 }
 
