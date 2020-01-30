@@ -102,7 +102,7 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
      * @return GroundSDK interface
      */
     @NonNull
-    protected final GroundSdk groundSdk() {
+    public final GroundSdk getDroneHandle() {
         return mGroundSdk;
     }
     private Drone _drone;

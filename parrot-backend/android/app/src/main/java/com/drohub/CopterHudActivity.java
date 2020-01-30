@@ -33,12 +33,9 @@
 package com.drohub;
 
 import android.animation.ObjectAnimator;
-import android.content.Context;
-import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.location.Location;
-import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -53,7 +50,6 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 
-import com.drohub.Janus.PeerConnectionClient;
 import com.drohub.hud.AltimeterView;
 import com.drohub.hud.Animations;
 import com.drohub.hud.AttitudeView;
@@ -64,7 +60,6 @@ import com.drohub.hud.PickAnimationDialog;
 import com.drohub.hud.PickFlipDirectionDialog;
 import com.drohub.hud.ZoomLevelView;
 import com.drohub.hud.ZoomVelocityView;
-import com.drohub.thrift.DroHubHandler;
 import com.drohub.thrift.ThriftConnection;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.instrument.Alarms;
@@ -90,9 +85,6 @@ import com.parrot.drone.groundsdk.device.pilotingitf.animation.Flip;
 import com.parrot.drone.groundsdk.facility.UserLocation;
 import com.parrot.drone.groundsdk.stream.GsdkStreamView;
 import com.parrot.drone.groundsdk.value.OptionalDouble;
-import com.parrot.drone.sdkcore.ulog.ULog;
-
-import org.webrtc.EglBase;
 
 import java.io.IOException;
 
@@ -187,7 +179,7 @@ public class CopterHudActivity extends GroundSdkActivityBase
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mDrone = groundSdk().getDrone(getIntent().getStringExtra(EXTRA_DEVICE_UID));
+        mDrone = getDroneHandle().getDrone(getIntent().getStringExtra(EXTRA_DEVICE_UID));
         if (mDrone == null) {
             finish();
             return;
@@ -385,7 +377,7 @@ public class CopterHudActivity extends GroundSdkActivityBase
             updateDistance();
         });
 
-        groundSdk().getFacility(UserLocation.class, userLocation -> {
+        getDroneHandle().getFacility(UserLocation.class, userLocation -> {
             mUserLocation = userLocation == null ? null : userLocation.lastKnownLocation();
             updateDistance();
         });
@@ -549,17 +541,13 @@ public class CopterHudActivity extends GroundSdkActivityBase
             }
         });
 
-        try {
-            _thrift_connection = new ThriftConnection();
-            _thrift_connection.onStart(mDrone.getUid(),
-                    getString(R.string.drohub_ws_url),
-                    getString(R.string.janus_websocket_uri),
-                    this);
-            Log.w("COPTER", "Started thrift connection");
-        }
-        catch (IOException e) {
-            Log.e("COPTER", e.getMessage());
-        }
+        _thrift_connection = new ThriftConnection();
+        _thrift_connection.onStart(mDrone.getUid(),
+                getString(R.string.drohub_ws_url),
+                getString(R.string.janus_websocket_uri),
+                this);
+        Log.w("COPTER", "Started thrift connection");
+
     }
 
     @Override
