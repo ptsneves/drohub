@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.media.projection.MediaProjectionManager;
+import android.util.DisplayMetrics;
 import android.util.Log;
 
 import org.apache.thrift.*;
@@ -213,8 +214,9 @@ public class DroHubHandler implements Drone.Iface {
     private void initVideo(Intent permission_data, int permission_code) {
         try {
             EglBase rootEglBase = EglBase.create();
+            DisplayMetrics metrics = _activity.getResources().getDisplayMetrics();
             PeerConnectionScreenShareParameters peerConnectionParameters = new PeerConnectionScreenShareParameters(
-                    _janus_websocket_uri, _activity, 2340, 1080, 30,
+                    _janus_websocket_uri, _activity, metrics.widthPixels, metrics.heightPixels, 30,
                     "H264",
                     120, null, false,
                     permission_data,
