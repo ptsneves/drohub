@@ -479,17 +479,14 @@ $(function () {
                 });
 
                 _signalr_connection.on("DroneRadioSignal", function (message) {
-                    radio_signal = JSON.parse(message);
                     _updateTelemetry('.radio-signal-text', message);
                 });
 
                 _signalr_connection.on("DroneFlyingState", function (message) {
-                    flying_state = JSON.parse(message);
                     _updateTelemetry('.flying-state-text', message);
                 });
 
                 _signalr_connection.on("DroneReply", function (message) {
-                    drone_reply = JSON.parse(message);
                     //pingService
                 });
 
