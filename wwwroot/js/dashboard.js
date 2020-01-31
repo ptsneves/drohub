@@ -271,6 +271,7 @@ $(function () {
         _FunctionTable["renderPlaneIcon"] = _renderPlaneIcon;
         _FunctionTable["renderPositionText"] = _renderPositionText;
         _FunctionTable["renderFlightTimeText"] = _renderFlightTimeText;
+        _FunctionTable["renderLiveVideo"] = _renderLiveVideo;
 
         _signalr_connection = null;
         _map_class_instance = null;
@@ -285,6 +286,29 @@ $(function () {
             if (!fn)
                 return;
             _FunctionTable[fn](index, element);
+        }
+
+        function _renderLiveVideo(_, element) {
+            element = $(element);
+            let live_video_result = JSON.parse(element.attr('data-telemetry'));
+            switch (live_video_result.State) {
+                case 0: //Live
+                    if (element.data("render-state") == "stopped") {
+                        element.data("render-state", "starting");
+                        window.setTimeout(function (element) {
+                            if (element.data('render-state') == "starting") {
+                                console.log("Something failed starting the video");
+                                element.data("render-state", "stopped");
+                            }
+                        }, 10000, element);
+                        initJanus(element.data('janus-url'), element.data('stun-server-url'), element.data('room-id'));
+                    }
+                    break;
+                default:
+                    element.data("render-state", "stopped");
+                    console.log("Maybe we should disconnect if necessary")
+                    break;
+            }
         }
 
         function _renderRadioSignal(_, element) {
@@ -468,24 +492,16 @@ $(function () {
                     drone_reply = JSON.parse(message);
                     //pingService
                 });
+
+                _signalr_connection.on("DroneLiveVideoStateResult", function (message) {
+                    _updateTelemetry('video.janus-video', message)
+                });
                 $('.telemetry-single-data').each(_renderTelemetry);
             }
         }
     }();
 
     JanusVideoClass = function () {
-        function _initJanus(index, element) {
-            if (index > 1)
-                throw new Error("Cannot have multiple elements with janus");
-            element = $(element);
-            room_ids = [];
-            element.find('video.janus-video').each(function () {
-                room_ids.push($(this).data('room-id'));
-            });
-            
-            initJanus(element.data('janus-url'), element.data('stun-server-url'), room_ids);
-        }
-
         function makeElementFullScreen(webrtc_video_element) {
             if (document.fullscreenElement
                 || document.webkitFullscreenElement
@@ -528,7 +544,6 @@ $(function () {
 
         return {
             init: function () {
-                $('.janus-section').each(_initJanus);
                 $('button[data-toggle="video-fullscreen"]').each(_initFullscreenButton)
                 $('a[data-toggle="video-fullscreen"]').each(_initFullscreenButton)
             }

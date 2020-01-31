@@ -1,7 +1,7 @@
-function initJanus(server_url, stun_server_url, room_ids) {
+function initJanus(server_url, stun_server_url, room_id) {
 	var opaqueId = "videoroomtest-" + Janus.randomString(12);
 	server = server_url;
-	console.log(room_ids);
+	console.log(room_id);
 	// Initialize the library (all console debuggers enabled)
 	Janus.init({debug: "all", callback: function() {
 		if(!Janus.isWebrtcSupported()) {
@@ -24,32 +24,20 @@ function initJanus(server_url, stun_server_url, room_ids) {
 							success: function(pluginHandle) {
 								sfutest = pluginHandle;
 								Janus.log("Plugin attached! (" + sfutest.getPlugin() + ", id=" + sfutest.getId() + ")");
-								// console.log(room);
-								room_ids.forEach(room => {
-									console.log(room);
-									sfutest.send(
-										{
-											"message": { "request": "exists", "room": room },
-											success: function (exists_result) {
-												if (exists_result.exists == true) {
-													sfutest.send(
-														{
-															"message": {
-																"request": "listparticipants",
-																"room": exists_result.room
-															},
-															success: function (listparticipants_result) {
-																listparticipants_result.participants.forEach(function (participants) {
-																	newRemoteFeed(participants.id, participants.display, exists_result.room);
-																});
-															}
-														}
-													);
-												}
-											}
+								sfutest.send(
+									{
+										"message": {
+											"request": "listparticipants",
+											"room": room_id
+										},
+										success: function (listparticipants_result) {
+											listparticipants_result.participants.forEach(function (participants) {
+												Janus.log(participants)
+												newRemoteFeed(participants.id, participants.display, room_id);
+											});
 										}
-									);
-								});
+									}
+								);
 								Janus.log("  -- This is a publisher/manager");
 							},
 							error: function(error) {
@@ -65,7 +53,8 @@ function initJanus(server_url, stun_server_url, room_ids) {
 							webrtcState: function(on) {
 								Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
 							},
-							onmessage: function(msg, jsep) {
+							onmessage: function (msg, jsep) {
+								console.log("Message" + msg);
 							},
 							onlocalstream: function(stream) {
 								Janus.log(" ::: Got a local stream :::");
@@ -166,9 +155,11 @@ function initJanus(server_url, stun_server_url, room_ids) {
 				},
 				onremotestream: function (stream) {
 					element = $(`video.device-video[data-room-id=${room_id}]`);
+					element.data('render-state', "playing");
 					Janus.attachMediaStream(element.get(0), stream);
 				},
 				oncleanup: function () {
+					element.data('render-state', "stopped");
 					Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");// TODO Add notification that there is no video signal
 				}
 			});

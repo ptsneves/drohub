@@ -180,7 +180,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <video class="rounded centered embed-responsive-item controls janus-video device-video" data-room-id="@device.Id" data-display-name="drone-@device.SerialNumber" autoplay playsinline></video>
+                                            <video class="rounded centered embed-responsive-item controls janus-video device-video" data-janus-url='@ViewData["FrontEndJanusUrl"]' data-stun-server-url='@ViewData["FrontEndStunServerUrl"]' data-renderer="renderLiveVideo" data-render-state="stopped" data-room-id="@device.Id" data-serial="@device.SerialNumber" autoplay playsinline></video>
                                         </div>
                                         <div class="box collapsed-box drone-control-box" data-serial="@device.SerialNumber">
                                             <div class="box-body">
