@@ -180,7 +180,7 @@ public class WebSocketChannel extends WebSocketClient {
         JSONObject message = new JSONObject();
         try {
             publish.putOpt("request", "configure");
-            publish.putOpt("audio", true);
+            publish.putOpt("audio", false);
             publish.putOpt("video", true);
 
             publish.putOpt("record", true);

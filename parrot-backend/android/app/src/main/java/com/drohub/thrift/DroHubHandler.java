@@ -216,7 +216,7 @@ public class DroHubHandler implements Drone.Iface {
             PeerConnectionScreenShareParameters peerConnectionParameters = new PeerConnectionScreenShareParameters(
                     _janus_websocket_uri, _activity, 2340, 1080, 30,
                     "H264",
-                    120, "opus", false,
+                    120, null, false,
                     permission_data,
                     permission_code);
 
