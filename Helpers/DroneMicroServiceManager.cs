@@ -214,7 +214,6 @@ namespace DroHub.Helpers.Thrift
             var mountpoint = await _janus_service.createVideoRoom(session, handle, device.Id, device.SerialNumber,
                     "mysecret", 10);
             var date_now = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds().ToString();
-            await _janus_service.startRecording(session, handle, device.Id, $"drone-{device.SerialNumber}-{date_now}" );
             return mountpoint;
         }
 
@@ -222,7 +221,6 @@ namespace DroHub.Helpers.Thrift
         {
             var session = await _janus_service.createSession();
             var handle = await _janus_service.createStreamerPluginHandle(session);
-            await _janus_service.stopRecording(session, handle, device.Id);
             await _janus_service.destroyVideoRoom(session, handle, device.Id);
         }
 

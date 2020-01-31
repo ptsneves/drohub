@@ -46,7 +46,7 @@ public class WebSocketChannel extends WebSocketClient {
 
     private WebSocketChannel(long room_id, String displayName, Activity activity, JanusRTCInterface delegate, String url, Draft_6455 janus_draft) throws URISyntaxException, InterruptedException, InvalidObjectException {
         super(new URI(url), janus_draft);
-        this.displayName = displayName;
+        this.displayName = "drone-" + displayName + "-" + System.currentTimeMillis();
         keepaliveHandler = new Handler();
         this.delegate = delegate;
         _activity = activity;
@@ -182,6 +182,9 @@ public class WebSocketChannel extends WebSocketClient {
             publish.putOpt("request", "configure");
             publish.putOpt("audio", true);
             publish.putOpt("video", true);
+
+            publish.putOpt("record", true);
+            publish.putOpt("filename", displayName);
 
             jsep.putOpt("type", sdp.type);
             jsep.putOpt("sdp", sdp.description);

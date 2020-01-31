@@ -262,7 +262,7 @@ function initJanus(server_url, stun_server_url, room_ids) {
 					Janus.log("Janus says this WebRTC PeerConnection feed is " + (on ? "up" : "down") + " now");
 				},
 				onremotestream: function (stream) {
-					element = $(`video.device-video[data-room-id=${room_id}][data-display-name=${display}]`);
+					element = $(`video.device-video[data-room-id=${room_id}]`);
 					Janus.attachMediaStream(element.get(0), stream);
 				},
 				oncleanup: function () {

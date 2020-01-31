@@ -207,51 +207,6 @@ namespace DroHub.Helpers {
                 public override string Request { get { return "list"; } }
                 public ListRequest(string admin_key) : base(admin_key) { }
             }
-
-
-            internal class StartRecordingRequest : MessageWithId
-            {
-                public StartRecordingRequest(string admin_key, Int64 stream_id) : base(admin_key, stream_id)
-                {
-                }
-
-                public override string Request { get { return "recording"; } }
-
-                [JsonProperty("action")]
-                public string Action {get { return "start"; } }
-
-                [JsonProperty("audio", NullValueHandling = NullValueHandling.Ignore)]
-                public string AudioPath { get { return null; } }
-
-                [JsonProperty("video", NullValueHandling = NullValueHandling.Ignore)]
-                public string VideoPath { get; set; }
-
-                [JsonProperty("data", NullValueHandling = NullValueHandling.Ignore)]
-                public string DataPath { get { return null; } }
-            }
-
-            internal class StopRecordingRequest : MessageWithId
-            {
-                public StopRecordingRequest(string admin_key, Int64 stream_id) : base(admin_key, stream_id)
-                {
-
-                }
-
-                public override string Request { get { return "recording"; } }
-
-                [JsonProperty("action")]
-                public string Action { get { return "stop"; } }
-
-                [JsonProperty("audio")]
-                public bool StopAudio { get { return true; } }
-
-                [JsonProperty("video")]
-                public bool StopVideo { get { return true; } }
-
-                [JsonProperty("data")]
-                public bool StopData { get { return true; } }
-            }
-
             public override string JanusAction {get { return "message"; } }
             [JsonProperty("body")]
             public IBody Body { get; set; }
@@ -307,15 +262,6 @@ namespace DroHub.Helpers {
             return (await getJanusAnswer($"/janus/{session.Id}", handle)).Data.Id;
         }
 
-        public async Task startRecording(CreateSession session, Int64 handle, Int64 stream_id, string video_file_name) {
-            var request = new JanusRequest(session, new JanusRequest.StartRecordingRequest(_options.AdminKey, stream_id)
-            {
-                VideoPath = $"{_options.RecordingPath}/{video_file_name}"
-            });
-            _logger.LogInformation($"Started recording video to {$"{_options.RecordingPath}/{video_file_name}"}");
-            await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
-        }
-
         public async Task destroyVideoRoom(CreateSession session, Int64 handle, Int64 stream_id) {
             var request = new JanusRequest(session, new JanusRequest.DestroyRequest(_options.AdminKey, stream_id));
             await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
@@ -325,13 +271,6 @@ namespace DroHub.Helpers {
             var request = new JanusRequest(session, new JanusRequest.StartRequest(_options.AdminKey, stream_id));
             await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
-
-        public async Task stopRecording(CreateSession session, Int64 handle, Int64 stream_id)
-        {
-            var request = new JanusRequest(session, new JanusRequest.StopRecordingRequest(_options.AdminKey, stream_id));
-            await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
-        }
-
         public async Task<JanusService.VideoRoomEndPoint> createVideoRoom(CreateSession session, Int64 handle, Int64 id,
                 string description, string secret, Int64 max_publishers) {
             var rand = new Random();
@@ -339,6 +278,8 @@ namespace DroHub.Helpers {
             var request = new JanusRequest(session, new JanusRequest.CreateVideoRoomRequest(_options.AdminKey, id, max_publishers)
             {
                 Description = description,
+                Record = true,
+                RecordingDir = $"{_options.RecordingPath}"
                 // Secret = secret
             });
             var result = (await getJanusAnswer($"/janus/{session.Id}/{handle}", request));

@@ -141,6 +141,9 @@ public class PeerConnectionClient implements JanusRTCInterface {
       sdpMediaConstraints.mandatory.add(
               new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
     }
+    else
+      sdpMediaConstraints.mandatory.add(
+              new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "false"));
 //    sdpMediaConstraints.mandatory.add(
 //            new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
 
