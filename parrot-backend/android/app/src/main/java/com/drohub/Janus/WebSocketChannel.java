@@ -128,6 +128,12 @@ public class WebSocketChannel extends WebSocketClient {
     );
     }
 
+    @Override
+    public void send(String message) {
+        Log.e(TAG, "send" + message);
+        super.send(message);
+    }
+
     private void publisherCreateHandle() {
         String transaction = randomString(12);
         JanusTransactions.JanusTransaction jt = janusTransactions.new JanusTransaction();
