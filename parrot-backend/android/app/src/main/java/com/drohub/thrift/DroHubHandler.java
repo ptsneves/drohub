@@ -40,7 +40,7 @@ public class DroHubHandler implements Drone.Iface {
         TelemetryContainer() {
             _q = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
         }
-        public TelemetryType pop() throws TException {
+        TelemetryType pop() throws TException {
             try {
                 System.out.println("Popping 1" + this.getClass().getName());
                 TelemetryType ret = _q.take();
@@ -53,7 +53,7 @@ public class DroHubHandler implements Drone.Iface {
                 System.out.println("Pop successful");
             }
         }
-        public void push(TelemetryType t) throws TException {
+        void push(TelemetryType t) throws TException {
             try {
                 _q.put(t);
             } catch (InterruptedException e) {
@@ -65,11 +65,10 @@ public class DroHubHandler implements Drone.Iface {
     private static final int _CAPTURE_PERMISSION_REQUEST_CODE = 1;
     
     private String _serial_number;
-    final public TelemetryContainer<DronePosition> _drone_position;
-    final public TelemetryContainer<DroneBatteryLevel> _drone_battery_level;
-    final public TelemetryContainer<DroneFlyingState> _drone_flying_state;
-    final public TelemetryContainer<DroneRadioSignal> _drone_radio_signal;
-
+    final private TelemetryContainer<DronePosition> _drone_position;
+    final private TelemetryContainer<DroneBatteryLevel> _drone_battery_level;
+    final private TelemetryContainer<DroneFlyingState> _drone_flying_state;
+    final private TelemetryContainer<DroneRadioSignal> _drone_radio_signal;
 
     private GroundSdkActivityBase _activity;
     private String _janus_websocket_uri;
@@ -81,7 +80,7 @@ public class DroHubHandler implements Drone.Iface {
     private com.parrot.drone.groundsdk.device.Drone _drone_handle;
     private Date _date_handle;
 
-    public DroHubHandler(String serial, String janus_websocket_uri, GroundSdkActivityBase activity) {
+    DroHubHandler(String serial, String janus_websocket_uri, GroundSdkActivityBase activity) {
         _serial_number = serial;
         _drone_position = new TelemetryContainer<>();
         _drone_battery_level = new TelemetryContainer<>();
@@ -174,7 +173,7 @@ public class DroHubHandler implements Drone.Iface {
                         )
                 );
             } catch (TException e) {
-                ;
+                // TODO: Think about this
             }
         });
 
@@ -193,7 +192,7 @@ public class DroHubHandler implements Drone.Iface {
             try {
                 _drone_position.push(position_to_send);
             } catch (TException e) {
-                ; // TODO: Think about this
+                // TODO: Think about this
             }
         });
 
@@ -210,19 +209,19 @@ public class DroHubHandler implements Drone.Iface {
             try {
                 _drone_radio_signal.push(radio_signal_to_send);
             } catch (TException e) {
-                ; // TODO: Think about this
+                // TODO: Think about this
             }
         });
 
         _drone_media_store = _drone_handle.getPeripheral(MediaStore.class, media_store -> {
-            ;
+
         }).get();
 
     }
 
 
 
-    public void handleCapturePermissionCallback(int requestCode, int resultCode, Intent data) {
+    void handleCapturePermissionCallback(int requestCode, int resultCode, Intent data) {
         if (requestCode == _CAPTURE_PERMISSION_REQUEST_CODE && _video_state == DroneLiveVideoState.STOPPED) {
             initVideo(data, resultCode);
             _video_state = DroneLiveVideoState.LIVE;
@@ -245,7 +244,6 @@ public class DroHubHandler implements Drone.Iface {
             _peerConnectionClient = new PeerConnectionClient(_room_id, _serial_number,
                     _activity, rootEglBase.getEglBaseContext(),
                     peerConnectionParameters,  null, null);
-
         }
         catch (Exception e) {
             Log.e(TAG, e.getStackTrace().toString());

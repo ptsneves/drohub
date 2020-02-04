@@ -107,7 +107,6 @@ function initJanus(server_url, stun_server_url, room_id) {
 						"room": room_id,
 						"feed": id
 					};
-					// remoteFeed.videoCodec = video;
 					remoteFeed.send({ "message": subscribe });
 				},
 				error: function (error) {
