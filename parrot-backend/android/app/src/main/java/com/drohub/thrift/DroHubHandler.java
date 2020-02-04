@@ -159,12 +159,14 @@ public class DroHubHandler implements Drone.Iface {
                 try {
                     _drone_flying_state.push(state_to_send);
                 } catch (TException e) {
-                    ; // TODO: Think about this
+                    // TODO: Think about this
                 }
             }
         });
 
         _drone_handle.getInstrument(BatteryInfo .class, battery_info -> {
+            if (battery_info == null)
+                return;
             try {
                 _drone_battery_level.push(
                         new DroneBatteryLevel(
@@ -182,7 +184,8 @@ public class DroHubHandler implements Drone.Iface {
                 return;
 
             Location location = gps.lastKnownLocation();
-
+            if (location == null)
+                return;
             DronePosition position_to_send = new DronePosition(location.getLatitude(),
                     location.getLongitude(),
                     location.getAltitude(),
@@ -258,19 +261,24 @@ public class DroHubHandler implements Drone.Iface {
     }
 
     @Override
-    public DroneLiveVideoStateResult getLiveVideoState(DroneSendLiveVideoRequest request) throws TException {
+    public DroneLiveVideoStateResult getLiveVideoState(DroneSendLiveVideoRequest request) {
         System.out.println(_video_state);
         return new DroneLiveVideoStateResult(_video_state, _serial_number, (new Date()).getTime());
     }
 
     @Override
-    public DroneLiveVideoStateResult sendLiveVideoTo(DroneSendLiveVideoRequest request) throws TException {
+    public DroneLiveVideoStateResult sendLiveVideoTo(DroneSendLiveVideoRequest request) {
         _video_state = DroneLiveVideoState.STOPPED;
         _room_id = request.room_id;
         MediaProjectionManager mediaProjectionManager =
                 (MediaProjectionManager) _activity.getApplication().getSystemService(
                         Context.MEDIA_PROJECTION_SERVICE);
 
+        if (mediaProjectionManager == null) {
+            _video_state = DroneLiveVideoState.INVALID_CONDITION;
+            return new DroneLiveVideoStateResult(_video_state, _serial_number,
+                    (new Date()).getTime());
+        }
         _activity.startActivityForResult(
                 mediaProjectionManager.createScreenCaptureIntent(), _CAPTURE_PERMISSION_REQUEST_CODE);
         //TODO: We need to notify that if he does not accept the permissions he will not be
