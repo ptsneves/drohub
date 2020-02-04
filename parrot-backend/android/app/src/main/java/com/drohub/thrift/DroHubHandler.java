@@ -35,7 +35,7 @@ import java.util.Date;
 
 public class DroHubHandler implements Drone.Iface {
     public class TelemetryContainer<TelemetryType>  {
-        private static final int QUEUE_CAPACITY = 4;
+        private static final int QUEUE_CAPACITY = 1024;
         private BlockingQueue<TelemetryType> _q;
         TelemetryContainer() {
             _q = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
@@ -43,7 +43,9 @@ public class DroHubHandler implements Drone.Iface {
         public TelemetryType pop() throws TException {
             try {
                 System.out.println("Popping 1" + this.getClass().getName());
-                return _q.take();
+                TelemetryType ret = _q.take();
+                _q.clear();
+                return ret;
             } catch (InterruptedException e) {
                 throw new TException(e.getMessage());
             }
