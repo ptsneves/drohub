@@ -31,7 +31,6 @@ import com.parrot.drone.groundsdk.device.peripheral.MediaStore;
 import com.parrot.drone.groundsdk.device.peripheral.media.MediaItem;
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf;
 
-import java.util.Date;
 
 public class DroHubHandler implements Drone.Iface {
     public class TelemetryContainer<TelemetryType>  {
@@ -78,7 +77,6 @@ public class DroHubHandler implements Drone.Iface {
     private MediaStore _drone_media_store;
     private long _room_id;
     private com.parrot.drone.groundsdk.device.Drone _drone_handle;
-    private Date _date_handle;
 
     DroHubHandler(String serial, String janus_websocket_uri, GroundSdkActivityBase activity) {
         _serial_number = serial;
@@ -92,7 +90,6 @@ public class DroHubHandler implements Drone.Iface {
         _janus_websocket_uri = janus_websocket_uri;
         _video_state = DroneLiveVideoState.INVALID_CONDITION;
         _drone_handle = _activity.getDroneHandle().getDrone(_serial_number);
-        _date_handle = new Date();
 
 
         String[] res_turn_urls = _activity.getResources().getStringArray(R.array.turn_servers);
@@ -118,7 +115,7 @@ public class DroHubHandler implements Drone.Iface {
                     switch (flying_indicators.getLandedState()) {
                         case MOTOR_RAMPING:
                             state_to_send = new DroneFlyingState(FlyingState.MOTOR_RAMPING,
-                                    _serial_number, _date_handle.getTime());
+                                    _serial_number, System.currentTimeMillis());
                             break;
                         case INITIALIZING:
                         case IDLE:
@@ -130,15 +127,15 @@ public class DroHubHandler implements Drone.Iface {
                     switch (flying_indicators.getFlyingState()) {
                         case TAKING_OFF:
                             state_to_send = new DroneFlyingState(FlyingState.TAKING_OFF,
-                                    _serial_number, _date_handle.getTime());
+                                    _serial_number, System.currentTimeMillis());
                             break;
                         case LANDING:
                             state_to_send = new DroneFlyingState(FlyingState.LANDING,
-                                    _serial_number, _date_handle.getTime());
+                                    _serial_number, System.currentTimeMillis());
                             break;
                         case FLYING:
                             state_to_send = new DroneFlyingState(FlyingState.FLYING,
-                                    _serial_number, _date_handle.getTime());
+                                    _serial_number, System.currentTimeMillis());
                             break;
                         case NONE:
                         case WAITING:
@@ -147,11 +144,11 @@ public class DroHubHandler implements Drone.Iface {
                     break;
                 case EMERGENCY_LANDING:
                     state_to_send = new DroneFlyingState(FlyingState.EMERGENCY_LANDING,
-                            _serial_number, _date_handle.getTime());
+                            _serial_number, System.currentTimeMillis());
                     break;
                 case EMERGENCY:
                     state_to_send = new DroneFlyingState(FlyingState.EMERGENCY,
-                            _serial_number, _date_handle.getTime());
+                            _serial_number, System.currentTimeMillis());
                     break;
             }
 
@@ -171,7 +168,7 @@ public class DroHubHandler implements Drone.Iface {
                 _drone_battery_level.push(
                         new DroneBatteryLevel(
                                 battery_info.getBatteryLevel(),
-                                _serial_number, _date_handle.getTime()
+                                _serial_number, System.currentTimeMillis()
                         )
                 );
             } catch (TException e) {
@@ -190,7 +187,7 @@ public class DroHubHandler implements Drone.Iface {
                     location.getLongitude(),
                     location.getAltitude(),
                     _serial_number,
-                    _date_handle.getTime());
+                    System.currentTimeMillis());
 
             try {
                 _drone_position.push(position_to_send);
@@ -205,7 +202,7 @@ public class DroHubHandler implements Drone.Iface {
 
            DroneRadioSignal radio_signal_to_send = new DroneRadioSignal(
                    _serial_number,
-                   _date_handle.getTime());
+                   System.currentTimeMillis());
 
             radio_signal_to_send.signal_quality = radio_signal.getLinkSignalQuality();
             radio_signal_to_send.rssi = radio_signal.getRssi();
@@ -257,13 +254,14 @@ public class DroHubHandler implements Drone.Iface {
 
     @Override
     public DroneReply pingService() throws TException {
-        return new DroneReply(true, _serial_number, _date_handle.getTime());
+        return new DroneReply(true, _serial_number, System.currentTimeMillis());
     }
 
     @Override
     public DroneLiveVideoStateResult getLiveVideoState(DroneSendLiveVideoRequest request) {
         System.out.println(_video_state);
-        return new DroneLiveVideoStateResult(_video_state, _serial_number, (new Date()).getTime());
+        return new DroneLiveVideoStateResult(_video_state, _serial_number,
+                System.currentTimeMillis());
     }
 
     @Override
@@ -277,14 +275,14 @@ public class DroHubHandler implements Drone.Iface {
         if (mediaProjectionManager == null) {
             _video_state = DroneLiveVideoState.INVALID_CONDITION;
             return new DroneLiveVideoStateResult(_video_state, _serial_number,
-                    (new Date()).getTime());
+                    System.currentTimeMillis());
         }
         _activity.startActivityForResult(
                 mediaProjectionManager.createScreenCaptureIntent(), _CAPTURE_PERMISSION_REQUEST_CODE);
         //TODO: We need to notify that if he does not accept the permissions he will not be
         //able to broadcast the video...THis requirement may change if we stop using screen capture.
         return new DroneLiveVideoStateResult(_video_state, _serial_number,
-                (new Date()).getTime());
+                System.currentTimeMillis());
     }
 
     @Override
@@ -295,7 +293,7 @@ public class DroHubHandler implements Drone.Iface {
             }
             pilotingItf.takeOff();
         });
-        return new DroneReply(true, _serial_number, _date_handle.getTime());
+        return new DroneReply(true, _serial_number, System.currentTimeMillis());
     }
 
     @Override
@@ -306,12 +304,12 @@ public class DroHubHandler implements Drone.Iface {
             }
             pilotingItf.land();
         });
-        return new DroneReply(true, _serial_number, _date_handle.getTime());
+        return new DroneReply(true, _serial_number, System.currentTimeMillis());
     }
 
     @Override
     public DroneReply doReturnToHome() throws TException {
-        return new DroneReply(false, _serial_number, _date_handle.getTime());
+        return new DroneReply(false, _serial_number, System.currentTimeMillis());
     }
 
 
@@ -371,7 +369,7 @@ public class DroHubHandler implements Drone.Iface {
 
         }
         list_to_send.serial = _serial_number;
-        list_to_send.timestamp = _date_handle.getTime();
+        list_to_send.timestamp = System.currentTimeMillis();
         return list_to_send;
     }
 
@@ -400,7 +398,7 @@ public class DroHubHandler implements Drone.Iface {
                         action_result = true;
                 }
         }
-        return new DroneReply(action_result, _serial_number, _date_handle.getTime());
+        return new DroneReply(action_result, _serial_number, System.currentTimeMillis());
     }
 
     @Override
@@ -428,6 +426,6 @@ public class DroHubHandler implements Drone.Iface {
                         action_result = true;
                 }
         }
-        return new DroneReply(action_result, _serial_number, _date_handle.getTime());
+        return new DroneReply(action_result, _serial_number, System.currentTimeMillis());
     }
 }
