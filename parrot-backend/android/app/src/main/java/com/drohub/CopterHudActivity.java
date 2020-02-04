@@ -546,7 +546,7 @@ public class CopterHudActivity extends GroundSdkActivityBase
                 getString(R.string.drohub_ws_url),
                 getString(R.string.janus_websocket_uri),
                 this);
-        Log.w("COPTER", "Started thrift connection");
+        Log.w("COPTER", "Started thrift connection to " + getString(R.string.drohub_ws_url) );
 
     }
 

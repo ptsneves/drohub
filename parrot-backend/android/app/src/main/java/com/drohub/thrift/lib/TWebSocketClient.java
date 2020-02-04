@@ -131,7 +131,7 @@ public class TWebSocketClient extends TTransport {
 
     @Override
     public void write(byte[] buf, int off, int len) throws TTransportException {
-//        System.out.println("send: " + StandardCharsets.UTF_8.decode(ByteBuffer.wrap(buf, off, len)).toString() );
+        System.out.println("send: " + StandardCharsets.UTF_8.decode(ByteBuffer.wrap(buf, off, len)).toString() );
         _client.send(ByteBuffer.wrap(buf, off, len));
     }
 }

@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.util.Log;
 
 import com.drohub.GroundSdkActivityBase;
+import com.drohub.R;
 import com.drohub.thift.gen.Drone;
 import com.drohub.thrift.lib.TMessageValidatorProtocol;
 import com.drohub.thrift.lib.TReverseTunnelServer;
@@ -21,7 +22,7 @@ public class ThriftConnection {
 
     public void onStart(String drone_serial, String thrift_ws_url, String janus_websocket_uri,
                         GroundSdkActivityBase activity) {
-
+        Log.w("COPTER", "Started thrift connection to " + janus_websocket_uri );
         HashMap<String, String> http_headers = new HashMap<>();
         http_headers.put("User-Agent", "AirborneProjects");
         http_headers.put("Content-Type", "application/x-thrift");

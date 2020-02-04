@@ -261,6 +261,7 @@ public class DroHubHandler implements Drone.Iface {
 
     @Override
     public DroneLiveVideoStateResult getLiveVideoState(DroneSendLiveVideoRequest request) throws TException {
+        System.out.println(_video_state);
         return new DroneLiveVideoStateResult(_video_state, _serial_number, (new Date()).getTime());
     }
 
@@ -348,11 +349,12 @@ public class DroHubHandler implements Drone.Iface {
 
     @Override
     public DroneFileList getFileList() throws TException {
+        Log.e(TAG, "Start fle list");
         List<MediaItem> media_items = _drone_media_store.browse(obj -> {}).get();
 
         if (media_items == null)
             throw new TException("An error occurred retrieving the file list");
-
+        Log.e(TAG, "No null");
         DroneFileList list_to_send = new DroneFileList();
 
         for (MediaItem item : media_items) {

@@ -171,13 +171,14 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
 
             if (auto_connection.getStatus() == AutoConnection.Status.STARTED) {
                 _drone = temp_drone;
-                ULog.w(TAG, "Drone UID " + _drone.getUid());
+
                 if (this instanceof MainActivity) {
                     Intent intent = new Intent(this, CopterHudActivity.class);
                     intent.putExtra(EXTRA_DEVICE_UID, _drone.getUid());
                     this.startActivity(intent);
                 }
                 else if (this instanceof CopterHudActivity && _thrift_connection == null) {
+                    ULog.w(TAG, "Drone UID " + _drone.getUid());
                     ;
                 }
             }
