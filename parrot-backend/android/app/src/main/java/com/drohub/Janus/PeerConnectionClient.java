@@ -332,7 +332,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
   }
 
 
-  public VideoCapturer createScreenCapturer(CapturerObserver capturerObserver, Intent data, int code) throws InvalidObjectException {
+  private VideoCapturer createScreenCapturer(CapturerObserver capturerObserver, Intent data, int code) throws InvalidObjectException {
     if (code != Activity.RESULT_OK) {
       throw new InvalidObjectException("No permissions for screen sharing");
     }
