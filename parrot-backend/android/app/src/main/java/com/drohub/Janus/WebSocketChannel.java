@@ -186,8 +186,10 @@ public class WebSocketChannel extends WebSocketClient {
         JSONObject message = new JSONObject();
         try {
             publish.putOpt("request", "configure");
+            publish.putOpt("bitrate", 256000);
             publish.putOpt("audio", false);
             publish.putOpt("video", true);
+            publish.putOpt("videocodec", "VP8");
 
             publish.putOpt("record", true);
             publish.putOpt("filename", displayName);

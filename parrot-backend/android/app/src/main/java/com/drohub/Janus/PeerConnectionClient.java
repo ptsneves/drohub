@@ -19,6 +19,7 @@ import org.webrtc.CapturerObserver;
 import org.webrtc.DefaultVideoDecoderFactory;
 import org.webrtc.DefaultVideoEncoderFactory;
 import org.webrtc.EglBase;
+import org.webrtc.HardwareVideoEncoderFactory;
 import org.webrtc.Logging;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
@@ -100,8 +101,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
 
       factory = PeerConnectionFactory
               .builder()
-              .setVideoDecoderFactory(new DefaultVideoDecoderFactory(renderEGLContext))
-              .setVideoEncoderFactory(new DefaultVideoEncoderFactory(renderEGLContext, true, true))
+              .setVideoEncoderFactory(new HardwareVideoEncoderFactory(renderEGLContext, true, false))
               .createPeerConnectionFactory();
 
       _webSocketChannel = WebSocketChannel.createWebSockeChannel(
@@ -142,8 +142,6 @@ public class PeerConnectionClient implements JanusRTCInterface {
     else
       sdpMediaConstraints.mandatory.add(
               new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "false"));
-//    sdpMediaConstraints.mandatory.add(
-//            new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
 
     PeerConnection peerConnection = createPeerConnection(handleId, JanusConnection.ConnectionType.LOCAL);
 

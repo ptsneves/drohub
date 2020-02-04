@@ -234,8 +234,10 @@ public class DroHubHandler implements Drone.Iface {
             EglBase rootEglBase = EglBase.create();
             DisplayMetrics metrics = _activity.getResources().getDisplayMetrics();
             PeerConnectionScreenShareParameters peerConnectionParameters = new PeerConnectionScreenShareParameters(
-                    _janus_websocket_uri, _activity, metrics.widthPixels, metrics.heightPixels, 30,
-                    "H264",
+                    _janus_websocket_uri, _activity,
+                    Arrays.asList(_turn_servers),
+                    metrics.widthPixels, metrics.heightPixels, 20,
+                    "VP8",
                     120, null, false,
                     permission_data,
                     permission_code);
