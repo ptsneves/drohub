@@ -9,8 +9,10 @@ import android.util.Log;
 
 import org.apache.thrift.*;
 import org.webrtc.EglBase;
+import org.webrtc.PeerConnection;
 
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -18,6 +20,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import com.drohub.GroundSdkActivityBase;
 import com.drohub.Janus.PeerConnectionClient;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
+import com.drohub.R;
 import com.drohub.thift.gen.*;
 import com.parrot.drone.groundsdk.device.instrument.BatteryInfo;
 import com.parrot.drone.groundsdk.device.instrument.FlyingIndicators;
@@ -68,6 +71,7 @@ public class DroHubHandler implements Drone.Iface {
 
     private GroundSdkActivityBase _activity;
     private String _janus_websocket_uri;
+    private PeerConnection.IceServer[] _turn_servers;
     private PeerConnectionClient _peerConnectionClient;
     private DroneLiveVideoState _video_state;
     private MediaStore _drone_media_store;
@@ -88,6 +92,18 @@ public class DroHubHandler implements Drone.Iface {
         _video_state = DroneLiveVideoState.INVALID_CONDITION;
         _drone_handle = _activity.getDroneHandle().getDrone(_serial_number);
         _date_handle = new Date();
+
+
+        String[] res_turn_urls = _activity.getResources().getStringArray(R.array.turn_servers);
+        _turn_servers = new PeerConnection.IceServer[res_turn_urls.length];
+        for (int i = 0; i < _turn_servers.length; i++) {
+            _turn_servers[i] =  PeerConnection.IceServer
+                    .builder(res_turn_urls[i])
+                    .setUsername(_activity.getResources().getString(R.string.turn_user_name))
+                    .setPassword(_activity.getResources().getString(R.string.turn_credential))
+                    .createIceServer();
+        }
+
 
         _drone_handle.getInstrument(FlyingIndicators.class, flying_indicators -> {
             if (flying_indicators == null)

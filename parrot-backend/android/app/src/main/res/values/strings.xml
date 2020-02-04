@@ -36,6 +36,16 @@
     <string name="drohub_ws_url">wss://drohub.airborneprojects.com/ws</string>
     <string name="janus_websocket_uri">wss://drohub.airborneprojects.com/ws_janus</string>
     <string name="drohub_url">https://drohub.airborneprojects.com</string>
+    <string name="turn_user_name">
+        XXXXX
+    </string>
+    <string name="turn_credential">
+        b9f961de-45e9-11ea-8fe1-6adcafebbb45
+    </string>
+    <string-array name="turn_servers">
+        <item>turn:eu-turn4.xirsys.com:80?transport=udp</item>
+        <item>turn:eu-turn4.xirsys.com:80?transport=tcp</item>
+    </string-array>
     <string name="title_dialog_animation_choice">Choose animation</string>
     <string name="title_dialog_flip_direction_choice">Choose flip direction</string>
     <string name="no_value">--</string>

@@ -2,7 +2,11 @@ package com.drohub.Janus.PeerConnectionParameters;
 
 import android.app.Activity;
 
+import org.webrtc.PeerConnection;
+
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PeerConnectionParameters {
   public enum VideoCapturerType {
@@ -19,10 +23,10 @@ public class PeerConnectionParameters {
   public final boolean noAudioProcessing;
   public final Activity activity;
   public final VideoCapturerType capturerType;
-
+  public final List<PeerConnection.IceServer> iceServers;
 
   PeerConnectionParameters(
-          String janus_web_socket_uri, Activity activity,
+          String janus_web_socket_uri, Activity activity, List<PeerConnection.IceServer> iceServers,
           int videoWidth, int videoHeight, int videoFps, String videoCodec, VideoCapturerType capturerType,
           int audioStartBitrate, String audioCodec,
           boolean noAudioProcessing) {
@@ -45,5 +49,6 @@ public class PeerConnectionParameters {
     this.audioCodec = audioCodec;
     this.noAudioProcessing = noAudioProcessing;
     this.capturerType = capturerType;
+    this.iceServers = iceServers;
   }
 }

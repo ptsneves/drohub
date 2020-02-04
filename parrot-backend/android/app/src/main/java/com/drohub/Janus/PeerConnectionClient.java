@@ -35,8 +35,6 @@ import org.webrtc.VideoTrack;
 import java.io.InvalidObjectException;
 import java.math.BigInteger;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -176,18 +174,14 @@ public class PeerConnectionClient implements JanusRTCInterface {
 
   private PeerConnection createPeerConnection(BigInteger handleId, JanusConnection.ConnectionType type) {
     Log.d(TAG, "Create peer connection.");
-    PeerConnection.IceServer iceServer = PeerConnection.IceServer
-            .builder("stun:stun.l.google.com:19302")
-            .createIceServer();
 
-    List<PeerConnection.IceServer> iceServers = new ArrayList<>();
-    iceServers.add(iceServer);
-    PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
+    PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(peerConnectionParameters.iceServers);
     rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.ALL;
     rtcConfig.enableDtlsSrtp = true;
 
 
     PeerConnectionObserver pcObserver = new PeerConnectionObserver(viewRenderer, _webSocketChannel, handleId);
+
     PeerConnection peerConnection = factory.createPeerConnection(rtcConfig, pcObserver);
     if (peerConnection == null)
       throw new NullPointerException("peer connection is null");
