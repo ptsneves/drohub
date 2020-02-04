@@ -64,7 +64,7 @@ namespace DroHub
                 options.CheckConsentNeeded = context => true;
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
-            services.Configure<DeviceMicroServiceOptions>(Configuration.GetSection("DeviceMicroServiceOptions"));
+
             services.Configure<JanusServiceOptions>(Configuration.GetSection("JanusServiceOptions"));
             services.AddHostedService<NotificationsHubPoller>();
             services.AddHttpClient<JanusService>();

@@ -16,21 +16,11 @@ namespace DroHub.Helpers {
             Address = "http://docker";
             Port = 8088;
             AdminKey = "NOTOKEN";
-            RTPPortStart = 6004;
-            RTPPortEnd = 6005;
             RecordingPath = "/tmp/";
         }
         public string Address { get; set; }
         public int Port { get; set; }
-        public int RTPPortStart { get; set; }
-        public int RTPPortEnd { get; set; }
         public string RecordingPath { get; set; }
-        [JsonIgnore]
-        public IEnumerable<int> RTPPortRange {
-            get {
-                return Enumerable.Range(RTPPortStart, RTPPortEnd);
-            }
-        }
         public string AdminKey { get; set; }
     }
     public class JanusService
@@ -273,8 +263,6 @@ namespace DroHub.Helpers {
         }
         public async Task<JanusService.VideoRoomEndPoint> createVideoRoom(CreateSession session, Int64 handle, Int64 id,
                 string description, string secret, Int64 max_publishers) {
-            var rand = new Random();
-            int video_port = rand.Next(_options.RTPPortStart, _options.RTPPortEnd);
             var request = new JanusRequest(session, new JanusRequest.CreateVideoRoomRequest(_options.AdminKey, id, max_publishers)
             {
                 Description = description,
