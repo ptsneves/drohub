@@ -255,26 +255,6 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintLeft_toRightOf="@id/take_off_land_btn"/>
 
-            <com.drohub.hud.JoystickView
-                android:id="@+id/roll_pitch_joystick"
-                android:layout_width="256dp"
-                android:layout_height="256dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginBottom="2dp"
-                android:padding="2dp"
-                app:layout_constraintBottom_toBottomOf="@+id/video_view"
-                app:layout_constraintLeft_toLeftOf="parent"/>
-
-            <com.drohub.hud.JoystickView
-                android:id="@+id/yaw_gaz_joystick"
-                android:layout_width="256dp"
-                android:layout_height="256dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginBottom="2dp"
-                android:padding="2dp"
-                app:layout_constraintBottom_toBottomOf="@+id/video_view"
-                app:layout_constraintRight_toRightOf="parent"/>
-
             <ImageButton
                 android:id="@+id/return_home_btn"
                 android:layout_width="48dp"

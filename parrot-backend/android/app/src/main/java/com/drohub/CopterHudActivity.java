@@ -54,7 +54,6 @@ import com.drohub.hud.AltimeterView;
 import com.drohub.hud.Animations;
 import com.drohub.hud.AttitudeView;
 import com.drohub.hud.HeadingView;
-import com.drohub.hud.JoystickView;
 import com.drohub.hud.LocationFormatter;
 import com.drohub.hud.PickAnimationDialog;
 import com.drohub.hud.PickFlipDirectionDialog;
@@ -85,8 +84,6 @@ import com.parrot.drone.groundsdk.device.pilotingitf.animation.Flip;
 import com.parrot.drone.groundsdk.facility.UserLocation;
 import com.parrot.drone.groundsdk.stream.GsdkStreamView;
 import com.parrot.drone.groundsdk.value.OptionalDouble;
-
-import java.io.IOException;
 
 
 /** Activity to pilot a copter. */
@@ -148,10 +145,6 @@ public class CopterHudActivity extends GroundSdkActivityBase
 
     @SuppressWarnings("FieldCanBeLocal")
     private ToggleButton mOverlayVisibilityBtn;
-
-    private JoystickView mRollPitchJoystick;
-
-    private JoystickView mYawGazJoystick;
 
     private Drone mDrone;
 
@@ -217,8 +210,6 @@ public class CopterHudActivity extends GroundSdkActivityBase
         mZoomLevelView = findViewById(R.id.zoom_level);
         mZoomVelocityView = findViewById(R.id.zoom_velocity);
         mOverlayVisibilityBtn = findViewById(R.id.overlay_visibility_btn);
-        mRollPitchJoystick = findViewById(R.id.roll_pitch_joystick);
-        mYawGazJoystick = findViewById(R.id.yaw_gaz_joystick);
         DefaultItemAnimator animator = new DefaultItemAnimator();
         // item change animations are a bit too flashy, disable them
         animator.setSupportsChangeAnimations(false);
@@ -513,34 +504,6 @@ public class CopterHudActivity extends GroundSdkActivityBase
             return true;
         });
 
-        mRollPitchJoystick.setListener((joystick, percentX, percentY) -> {
-            int roll = (int) (percentX * 100);
-            int pitch = (int) (-percentY * 100);
-            if (mLookAtItf != null && mLookAtItf.getState() == Activable.State.ACTIVE) {
-                mLookAtItf.setRoll(roll);
-                mLookAtItf.setPitch(pitch);
-            } else if (mPointOfInterestPilotingItf != null && mPointOfInterestPilotingItf.getState() == Activable.State.ACTIVE) {
-                mPointOfInterestPilotingItf.setRoll(roll);
-                mPointOfInterestPilotingItf.setPitch(pitch);
-            } else {
-                mPilotingItf.setRoll(roll);
-                mPilotingItf.setPitch(pitch);
-            }
-        });
-
-        mYawGazJoystick.setListener((joystick, percentX, percentY) -> {
-            int yaw = (int) (percentX * 100);
-            int speed = (int) (percentY * 100);
-            if (mLookAtItf != null && mLookAtItf.getState() == Activable.State.ACTIVE) {
-                mLookAtItf.setVerticalSpeed(speed);
-            } else if (mPointOfInterestPilotingItf != null && mPointOfInterestPilotingItf.getState() == Activable.State.ACTIVE) {
-                mPointOfInterestPilotingItf.setVerticalSpeed(speed);
-            } else {
-                mPilotingItf.setYawRotationSpeed(yaw);
-                mPilotingItf.setVerticalSpeed(speed);
-            }
-        });
-
         _thrift_connection = new ThriftConnection();
         _thrift_connection.onStart(mDrone.getUid(),
                 getString(R.string.drohub_ws_url),
@@ -572,8 +535,6 @@ public class CopterHudActivity extends GroundSdkActivityBase
 
     private void setOverlayVisibility(boolean visible) {
         int visibility = visible ? View.VISIBLE : View.GONE;
-        mRollPitchJoystick.setVisibility(visibility);
-        mYawGazJoystick.setVisibility(visibility);
         mAltimeterView.setVisibility(visibility);
         mAttitudeView.setVisibility(visibility);
     }
