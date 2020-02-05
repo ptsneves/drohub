@@ -66,10 +66,6 @@ public class EchoStream : Stream
         }
     }
 
-    public EchoStream(CancellationToken cancellation_token) : this(10, cancellation_token)
-    {
-    }
-
     public EchoStream(int maxQueueDepth, CancellationToken cancellation_token)
     {
         _maxQueueDepth = maxQueueDepth;
