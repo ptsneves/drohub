@@ -21,16 +21,6 @@ namespace DroHub.Helpers.Thrift
         private string _serial_number;
         private CancellationTokenSource _cancellation_token_src;
         private readonly List<Task> _task_list;
-        private class IOEchoStream
-        {
-            public EchoStream Input { get; }
-            public EchoStream Output { get; }
-            public IOEchoStream(CancellationToken tkn)
-            {
-                Input = new EchoStream(1024, tkn);
-                Output = new EchoStream(1024, tkn);
-            }
-        }
         private readonly List<EchoStream> _input_streams;
         private bool _is_disposed;
         private string _socket_id;
@@ -42,14 +32,15 @@ namespace DroHub.Helpers.Thrift
         {
             private readonly WebSocket socket;
             private readonly ILogger _logger;
-            public TWebSocketStream(Stream input_stream, Stream output_stream, WebSocket socket_, ILogger logger) : base(input_stream, output_stream)
+            private readonly CancellationToken _tkn;
+            public TWebSocketStream(Stream input_stream, WebSocket socket_, ILogger logger, CancellationToken tkn) : base(input_stream, new EchoStream(1024, tkn))
             {
                 socket = socket_;
                 _logger = logger;
+                _tkn = tkn;
             }
             public override async Task FlushAsync(CancellationToken tkn)
             {
-                var output_stream = OutputStream;
                 if (socket.State == WebSocketState.Open)
                 {
                     if (tkn.IsCancellationRequested)
@@ -58,22 +49,22 @@ namespace DroHub.Helpers.Thrift
                         return;
                     }
 
-                    int maximum_to_flush = (int)Math.Min(Int32.MaxValue, Math.Max(output_stream.Length, 1));
-                    var buffer = new byte[maximum_to_flush];
-                    if (output_stream.CanRead)
+                    if (OutputStream.CanRead)
                     {
-                        var res = output_stream.Read(buffer, 0, maximum_to_flush);
+                        int maximum_to_flush = (int)Math.Min(Int32.MaxValue, Math.Max(OutputStream.Length, 1));
+                        var buffer = new byte[maximum_to_flush];
+                        var res = OutputStream.Read(buffer, 0, maximum_to_flush);
+                        OutputStream = new EchoStream(1024, _tkn);
                         if (res > 0)
                         {
                             ASCIIEncoding ascii = new ASCIIEncoding();
                             var a = ascii.GetString(buffer, 0, maximum_to_flush);
                             _logger.LogDebug($"Send async res {res} !{a}");
                             await socket.SendAsync(buffer, WebSocketMessageType.Binary, true, tkn);
-                            _logger.LogDebug("Sent");
                         }
                         else
                         {
-                            _logger.LogDebug("???");
+                            _logger.LogError("???");
                             return;
                         }
                     }
@@ -86,10 +77,10 @@ namespace DroHub.Helpers.Thrift
             public C Client { get; }
             private bool _is_disposed;
             private readonly ThriftMessageHandler _thrift_handler_instance;
-            private readonly IOEchoStream _stream;
             CancellationTokenSource _cn_src;
             private readonly ILogger _logger;
             private readonly string _serial_number;
+            private readonly EchoStream _input_stream;
             public ThriftClient(ThriftMessageHandler th, CancellationToken tkn, ILogger logger)
             {
                 _cn_src = CancellationTokenSource.CreateLinkedTokenSource(tkn);
@@ -97,14 +88,13 @@ namespace DroHub.Helpers.Thrift
                 _thrift_handler_instance = th;
                 _logger = logger;
 
-                _stream = new IOEchoStream(tkn);
+                _input_stream = new EchoStream(1024, tkn);
                 lock (th._input_streams)
                 {
-                    th._input_streams.Add(_stream.Input);
+                    th._input_streams.Add(_input_stream);
                 }
-                TTransport transport = new TWebSocketStream(_stream.Input, _stream.Output, th._socket, logger);
-                // transport = new TFramedTransport(transport);
-                TProtocol protocol = new TJsonProtocol(transport);
+                TTransport transport = new TWebSocketStream(_input_stream, th._socket, logger, tkn);
+                TProtocol protocol = new TAJsonProtocol(transport);
                 protocol = new TAMessageValidatorProtocol(protocol, TAMessageValidatorProtocol.ValidationModeEnum.KEEP_READING,
                     TAMessageValidatorProtocol.OperationModeEnum.SEQID_MASTER);
                 Client = (C)Activator.CreateInstance(typeof(C), protocol);
@@ -121,10 +111,7 @@ namespace DroHub.Helpers.Thrift
                     lock (_thrift_handler_instance._input_streams)
                     {
                         _cn_src.Cancel();
-                        _thrift_handler_instance._input_streams.Remove(_stream.Input);
-
-
-                        _logger.LogDebug("Disposed");
+                        _thrift_handler_instance._input_streams.Remove(_input_stream);
                     }
                 }
                 _is_disposed = true;
