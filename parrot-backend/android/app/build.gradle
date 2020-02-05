@@ -27,6 +27,7 @@ android {
             signingConfig signingConfigs.debug
         }
         debug {
+            applicationIdSuffix ".local"
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             debuggable true
         }
