@@ -266,6 +266,10 @@ public class DroHubHandler implements Drone.Iface {
 
     @Override
     public DroneLiveVideoStateResult sendLiveVideoTo(DroneSendLiveVideoRequest request) {
+        if (_video_state != DroneLiveVideoState.INVALID_CONDITION) {
+            return new DroneLiveVideoStateResult(_video_state, _serial_number,
+                    System.currentTimeMillis());
+        }
         _video_state = DroneLiveVideoState.STOPPED;
         _room_id = request.room_id;
         MediaProjectionManager mediaProjectionManager =
