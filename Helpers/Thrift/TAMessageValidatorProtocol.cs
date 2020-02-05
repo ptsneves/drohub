@@ -93,26 +93,33 @@ namespace DroHub.Helpers.Thrift
         }
         public override async ValueTask<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken)
         {
-            await ReadMagicNumber(cancellationToken);
-            TMessage new_message = await base.ReadMessageBeginAsync(cancellationToken);
-            // Console.WriteLine($"seq id {_random_seq_id} == {new_message.SeqID}");
-            if (OperationMode == OperationModeEnum.SEQID_MASTER)
-            {
-                while (_random_seq_id != new_message.SeqID)
-                {
+            TMessage new_message;
+            while (true) {
+                try {
+                    await ReadMagicNumber(cancellationToken);
+                    new_message = await base.ReadMessageBeginAsync(cancellationToken);
+                    if (OperationMode != OperationModeEnum.SEQID_MASTER)
+                        return new_message;
+
                     if (ValidationMode == ValidationModeEnum.KEEP_READING)
                     {
-                        // Console.WriteLine("Re reading");
-                        await ReadMagicNumber(cancellationToken);
-                        new_message = await base.ReadMessageBeginAsync(cancellationToken);
+                        if (_random_seq_id == new_message.SeqID)
+                        {
+                            return new_message;
+                        }
                     }
                     else if (ValidationMode == ValidationModeEnum.THROW_EXCEPTION)
                         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "Received SeqID and sent one do not match.");
                     else
                         throw new InvalidProgramException("This is an unreachable situation");
                 }
+                catch (Exception) {
+                    if (ValidationMode == ValidationModeEnum.KEEP_READING)
+                        continue;
+                    else
+                        throw;
+                }
             }
-            return new_message;
         }
     }
 }
