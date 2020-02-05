@@ -8,5 +8,6 @@
 .vscode
 bin
 obj
+out
 parrot-service
 DroHub.Tests
