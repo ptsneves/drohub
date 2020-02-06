@@ -33,9 +33,9 @@
   -->
 
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="drohub_ws_url">wss://drohub.airborneprojects.com/ws</string>
-    <string name="janus_websocket_uri">wss://drohub.airborneprojects.com/ws_janus</string>
-    <string name="drohub_url">https://drohub.airborneprojects.com</string>
+    <string name="drohub_ws_url">wss://drohub.xyz/ws</string>
+    <string name="janus_websocket_uri">wss://drohub.xyz/ws_janus</string>
+    <string name="drohub_url">https://drohub.xyz</string>
     <string name="turn_user_name">
         XXXXX
     </string>
