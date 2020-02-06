@@ -6,6 +6,10 @@ services:
         image: "ptsneves/airborneprojects:mjr-converter"
         volumes:
             - live-video-storage:/var/live-video-storage
+        logging:
+            options:
+                max-file: "5"
+                max-size: "100m"
     janus:
         build:
             context: ./docker-janus
@@ -16,6 +20,10 @@ services:
             - "6004-6200:6004-6200/udp"
         volumes:
             - live-video-storage:/var/live-video-storage
+        logging:
+            options:
+                max-file: "5"
+                max-size: "100m"
     web:
         build:
             context: .
@@ -30,6 +38,10 @@ services:
         restart: on-failure
         volumes:
             - live-video-storage:/var/live-video-storage
+        logging:
+            options:
+                max-file: "5"
+                max-size: "100m"
     database:
         image: mysql:latest
         network_mode: host
