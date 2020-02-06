@@ -269,12 +269,15 @@ namespace DroHub.Helpers {
                 RecordingDir = $"{_options.RecordingPath}"
                 // Secret = secret
             });
-            var result = (await getJanusAnswer($"/janus/{session.Id}/{handle}", request));
+            var result = await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
             _logger.LogDebug("Janus answer {result}", JsonConvert.SerializeObject(result.PluginData.StreamingPluginData));
             if (!String.IsNullOrEmpty(result.PluginData.StreamingPluginData.Error))
             {
-                _logger.LogDebug("Failed to create janus video room");
-                throw new JanusServiceException(JsonConvert.SerializeObject(result.PluginData.StreamingPluginData.Error));
+                if (result.PluginData.StreamingPluginData.Error != $"Room {id} already exists")
+                {
+                    _logger.LogDebug("Failed to create janus video room");
+                    throw new JanusServiceException(JsonConvert.SerializeObject(result.PluginData.StreamingPluginData.Error));
+                }
             }
 
             return new JanusService.VideoRoomEndPoint
