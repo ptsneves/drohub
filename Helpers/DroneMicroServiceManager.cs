@@ -184,6 +184,7 @@ namespace DroHub.Helpers.Thrift
                     _logger.LogDebug("Saved edit information on device {}", device);
                 }
                 catch(Exception e) {
+                    _logger.LogError(e.ToString());
                     await destroyMountPointForDevice(device);
                     throw e;
                 }
