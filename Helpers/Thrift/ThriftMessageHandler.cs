@@ -104,7 +104,7 @@ namespace DroHub.Helpers.Thrift
                 }
                 TTransport transport = new TWebSocketStream(_stream.Input, _stream.Output, th._socket, logger);
                 // transport = new TFramedTransport(transport);
-                TProtocol protocol = new TJsonProtocol(transport);
+                TProtocol protocol = new TAJsonProtocol(transport);
                 protocol = new TAMessageValidatorProtocol(protocol, TAMessageValidatorProtocol.ValidationModeEnum.KEEP_READING,
                     TAMessageValidatorProtocol.OperationModeEnum.SEQID_MASTER);
                 Client = (C)Activator.CreateInstance(typeof(C), protocol);
