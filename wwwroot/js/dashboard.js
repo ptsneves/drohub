@@ -295,12 +295,6 @@ $(function () {
                 case 0: //Live
                     if (element.data("render-state") == "stopped") {
                         element.data("render-state", "starting");
-                        window.setTimeout(function (element) {
-                            if (element.data('render-state') == "starting") {
-                                console.log("Something failed starting the video");
-                                element.data("render-state", "stopped");
-                            }
-                        }, 10000, element);
                         initJanus(element.data('janus-url'), element.data('stun-server-url'), element.data('room-id'));
                     }
                     break;
