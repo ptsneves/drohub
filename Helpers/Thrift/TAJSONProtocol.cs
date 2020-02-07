@@ -732,7 +732,6 @@ namespace Thrift.Protocol
 
         public override async ValueTask<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken)
         {
-            resetContext();
             var message = new TMessage();
             await ReadJsonArrayStartAsync(cancellationToken);
             if (await ReadJsonIntegerAsync(cancellationToken) != Version)
