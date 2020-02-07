@@ -5,6 +5,8 @@ import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
+
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.extensions.IExtension;
@@ -37,20 +39,36 @@ public class WebSocketChannel extends WebSocketClient {
     private JanusRTCInterface delegate;
     private Activity _activity;
     private long _room_id;
+    private PeerConnectionParameters _peerConnectionParameters;
 
-    public static WebSocketChannel createWebSockeChannel(long room_id, String displayName, Activity activity, JanusRTCInterface delegate, String url) throws URISyntaxException, InterruptedException, InvalidObjectException {
+    public static WebSocketChannel createWebSockeChannel(long room_id,
+                                                         String displayName,
+                                                         Activity activity,
+                                                         JanusRTCInterface delegate,
+                                                         String url,
+                                                         PeerConnectionParameters connection_parameters
+                                                         ) throws URISyntaxException, InterruptedException, InvalidObjectException {
         Draft_6455 janus_draft = new Draft_6455(Collections.<IExtension>emptyList(),
                 Collections.<IProtocol>singletonList(new Protocol("janus-protocol")));
-        return new WebSocketChannel(room_id, displayName, activity, delegate, url, janus_draft);
+        return new WebSocketChannel(room_id, displayName, activity, delegate, url, janus_draft,
+                connection_parameters);
     }
 
-    private WebSocketChannel(long room_id, String displayName, Activity activity, JanusRTCInterface delegate, String url, Draft_6455 janus_draft) throws URISyntaxException, InterruptedException, InvalidObjectException {
+    private WebSocketChannel(long room_id,
+                             String displayName,
+                             Activity activity,
+                             JanusRTCInterface delegate,
+                             String url,
+                             Draft_6455 janus_draft,
+                             PeerConnectionParameters peerConnectionParameters) throws URISyntaxException, InterruptedException, InvalidObjectException {
+
         super(new URI(url), janus_draft);
         this.displayName = "drone-" + displayName + "-" + System.currentTimeMillis();
         keepaliveHandler = new Handler();
         this.delegate = delegate;
         _activity = activity;
         _room_id = room_id;
+        _peerConnectionParameters = peerConnectionParameters;
         if (!connectBlocking(10, TimeUnit.SECONDS))
             throw new InvalidObjectException("Could not connect to janus");
     }
@@ -186,10 +204,10 @@ public class WebSocketChannel extends WebSocketClient {
         JSONObject message = new JSONObject();
         try {
             publish.putOpt("request", "configure");
-            publish.putOpt("bitrate", 256000);
+            publish.putOpt("bitrate", _peerConnectionParameters.videoStartBitrate);
             publish.putOpt("audio", false);
             publish.putOpt("video", true);
-            publish.putOpt("videocodec", "VP8");
+            publish.putOpt("videocodec", _peerConnectionParameters.videoCodec);
 
             publish.putOpt("record", true);
             publish.putOpt("filename", displayName);

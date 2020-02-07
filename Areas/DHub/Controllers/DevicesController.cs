@@ -386,8 +386,8 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         public IActionResult GetLiveStreamRecordingVideo(string video_id) {
-            var path = Path.Combine(_janus_options.RecordingPath, video_id.Replace("mjr", "webm"));
-            var res = File(System.IO.File.OpenRead(path), "video/VP8");
+            var path = Path.Combine(_janus_options.RecordingPath, video_id.Replace("mjr", "mp4"));
+            var res = File(System.IO.File.OpenRead(path), "video/mp4");
             res.EnableRangeProcessing = true;
             return res;
         }
@@ -409,8 +409,7 @@ namespace DroHub.Areas.DHub.Controllers
             var model = new GalleryPageModel
             {
                 device = device,
-                video_paths = di.GetFiles($"drone-{device.SerialNumber}-*.webm").OrderByDescending(f => f.Name).Concat(
-                    di.GetFiles($"drone-{device.SerialNumber}-*.mjr.tmp").OrderByDescending(f => f.Name)).ToArray()
+                video_paths = di.GetFiles($"drone-{device.SerialNumber}-*.mp4").OrderByDescending(f => f.Name).ToArray()
         };
             return View(model);
         }

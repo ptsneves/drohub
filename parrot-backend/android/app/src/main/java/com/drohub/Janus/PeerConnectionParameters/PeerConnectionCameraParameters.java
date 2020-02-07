@@ -11,10 +11,12 @@ public class PeerConnectionCameraParameters extends PeerConnectionParameters {
                                           Activity activity,
                                           List<PeerConnection.IceServer> iceServers,
                                           int videoWidth, int videoHeight, int videoFps,
-                                          String videoCodec, VideoCapturerType capturerType,
+                                          String videoCodec, int videoStartBitrate,
+                                          VideoCapturerType capturerType,
                                           int audioStartBitrate, String audioCodec,
                                           boolean noAudioProcessing) {
         super(janus_web_socket_uri, activity, iceServers, videoWidth, videoHeight, videoFps, videoCodec,
-                capturerType, audioStartBitrate, audioCodec, noAudioProcessing);
+                videoStartBitrate, capturerType, audioStartBitrate,
+                audioCodec, noAudioProcessing);
     }
 }

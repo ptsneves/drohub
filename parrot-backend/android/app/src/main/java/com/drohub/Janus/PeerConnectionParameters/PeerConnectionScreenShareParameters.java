@@ -16,13 +16,15 @@ public class PeerConnectionScreenShareParameters extends PeerConnectionParameter
                                                List<PeerConnection.IceServer> iceServers,
                                                int videoWidth, int videoHeight, int videoFps,
                                                String videoCodec,
+                                               int videoStartBitrate,
                                                int audioStartBitrate, String audioCodec,
                                                boolean noAudioProcessing,
                                                Intent permission_data,
                                                int permission_result_code) {
 
         super(janus_web_socket_uri, activity, iceServers, videoWidth, videoHeight, videoFps, videoCodec,
-                VideoCapturerType.SCREEN_SHARE, audioStartBitrate, audioCodec, noAudioProcessing);
+                videoStartBitrate, VideoCapturerType.SCREEN_SHARE, audioStartBitrate, audioCodec,
+                noAudioProcessing);
 
         this.permission_data = permission_data;
         this.permission_result_code = permission_result_code;

@@ -41,7 +41,7 @@ namespace MJR_Converter
 
         private static void RunConvert(string mjr_src) {
             var mjr_src_fn = Path.GetFileName(mjr_src);
-            var dst_fn = Path.ChangeExtension(mjr_src_fn, "webm");
+            var dst_fn = Path.ChangeExtension(mjr_src_fn, "mp4");
             var tmp_dst = Path.Join(Path.GetTempPath(), dst_fn);
             var final_dst = Path.Join(Path.GetDirectoryName(mjr_src), dst_fn);
             if (File.Exists(final_dst))

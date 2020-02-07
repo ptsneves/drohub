@@ -24,6 +24,13 @@ namespace DroHub.Helpers {
     }
     public class JanusService
     {
+        public enum VideoCodecType
+        {
+            H264,
+            VP8,
+            VP9
+        }
+
         public class JanusServiceException : Exception
         {
             public JanusServiceException(string message): base(message) { }
@@ -141,6 +148,9 @@ namespace DroHub.Helpers {
 
                 [JsonProperty("secret")]
                 public string Secret { get; set; }
+
+                [JsonProperty("videocodec")]
+                public string VideoCodec { get; set; }
 
                 [JsonProperty("pin")]
                 public string Pin { get; set; }
@@ -261,14 +271,16 @@ namespace DroHub.Helpers {
             await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
         public async Task<JanusService.VideoRoomEndPoint> createVideoRoom(CreateSession session, Int64 handle, Int64 id,
-                string description, string secret, Int64 max_publishers) {
+                string description, string secret, Int64 max_publishers, VideoCodecType video_codec) {
             var request = new JanusRequest(session, new JanusRequest.CreateVideoRoomRequest(_options.AdminKey, id, max_publishers)
             {
                 Description = description,
                 Record = true,
-                RecordingDir = $"{_options.RecordingPath}"
+                RecordingDir = $"{_options.RecordingPath}",
+                VideoCodec = video_codec.ToString("g").ToLower(),
                 // Secret = secret
             });
+
             var result = await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
             _logger.LogDebug("Janus answer {result}", JsonConvert.SerializeObject(result.PluginData.StreamingPluginData));
             if (!String.IsNullOrEmpty(result.PluginData.StreamingPluginData.Error))

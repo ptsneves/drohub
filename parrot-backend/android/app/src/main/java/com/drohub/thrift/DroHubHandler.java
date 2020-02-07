@@ -219,8 +219,6 @@ public class DroHubHandler implements Drone.Iface {
 
     }
 
-
-
     void handleCapturePermissionCallback(int requestCode, int resultCode, Intent data) {
         if (requestCode == _CAPTURE_PERMISSION_REQUEST_CODE && _video_state == DroneLiveVideoState.STOPPED) {
             initVideo(data, resultCode);
@@ -236,8 +234,8 @@ public class DroHubHandler implements Drone.Iface {
                     _janus_websocket_uri, _activity,
                     Arrays.asList(_turn_servers),
                     metrics.widthPixels, metrics.heightPixels, 20,
-                    "VP8",
-                    120, null, false,
+                    "h264",
+                    1024000, 128000, null, false,
                     permission_data,
                     permission_code);
 

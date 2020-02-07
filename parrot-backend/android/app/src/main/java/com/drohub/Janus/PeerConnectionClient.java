@@ -109,7 +109,8 @@ public class PeerConnectionClient implements JanusRTCInterface {
               displayName,
               peerConnectionParameters.activity,
               this,
-              peerConnectionParameters.janusWebSocketURL);
+              peerConnectionParameters.janusWebSocketURL,
+              peerConnectionParameters);
     }
     catch (Exception e) {
       close();

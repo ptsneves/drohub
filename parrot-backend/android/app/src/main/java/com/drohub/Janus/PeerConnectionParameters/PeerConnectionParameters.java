@@ -19,6 +19,7 @@ public class PeerConnectionParameters {
   public final String janusWebSocketURL;
   public final String videoCodec;
   public final int audioStartBitrate;
+  public final int videoStartBitrate;
   public final String audioCodec;
   public final boolean noAudioProcessing;
   public final Activity activity;
@@ -27,7 +28,8 @@ public class PeerConnectionParameters {
 
   PeerConnectionParameters(
           String janus_web_socket_uri, Activity activity, List<PeerConnection.IceServer> iceServers,
-          int videoWidth, int videoHeight, int videoFps, String videoCodec, VideoCapturerType capturerType,
+          int videoWidth, int videoHeight, int videoFps, String videoCodec, int videoStartBitrate,
+          VideoCapturerType capturerType,
           int audioStartBitrate, String audioCodec,
           boolean noAudioProcessing) {
 
@@ -45,6 +47,7 @@ public class PeerConnectionParameters {
     this.videoHeight = videoHeight;
     this.videoFps = videoFps;
     this.videoCodec = videoCodec;
+    this.videoStartBitrate = videoStartBitrate;
     this.audioStartBitrate = audioStartBitrate;
     this.audioCodec = audioCodec;
     this.noAudioProcessing = noAudioProcessing;

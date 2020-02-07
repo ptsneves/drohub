@@ -213,7 +213,7 @@ namespace DroHub.Helpers.Thrift
             var session = await _janus_service.createSession();
             var handle = await _janus_service.createStreamerPluginHandle(session);
             var mountpoint = await _janus_service.createVideoRoom(session, handle, device.Id, device.SerialNumber,
-                    "mysecret", 10);
+                    "mysecret", 10, JanusService.VideoCodecType.H264); // we need to force this for iOS
             var date_now = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds().ToString();
             return mountpoint;
         }
