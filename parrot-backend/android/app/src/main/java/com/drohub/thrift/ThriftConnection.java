@@ -37,8 +37,8 @@ public class ThriftConnection {
 
         drohub_handler = new DroHubHandler(drone_serial, janus_websocket_uri, activity);
         TThreadPoolServer.Args args = new TThreadPoolServer.Args(trts);
-        args.minWorkerThreads(6);
-        args.maxWorkerThreads(6);
+        args.minWorkerThreads(8);
+        args.maxWorkerThreads(8);
 
         args.processor(new Drone.Processor<>(drohub_handler));
         args.inputProtocolFactory(message_validator_factory);
