@@ -174,8 +174,10 @@ public class PeerConnectionClient implements JanusRTCInterface {
   private PeerConnection createPeerConnection(BigInteger handleId, JanusConnection.ConnectionType type) {
     Log.d(TAG, "Create peer connection.");
 
-    PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(peerConnectionParameters.iceServers);
-    rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.ALL;
+    PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(
+            peerConnectionParameters.iceServers);
+
+    rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.RELAY;
     rtcConfig.enableDtlsSrtp = true;
 
 

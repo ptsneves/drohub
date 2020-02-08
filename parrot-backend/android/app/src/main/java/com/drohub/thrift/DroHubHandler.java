@@ -100,6 +100,7 @@ public class DroHubHandler implements Drone.Iface {
                     .setUsername(_activity.getResources().getString(R.string.turn_user_name))
                     .setPassword(_activity.getResources().getString(R.string.turn_credential))
                     .createIceServer();
+            System.out.println("Added turn server " + res_turn_urls[i]);
         }
 
 

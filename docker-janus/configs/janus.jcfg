@@ -150,8 +150,8 @@ media: {
 # be used for gathering candidates, and enable or disable the
 # internal libnice debugging, if needed.
 nat: {
-	stun_server = "eu-turn4.xirsys.com"
-	#stun_port = 3478
+	stun_server = "eu-turn5.xirsys.com"
+	stun_port = 3478
 	#nice_debug = true
 	#full_trickle = true
 	#ice_lite = true
@@ -165,17 +165,17 @@ nat: {
 	# such, use the option with caution and only if you know what you're doing.
 	# Make sure you keep ICE Lite disabled, though, as it's not strictly
 	# speaking a publicly reachable server, and a NAT is still involved.
-	nat_1_1_mapping = "18.197.86.34"
+	#nat_1_1_mapping = ""
 
 	# You can configure a TURN server in two different ways: specifying a
 	# statically configured TURN server, and thus provide the address of the
 	# TURN server, the transport (udp/tcp/tls) to use, and a set of valid
 	# credentials to authenticate...
-	turn_server = "eu-turn4.xirsys.com"
+	turn_server = "eu-turn5.xirsys.com"
 	turn_port = 80
-	turn_type = "tcp"
+	turn_type = "udp"
 	turn_user = "XXXXX"
-	turn_pwd = "b9f961de-45e9-11ea-8fe1-6adcafebbb45"
+	turn_pwd = "XXXXXX"
 
 	# ... or you can make use of the TURN REST API to get info on one or more
 	# TURN services dynamically. This makes use of the proposed standard of
@@ -195,7 +195,7 @@ nat: {
 	# to enforce. This is especially useful if the server hosting the gateway
 	# has several interfaces, and you only want a subset to be used. Any of
 	# the following examples are valid:
-	#     ice_enforce_list = "eth0"
+	     ice_enforce_list = "wg1"
 	#     ice_enforce_list = "eth0,eth1"
 	#     ice_enforce_list = "eth0,192.168."
 	#     ice_enforce_list = "eth0,192.168.0.1"
