@@ -461,8 +461,7 @@ $(function () {
                 });
 
                 _signalr_connection.on("DroneBatteryLevel", function (message) {
-                    _updateTelemetry('.battery-level-text', message);
-                    _updateTelemetry('.battery-level-icon', message);
+                    _updateTelemetry('.battery-level', message);
                 });
 
                 _signalr_connection.on("DroneRadioSignal", function (message) {

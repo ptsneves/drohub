@@ -115,7 +115,9 @@
                                                 <div class="video-overlay-top row vertical-align">
                                                     <div class="col-md-4">
                                                         <i class="telemetry-single-data radio-signal-text" data-renderer="renderRadioSignalIcon" data-serial="@device.SerialNumber" data-telemetry='@radio_signals_initial'></i>
-                                                        <i class="telemetry-single-data battery-level-icon" data-renderer="renderBatteryLevelIcon" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'><span class=" telemetry-single-data battery-level-text" data-renderer="renderBatteryLevel" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>No data</span></i>
+                                                        <i class="telemetry-single-data battery-level" data-renderer="renderBatteryLevelIcon" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>
+                                                            <span class=" telemetry-single-data battery-level" data-renderer="renderBatteryLevel" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>No data</span>
+                                                        </i>
                                                         <i>|</i>
                                                         <span class=" telemetry-single-data battery-level-text" data-renderer="renderFlightTimeText" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>Not flying</span>
                                                     </div>
