@@ -372,7 +372,7 @@ $(function () {
             battery_level_class_range.addRegularSteps(0, 101, [
                 'fas fa-battery-empty blinking text-danger blinking',
                 'fas fa-battery-quarter text-warning blinking',
-                'fas fa-battery-half text-warning',
+                'fas fa-battery-half text-strong-yellow',
                 'fas fa-battery-three-quarters text-strong-green',
                 'fas fa-battery-full text-strong-green',
             ]);
