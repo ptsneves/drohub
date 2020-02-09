@@ -373,8 +373,8 @@ $(function () {
                 'fas fa-battery-empty blinking text-danger blinking',
                 'fas fa-battery-quarter text-warning blinking',
                 'fas fa-battery-half text-warning',
-                'fas fa-battery-three-quarters text-success',
-                'fas fa-battery-full text-success',
+                'fas fa-battery-three-quarters text-strong-green',
+                'fas fa-battery-full text-strong-green',
             ]);
             battery_level = JSON.parse(element.attr('data-telemetry'));
 
