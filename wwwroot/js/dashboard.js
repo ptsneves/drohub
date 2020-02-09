@@ -40,9 +40,10 @@ $(function () {
                     let device_type = element.data('device-type');
                     let device_serial = element.data('serial');
                     let device_svg_marker = element.data('marker-svg-path');
-
-                    if (device_coords == null || device_type == null || device_serial == null)
+                    if (device_coords == null || device_type == null || device_serial == null) {
+                        console.warn("A rendering was requested but not all fields are set");
                         return;
+                    }
 
                     let icon_url = `${window.location.origin}/${device_svg_marker}`
                     let marker_icon = {
@@ -58,8 +59,8 @@ $(function () {
                     }
                     else {
                         let marker = new google.maps.Marker({
-                            position: { lat: device_coords.Latitude, lng: device_coords.Longitude },
-                            icon: marker_icon,
+                            position: new google.maps.LatLng(device_coords.Latitude, device_coords.Longitude),
+                            // icon: marker_icon,
                             map: maps[device_serial],
                             serial: device_serial,
                             device_type: device_type
@@ -84,17 +85,8 @@ $(function () {
             marker.map.setZoom(20);
         }
 
-        function _updatePositionMapMarker() {
-            $('.position-text').each(
-                function (_, element) {
-                    element = $(element);
-                    _MarkerStoreClass.renderPositionMarker(_, element);
-                }
-            );
-        }
-
         return {
-            updatePositionMapMarker: _updatePositionMapMarker,
+            renderMapMarker: _MarkerStoreClass.renderPositionMarker,
             init: function () {
                 function perElementInit(index, element) {
                     function _initializeMapMarkerActionButton(index, element) {
@@ -103,7 +95,8 @@ $(function () {
                     }
                     jquery_element = $(element);
                     serial_number = jquery_element.data('serial');
-
+                    if (serial_number == null)
+                        console.error("Could not initialize map because we found not data-serial");
                     styles = [
                         { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
                         { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
@@ -203,9 +196,6 @@ $(function () {
                             $('#modal-move-to-position').modal({ focus: true, show: true, keyboard: true });
                         }
                     );
-
-                    _updatePositionMapMarker();
-
                     $('.map-marker-action-button').each(_initializeMapMarkerActionButton);
                 }
                 $('.google-map').each(perElementInit);
@@ -419,6 +409,8 @@ $(function () {
         function _renderBatteryLevel(_, element) {
             element = $(element);
             battery_level = JSON.parse(element.attr('data-telemetry'));
+            if (battery_level == null)
+                return;
             element.text(`${battery_level.BatteryLevelPercent}%`);
         }
 
@@ -462,10 +454,10 @@ $(function () {
                 _FunctionTable["renderPositionText"] = _renderPositionText;
                 _FunctionTable["renderFlightTimeText"] = _renderFlightTimeText;
                 _FunctionTable["renderLiveVideo"] = _renderLiveVideo;
+                _FunctionTable["renderMapMarker"] = _map_class_instance.renderMapMarker;
 
                 _signalr_connection.on("DronePosition", function (message) {
-                    _updateTelemetry('.position-text', message);
-                    _map_class_instance.updatePositionMapMarker();
+                    _updateTelemetry('.main-marker', message);
                 });
 
                 _signalr_connection.on("DroneBatteryLevel", function (message) {

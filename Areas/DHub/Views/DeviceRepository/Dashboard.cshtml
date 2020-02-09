@@ -100,8 +100,9 @@
                     </div>
 
                         <div class="row body">
-                            <div class="col-md-4 small-gutter">
-                                <div class="google-map" data-serial="@device.SerialNumber" style="border: 1px solid black"></div>
+                            <div class="col-md-4 small-gutter map-container">
+                                <span class="position-text marker main-marker" data-renderer="renderMapMarker" data-serial="@device.SerialNumber" data-device-type="drone" ></span>
+                                <div class="google-map" style="border: 1px solid black" data-serial="@device.SerialNumber"></div>
                                 <select class="js-example-basic-single " style="width: 100%;">
                                     <option title="Move to Position">Move To Position</option>
                                 </select>
