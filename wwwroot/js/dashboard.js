@@ -263,15 +263,6 @@ $(function () {
 
     TelemetryClass = function () {
         var _FunctionTable = {};
-        _FunctionTable["renderBatteryLevel"] = _renderBatteryLevel;
-        _FunctionTable["renderBatteryLevelIcon"] = _renderBatteryLevelIcon;
-        _FunctionTable["renderRadioSignal"] = _renderRadioSignal;
-        _FunctionTable["renderRadioSignalIcon"] = _renderRadioSignalIcon;
-        _FunctionTable["renderFlyingState"] = _renderFlyingState;
-        _FunctionTable["renderPlaneIcon"] = _renderPlaneIcon;
-        _FunctionTable["renderPositionText"] = _renderPositionText;
-        _FunctionTable["renderFlightTimeText"] = _renderFlightTimeText;
-        _FunctionTable["renderLiveVideo"] = _renderLiveVideo;
 
         _signalr_connection = null;
         _map_class_instance = null;
@@ -461,6 +452,16 @@ $(function () {
             init: function (signalr_connection, map_class_instance) {
                 _map_class_instance = map_class_instance;
                 _signalr_connection = signalr_connection;
+
+                _FunctionTable["renderBatteryLevel"] = _renderBatteryLevel;
+                _FunctionTable["renderBatteryLevelIcon"] = _renderBatteryLevelIcon;
+                _FunctionTable["renderRadioSignal"] = _renderRadioSignal;
+                _FunctionTable["renderRadioSignalIcon"] = _renderRadioSignalIcon;
+                _FunctionTable["renderFlyingState"] = _renderFlyingState;
+                _FunctionTable["renderPlaneIcon"] = _renderPlaneIcon;
+                _FunctionTable["renderPositionText"] = _renderPositionText;
+                _FunctionTable["renderFlightTimeText"] = _renderFlightTimeText;
+                _FunctionTable["renderLiveVideo"] = _renderLiveVideo;
 
                 _signalr_connection.on("DronePosition", function (message) {
                     _updateTelemetry('.position-text', message);
