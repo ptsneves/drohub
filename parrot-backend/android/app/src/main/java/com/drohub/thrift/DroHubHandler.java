@@ -205,8 +205,9 @@ public class DroHubHandler implements Drone.Iface {
                    _serial_number,
                    System.currentTimeMillis());
 
-            radio_signal_to_send.signal_quality = radio_signal.getLinkSignalQuality();
-            radio_signal_to_send.rssi = radio_signal.getRssi();
+            radio_signal_to_send.setSignal_quality(radio_signal.getLinkSignalQuality());
+            radio_signal_to_send.setRssi(radio_signal.getRssi());
+
             try {
                 _drone_radio_signal.push(radio_signal_to_send);
             } catch (TException e) {
@@ -371,8 +372,9 @@ public class DroHubHandler implements Drone.Iface {
             list_to_send.file_entries.add(file);
 
         }
-        list_to_send.serial = _serial_number;
-        list_to_send.timestamp = System.currentTimeMillis();
+        list_to_send.setFile_entriesIsSet(true);
+        list_to_send.setSerial(_serial_number);
+        list_to_send.setTimestamp(System.currentTimeMillis());
         return list_to_send;
     }
 
