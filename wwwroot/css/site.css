@@ -159,3 +159,7 @@ for details on configuring this project to bundle and minify static web assets. 
 .text-strong-yellow {
     color: #ffff00;
 }
+
+.text-strong-red {
+    color: #ff0000;
+}

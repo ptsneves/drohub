@@ -370,7 +370,7 @@ $(function () {
             element = $(element);
             battery_level_class_range = ElementClassRangeClass();
             battery_level_class_range.addRegularSteps(0, 101, [
-                'fas fa-battery-empty blinking text-danger blinking',
+                'fas fa-battery-empty blinking text-strong-red blinking',
                 'fas fa-battery-quarter text-warning blinking',
                 'fas fa-battery-half text-strong-yellow',
                 'fas fa-battery-three-quarters text-strong-green',
