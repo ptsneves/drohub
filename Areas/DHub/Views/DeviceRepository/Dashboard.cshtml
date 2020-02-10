@@ -113,15 +113,14 @@
                                         <div class="embed-responsive embed-responsive-16by9" id="stream-@device.Id">
                                             <div class="device-video-overlay container">
                                                 <div class="video-overlay-top row vertical-align">
-                                                    <div class="col-md-4">
+                                                    <div class="col-md-4" style="width: 100%;text-align: left;">
                                                         <i class="telemetry-single-data fad radio-signal" data-renderer="renderRadioSignalIcon" data-serial="@device.SerialNumber" data-telemetry='@radio_signals_initial'></i>
                                                         <i class="telemetry-single-data battery-level fa" data-renderer="renderBatteryLevelIcon" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>
                                                             <span class=" telemetry-single-data battery-level fa" data-renderer="renderBatteryLevel" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>No data</span>
                                                         </i>
-                                                        <i>|</i>
                                                         @* <span class=" telemetry-single-data " data-renderer="renderFlightTimeText" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>Not flying</span> *@
                                                     </div>
-                                                    <div class="container-action-overlay col-md-4">
+                                                    <div class="container-action-overlay col-md-4" style="width: 100%; text-align: center;">
 
                                                         <button class="btn-transparent-bg" data-url="@takeoff_action_url" data-toggle="ajax-request" title="Take off this device">
                                                         <i class="fas fa-plane-departure"></i>
@@ -133,15 +132,15 @@
                                                             <i class="fas fa-home"></i>
                                                         </button>
                                                     </div>
-                                                    <div class="text-right col-md-4">
-                                                        <i class="far fa-external-link-alt"></i>
+                                                    <div class="col-md-4" style="width: 100%; text-align: right;">
+                                                        @* <button class="btn-transparent-bg" data-toggle="ajax-request" data-url="@return_to_home_action_url">
+                                                            <i class="far fa-external-link-alt"></i>
+                                                        </button> *@
+                                                        <button class="btn-transparent-bg " data-serial="@device.SerialNumber" data-toggle="video-fullscreen">
+                                                            <i class="fas fa-compress"></i>
+                                                        </button>
                                                     </div>
                                                 </div>
-                                                @* <div class="video-overlay-bottom">
-                                                    <button class="btn-transparent-bg " data-serial="@device.SerialNumber" data-toggle="video-fullscreen">
-                                                        <i class="fas fa-compress"></i>
-                                                    </button>
-                                                </div> *@
                                                 <div class="video-overlay-bottom">
                                                     <div class="row" style="bottom: 15px; position:relative">
                                                         <div class="col-md-3">

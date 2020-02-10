@@ -366,9 +366,9 @@ $(function () {
             rssi_class_range.addRegularSteps(-96, -20, ["fa-signal-1", "fa-signal-2", "fa-signal-3", "fa-signal"]);
 
             let signal_quality_class_range = ElementClassRangeClass();
-            signal_quality_class_range.addStep(1, 2, "text-strong-red");
+            signal_quality_class_range.addStep(-1, 2, "text-strong-red");
             signal_quality_class_range.addStep(2, 3, "text-strong-yellow");
-            signal_quality_class_range.addStep(3, 5, "text-stong-green");
+            signal_quality_class_range.addStep(3, 6, "text-stong-green");
 
             let radio_signal = JSON.parse(element.attr('data-telemetry'));
             if (radio_signal == null) {
