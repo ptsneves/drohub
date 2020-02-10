@@ -235,7 +235,7 @@ $(function () {
                 }
             },
             addClassToElement: function (element, value = null) {
-                if (!value) {
+                if (value == null) {
                     _makeClassActive(element, _classes[0].class);
                     return;
                 }
@@ -371,6 +371,11 @@ $(function () {
             signal_quality_class_range.addStep(3, 5, "text-success");
 
             let radio_signal = JSON.parse(element.attr('data-telemetry'));
+            if (radio_signal == null) {
+                console.error("Trying to render a radio signal but no telemetry available");
+                return;
+            }
+
             if (!radio_signal) {
                 rssi_class_range.addClassToElement(element);
                 signal_quality_class_range.addClassToElement(element);
