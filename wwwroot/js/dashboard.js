@@ -224,7 +224,7 @@ $(function () {
             split_classes.forEach(item => _available_classes.add(item));
         }
 
-        _addStep(null, null, "fad fa-empty-set");
+        _addStep(null, null, "fa-empty-set");
 
         return {
             addStep: _addStep,
@@ -345,11 +345,11 @@ $(function () {
             element = $(element);
             battery_level_class_range = ElementClassRangeClass();
             battery_level_class_range.addRegularSteps(0, 101, [
-                'fas fa-battery-empty blinking text-strong-red blinking',
-                'fas fa-battery-quarter text-strong-yellow blinking',
-                'fas fa-battery-half text-strong-yellow',
-                'fas fa-battery-three-quarters text-strong-green',
-                'fas fa-battery-full text-strong-green',
+                'fa-battery-empty blinking text-strong-red blinking',
+                'fa-battery-quarter text-strong-yellow blinking',
+                'fa-battery-half text-strong-yellow',
+                'fa-battery-three-quarters text-strong-green',
+                'fa-battery-full text-strong-green',
             ]);
             battery_level = JSON.parse(element.attr('data-telemetry'));
 
@@ -363,7 +363,7 @@ $(function () {
             element = $(element);
 
             let rssi_class_range = ElementClassRangeClass();
-            rssi_class_range.addRegularSteps(-96, -20, ["fad fa-signal-1", "fad fa-signal-2", "fad fa-signal"]);
+            rssi_class_range.addRegularSteps(-96, -20, ["fa-signal-1", "fa-signal-2", "fa-signal-3", "fa-signal"]);
 
             let signal_quality_class_range = ElementClassRangeClass();
             signal_quality_class_range.addStep(1, 2, "text-strong-red");
