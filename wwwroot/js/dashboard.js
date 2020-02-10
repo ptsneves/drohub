@@ -286,31 +286,6 @@ $(function () {
             }
         }
 
-        function _renderRadioSignal(_, element) {
-            element = $(element);
-            radio_signal = JSON.parse(element.attr('data-telemetry'));
-            if (!radio_signal)
-                return;
-
-            if (radio_signal.__isset['rssi'] == true) {
-                element.removeClass('label-default');
-                element.addClass('label-primary');
-                element.text(radio_signal.Rssi + " dbm");
-            }
-            else {
-                element.removeClass('label-default');
-                if (radio_signal.SignalQuality > 3) {
-                    element.addClass('label-success');
-                }
-                else if (radio_signal.SignalQuality >= 2 && radio_signal.SignalQuality <= 3)
-                    element.addClass('label-warning');
-                else
-                    element.addClass('label-danger');
-
-                element.text(radio_signal.SignalQuality + " Level");
-            }
-        }
-
         function _renderFlyingState(_, element) {
             element = $(element);
             flying_state = JSON.parse(element.attr('data-telemetry'));
@@ -447,7 +422,6 @@ $(function () {
 
                 _FunctionTable["renderBatteryLevel"] = _renderBatteryLevel;
                 _FunctionTable["renderBatteryLevelIcon"] = _renderBatteryLevelIcon;
-                _FunctionTable["renderRadioSignal"] = _renderRadioSignal;
                 _FunctionTable["renderRadioSignalIcon"] = _renderRadioSignalIcon;
                 _FunctionTable["renderFlyingState"] = _renderFlyingState;
                 _FunctionTable["renderPlaneIcon"] = _renderPlaneIcon;
