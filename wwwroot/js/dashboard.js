@@ -444,7 +444,7 @@ $(function () {
                 });
 
                 _signalr_connection.on("DroneRadioSignal", function (message) {
-                    _updateTelemetry('.radio-signal-text', message);
+                    _updateTelemetry('.radio-signal', message);
                 });
 
                 _signalr_connection.on("DroneFlyingState", function (message) {
