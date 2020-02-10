@@ -346,7 +346,7 @@ $(function () {
             battery_level_class_range = ElementClassRangeClass();
             battery_level_class_range.addRegularSteps(0, 101, [
                 'fas fa-battery-empty blinking text-strong-red blinking',
-                'fas fa-battery-quarter text-warning blinking',
+                'fas fa-battery-quarter text-strong-yellow blinking',
                 'fas fa-battery-half text-strong-yellow',
                 'fas fa-battery-three-quarters text-strong-green',
                 'fas fa-battery-full text-strong-green',
@@ -366,9 +366,9 @@ $(function () {
             rssi_class_range.addRegularSteps(-96, -20, ["fad fa-signal-1", "fad fa-signal-2", "fad fa-signal"]);
 
             let signal_quality_class_range = ElementClassRangeClass();
-            signal_quality_class_range.addStep(1, 2, "text-danger");
-            signal_quality_class_range.addStep(2, 3, "text-warning");
-            signal_quality_class_range.addStep(3, 5, "text-success");
+            signal_quality_class_range.addStep(1, 2, "text-strong-red");
+            signal_quality_class_range.addStep(2, 3, "text-strong-yellow");
+            signal_quality_class_range.addStep(3, 5, "text-stong-green");
 
             let radio_signal = JSON.parse(element.attr('data-telemetry'));
             if (radio_signal == null) {
