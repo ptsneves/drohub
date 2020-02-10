@@ -142,7 +142,7 @@ namespace DroHub.Tests
                     typeof(DroneRadioSignal),
                     typeof(DroneFlyingState),
                     typeof(DroneReply),
-                    typeof(DroneVideoStateResult)
+                    typeof(DroneLiveVideoStateResult)
                 };
 
                 foreach (var type in types)
@@ -168,7 +168,7 @@ namespace DroHub.Tests
                 var radio_signal_seed = new DroneRadioSignal { SignalQuality = 2, Rssi = -23.0f, Serial = device_serial, Timestamp = timestamp };
                 var flying_state_seed = new DroneFlyingState { State = FlyingState.LANDED, Serial = device_serial, Timestamp = timestamp };
                 var battery_level_seed = new DroneBatteryLevel { BatteryLevelPercent = 100, Serial = device_serial, Timestamp = timestamp };
-                var drone_video_state_seed = new DroneVideoStateResult { HumanMessage = "A test", State = DroneVideoState.LIVE, Serial = device_serial, Timestamp = timestamp };
+                var drone_video_state_seed = new DroneLiveVideoStateResult {State = DroneLiveVideoState.LIVE, Serial = device_serial, Timestamp = timestamp };
 
                 await connection.StartAsync();
                 using (var drone_rpc = new DroneRPC())
@@ -187,7 +187,7 @@ namespace DroHub.Tests
                     var radio_signals_result = await HttpClientHelper.getDeviceTelemetry<DroneRadioSignal>(_fixture, device_serial, 1, 10);
                     var flying_states_result = await HttpClientHelper.getDeviceTelemetry<DroneFlyingState>(_fixture, device_serial, 1, 10);
                     var battery_levels_result = await HttpClientHelper.getDeviceTelemetry<DroneBatteryLevel>(_fixture, device_serial, 1, 10);
-                    var drone_video_states_result = await HttpClientHelper.getDeviceTelemetry<DroneVideoStateResult>(_fixture, device_serial, 1, 10);
+                    var drone_video_states_result = await HttpClientHelper.getDeviceTelemetry<DroneLiveVideoStateResult>(_fixture, device_serial, 1, 10);
 
                     reply_result.Single(s => s.Timestamp == reply_seed.Timestamp);
                     positions_result.Single(s => s.Timestamp == position_seed.Timestamp);
