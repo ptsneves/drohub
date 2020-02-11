@@ -52,16 +52,6 @@ namespace DroHub.Tests
             }
         }
 
-        [Fact]
-        public async void TestHashInFooter()
-        {
-            using (var http_client_helper = await HttpClientHelper.createLoggedInAdmin(_fixture))
-            {
-                var dom = DroHubFixture.getHtmlDOM(await http_client_helper.Response.Content.ReadAsStringAsync());
-                Assert.Matches("\\b[0-9a-f]{7,40}\\b", dom.QuerySelectorAll("span.build-hash").First().TextContent);
-            }
-        }
-
         [InlineData("True", "MyAnafi", "000000")]
         [InlineData("False", "MyAnafi", null)]
         [InlineData("False", null, null)]
