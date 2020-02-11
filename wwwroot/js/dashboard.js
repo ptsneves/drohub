@@ -53,12 +53,12 @@ $(function () {
                         anchor: new google.maps.Point(0, 0) // anchorscaledSize: new google.maps.Size(50, 50), // scaled size
                     }
 
+                    let marker = null;
                     if ((marker = _getMarker(device_type, device_serial)) != null) {
                         marker.setPosition({ lat: device_coords.Latitude, lng: device_coords.Longitude });
-                        return;
                     }
                     else {
-                        let marker = new google.maps.Marker({
+                        marker = new google.maps.Marker({
                             position: new google.maps.LatLng(device_coords.Latitude, device_coords.Longitude),
                             // icon: marker_icon,
                             map: maps[device_serial],
@@ -67,23 +67,15 @@ $(function () {
                         });
                         _setMarker(marker, device_type, device_serial);
                     }
+
+                    if (element.hasClass('main-marker')) {
+                        marker.map.panTo(marker.position);
+                        marker.map.setZoom(20);
+                    }
                 }
             }
         }();
         _MarkerStoreClass.init(maps);
-
-        function _centerMapOnDevice(index, element) {
-            element = $(element);
-            let device_marker = _MarkerStoreClass.getMarker(element.data('device-type'), element.data('serial'));
-            if (device_marker)
-                _centerMapOnMarker(device_marker);
-        }
-        data_function_table["centerMapOnDevice"] = _centerMapOnDevice;
-
-        function _centerMapOnMarker(marker) {
-            marker.map.panTo(marker.position);
-            marker.map.setZoom(20);
-        }
 
         return {
             renderMapMarker: _MarkerStoreClass.renderPositionMarker,
