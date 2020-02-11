@@ -97,7 +97,7 @@
                         </div>
                     </div>
 
-                        <div class="row body">
+                        <div class="row">
                             <div class="col-md-4 small-gutter map-container">
                                 <span class="position-text marker main-marker" data-renderer="renderMapMarker" data-serial="@device.SerialNumber" data-device-type="drone" data-telemetry='@position_initial'></span>
                                 <div class="google-map" style="border: 1px solid black" data-serial="@device.SerialNumber"></div>
@@ -139,43 +139,41 @@
                                                         </button>
                                                     </div>
                                                 </div>
-                                                <div class="video-overlay-bottom">
-                                                    <div class="row" style="bottom: 15px; position:relative">
-                                                        <div class="col-md-3">
-                                                                <form method="post" action="@toggle_record_video_action_url" data-toggle="ajax-request" autocomplete="off">
-                                                                <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.START" checked>
-                                                                <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.STOP">
-                                                                <button type="submit" class="btn-transparent-bg video-overlay-record-icon" title="Toggle Video Recording">
-                                                                    <i class="fad fa-hospital-symbol" style="--fa-secondary-opacity: 0.4;  "></i>
+                                                <div class="video-overlay-bottom row row-no-padding vertical-align">
+                                                    <div class="col-md-3 max-width">
+                                                            <form method="post" action="@toggle_record_video_action_url" data-toggle="ajax-request" autocomplete="off">
+                                                            <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.START" checked>
+                                                            <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.STOP">
+                                                            <button type="submit" class="btn-transparent-bg video-overlay-record-icon" title="Toggle Video Recording">
+                                                                <i class="fad fa-hospital-symbol" style="--fa-secondary-opacity: 0.4;  "></i>
+                                                            </button>
+                                                            </form>
+                                                    </div>
+                                                    <div class="col-md-3 max-width"></div>
+                                                    <div class="col-md-3 max-width"></div>
+                                                    <div class="col-md-3 max-width">
+                                                        <div class="video-overlay-record-rectangle">
+                                                            <form method="post" action="@take_picture_action_url" data-toggle="ajax-request" autocomplete="off">
+                                                                <input type="radio" name="@nameof(DroneTakePictureRequest.ActionType)" value="@ActionType.START" checked>
+                                                                <input type="radio" name="@nameof(DroneTakePictureRequest.ActionType)" value="@ActionType.STOP">
+                                                                <button type="submit" class="btn-transparent-bg video-overlay-photo-icon" title="Take Picture">
+                                                                    <i class="fad fa-camera" style="--fa-secondary-color:red;--fa-secondary-opacity: 1.0;  "></i>
                                                                 </button>
-                                                                </form>
-                                                        </div>
-                                                        <div class="col-md-3"></div>
-                                                        <div class="col-md-3"></div>
-                                                        <div class="col-md-3">
-                                                            <div class="video-overlay-record-rectangle">
-                                                                <form method="post" action="@take_picture_action_url" data-toggle="ajax-request" autocomplete="off">
-                                                                    <input type="radio" name="@nameof(DroneTakePictureRequest.ActionType)" value="@ActionType.START" checked>
-                                                                    <input type="radio" name="@nameof(DroneTakePictureRequest.ActionType)" value="@ActionType.STOP">
-                                                                    <button type="submit" class="btn-transparent-bg video-overlay-photo-icon" title="Take Picture">
-                                                                        <i class="fad fa-camera" style="--fa-secondary-color:red;--fa-secondary-opacity: 1.0;  "></i>
-                                                                    </button>
-                                                                </form>
-                                                                <form method="post" action="@toggle_record_video_action_url" data-toggle="ajax-request" autocomplete="off">
-                                                                <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.START" checked>
-                                                                <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.STOP">
-                                                                <button type="submit" class="btn-transparent-bg video-overlay-record-icon" title="Toggle Video Recording">
-                                                                    <i class="fad fa-record-vinyl" style="--fa-secondary-color:red;--fa-secondary-opacity: 1.0;  "></i>
-                                                                </button>
-                                                                </form>
-                                                            </div>
+                                                            </form>
+                                                            <form method="post" action="@toggle_record_video_action_url" data-toggle="ajax-request" autocomplete="off">
+                                                            <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.START" checked>
+                                                            <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.STOP">
+                                                            <button type="submit" class="btn-transparent-bg video-overlay-record-icon" title="Toggle Video Recording">
+                                                                <i class="fad fa-record-vinyl" style="--fa-secondary-color:red;--fa-secondary-opacity: 1.0;  "></i>
+                                                            </button>
+                                                            </form>
                                                         </div>
                                                     </div>
-                                                    <div class="row video-overlay-centered">
+                                                    @* <div class="row video-overlay-centered">
                                                         <a href="#" data-toggle="drone-control-box" class="btn-transparent-bg link-unstyled video-overlay-controls-toggle plus-right" data-serial="@device.SerialNumber" >
                                                                 Open Controls
                                                         </a>
-                                                    </div>
+                                                    </div> *@
                                                 </div>
                                             </div>
                                             <video class="rounded centered embed-responsive-item controls janus-video device-video" data-janus-url='@ViewData["FrontEndJanusUrl"]' data-stun-server-url='@ViewData["FrontEndStunServerUrl"]' data-renderer="renderLiveVideo" data-render-state="stopped" data-room-id="@device.Id" data-serial="@device.SerialNumber" autoplay playsinline></video>

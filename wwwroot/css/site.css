@@ -60,7 +60,16 @@ for details on configuring this project to bundle and minify static web assets. 
 
 .video-overlay-bottom {
     position: absolute;
-    bottom: 0;
+    bottom: 5%;
+    width: 100%;
+}
+
+.no-side-padding {
+    padding-right: 0px;
+    padding-left: 0px;
+}
+
+.max-width {
     width: 100%;
 }
 
@@ -72,10 +81,6 @@ for details on configuring this project to bundle and minify static web assets. 
     width: 100%;
     border-radius: 6px;
     background-color: rgba(0,0,0,0.5);
-}
-
-.video-overlay-slightly-raised {
-    bottom: 50px
 }
 
 .video-overlay-circle {
@@ -90,14 +95,17 @@ for details on configuring this project to bundle and minify static web assets. 
 }
 
 .video-overlay-record-rectangle {
-  height: 78px;
-  width: 148px;
   font-size: 50px;
   border-bottom-left-radius: 100px;
   border-top-left-radius: 100px;
   float: right;
   background-color: rgba(0,0,0,0.5);
   display: inline-flex;
+}
+
+.row-no-padding > [class*="col-"] {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
 }
 
 .video-overlay-photo-icon {
