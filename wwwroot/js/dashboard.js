@@ -458,7 +458,7 @@ $(function () {
                 _signalr_connection.on("DroneLiveVideoStateResult", function (message) {
                     _updateTelemetry('video.janus-video', message)
                 });
-                $('.telemetry-single-data').each(_renderTelemetry);
+                $('*[data-renderer]').filter('*[data-telemetry]').each(_renderTelemetry);
             }
         }
     }();
