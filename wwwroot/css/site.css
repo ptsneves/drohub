@@ -67,7 +67,8 @@ for details on configuring this project to bundle and minify static web assets. 
 .video-overlay-top {
     position: absolute;
     top: 0;
-    height: 40px;
+    padding-top: 1%;
+    padding-bottom: 1%;
     width: 100%;
     border-radius: 6px;
     background-color: rgba(0,0,0,0.5);
