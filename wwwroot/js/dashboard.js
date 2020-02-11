@@ -245,7 +245,7 @@ $(function () {
                         return;
                     }
                 }
-                throw Error(`Unreachable situation. The range has been violated\
+                console.warn(`Unreachable situation. The range has been violated\
     Value: ${value} and classes ${JSON.stringify(_classes)}`);
             }
         }
