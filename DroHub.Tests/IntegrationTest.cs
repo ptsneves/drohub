@@ -146,8 +146,8 @@ namespace DroHub.Tests
                 DroneDeviceHelper.DroneTestDelegate del = async () =>
                 {
                     var tasks = task_sources.Values.Select(tcss => tcss.Task);
-                    await Task.WhenAny(Task.WhenAll(tasks), Task.Delay(12000)); //Because the ping reply can come later
-                        var completed_results = tasks
+                    await Task.WhenAny(Task.WhenAll(tasks), Task.Delay(4000)); //Because the ping reply can come later
+                    var completed_results = tasks
                         .Where(t => t.Status == TaskStatus.RanToCompletion)
                         .Select(t => t.Result)
                         .ToList();
@@ -173,7 +173,6 @@ namespace DroHub.Tests
                     drone_rpc.VideoStateResultReply.Add(drone_video_state_seed);
 
                     await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, device_serial, del);
-
                     var reply_result = await HttpClientHelper.getDeviceTelemetry<DroneReply>(_fixture, device_serial, 1, 10);
                     var positions_result = await HttpClientHelper.getDeviceTelemetry<DronePosition>(_fixture, device_serial, 1, 10);
                     var radio_signals_result = await HttpClientHelper.getDeviceTelemetry<DroneRadioSignal>(_fixture, device_serial, 1, 10);
@@ -194,8 +193,6 @@ namespace DroHub.Tests
                         // var get_device_telemetry = typeof(HttpClientHelper).GetMethod("getDeviceTelemetry");
                         // var get_telemetry_t_method = get_device_telemetry.MakeGenericMethod(telemetry_list_type);
                         // get_telemetry_t_method.Invoke(null, new object[] {_fixture, device_serial, 1, 10});
-
-
                     }
                     // drone_positions.First(p => p.)
                 }
