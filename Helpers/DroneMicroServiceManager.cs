@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using DroHub.Areas.DHub.SignalRHubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
 
 namespace DroHub.Helpers.Thrift
 {
@@ -58,25 +59,20 @@ namespace DroHub.Helpers.Thrift
             return result;
         }
 
-        private async Task RecordTelemetry(IDroneTelemetry telemetry_data, CancellationToken token)
+        private async Task RecordTelemetry(IDroneTelemetry telemetry_data, DroHubContext context, CancellationToken token)
         {
             if (token.IsCancellationRequested)
                 return;
 
-            using (var scope = _services.CreateScope())
-            {
-                var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
-                //check if the device exists before we add it to the db
-                var device = await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == telemetry_data.Serial, token);
-                if (device == null || token.IsCancellationRequested)
-                {
-                    _logger.LogDebug("Not saving received telemetry for unregistered device {telemetry_data}", telemetry_data);
-                    return;
-                }
-                context.Add(telemetry_data);
-                await context.SaveChangesAsync(token);
-            }
+            context.Add(telemetry_data);
+            await context.SaveChangesAsync(token);
         }
+
+        private async Task BroadcastToSignalR(string t_name, IDroneTelemetry telemetry, DroHubContext context, Device device, CancellationToken token) {
+            var user_list = await context.UserDevices.Where(ud => ud.DeviceId == device.Id).Select(ud => ud.DroHubUser.Id).ToListAsync();
+            await _hub.Clients.Users(user_list).SendAsync(t_name, JsonConvert.SerializeObject(telemetry), token);
+        }
+
         protected delegate Task<T> DeviceActionDelegate<T>(Drone.Client client,
             CancellationToken token);
 
@@ -100,15 +96,23 @@ namespace DroHub.Helpers.Thrift
             _logger.LogDebug($"Starting Service {t_name}");
             try
             {
-
                 using (var client = handler.getClient<Drone.Client>(_logger))
                 {
                     T telemetry = await del(client.Client, token);
                     if (!token.IsCancellationRequested)
                     {
-                        _logger.LogDebug($"received {t_name} {telemetry}", telemetry);
-                        await _hub.Clients.All.SendAsync(t_name, JsonConvert.SerializeObject(telemetry), token);
-                        await RecordTelemetry(telemetry, token);
+                        using (var scope = _services.CreateScope()) {
+                            var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
+                            var device = await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == telemetry.Serial, token);
+                            if (device == null || token.IsCancellationRequested)
+                            {
+                                _logger.LogDebug("Not saving received telemetry for unregistered device {serial}", telemetry.Serial);
+                                return;
+                            }
+                            _logger.LogDebug($"received {t_name} {telemetry}", telemetry);
+                            await BroadcastToSignalR(t_name, telemetry, context, device, token);
+                            await RecordTelemetry(telemetry, context, token);
+                        }
                     }
                 }
             }
@@ -181,7 +185,6 @@ namespace DroHub.Helpers.Thrift
                         // RoomSecret = video_room.Secret,
                         RoomId = video_room.Id
                     };
-                    _logger.LogDebug("Saved edit information on device {}", device);
                 }
                 catch(Exception e) {
                     _logger.LogError(e.ToString());
