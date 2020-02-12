@@ -16,6 +16,7 @@ namespace DroHub.Tests.TestInfrastructure
         public HttpResponseMessage Response { get; private set; }
         public CookieContainer cookieContainer {get; private set; }
         public string verificationToken { get; private set; }
+        public Cookie loginCookie { get; private set; }
 
         public HttpClientHelper(DroHubFixture test_fixture) {
             _disposed = false;
@@ -54,6 +55,7 @@ namespace DroHub.Tests.TestInfrastructure
                 Console.WriteLine(http_helper.verificationToken);
                 throw new InvalidProgramException($"Login failed. Instead we are in {http_helper.Response.RequestMessage.RequestUri.ToString()}" );
             }
+            http_helper.loginCookie = http_helper.cookieContainer.GetCookies(login_uri)[".AspNetCore.Identity.Application"];
             return http_helper;
         }
 

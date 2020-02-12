@@ -114,15 +114,17 @@ namespace DroHub.Tests
         public async void TestThriftDrone()
         {
             string device_serial = "ThriftSerial";
+            System.Net.Cookie cookie = null;
             using (var helper = await HttpClientHelper.createDevice(_fixture, "SomeName", device_serial))
             {
                 var dom = DroHubFixture.getHtmlDOM(await helper.Response.Content.ReadAsStringAsync());
                 Assert.Equal("True", dom.QuerySelectorAll("input[name='IsValid']").First().GetAttribute("value"));
+                cookie = helper.loginCookie;
             }
             try
             {
                 HubConnection connection = new HubConnectionBuilder()
-                    .WithUrl(new Uri("ws://localhost:5000/telemetryhub"))
+                    .WithUrl(new Uri("ws://localhost:5000/telemetryhub"), options => { options.Cookies.Add(cookie);})
                     .Build();
 
                 var task_sources = new Dictionary<Type, TaskCompletionSource<bool>>();
