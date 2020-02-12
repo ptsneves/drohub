@@ -17,15 +17,14 @@ namespace DroHub.Tests.TestInfrastructure
         {
             var loggerFactory = new LoggerFactory().AddConsole().AddDebug(LogLevel.Trace);
             using (var ws_transport = new TWebSocketClient(fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Binary))
-            using (var framed_transport = new TFramedTransport(ws_transport))
-            using (var reverse_tunnel_transport = new TReverseTunnelServer(framed_transport, 1))
+            using (var reverse_tunnel_transport = new TReverseTunnelServer(ws_transport, 1))
             {
 
                 ws_transport.WebSocketOptions.SetRequestHeader("User-Agent", "AirborneProjets");
                 ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
                 ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
 
-                var message_validator_factory = new TAMessageValidatorProtocol.Factory(new TJsonProtocol.Factory(),
+                var message_validator_factory = new TAMessageValidatorProtocol.Factory(new TAJsonProtocol.Factory(),
                         TAMessageValidatorProtocol.ValidationModeEnum.KEEP_READING,
                         TAMessageValidatorProtocol.OperationModeEnum.SEQID_SLAVE);
 

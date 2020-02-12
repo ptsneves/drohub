@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Thrift.Transport;
 using System.Collections.Concurrent;
+using Thrift.Transport.Client;
 using System.IO;
 using System.Text;
 
@@ -11,9 +12,11 @@ public class TReverseTunnelServer : Thrift.Transport.TServerTransport, IDisposab
     internal class WrappedTransportForTunnel : TTransport
     {
         private readonly TReverseTunnelServer _parent;
+        private TMemoryBufferTransport _write_buf;
         public WrappedTransportForTunnel(TReverseTunnelServer parent)
         {
             _parent = parent;
+            _write_buf = new TMemoryBufferTransport(1024);
         }
 
         public override bool IsOpen => true;
@@ -26,8 +29,12 @@ public class TReverseTunnelServer : Thrift.Transport.TServerTransport, IDisposab
 
         public override async Task FlushAsync(CancellationToken cancellationToken)
         {
-            await _parent._transport.FlushAsync();
-            _parent._accepted_workers.Take();
+            var d = _write_buf.GetBuffer();
+            await _parent._transport.WriteAsync(d, 0, d.Length, cancellationToken);
+            UTF8Encoding utf8 = new UTF8Encoding();
+            _write_buf.SetLength(0);
+            await _parent._transport.FlushAsync(cancellationToken);
+            // _parent._accepted_workers.Take();
             
         }
 
@@ -49,7 +56,9 @@ public class TReverseTunnelServer : Thrift.Transport.TServerTransport, IDisposab
 
         public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
-            await _parent._transport.WriteAsync(buffer, cancellationToken);
+            // UTF8Encoding utf8 = new UTF8Encoding();
+            // Console.WriteLine($"Tunnel Read {string.Format("0x{0:X}", buffer[0])} !! {utf8.GetString(buffer, offset, length)}");
+            await _write_buf.WriteAsync(buffer, offset, length, cancellationToken);
         }
 
         protected override void Dispose(bool disposing)
