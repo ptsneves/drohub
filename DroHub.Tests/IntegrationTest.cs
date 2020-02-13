@@ -82,11 +82,7 @@ namespace DroHub.Tests
         [Theory]
         public async void TestCreateAndDeleteDevice(string is_valid, string device_name, string device_serial)
         {
-            using (var helper = await HttpClientHelper.createDevice(_fixture, device_name, device_serial, "admin", _fixture.AdminPassword))
-            {
-                var dom = DroHubFixture.getHtmlDOM(await helper.Response.Content.ReadAsStringAsync());
-                Assert.Equal(is_valid, dom.QuerySelectorAll("input[name='IsValid']").First().GetAttribute("value"));
-            }
+            using (var helper = await HttpClientHelper.createDevice(_fixture, device_name, device_serial, "admin", _fixture.AdminPassword)) { }
             if (is_valid == "True")
             {
                 (await HttpClientHelper.deleteDevice(_fixture, device_serial)).Dispose();
@@ -111,11 +107,7 @@ namespace DroHub.Tests
         {
             if (create_delete_device)
             {
-                using (var helper = await HttpClientHelper.createDevice(_fixture, "SomeName", serial_field, "admin", _fixture.AdminPassword))
-                {
-                    var dom = DroHubFixture.getHtmlDOM(await helper.Response.Content.ReadAsStringAsync());
-                    Assert.Equal("True", dom.QuerySelectorAll("input[name='IsValid']").First().GetAttribute("value"));
-                }
+                using (var helper = await HttpClientHelper.createDevice(_fixture, "SomeName", serial_field, "admin", _fixture.AdminPassword)){ }
             }
             using (var ws_transport = new TWebSocketClient(_fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text))
             {
@@ -140,8 +132,6 @@ namespace DroHub.Tests
             System.Net.Cookie cookie = null;
             using (var helper = await HttpClientHelper.createDevice(_fixture, "SomeName", device_serial, "admin", _fixture.AdminPassword))
             {
-                var dom = DroHubFixture.getHtmlDOM(await helper.Response.Content.ReadAsStringAsync());
-                Assert.Equal("True", dom.QuerySelectorAll("input[name='IsValid']").First().GetAttribute("value"));
                 cookie = helper.loginCookie;
             }
             try

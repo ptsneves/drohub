@@ -136,6 +136,9 @@ namespace DroHub.Tests.TestInfrastructure
                 http_helper.Response?.Dispose();
                 http_helper.Response = await http_helper.Client.PostAsync(create_device_url, urlenc);
                 http_helper.Response.EnsureSuccessStatusCode();
+                var dom = DroHubFixture.getHtmlDOM(await http_helper.Response.Content.ReadAsStringAsync());
+                if (dom.QuerySelectorAll("input[name='IsValid']").First().GetAttribute("value") != "True")
+                    throw new InvalidOperationException("create Device failed");
                 return http_helper;
             }
         }
