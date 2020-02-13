@@ -26,8 +26,55 @@ namespace DroHub.Tests.TestInfrastructure
             Client = new HttpClient(handlerHttp);
         }
 
-        public static async  ValueTask<HttpClientHelper> createLoggedInAdmin(DroHubFixture test_fixture) {
+        public static async ValueTask<HttpClientHelper> createLoggedInAdmin(DroHubFixture test_fixture) {
             return await createLoggedInUser(test_fixture, "admin", test_fixture.AdminPassword);
+        }
+
+        public static async ValueTask<HttpClientHelper> addUser(DroHubFixture test_fixture, string user_email, string user_password) {
+            var http_helper = await HttpClientHelper.createLoggedInAdmin(test_fixture);
+            var content = await http_helper.Response.Content.ReadAsStringAsync();
+            var create_device_url = new Uri(test_fixture.SiteUri, "Identity/Account/Manage/AdminPanel");
+            using (var create_page_response = await http_helper.Client.GetAsync(create_device_url))
+            {
+                create_page_response.EnsureSuccessStatusCode();
+                var verification_token = DroHubFixture.getVerificationToken(await create_page_response.Content.ReadAsStringAsync());
+                var data_dic = new Dictionary<string, string>();
+                if (user_email != null)
+                    data_dic["Email"] = user_email;
+                if (user_password != null)
+                {
+                    data_dic["Password"] = user_password;
+                    data_dic["ConfirmPassword"] = user_password;
+                }
+                data_dic["__RequestVerificationToken"] = verification_token;
+                var urlenc = new FormUrlEncodedContent(data_dic);
+                http_helper.Response?.Dispose();
+                http_helper.Response = await http_helper.Client.PostAsync(create_device_url, urlenc);
+                http_helper.Response.EnsureSuccessStatusCode();
+                return http_helper;
+            }
+        }
+
+        public static async ValueTask<HttpClientHelper> deleteUser(DroHubFixture test_fixture, string user_email, string user_password) {
+            var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user_email, user_password);
+            var content = await http_helper.Response.Content.ReadAsStringAsync();
+            var create_device_url = new Uri(test_fixture.SiteUri, "Identity/Account/Manage/DeletePersonalData");
+            using (var create_page_response = await http_helper.Client.GetAsync(create_device_url))
+            {
+                create_page_response.EnsureSuccessStatusCode();
+                var verification_token = DroHubFixture.getVerificationToken(await create_page_response.Content.ReadAsStringAsync());
+                var data_dic = new Dictionary<string, string>();
+                if (user_password != null)
+                {
+                    data_dic["Password"] = user_password;
+                }
+                data_dic["__RequestVerificationToken"] = verification_token;
+                var urlenc = new FormUrlEncodedContent(data_dic);
+                http_helper.Response?.Dispose();
+                http_helper.Response = await http_helper.Client.PostAsync(create_device_url, urlenc);
+                http_helper.Response.EnsureSuccessStatusCode();
+                return http_helper;
+            }
         }
 
         public static async ValueTask<HttpClientHelper> createHttpClient(DroHubFixture test_fixture) {

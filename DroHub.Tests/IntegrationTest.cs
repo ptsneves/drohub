@@ -23,19 +23,36 @@ namespace DroHub.Tests
                     http_helper.Response.RequestMessage.RequestUri);
         }
 
-        [InlineData("admin", null)]
-        [InlineData("admin", "1")]
+        [InlineData("admin", null, false, false, true)]
+        [InlineData("admin", "1", false, true)]
+        [InlineData("guest@drohub.xyz", "1", true, false)]
         [Theory]
-        public async void TestLogin(string user, string password)
+        public async void TestLogin(string user, string password, bool create, bool expect_login_fail, bool expect_create_fail = false)
         {
-            if (user == "admin" && password == null)
-            {
-                password = _fixture.AdminPassword;
-                using (var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, user, password)) { }
+            if(create) {
+                if (!expect_create_fail)
+                    using (var http_client_helper = await HttpClientHelper.addUser(_fixture, user, password)) { }
+                else
+                    await Assert.ThrowsAsync<System.InvalidProgramException>(async () => (await HttpClientHelper.addUser(_fixture, user, password)).Dispose());
             }
-            else
+            try
             {
-                await Assert.ThrowsAsync<System.InvalidProgramException>(async () => (await HttpClientHelper.createLoggedInUser(_fixture, user, password)).Dispose());
+                if (password == null)
+                    password = _fixture.AdminPassword;
+
+                if (expect_login_fail)
+                    await Assert.ThrowsAsync<System.InvalidProgramException>(async () => (await HttpClientHelper.createLoggedInUser(_fixture, user, password)).Dispose());
+                else
+                    using (var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, user, password)) { }
+            }
+            finally {
+                if (create)
+                {
+                    using (var http_client_helper = await HttpClientHelper.deleteUser(_fixture, user, password)) { }
+                    if (!expect_login_fail) {
+                        await Assert.ThrowsAsync<System.InvalidProgramException>(async () => (await HttpClientHelper.createLoggedInUser(_fixture, user, password)).Dispose());
+                    }
+                }
             }
         }
 
