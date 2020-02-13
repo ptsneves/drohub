@@ -116,8 +116,10 @@ namespace DroHub.Tests.TestInfrastructure
             }
         }
 
-        public static async ValueTask<HttpClientHelper> createDevice(DroHubFixture test_fixture, string device_name, string device_serial) {
-            var http_helper = await HttpClientHelper.createLoggedInAdmin(test_fixture);
+        public static async ValueTask<HttpClientHelper> createDevice(DroHubFixture test_fixture, string device_name, string device_serial, string user, string password) {
+
+            // if (user == null)
+            var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user, password);
             var content = await http_helper.Response.Content.ReadAsStringAsync();
             var create_device_url = new Uri(test_fixture.SiteUri, "DHub/Devices/Create");
             using (var create_page_response = await http_helper.Client.GetAsync(create_device_url))
