@@ -54,7 +54,11 @@ namespace DroHub.Tests.TestInfrastructure
             return document.QuerySelectorAll("input[name='__RequestVerificationToken']").First().GetAttribute("value");
         }
         public void Dispose() {
-            _containers.Dispose();
+            try {
+                _containers.Dispose();
+            } catch (Ductus.FluentDocker.Common.FluentDockerException) {
+                //Do nothing. This exception seems a bug in FluentDocker
+            }
         }
     }
 }
