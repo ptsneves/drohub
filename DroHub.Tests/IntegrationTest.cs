@@ -23,11 +23,13 @@ namespace DroHub.Tests
                     http_helper.Response.RequestMessage.RequestUri);
         }
 
-        [InlineData("admin", null, false, false, true)]
-        [InlineData("admin", "1", false, true)]
-        [InlineData("guest@drohub.xyz", "1", true, false)]
+        [InlineData("admin", null, false)]
+        [InlineData("admin", "1", true, false)]
+        [InlineData("guest@drohub.xyz", "1", false, true)]
+        [InlineData("guest", "1", true, true, false, true)] //The create does not fail but the user is actually not created thus login and delete fail
         [Theory]
-        public async void TestLogin(string user, string password, bool create, bool expect_login_fail, bool expect_create_fail = false)
+        public async void TestUserCreateAndLogin(string user, string password, bool expect_login_fail, bool create =false,
+                bool expect_create_fail = false, bool expect_delete_fail = false)
         {
             if(create) {
                 if (!expect_create_fail)
@@ -48,10 +50,14 @@ namespace DroHub.Tests
             finally {
                 if (create)
                 {
-                    using (var http_client_helper = await HttpClientHelper.deleteUser(_fixture, user, password)) { }
-                    if (!expect_login_fail) {
-                        await Assert.ThrowsAsync<System.InvalidProgramException>(async () => (await HttpClientHelper.createLoggedInUser(_fixture, user, password)).Dispose());
+                    if (!expect_delete_fail)
+                    {
+                        (await HttpClientHelper.deleteUser(_fixture, user, password)).Dispose();
                     }
+                    else
+                        await Assert.ThrowsAsync<System.InvalidProgramException>(async () => (await HttpClientHelper.deleteUser(_fixture, user, password)).Dispose());
+
+                    await Assert.ThrowsAsync<System.InvalidProgramException>(async () => (await HttpClientHelper.createLoggedInUser(_fixture, user, password)).Dispose());
                 }
             }
         }
