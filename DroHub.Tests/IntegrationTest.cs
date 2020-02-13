@@ -75,19 +75,42 @@ namespace DroHub.Tests
             }
         }
 
-        [InlineData("True", "MyAnafi", "000000")]
-        [InlineData("False", "MyAnafi", null)]
-        [InlineData("False", null, null)]
-        [InlineData("False", null, "000000")]
+        [InlineData(true, "MyAnafi", "000000")]
+        [InlineData(false, "MyAnafi", null)]
+        [InlineData(false, null, null)]
+        [InlineData(false, null, "000000")]
         [Theory]
-        public async void TestCreateAndDeleteDevice(string is_valid, string device_name, string device_serial)
+        public async void TestCreateAndDeleteDevice(bool expect_created, string device_name, string device_serial)
         {
-            using (var helper = await HttpClientHelper.createDevice(_fixture, device_name, device_serial, "admin", _fixture.AdminPassword)) { }
-            if (is_valid == "True")
+            try
             {
-                (await HttpClientHelper.deleteDevice(_fixture, device_serial)).Dispose();
+                if (expect_created)
+                {
+                    using (var helper = await HttpClientHelper.createDevice(_fixture, device_name, device_serial, "admin", _fixture.AdminPassword)) { }
+                    var devices_list = await HttpClientHelper.getDeviceList(_fixture);
+                    Assert.NotNull(devices_list);
+                    devices_list.Single(d => d.serialNumber == device_serial);
+                }
+                else
+                {
+                    await Assert.ThrowsAsync<System.InvalidOperationException>(async () =>
+                    {
+                        using (var helper = await HttpClientHelper.createDevice(_fixture, device_name, device_serial, "admin", _fixture.AdminPassword)) { }
+                    });
+                    Assert.Null(await HttpClientHelper.getDeviceList(_fixture));
+                }
+            }
+            finally {
+                if (expect_created)
+                    (await HttpClientHelper.deleteDevice(_fixture, device_serial)).Dispose();
+                else
+                {
+                    if (device_serial != null && device_name != null)
+                        (await HttpClientHelper.deleteDevice(_fixture, device_serial)).Dispose();
+                }
+
                 var devices_list = await HttpClientHelper.getDeviceList(_fixture);
-                Assert.ThrowsAny<ArgumentNullException>(() => devices_list.First(d => d.serialNumber == device_serial));
+                    Assert.ThrowsAny<ArgumentNullException>(() => devices_list.First(d => d.serialNumber == device_serial));
             }
         }
 
