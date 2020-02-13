@@ -65,7 +65,7 @@ namespace DroHub.Helpers.Thrift
                 return;
 
             context.Add(telemetry_data);
-            await context.SaveChangesAsync(token);
+            await context.SaveChangesAsync();
         }
 
         private async Task BroadcastToSignalR(string t_name, IDroneTelemetry telemetry, DroHubContext context, Device device, CancellationToken token) {
