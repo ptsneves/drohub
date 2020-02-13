@@ -127,10 +127,10 @@ namespace DroHub.Tests
             }
         }
 
-        [Fact]
-        public async void TestThriftDrone()
+        [InlineData("ThriftSerial")]
+        [Theory]
+        public async void TestThriftDrone(string device_serial)
         {
-            string device_serial = "ThriftSerial";
             System.Net.Cookie cookie = null;
             using (var helper = await HttpClientHelper.createDevice(_fixture, "SomeName", device_serial))
             {
