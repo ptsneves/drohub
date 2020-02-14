@@ -167,6 +167,12 @@ namespace DroHub.Helpers.Thrift
                 return;
             }
 
+            if (context.Request.Headers["x-drohub-user"] == StringValues.Empty || context.Request.Headers["x-drohub-password"] == String.Empty) {
+                _logger.LogInformation("User did not provide a user or password");
+                context.Response.StatusCode = 400;
+                return;
+            }
+
             try
             {
                 _serial_number = context.Request.Headers["x-device-expected-serial"];
