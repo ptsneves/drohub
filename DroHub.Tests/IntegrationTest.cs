@@ -128,25 +128,31 @@ namespace DroHub.Tests
         [InlineData("ASerial", false, true)]
         [InlineData(null, true, false)]
         [Theory]
-        public async void TestConnectionClosedOnInvalidSerial(string serial_field, bool expect_throw, bool create_delete_device)
+        public async void TestWebSocketConnection(string serial_field, bool expect_throw, bool create_delete_device)
         {
             if (create_delete_device)
             {
                 using (var helper = await HttpClientHelper.createDevice(_fixture, "SomeName", serial_field, "admin", _fixture.AdminPassword)){ }
             }
-            using (var ws_transport = new TWebSocketClient(_fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text))
+            try
             {
-                ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
-                if (serial_field != null)
-                    ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", serial_field);
-                if (expect_throw)
-                    await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());
-                else
-                    await ws_transport.OpenAsync();
+                using (var ws_transport = new TWebSocketClient(_fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text))
+                {
+                    ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
+                    if (serial_field != null)
+                        ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", serial_field);
+                    if (expect_throw)
+                        await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());
+                    else
+                        await ws_transport.OpenAsync();
+                }
             }
-            if (create_delete_device)
+            finally
             {
-                (await HttpClientHelper.deleteDevice(_fixture, serial_field, "admin", _fixture.AdminPassword)).Dispose();
+                if (create_delete_device)
+                {
+                    (await HttpClientHelper.deleteDevice(_fixture, serial_field, "admin", _fixture.AdminPassword)).Dispose();
+                }
             }
         }
 
