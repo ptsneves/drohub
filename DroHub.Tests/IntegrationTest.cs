@@ -141,6 +141,8 @@ namespace DroHub.Tests
                     ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
                     if (serial_field != null)
                         ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", serial_field);
+                        ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", "s");
+                        ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-password", "s");
                     if (expect_throw)
                         await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());
                     else

@@ -28,6 +28,8 @@ namespace DroHub.Tests.TestInfrastructure
                 ws_transport.WebSocketOptions.SetRequestHeader("User-Agent", "AirborneProjets");
                 ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
                 ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
+                ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", "1");
+                ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-password", "1");
 
                 var message_validator_factory = new TAMessageValidatorProtocol.Factory(new TAJsonProtocol.Factory(),
                         TAMessageValidatorProtocol.ValidationModeEnum.KEEP_READING,
