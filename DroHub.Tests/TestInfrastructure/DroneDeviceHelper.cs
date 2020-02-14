@@ -51,7 +51,7 @@ namespace DroHub.Tests.TestInfrastructure
             {
                 Type telemetry_type = telemetry_item.Key;
                 MethodInfo get_device_telemetry = typeof(HttpClientHelper).GetMethod("getDeviceTelemetry").MakeGenericMethod(telemetry_type);
-                dynamic awaitable = get_device_telemetry.Invoke(null, new object[] { fixture, _device_serial, 1, 10 });
+                dynamic awaitable = get_device_telemetry.Invoke(null, new object[] { fixture, _device_serial, _user_name, _password, 1, 10 });
                 await awaitable;
                 dynamic result_list = awaitable.GetAwaiter().GetResult();
                 ((IEnumerable)result_list).Cast<dynamic>().Single(s => s.Timestamp == telemetry_item.Value.Telemetry.Timestamp);
@@ -91,13 +91,21 @@ namespace DroHub.Tests.TestInfrastructure
             TelemetryItems.Add(typeof(T), new TelemetryItem<IDroneTelemetry>(value, _connection, typeof(T).FullName));
         }
 
+        public async Task WaitForServer() {
+            var tasks = TelemetryItems.Select(item => ((TelemetryMock.BaseTelemetryItem)item.Value).TaskSource.Task);
+            await Task.WhenAny(Task.WhenAll(tasks), Task.Delay(4000));
+        }
+
         private HubConnection _connection;
         public async Task startMock(DroHubFixture fixture, string hub_uri, string user, string password, bool create_user = false, bool create_device = false)
         {
             _fixture = fixture;
+            _user_name = user;
+            _password = password;
+
             if (create_device)
             {
-                http_helper = await HttpClientHelper.createDevice(_fixture, "SomeName", _device_serial, user, password, create_user);
+                http_helper = await HttpClientHelper.createDevice(_fixture, _device_serial, _device_serial, user, password, create_user);
                 must_delete_device = true;
             }
             else
@@ -134,13 +142,16 @@ namespace DroHub.Tests.TestInfrastructure
         public async Task stopMock()
         {
             if (must_delete_device)
-                (await HttpClientHelper.deleteDevice(_fixture, _device_serial)).Dispose();
+                (await HttpClientHelper.deleteDevice(_fixture, _device_serial, _user_name, _password)).Dispose();
         }
         public Dictionary<Type, TelemetryItem<IDroneTelemetry>> TelemetryItems { get; private set; }
         private string _device_serial;
+        public string SerialNumber {get { return _device_serial; } }
         HttpClientHelper http_helper;
         private bool must_delete_device = false;
-        DroHubFixture _fixture;
+        private DroHubFixture _fixture;
+        private string _user_name;
+        private string _password;
 
         public TelemetryMock(string device_serial)
         {

@@ -26,15 +26,11 @@ namespace DroHub.Tests.TestInfrastructure
             Client = new HttpClient(handlerHttp);
         }
 
-        public static async ValueTask<HttpClientHelper> createLoggedInAdmin(DroHubFixture test_fixture) {
-            return await createLoggedInUser(test_fixture, "admin", test_fixture.AdminPassword);
-        }
-
         public static async ValueTask<HttpClientHelper> addUser(DroHubFixture test_fixture, string user_email, string user_password) {
-            var http_helper = await HttpClientHelper.createLoggedInAdmin(test_fixture);
+            var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, "admin", test_fixture.AdminPassword);
             var content = await http_helper.Response.Content.ReadAsStringAsync();
-            var create_device_url = new Uri(test_fixture.SiteUri, "Identity/Account/Manage/AdminPanel");
-            using (var create_page_response = await http_helper.Client.GetAsync(create_device_url))
+            var create_user_url = new Uri(test_fixture.SiteUri, "Identity/Account/Manage/AdminPanel");
+            using (var create_page_response = await http_helper.Client.GetAsync(create_user_url))
             {
                 create_page_response.EnsureSuccessStatusCode();
                 var verification_token = DroHubFixture.getVerificationToken(await create_page_response.Content.ReadAsStringAsync());
@@ -49,7 +45,7 @@ namespace DroHub.Tests.TestInfrastructure
                 data_dic["__RequestVerificationToken"] = verification_token;
                 var urlenc = new FormUrlEncodedContent(data_dic);
                 http_helper.Response?.Dispose();
-                http_helper.Response = await http_helper.Client.PostAsync(create_device_url, urlenc);
+                http_helper.Response = await http_helper.Client.PostAsync(create_user_url, urlenc);
                 http_helper.Response.EnsureSuccessStatusCode();
                 return http_helper;
             }
@@ -106,8 +102,8 @@ namespace DroHub.Tests.TestInfrastructure
             return http_helper;
         }
 
-        public static async ValueTask<List<dynamic>> getDeviceList(DroHubFixture test_fixture) {
-            using (var http_helper = await HttpClientHelper.createLoggedInAdmin(test_fixture)) {
+        public static async ValueTask<List<dynamic>> getDeviceList(DroHubFixture test_fixture, string user, string password) {
+            using (var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user, password)) {
                 var content = await http_helper.Response.Content.ReadAsStringAsync();
                 var create_device_url = new Uri(test_fixture.SiteUri, "DHub/Devices/GetDevicesList");
                 http_helper.Response?.Dispose();
@@ -118,10 +114,9 @@ namespace DroHub.Tests.TestInfrastructure
 
         public static async ValueTask<HttpClientHelper> createDevice(DroHubFixture test_fixture, string device_name, string device_serial, string user, string password, bool create_user = false) {
             HttpClientHelper http_helper;
-            if (create_user)
-                http_helper = await HttpClientHelper.addUser(test_fixture, user, password);
-            else
-                http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user, password);
+            (await HttpClientHelper.addUser(test_fixture, user, password)).Dispose();
+            http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user, password);
+
             var content = await http_helper.Response.Content.ReadAsStringAsync();
             var create_device_url = new Uri(test_fixture.SiteUri, "DHub/Devices/Create");
             using (var create_page_response = await http_helper.Client.GetAsync(create_device_url))
@@ -145,8 +140,8 @@ namespace DroHub.Tests.TestInfrastructure
             }
         }
 
-        public static async ValueTask<HttpClientHelper> deleteDevice(DroHubFixture test_fixture, int device_id) {
-            var http_helper = await HttpClientHelper.createLoggedInAdmin(test_fixture);
+        public static async ValueTask<HttpClientHelper> deleteDevice(DroHubFixture test_fixture, int device_id, string user, string password) {
+            var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user, password);
             var content = await http_helper.Response.Content.ReadAsStringAsync();
             var create_device_url = new Uri(test_fixture.SiteUri, $"DHub/Devices/Delete/{device_id}");
             using (var create_page_response = await http_helper.Client.GetAsync(create_device_url))
@@ -164,19 +159,19 @@ namespace DroHub.Tests.TestInfrastructure
             }
         }
 
-        public static async ValueTask<HttpClientHelper> deleteDevice(DroHubFixture test_fixture, string serial_number)
+        public static async ValueTask<HttpClientHelper> deleteDevice(DroHubFixture test_fixture, string serial_number, string user, string password)
         {
-            var devices_list = await HttpClientHelper.getDeviceList(test_fixture);
+            var devices_list = await HttpClientHelper.getDeviceList(test_fixture, user, password);
             int device_id = devices_list.First(d => d.serialNumber == serial_number).id;
-            return await HttpClientHelper.deleteDevice(test_fixture, device_id);
+            return await HttpClientHelper.deleteDevice(test_fixture, device_id, user, password);
         }
 
-        public static async ValueTask<List<T>> getDeviceTelemetry<T>(DroHubFixture test_fixture, string serial_number,
+        public static async ValueTask<List<T>> getDeviceTelemetry<T>(DroHubFixture test_fixture, string serial_number, string user, string password,
                 int start_index, int end_index) {
-            var devices_list = await HttpClientHelper.getDeviceList(test_fixture);
+            var devices_list = await HttpClientHelper.getDeviceList(test_fixture, user, password);
             int device_id = devices_list.First(d => d.serialNumber == serial_number).id;
 
-            using (var http_helper = await HttpClientHelper.createLoggedInAdmin(test_fixture)) {
+            using (var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user, password)) {
                 var content = await http_helper.Response.Content.ReadAsStringAsync();
                 var create_device_url = new Uri(test_fixture.SiteUri, $"DHub/Devices/Get{typeof(T)}s/{device_id}");
                 http_helper.Response?.Dispose();

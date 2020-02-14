@@ -66,7 +66,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestLogout() {
-            using (var http_client_helper = await HttpClientHelper.createLoggedInAdmin(_fixture))
+            using (var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, "admin", _fixture.AdminPassword))
             {
                 var logout_url = new Uri(_fixture.SiteUri, "Identity/Account/Logout");
 
@@ -89,7 +89,7 @@ namespace DroHub.Tests
                 if (expect_created)
                 {
                     using (var helper = await HttpClientHelper.createDevice(_fixture, device_name, device_serial, "admin", _fixture.AdminPassword)) { }
-                    var devices_list = await HttpClientHelper.getDeviceList(_fixture);
+                    var devices_list = await HttpClientHelper.getDeviceList(_fixture, "admin", _fixture.AdminPassword);
                     Assert.NotNull(devices_list);
                     devices_list.Single(d => d.serialNumber == device_serial);
                 }
@@ -99,19 +99,19 @@ namespace DroHub.Tests
                     {
                         using (var helper = await HttpClientHelper.createDevice(_fixture, device_name, device_serial, "admin", _fixture.AdminPassword)) { }
                     });
-                    Assert.Null(await HttpClientHelper.getDeviceList(_fixture));
+                    Assert.Null(await HttpClientHelper.getDeviceList(_fixture, "admin", _fixture.AdminPassword));
                 }
             }
             finally {
                 if (expect_created)
-                    (await HttpClientHelper.deleteDevice(_fixture, device_serial)).Dispose();
+                    (await HttpClientHelper.deleteDevice(_fixture, device_serial, "admin", _fixture.AdminPassword)).Dispose();
                 else
                 {
                     if (device_serial != null && device_name != null)
-                        (await HttpClientHelper.deleteDevice(_fixture, device_serial)).Dispose();
+                        (await HttpClientHelper.deleteDevice(_fixture, device_serial, "admin", _fixture.AdminPassword)).Dispose();
                 }
 
-                var devices_list = await HttpClientHelper.getDeviceList(_fixture);
+                var devices_list = await HttpClientHelper.getDeviceList(_fixture,  "admin", _fixture.AdminPassword);
                     Assert.ThrowsAny<ArgumentNullException>(() => devices_list.First(d => d.serialNumber == device_serial));
             }
         }
@@ -146,7 +146,7 @@ namespace DroHub.Tests
             }
             if (create_delete_device)
             {
-                (await HttpClientHelper.deleteDevice(_fixture, serial_field)).Dispose();
+                (await HttpClientHelper.deleteDevice(_fixture, serial_field, "admin", _fixture.AdminPassword)).Dispose();
             }
         }
 
