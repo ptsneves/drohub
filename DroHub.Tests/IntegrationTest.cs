@@ -150,26 +150,43 @@ namespace DroHub.Tests
             }
         }
 
-        [InlineData("ThriftSerial1", "mysuser", "pass", true)]
+        [InlineData("ThriftSerial1", "mysuser@drohub.com", "pass", true, 4, false)]
         [Theory]
-        public async void TestThriftDrone(string device_serial, string user, string password, bool create_user)
+        public async void TestThriftDrone(string device_serial, string user, string password,
+                bool create_users, int concurrent_devices, bool single_user_multiple_devices)
         {
-            TelemetryMock telemetry_mock = new TelemetryMock(device_serial);
+            var telemetry_mocks = new List<TelemetryMock>();
+            var drone_rpcs = new List<DroneRPC>();
+            for (var i = 0; i < concurrent_devices; i++) {
+                telemetry_mocks.Add(new TelemetryMock($"{device_serial}_{i}"));
 
-            await telemetry_mock.startMock(_fixture, "ws://localhost:5000/telemetryhub", user, password, create_user, true);
-            DroneDeviceHelper.DroneTestDelegate del = async () =>
-            {
-                var tasks = telemetry_mock.TelemetryItems.Select(item => ((TelemetryMock.BaseTelemetryItem)item.Value).TaskSource.Task);
-                await Task.WhenAny(Task.WhenAll(tasks), Task.Delay(4000));
-            };
+                if (single_user_multiple_devices)
+                    await telemetry_mocks[i].startMock(_fixture, "ws://localhost:5000/telemetryhub", user, password, create_users, true);
+                else
+                    await telemetry_mocks[i].startMock(_fixture, "ws://localhost:5000/telemetryhub", $"{user}{i}", password, create_users, true);
 
-            using (var drone_rpc = new DroneRPC(telemetry_mock))
-            {
-                await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, device_serial, del);
-                Assert.Equal(telemetry_mock.TelemetryItems.Count, telemetry_mock.getSignalRTasksTelemetry());
-                await telemetry_mock.verifyRecordedTelemetry(_fixture);
+                drone_rpcs.Add(new DroneRPC(telemetry_mocks[i]));
+
             }
-            await telemetry_mock.stopMock();
+            for (var i = 0; i < concurrent_devices; i++) {
+                await DroneDeviceHelper.mockDrone(_fixture, drone_rpcs[i], telemetry_mocks[i].SerialNumber, telemetry_mocks[i].WaitForServer);
+            }
+            try
+            {
+                for (var i = 0; i < concurrent_devices; i++)
+                {
+                    Assert.Equal(telemetry_mocks[i].TelemetryItems.Count, telemetry_mocks[i].getSignalRTasksTelemetry());
+                    await telemetry_mocks[i].verifyRecordedTelemetry(_fixture);
+                }
+            }
+            finally
+            {
+                for (var i = 0; i < concurrent_devices; i++)
+                {
+                    drone_rpcs[i].Dispose();
+                    await telemetry_mocks[i].stopMock();
+                }
+            }
         }
     }
 }

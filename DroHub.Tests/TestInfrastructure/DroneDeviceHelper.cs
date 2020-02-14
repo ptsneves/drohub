@@ -107,6 +107,7 @@ namespace DroHub.Tests.TestInfrastructure
             {
                 http_helper = await HttpClientHelper.createDevice(_fixture, _device_serial, _device_serial, user, password, create_user);
                 must_delete_device = true;
+                must_delete_user = create_user;
             }
             else
             {
@@ -149,6 +150,7 @@ namespace DroHub.Tests.TestInfrastructure
         public string SerialNumber {get { return _device_serial; } }
         HttpClientHelper http_helper;
         private bool must_delete_device = false;
+        private bool must_delete_user = false;
         private DroHubFixture _fixture;
         private string _user_name;
         private string _password;
