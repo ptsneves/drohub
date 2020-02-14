@@ -15,4 +15,8 @@
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="ApacheThrift" Version="0.13.0.1" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DroHub.csproj" />
+  </ItemGroup>
 </Project>
