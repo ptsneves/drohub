@@ -9,7 +9,7 @@ using DroHub.Areas.DHub.Models;
 public class DroneRPC : Drone.IAsync, IDisposable
 {
     private bool disposed = false;
-    public Dictionary<Type, BlockingCollection<IDroneTelemetry>> collections;
+    private Dictionary<Type, BlockingCollection<IDroneTelemetry>> collections;
 
     public DroneRPC(TelemetryMock tmock) {
         collections = new Dictionary<Type, BlockingCollection<IDroneTelemetry>>();
@@ -20,7 +20,7 @@ public class DroneRPC : Drone.IAsync, IDisposable
         }
     }
 
-    public T GetTelemetryItem<T>() where T : IDroneTelemetry
+    private T GetTelemetryItem<T>() where T : IDroneTelemetry
     {
         var type = typeof(T);
         return (T)collections[type].Take();
