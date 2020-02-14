@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.AspNetCore.SignalR.Client;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Net.Http;
+using System.Collections;
 
 namespace DroHub.Tests
 {
@@ -148,95 +150,26 @@ namespace DroHub.Tests
             }
         }
 
-        [InlineData("ThriftSerial")]
+        [InlineData("ThriftSerial1", "mysuser", "pass", true)]
         [Theory]
-        public async void TestThriftDrone(string device_serial)
+        public async void TestThriftDrone(string device_serial, string user, string password, bool create_user)
         {
-            System.Net.Cookie cookie = null;
-            using (var helper = await HttpClientHelper.createDevice(_fixture, "SomeName", device_serial, "admin", _fixture.AdminPassword))
+            TelemetryMock telemetry_mock = new TelemetryMock(device_serial);
+
+            await telemetry_mock.startMock(_fixture, "ws://localhost:5000/telemetryhub", user, password, create_user, true);
+            DroneDeviceHelper.DroneTestDelegate del = async () =>
             {
-                cookie = helper.loginCookie;
-            }
-            try
+                var tasks = telemetry_mock.TelemetryItems.Select(item => ((TelemetryMock.BaseTelemetryItem)item.Value).TaskSource.Task);
+                await Task.WhenAny(Task.WhenAll(tasks), Task.Delay(4000));
+            };
+
+            using (var drone_rpc = new DroneRPC(telemetry_mock))
             {
-                HubConnection connection = new HubConnectionBuilder()
-                    .WithUrl(new Uri("ws://localhost:5000/telemetryhub"), options => { options.Cookies.Add(cookie);})
-                    .Build();
-
-                var task_sources = new Dictionary<Type, TaskCompletionSource<bool>>();
-                var types = new Type[] {
-                    typeof(DronePosition),
-                    typeof(DroneBatteryLevel),
-                    typeof(DroneRadioSignal),
-                    typeof(DroneFlyingState),
-                    typeof(DroneReply),
-                    typeof(DroneLiveVideoStateResult)
-                };
-
-                foreach (var type in types)
-                {
-                    task_sources[type] = new TaskCompletionSource<bool>();
-                    connection.On<string>(type.FullName, (message) => { task_sources[type].TrySetResult(true); });
-                }
-
-                DroneDeviceHelper.DroneTestDelegate del = async () =>
-                {
-                    var tasks = task_sources.Values.Select(tcss => tcss.Task);
-                    await Task.WhenAny(Task.WhenAll(tasks), Task.Delay(4000)); //Because the ping reply can come later
-                    var completed_results = tasks
-                        .Where(t => t.Status == TaskStatus.RanToCompletion)
-                        .Select(t => t.Result)
-                        .ToList();
-                    Assert.Equal(task_sources.Count, completed_results.Count);
-                };
-
-                var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                var reply_seed = new DroneReply{ Result = true, Serial = device_serial, Timestamp = timestamp};
-                var position_seed = new DronePosition { Longitude = 0.0f, Latitude = 0.1f, Altitude = 10f, Serial = device_serial, Timestamp = timestamp };
-                var radio_signal_seed = new DroneRadioSignal { SignalQuality = 2, Rssi = -23.0f, Serial = device_serial, Timestamp = timestamp };
-                var flying_state_seed = new DroneFlyingState { State = FlyingState.LANDED, Serial = device_serial, Timestamp = timestamp };
-                var battery_level_seed = new DroneBatteryLevel { BatteryLevelPercent = 100, Serial = device_serial, Timestamp = timestamp };
-                var drone_video_state_seed = new DroneLiveVideoStateResult {State = DroneLiveVideoState.LIVE, Serial = device_serial, Timestamp = timestamp };
-
-                await connection.StartAsync();
-                using (var drone_rpc = new DroneRPC())
-                {
-                    drone_rpc.PingServiceReply.Add(reply_seed);
-                    drone_rpc.PositionReply.Add(position_seed);
-                    drone_rpc.RadioSignalReply.Add(radio_signal_seed);
-                    drone_rpc.FlyingStateReply.Add(flying_state_seed);
-                    drone_rpc.BatteryLevelReply.Add(battery_level_seed);
-                    drone_rpc.VideoStateResultReply.Add(drone_video_state_seed);
-
-                    await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, device_serial, del);
-                    var reply_result = await HttpClientHelper.getDeviceTelemetry<DroneReply>(_fixture, device_serial, 1, 10);
-                    var positions_result = await HttpClientHelper.getDeviceTelemetry<DronePosition>(_fixture, device_serial, 1, 10);
-                    var radio_signals_result = await HttpClientHelper.getDeviceTelemetry<DroneRadioSignal>(_fixture, device_serial, 1, 10);
-                    var flying_states_result = await HttpClientHelper.getDeviceTelemetry<DroneFlyingState>(_fixture, device_serial, 1, 10);
-                    var battery_levels_result = await HttpClientHelper.getDeviceTelemetry<DroneBatteryLevel>(_fixture, device_serial, 1, 10);
-                    var drone_video_states_result = await HttpClientHelper.getDeviceTelemetry<DroneLiveVideoStateResult>(_fixture, device_serial, 1, 10);
-
-                    reply_result.Single(s => s.Timestamp == reply_seed.Timestamp);
-                    positions_result.Single(s => s.Timestamp == position_seed.Timestamp);
-                    radio_signals_result.Single(s => s.Timestamp == radio_signal_seed.Timestamp);
-                    flying_states_result.Single(s => s.Timestamp == flying_state_seed.Timestamp);
-                    battery_levels_result.Single(s => s.Timestamp == battery_level_seed.Timestamp);
-                    drone_video_states_result.Single(s => s.Timestamp == drone_video_state_seed.Timestamp);
-
-                    foreach (var type in types)
-                    {
-                        // Type telemetry_list_type = typeof(List<>).MakeGenericType(type);
-                        // var get_device_telemetry = typeof(HttpClientHelper).GetMethod("getDeviceTelemetry");
-                        // var get_telemetry_t_method = get_device_telemetry.MakeGenericMethod(telemetry_list_type);
-                        // get_telemetry_t_method.Invoke(null, new object[] {_fixture, device_serial, 1, 10});
-                    }
-                    // drone_positions.First(p => p.)
-                }
+                await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, device_serial, del);
+                Assert.Equal(telemetry_mock.TelemetryItems.Count, telemetry_mock.getSignalRTasksTelemetry());
+                await telemetry_mock.verifyRecordedTelemetry(_fixture);
             }
-            finally
-            {
-                (await HttpClientHelper.deleteDevice(_fixture, device_serial)).Dispose();
-            }
+            await telemetry_mock.stopMock();
         }
     }
 }

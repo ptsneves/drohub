@@ -1,36 +1,29 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.Collections.Concurrent;
+using DroHub.Tests.TestInfrastructure;
+using DroHub.Areas.DHub.Models;
+
 public class DroneRPC : Drone.IAsync, IDisposable
 {
-    public BlockingCollection<DroneReply> LandingReply {get; private set; }
-    public BlockingCollection<DroneReply> ReturnToHomeReply {get; private set; }
-    public BlockingCollection<DroneReply> TakeOffReply {get; private set; }
-    public BlockingCollection<DronePosition> PositionReply { get; private set; }
-    public BlockingCollection<DroneBatteryLevel> BatteryLevelReply {get; private set; }
-    public BlockingCollection<DroneFileList> FileListReply {get; private set; }
-    public BlockingCollection<DroneFlyingState> FlyingStateReply {get; private set; }
-    public BlockingCollection<DroneRadioSignal> RadioSignalReply {get; private set; }
-    public BlockingCollection<DroneLiveVideoStateResult> VideoStateResultReply {get; private set; }
-    public BlockingCollection<DroneReply> MoveToPositionReply {get; private set; }
-    public BlockingCollection<DroneReply> PingServiceReply {get; private set; }
-    public BlockingCollection<DroneLiveVideoStateResult> SendVideoStateReply {get ; private set; }
     private bool disposed = false;
+    public Dictionary<Type, BlockingCollection<IDroneTelemetry>> collections;
 
-    public DroneRPC() {
-        LandingReply = new BlockingCollection<DroneReply>();
-        ReturnToHomeReply = new BlockingCollection<DroneReply>();
-        TakeOffReply = new BlockingCollection<DroneReply>();
-        PositionReply = new BlockingCollection<DronePosition>();
-        BatteryLevelReply = new BlockingCollection<DroneBatteryLevel>();
-        FileListReply = new BlockingCollection<DroneFileList>();
-        FlyingStateReply = new BlockingCollection<DroneFlyingState>();
-        RadioSignalReply = new BlockingCollection<DroneRadioSignal>();
-        VideoStateResultReply = new BlockingCollection<DroneLiveVideoStateResult>();
-        MoveToPositionReply = new BlockingCollection<DroneReply>();
-        PingServiceReply = new BlockingCollection<DroneReply>();
-        SendVideoStateReply = new BlockingCollection<DroneLiveVideoStateResult>();
+    public DroneRPC(TelemetryMock tmock) {
+        collections = new Dictionary<Type, BlockingCollection<IDroneTelemetry>>();
+        foreach (var item in tmock.TelemetryItems) {
+            var new_collection = new BlockingCollection<IDroneTelemetry>();
+            new_collection.Add(item.Value.Telemetry);
+            collections[item.Key] = new_collection;
+        }
+    }
+
+    public T GetTelemetryItem<T>() where T : IDroneTelemetry
+    {
+        var type = typeof(T);
+        return (T)collections[type].Take();
     }
 
     public void Dispose() {
@@ -43,79 +36,78 @@ public class DroneRPC : Drone.IAsync, IDisposable
 
         if (disposing)
         {
-            LandingReply?.Dispose();
-            ReturnToHomeReply?.Dispose();
-            TakeOffReply?.Dispose();
-            PositionReply?.Dispose();
-            BatteryLevelReply?.Dispose();
-            FileListReply?.Dispose();
-            FlyingStateReply?.Dispose();
-            RadioSignalReply?.Dispose();
-            VideoStateResultReply?.Dispose();
-            MoveToPositionReply?.Dispose();
-            PingServiceReply?.Dispose();
-            SendVideoStateReply?.Dispose();
+            foreach(var collection in collections) {
+                collection.Value.Dispose();
+            }
         }
         disposed = true;
-    }
-    Task<DroneReply> Drone.IAsync.doLandingAsync(CancellationToken cancellationToken)
-    {
-        return Task.FromResult<DroneReply>(LandingReply.Take());
-    }
-
-    Task<DroneReply> Drone.IAsync.doReturnToHomeAsync(CancellationToken cancellationToken)
-    {
-        return Task.FromResult<DroneReply>(ReturnToHomeReply.Take());
-    }
-
-    Task<DroneReply> Drone.IAsync.doTakeoffAsync(CancellationToken cancellationToken)
-    {
-        return Task.FromResult<DroneReply>(TakeOffReply.Take());
     }
 
     Task<DroneBatteryLevel> Drone.IAsync.getBatteryLevelAsync(CancellationToken cancellationToken)
     {
-        return Task.FromResult<DroneBatteryLevel>(BatteryLevelReply.Take());
+        var r = GetTelemetryItem<DroneBatteryLevel>();
+        return Task.FromResult<DroneBatteryLevel>(r);
     }
 
     Task<DroneFileList> Drone.IAsync.getFileListAsync(CancellationToken cancellationToken)
     {
-        return Task.FromResult<DroneFileList>(FileListReply.Take());
+        throw new NotImplementedException();
+        // return Task.FromResult<IDroneTelemetry>(GetTelemetryItem<DroneFileList>().Take().Telemetry);
     }
 
     Task<DroneFlyingState> Drone.IAsync.getFlyingStateAsync(CancellationToken cancellationToken)
     {
-        return Task.FromResult<DroneFlyingState>(FlyingStateReply.Take());
+        var r = GetTelemetryItem<DroneFlyingState>();
+        return Task.FromResult<DroneFlyingState>(r);
     }
 
     Task<DronePosition> Drone.IAsync.getPositionAsync(CancellationToken cancellationToken)
     {
-        return Task.FromResult<DronePosition>(PositionReply.Take());
+        var r = GetTelemetryItem<DronePosition>();
+        return Task.FromResult<DronePosition>(r);
     }
 
     Task<DroneRadioSignal> Drone.IAsync.getRadioSignalAsync(CancellationToken cancellationToken)
     {
-        return Task.FromResult<DroneRadioSignal>(RadioSignalReply.Take());
+        var r = GetTelemetryItem<DroneRadioSignal>();
+        return Task.FromResult<DroneRadioSignal>(r);
     }
 
     Task<DroneLiveVideoStateResult> Drone.IAsync.getLiveVideoStateAsync(DroneSendLiveVideoRequest request, CancellationToken cancellationToken)
     {
-        return Task.FromResult<DroneLiveVideoStateResult>(VideoStateResultReply.Take());
-    }
-
-    Task<DroneReply> Drone.IAsync.moveToPositionAsync(DroneRequestPosition request, CancellationToken cancellationToken)
-    {
-        return Task.FromResult<DroneReply>(MoveToPositionReply.Take());
+        var r = GetTelemetryItem<DroneLiveVideoStateResult>();
+        return Task.FromResult<DroneLiveVideoStateResult>(r);
     }
 
     Task<DroneReply> Drone.IAsync.pingServiceAsync(CancellationToken cancellationToken)
     {
-        return Task.FromResult<DroneReply>(PingServiceReply.Take());
+        var r = GetTelemetryItem<DroneReply>();
+        return Task.FromResult<DroneReply>(r);
     }
 
-    Task<DroneLiveVideoStateResult> Drone.IAsync.sendLiveVideoToAsync(DroneSendLiveVideoRequest request, CancellationToken cancellationToken)
+    public Task<DroneLiveVideoStateResult> sendLiveVideoToAsync(DroneSendLiveVideoRequest request, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult<DroneLiveVideoStateResult>(SendVideoStateReply.Take());
+        throw new NotImplementedException();
+    }
+
+    public Task<DroneReply> doTakeoffAsync(CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<DroneReply> doLandingAsync(CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<DroneReply> doReturnToHomeAsync(CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<DroneReply> moveToPositionAsync(DroneRequestPosition request, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
     }
 
     public Task<DroneReply> takePictureAsync(DroneTakePictureRequest request, CancellationToken cancellationToken = default)
