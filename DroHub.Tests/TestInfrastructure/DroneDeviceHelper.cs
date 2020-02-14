@@ -18,7 +18,8 @@ namespace DroHub.Tests.TestInfrastructure
    class DroneDeviceHelper
     {
         public delegate Task DroneTestDelegate();
-        public static async Task mockDrone(DroHubFixture fixture, DroneRPC drone_rpc, string device_serial, DroneTestDelegate test_delegate)
+        public static async Task mockDrone(DroHubFixture fixture, DroneRPC drone_rpc, string device_serial, DroneTestDelegate test_delegate,
+                string user, string password)
         {
             var loggerFactory = new LoggerFactory().AddConsole().AddDebug(LogLevel.Trace);
             using (var ws_transport = new TWebSocketClient(fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Binary))

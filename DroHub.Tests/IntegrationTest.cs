@@ -165,19 +165,22 @@ namespace DroHub.Tests
         {
             var telemetry_mocks = new List<TelemetryMock>();
             var drone_rpcs = new List<DroneRPC>();
+            var users = new List<string>();
             for (var i = 0; i < concurrent_devices; i++) {
                 telemetry_mocks.Add(new TelemetryMock($"{device_serial}_{i}"));
-
                 if (single_user_multiple_devices)
-                    await telemetry_mocks[i].startMock(_fixture, "ws://localhost:5000/telemetryhub", user, password, create_users, true);
+                    users.Add(user);
                 else
-                    await telemetry_mocks[i].startMock(_fixture, "ws://localhost:5000/telemetryhub", $"{user}{i}", password, create_users, true);
+                    users.Add($"{user}{i}");
+
+                await telemetry_mocks[i].startMock(_fixture, "ws://localhost:5000/telemetryhub", users[i], password, create_users, true);
 
                 drone_rpcs.Add(new DroneRPC(telemetry_mocks[i]));
 
             }
             for (var i = 0; i < concurrent_devices; i++) {
-                await DroneDeviceHelper.mockDrone(_fixture, drone_rpcs[i], telemetry_mocks[i].SerialNumber, telemetry_mocks[i].WaitForServer);
+                await DroneDeviceHelper.mockDrone(_fixture, drone_rpcs[i], telemetry_mocks[i].SerialNumber, telemetry_mocks[i].WaitForServer,
+                        users[i], password);
             }
             try
             {
