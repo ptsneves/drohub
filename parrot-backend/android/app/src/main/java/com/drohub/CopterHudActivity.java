@@ -128,9 +128,6 @@ public class CopterHudActivity extends GroundSdkActivityBase
 
     private AltimeterView mAltimeterView;
 
-    @SuppressWarnings("FieldCanBeLocal")
-    private ImageButton mUserEmergencyBtn;
-
     private ImageButton mTakeOffLandBtn;
 
     private ImageButton mReturnHomeBtn;
@@ -202,7 +199,6 @@ public class CopterHudActivity extends GroundSdkActivityBase
         mGpsIcon = findViewById(R.id.gps);
         mAltimeterView = findViewById(R.id.altimeter);
         mHeadingView = findViewById(R.id.heading);
-        mUserEmergencyBtn = findViewById(R.id.emergency_btn);
         mTakeOffLandBtn = findViewById(R.id.take_off_land_btn);
         mReturnHomeBtn = findViewById(R.id.return_home_btn);
         mAnimationBtn = findViewById(R.id.animation_btn);
@@ -462,8 +458,6 @@ public class CopterHudActivity extends GroundSdkActivityBase
                 );
             }
         });
-
-        mUserEmergencyBtn.setOnClickListener(v -> mPilotingItf.emergencyCutOut());
 
         mTakeOffLandBtn.setOnClickListener(v -> mPilotingItf.smartTakeOffLand());
 

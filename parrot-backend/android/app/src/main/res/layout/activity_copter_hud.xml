@@ -56,7 +56,7 @@
                 android:id="@+id/video_view"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
-                app:layout_constraintBottom_toTopOf="@+id/emergency_btn"
+                app:layout_constraintBottom_toTopOf="@+id/take_off_land_btn"
                 app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
@@ -220,18 +220,6 @@
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/attitude"/>
-
-            <ImageButton
-                android:id="@+id/emergency_btn"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginEnd="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:tint="@color/emergency_bt_tint"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintRight_toLeftOf="@+id/heading"
-                app:srcCompat="@drawable/ic_emergency"
-                tools:ignore="ContentDescription"/>
 
             <ImageButton
                 android:id="@+id/take_off_land_btn"
