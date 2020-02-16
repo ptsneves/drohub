@@ -72,7 +72,7 @@ import java.util.Set;
 public abstract class GroundSdkActivityBase extends AppCompatActivity {
     @NonNull
     public static String withKey(@NonNull String key) {
-        return "com.parrot.drone.groundsdkdemo.EXTRA_" + key;
+        return "com.drohub.EXTRA_" + key;
     }
 
     public static final String EXTRA_DEVICE_UID = withKey("DEVICE_UID");
