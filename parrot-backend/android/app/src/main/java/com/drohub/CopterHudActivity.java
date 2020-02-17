@@ -84,6 +84,7 @@ import com.parrot.drone.groundsdk.device.pilotingitf.animation.Flip;
 import com.parrot.drone.groundsdk.facility.UserLocation;
 import com.parrot.drone.groundsdk.stream.GsdkStreamView;
 import com.parrot.drone.groundsdk.value.OptionalDouble;
+import com.parrot.drone.sdkcore.ulog.ULog;
 
 
 /** Activity to pilot a copter. */
@@ -168,8 +169,16 @@ public class CopterHudActivity extends GroundSdkActivityBase
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        String device_uid = getIntent().getStringExtra(EXTRA_DEVICE_UID);
+        String user_email = getIntent().getStringExtra(EXTRA_USER_EMAIL);
+        String password = getIntent().getStringExtra(EXTRA_USER_PASSWORD);
+        if (device_uid == null || user_email == null || password == null) {
+            Log.e(TAG, "Device uid, user or password were not passed in intent");
+            finish();
+            return;
+        }
 
-        mDrone = getDroneHandle().getDrone(getIntent().getStringExtra(EXTRA_DEVICE_UID));
+        mDrone = getDroneHandle().getDrone(device_uid);
         if (mDrone == null) {
             finish();
             return;
@@ -184,7 +193,6 @@ public class CopterHudActivity extends GroundSdkActivityBase
         mDrawer = findViewById(R.id.drawer);
         mResizableContent = findViewById(R.id.resizable_content);
         mDrawerGrip = findViewById(R.id.drawer_grip);
-
         mStreamView = findViewById(R.id.video_view);
         mFlyingIndicators = findViewById(R.id.flying_indicator);
         mPowerAlarm = findViewById(R.id.power_alarm);
@@ -502,10 +510,21 @@ public class CopterHudActivity extends GroundSdkActivityBase
         _thrift_connection.onStart(mDrone.getUid(),
                 getString(R.string.drohub_ws_url),
                 getString(R.string.janus_websocket_uri),
-                this);
+                this, user_email, password);
         Log.w("COPTER", "Started thrift connection to " + getString(R.string.drohub_ws_url) );
 
     }
+
+    @Override
+    protected void onDroneConnected(Drone drone) {
+        Log.w("COPTER", "Connected Drone UID " + mDrone.getUid());
+    }
+
+    @Override
+    protected void onDroneDisconnected() {
+        Log.w("COPTER", "Connected Drone UID " + mDrone.getUid());
+    }
+
 
     @Override
     protected void onDestroy() {

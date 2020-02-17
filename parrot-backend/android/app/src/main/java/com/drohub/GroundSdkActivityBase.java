@@ -33,6 +33,7 @@
 package com.drohub;
 
 import android.Manifest;
+import android.accounts.AccountManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -76,6 +77,8 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
     }
 
     public static final String EXTRA_DEVICE_UID = withKey("DEVICE_UID");
+    public static final String EXTRA_USER_EMAIL = withKey("USER_EMAIL");
+    public static final String EXTRA_USER_PASSWORD = withKey("USER_PASSWORD");
     /** Logging tag. */
     private static final ULogTag TAG = new ULogTag("DROHUB");
 
@@ -95,6 +98,8 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
     /** Ground SDK interface. */
     private GroundSdk mGroundSdk;
     protected ThriftConnection _thrift_connection;
+    protected String user_email;
+    protected String password;
 
     /**
      * Gets GroundSDK interface.
@@ -122,6 +127,10 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        user_email = getIntent().getStringExtra(EXTRA_USER_EMAIL); //Can be null
+        password = getIntent().getStringExtra(EXTRA_USER_PASSWORD); //Can be null
+
 
         mGroundSdk = ManagedGroundSdk.obtainSession(this);
         if (mGroundSdk == null) {
@@ -169,21 +178,17 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
             if (temp_drone == null)
                 return;
 
-            if (auto_connection.getStatus() == AutoConnection.Status.STARTED) {
+            if (auto_connection.getStatus() == AutoConnection.Status.STARTED &&
+                    (_drone == null || temp_drone.getUid() != _drone.getUid())) {
                 _drone = temp_drone;
-
-                if (this instanceof MainActivity) {
-                    Intent intent = new Intent(this, CopterHudActivity.class);
-                    intent.putExtra(EXTRA_DEVICE_UID, _drone.getUid());
-                    this.startActivity(intent);
-                }
-                else if (this instanceof CopterHudActivity && _thrift_connection == null) {
-                    ULog.w(TAG, "Drone UID " + _drone.getUid());
-                    ;
-                }
+                onDroneConnected(_drone);
             }
         });
     }
+
+
+        protected abstract void onDroneConnected(Drone drone);
+        protected abstract void onDroneDisconnected();
 
     private static final IntentFilter FILTER_GAMEPAD_EVENT = new IntentFilter(
             VirtualGamepad.ACTION_GAMEPAD_APP_EVENT);

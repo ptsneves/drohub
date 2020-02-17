@@ -21,11 +21,13 @@ public class ThriftConnection {
     private Thread _server_thread;
 
     public void onStart(String drone_serial, String thrift_ws_url, String janus_websocket_uri,
-                        GroundSdkActivityBase activity) {
+                        GroundSdkActivityBase activity, String user, String password) {
         Log.w("COPTER", "Started thrift connection to " + janus_websocket_uri );
         HashMap<String, String> http_headers = new HashMap<>();
         http_headers.put("User-Agent", "AirborneProjects");
         http_headers.put("Content-Type", "application/x-thrift");
+        http_headers.put("x-drohub-user", user);
+        http_headers.put("x-drohub-password", password);
         http_headers.put("x-device-expected-serial", drone_serial);
         TWebSocketClient tws = new TWebSocketClient(thrift_ws_url, http_headers);
 

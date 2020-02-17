@@ -13,6 +13,9 @@ using Thrift.Transport;
 using Thrift.Transport.Client;
 using Thrift.Protocol;
 using Thrift;
+using Microsoft.AspNetCore.Identity;
+using DroHub.Areas.Identity.Data;
+
 namespace DroHub.Helpers.Thrift
 {
     public class ThriftMessageHandler
@@ -36,6 +39,7 @@ namespace DroHub.Helpers.Thrift
         private string _socket_id;
         private WebSocket _socket;
         private ConnectionManager _connection_manager;
+        private readonly SignInManager<DroHubUser> _signin_manager;
         public string SerialNumber { get { return _serial_number; } }
 
         public class TWebSocketStream : TStreamTransport
@@ -135,13 +139,14 @@ namespace DroHub.Helpers.Thrift
             return new ThriftClient<C>(this, _cancellation_token_src.Token, logger);
         }
 
-        public ThriftMessageHandler(ConnectionManager connection_manager, ILogger<ThriftMessageHandler> logger)
+        public ThriftMessageHandler(ConnectionManager connection_manager, SignInManager<DroHubUser> signin_manager, ILogger<ThriftMessageHandler> logger)
         {
             _is_disposed = false;
             _logger = logger;
             _task_list = new List<Task>();
             _input_streams = new List<EchoStream>();
             _connection_manager = connection_manager;
+            _signin_manager = signin_manager;
         }
 
         public async Task runHandler(HttpContext context, IThriftTasks tasks) {
@@ -169,8 +174,19 @@ namespace DroHub.Helpers.Thrift
 
             if (context.Request.Headers["x-drohub-user"] == StringValues.Empty || context.Request.Headers["x-drohub-password"] == String.Empty) {
                 _logger.LogInformation("User did not provide a user or password");
-                context.Response.StatusCode = 400;
+                context.Response.StatusCode = 401;
                 return;
+            }
+            else {
+                // _signin_manager.
+                var result = await _signin_manager.PasswordSignInAsync(context.Request.Headers["x-drohub-user"],
+                // _signin_manager.
+                context.Request.Headers["x-drohub-password"], false, lockoutOnFailure: true);
+                if (!result.Succeeded) {
+                    _logger.LogInformation($"Failed authentication for {context.Request.Headers["x-drohub-user"]} {context.Request.Headers["x-drohub-password"]}");
+                    context.Response.StatusCode = 401;
+                    return;
+                }
             }
 
             try
