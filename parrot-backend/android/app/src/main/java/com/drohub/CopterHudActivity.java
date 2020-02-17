@@ -152,10 +152,7 @@ public class CopterHudActivity extends GroundSdkActivityBase
 
     private LookAtPilotingItf mLookAtItf;
 
-    private PointOfInterestPilotingItf mPointOfInterestPilotingItf;
-
     private AnimationItf mAnimationItf;
-
     private GsdkStreamView mStreamView;
 
     private boolean mIsTablet;
@@ -270,8 +267,6 @@ public class CopterHudActivity extends GroundSdkActivityBase
             mAnimationBtn.setEnabled(mAnimationItf != null && !mAnimationItf.getAvailableAnimations().isEmpty());
         });
 
-        mDrone.getPilotingItf(PointOfInterestPilotingItf.class,
-                pointOfInterestPilotingItf -> mPointOfInterestPilotingItf = pointOfInterestPilotingItf);
 
         mDrone.getInstrument(FlyingIndicators.class, flyingIndicators -> {
             int resource = 0;
