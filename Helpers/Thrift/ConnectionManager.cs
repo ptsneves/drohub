@@ -46,7 +46,7 @@ namespace DroHub.Helpers.Thrift
                     throw new InvalidOperationException("For some reason cannot add a new Handler");
                 }
             }
-            _logger.LogDebug("Added connection");
+            _logger.LogDebug("Added connection for "+ handler.SerialNumber);
             return handler.SerialNumber;
         }
 

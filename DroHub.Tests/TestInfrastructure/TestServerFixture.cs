@@ -39,6 +39,7 @@ namespace DroHub.Tests.TestInfrastructure
             {
                 AdminPassword = logs.ReadToEnd().First(line => line.Contains("GENERATED ROOT PASSWORD")).Split(null).Last();
             }
+            Console.WriteLine("Ready to start");
         }
 
         public static AngleSharp.Html.Dom.IHtmlDocument getHtmlDOM(string responseBody)
