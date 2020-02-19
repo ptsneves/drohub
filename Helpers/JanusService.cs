@@ -242,7 +242,7 @@ namespace DroHub.Helpers {
             var payload = new StringContent(JsonConvert.SerializeObject(object_to_serialize), Encoding.UTF8, "application/json");
             var response = await Client.PostAsync(relative_path, payload);
             response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadAsAsync<JanusAnswer>();
+            var result = Newtonsoft.Json.JsonConvert.DeserializeObject<JanusAnswer>(await response.Content.ReadAsStringAsync());
             _logger.LogDebug("Janus answer result {result}", JsonConvert.SerializeObject(
                     await response.Content.ReadAsStringAsync(), Formatting.Indented));
 

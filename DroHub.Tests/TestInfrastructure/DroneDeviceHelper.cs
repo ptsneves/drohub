@@ -21,7 +21,7 @@ namespace DroHub.Tests.TestInfrastructure
         public static async Task mockDrone(DroHubFixture fixture, DroneRPC drone_rpc, string device_serial, DroneTestDelegate test_delegate,
                 string user, string password)
         {
-            var loggerFactory = new LoggerFactory().AddConsole().AddDebug(LogLevel.Trace);
+            var loggerFactory = new LoggerFactory();
             using (var ws_transport = new TWebSocketClient(fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Binary))
             using (var reverse_tunnel_transport = new TReverseTunnelServer(ws_transport, 1))
             {

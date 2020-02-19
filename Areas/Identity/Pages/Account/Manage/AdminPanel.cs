@@ -24,7 +24,7 @@ namespace DroHub.Areas.Identity.Pages.Account
         private readonly IEmailSender _emailSender;
 
         public UserManager<DroHubUser> UserManager { get { return _userManager; } }
-        public IQueryable<DroHubUser> Users { get; private set; }
+        public List<DroHubUser> Users { get; private set; }
 
         public RegisterModel(
             UserManager<DroHubUser> userManager,
@@ -36,7 +36,7 @@ namespace DroHub.Areas.Identity.Pages.Account
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
-            Users = _userManager.Users.Include(u => u.UserDevices).ThenInclude(ud => ud.Device);
+            Users = _userManager.Users.Include(u => u.UserDevices).ThenInclude(ud => ud.Device).ToList();
         }
 
         [BindProperty]

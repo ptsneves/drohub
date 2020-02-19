@@ -24,7 +24,8 @@
           <td>@user.UserName</td>
           <td>
           @foreach(var policy in AuthorizationOptionsExtension.Policies) {
-            @if ((await AuthorizationService.AuthorizeAsync(await UserClaimsPrincipalFactory.CreateAsync(user), null, policy.Key)).Succeeded)
+            var s = await UserClaimsPrincipalFactory.CreateAsync(user);
+            @if ((await AuthorizationService.AuthorizeAsync(s, null, policy.Key)).Succeeded)
             {
                 <p>@policy.Key</p>
             }

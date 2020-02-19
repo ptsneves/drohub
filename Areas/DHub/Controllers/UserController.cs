@@ -5,7 +5,6 @@ using DroHub.Areas.Identity.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Web.Http;
 using System.Collections.Generic;
 
 namespace DroHub.Areas.DHub.Controllers
@@ -36,7 +35,7 @@ namespace DroHub.Areas.DHub.Controllers
         [AllowAnonymous]
         [HttpPost]
         
-        public async Task<IActionResult> Authenticate([FromBody]InputModel input)
+    public async Task<IActionResult> Authenticate([FromBody]InputModel input)
         {
             // This doesn't count login failures towards account lockout
             // To enable password failures to trigger account lockout, set lockoutOnFailure: true
