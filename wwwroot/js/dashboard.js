@@ -525,11 +525,11 @@ $(function () {
     //     }, 1000);
     //     position = `{"__isset":{"latitude":false,"longitude":false,"altitude":false,"serial":false,"timestamp":false},"Id":412,"Latitude":48.878692719478146,"Longitude":2.4971${i},"Altitude":5.1912965774536133,"Serial":"000000000000000000","Timestamp":1577126313}`;
     //     test_connection.invoke("DronePosition", position)
-    //     MapClass.updatePositionMapMarker();
     // }
-    // TelemetryClass.updateTelemetry('.battery-level-text', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 99, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
+    // TelemetryClass.updateTelemetry('.marker', `{"__isset":{"latitude":false,"longitude":false,"altitude":false,"serial":false,"timestamp":false},"Id":1,"Latitude":48.878692719478146,"Longitude":2.4971,"Altitude":5.1912965774536133,"Serial":"PI040416BA8H083705","Timestamp":1577126313}`);
+    // TelemetryClass.updateTelemetry('.battery-level', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 10, "Serial": "PI040416BA8H083705", "Timestamp": 1577126258 }');
     // TelemetryClass.updateTelemetry('.battery-level-icon', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 99, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
     // TelemetryClass.updateTelemetry('.battery-level-icon', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 29, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
-    // TelemetryClass.updateTelemetry('.radio-signal-text', '{ "__isset": { "rssi": true, "signal_quality": true, "serial": false, "timestamp": false }, "Id": 12, "Rssi": -85, "SignalQuality": 2, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
-    // TelemetryClass.updateTelemetry('.flying-state-text', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "State": 0, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
+    TelemetryClass.updateTelemetry('.radio-signal', '{ "__isset": { "rssi": true, "signal_quality": true, "serial": false, "timestamp": false }, "Id": 12, "Rssi": -50, "SignalQuality": 5, "Serial": "PI040416BA8H083705", "Timestamp": 1577126258 }');
+    // TelemetryClass.updateTelemetry('.flying-state-text', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "State": 6, "Serial": "PI040416BA8H083705", "Timestamp": 1577126258 }');
 })
