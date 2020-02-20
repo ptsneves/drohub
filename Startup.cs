@@ -71,7 +71,7 @@ namespace DroHub
 
             services.AddSignalR();
             services.AddWebSocketManager();
-            services.AddMvc().AddRazorPagesOptions(options =>
+            services.AddMvc().AddRazorRuntimeCompilation().AddRazorPagesOptions(options =>
             {
                 options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/Account/");
             }).AddMvcOptions(optsions => {
