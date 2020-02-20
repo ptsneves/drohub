@@ -63,8 +63,6 @@ namespace DroHub.Areas.DHub.Controllers
 
         public async Task<IActionResult> Index(int? id)
         {
-            if (id == null) return NotFound();
-
             return await Dashboard();
         }
 
@@ -103,8 +101,6 @@ namespace DroHub.Areas.DHub.Controllers
                 .Where(ud => _userManager.GetUserId(User) == ud.DroHubUserId)
                 .CountAsync();
 
-            if (devices == 0)
-                return RedirectToAction("Manage", "Account", new { area = "Identity" });
 
             var google_api_key = _repository_settings.GoogleMapsAPIKey;
             if (!String.IsNullOrEmpty(google_api_key))

@@ -13,7 +13,6 @@
         </div>
         <!-- sidebar menu: : style can be found in sidebar.less -->
         <ul class="sidebar-menu tree" data-widget="tree">
-            <li class="header">MAIN NAVIGATION</li>
             <li class="treeview">
                     <a href="#">
                         <i class="fa fa-camera"></i>
@@ -23,12 +22,6 @@
                         </span>
                     </a>
                     <ul class="treeview-menu" id="devices-list">
-                        <li>
-                            <a data-toggle="ajax-modal" href="#modal-add-device" data-target="#modal-add-device" data-url='@Url.Action("Create", "Devices", new {Area = "DHub"})'>
-                                <i class="fa fa-plus"></i>
-                                Associate Device
-                            </a>
-                        </li>
                     </ul>
                 </li>
 
@@ -36,11 +29,6 @@
             <li>
                 <a asp-action="Dashboard" asp-area="DHub" asp-controller="DeviceRepository">
                     <i class="fa fa-map"></i> <span>Dashboard</span>
-                </a>
-            </li>
-            <li>
-                <a asp-area="" asp-controller="Home" asp-action="Contact">
-                    <i class="fa fa-phone"></i> <span>Contact</span>
                 </a>
             </li>
         </ul>
