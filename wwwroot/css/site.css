@@ -28,6 +28,10 @@ for details on configuring this project to bundle and minify static web assets. 
     background-color: #2d3c4a;
 }
 
+.logo-drohub {
+    color: white;
+}
+
 .small-gutter {
     padding:7px;
 }
