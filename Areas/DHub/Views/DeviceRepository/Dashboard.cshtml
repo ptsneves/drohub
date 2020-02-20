@@ -99,8 +99,8 @@
 
                         <div class="row">
                             <div class="col-md-4 small-gutter map-container">
-                                <span class="position-text marker main-marker" data-renderer="renderMapMarker" data-serial="@device.SerialNumber" data-device-type="drone" data-telemetry='@position_initial'></span>
-                                <div class="google-map" style="border: 1px solid black" data-serial="@device.SerialNumber"></div>
+                                <span class="position-text marker main-marker" data-renderer="renderMapMarker" data-serial="@device.SerialNumber" data-device-type="drone" data-marker-svg-path="images/assets/device-pin/device-pin-red.svg" data-telemetry='@position_initial'></span>
+                                <div class="google-map" data-serial="@device.SerialNumber"></div>
                                 <select class="js-example-basic-single " style="width: 100%;">
                                     <option title="Move to Position">Move To Position</option>
                                 </select>
@@ -109,28 +109,43 @@
                                 <div id="box-body-@device.Id">
                                     <div class="webrtc-video" data-serial="@device.SerialNumber">
                                         <div class="embed-responsive embed-responsive-16by9" id="stream-@device.Id">
-                                            <div class="device-video-overlay container">
+                                            <div class="device-video-overlay device-video-overlay-animation container " >
                                                 <div class="video-overlay-top row vertical-align">
-                                                    <div class="col-md-4" style="width: 100%;text-align: left;">
-                                                        <i class="fad radio-signal" data-renderer="renderRadioSignalIcon" data-serial="@device.SerialNumber" data-telemetry='@radio_signals_initial'></i>
-                                                        <i class="battery-level fa" data-renderer="renderBatteryLevelIcon" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>
-                                                            <span class=" battery-level fa" data-renderer="renderBatteryLevel" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>No data</span>
-                                                        </i>
-                                                        @* <span class="  " data-renderer="renderFlightTimeText" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>Not flying</span> *@
+                                                    <div class="col-md-11" style="width: 100%;text-align: left;">
+                                                        <div class="minimum-size" style="padding-right: 3%">
+                                                            <i class="fad radio-signal" data-renderer="renderRadioSignalIcon" data-serial="@device.SerialNumber" data-telemetry='@radio_signals_initial'></i>
+                                                            <i class="battery-level fa" data-renderer="renderBatteryLevelIcon" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>
+                                                                <span class=" battery-level fa" data-renderer="renderBatteryLevel" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>No data</span>
+                                                            </i>
+                                                        </div>
+                                                        <i>|</i>
+                                                        <div class="minimum-size" style="padding-right: 3%; padding-left: 3%;">
+                                                            <img src="/images/assets/video-info-satelite.svg">
+                                                            <span class="satellite-count" data-renderer="renderSatelliteCount" data-serial="@device.SerialNumber" data-telemetry='null'>-1</span>
+                                                            <img src="/images/assets/video-info-controlsignal-good.svg">
+                                                            <img src="/images/assets/video-info-height.svg">
+                                                            <span class="position" data-renderer="renderAltitude" data-serial="@device.SerialNumber" data-telemetry='@position_initial'>-1</span>
+                                                        </div>
+                                                        <i>|</i>
+                                                        <div class="minimum-size" style="padding-right: 3%; padding-left: 3%;">
+                                                            <span class="  " data-renderer="renderFlightTimeText" data-serial="@device.SerialNumber" data-telemetry='null'>00:00</span>
+                                                            <i>-</i>
+                                                            <span class="flying-state-text" data-renderer="renderFlyingState" data-serial="@device.SerialNumber" data-telemetry='@flying_state_initial'>FlightState</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="container-action-overlay col-md-4" style="width: 100%; text-align: center;">
-
-                                                        <button class="btn-transparent-bg" data-url="@takeoff_action_url" data-toggle="ajax-request" title="Take off this device">
-                                                        <i class="fas fa-plane-departure"></i>
-                                                        </button>
-                                                        <button class="btn-transparent-bg" data-url="@landing_action_url" data-toggle="ajax-request" title="Land this device">
-                                                            <i class="fas fa-plane-arrival"></i>
-                                                        </button>
-                                                        <button class="btn-transparent-bg" data-toggle="ajax-request" data-url="@return_to_home_action_url">
-                                                            <i class="fas fa-home"></i>
-                                                        </button>
-                                                    </div>
-                                                    <div class="col-md-4" style="width: 100%; text-align: right;">
+                                                    @* <div class="container-action-overlay col-md-4" style="width: 100%; text-align: center;"> *@
+                                                    @* *@
+                                                    @*     <button class="btn-transparent-bg" data-url="@takeoff_action_url" data-toggle="ajax-request" title="Take off this device"> *@
+                                                    @*     <i class="fas fa-plane-departure"></i> *@
+                                                    @*     </button> *@
+                                                    @*     <button class="btn-transparent-bg" data-url="@landing_action_url" data-toggle="ajax-request" title="Land this device"> *@
+                                                    @*         <i class="fas fa-plane-arrival"></i> *@
+                                                    @*     </button> *@
+                                                    @*     <button class="btn-transparent-bg" data-toggle="ajax-request" data-url="@return_to_home_action_url"> *@
+                                                    @*         <i class="fas fa-home"></i> *@
+                                                    @*     </button> *@
+                                                    @* </div> *@
+                                                    <div class="col-md-1 no-side-padding" style="text-align: right;">
                                                         @* <button class="btn-transparent-bg" data-toggle="ajax-request" data-url="@return_to_home_action_url">
                                                             <i class="far fa-external-link-alt"></i>
                                                         </button> *@
@@ -141,32 +156,38 @@
                                                 </div>
                                                 <div class="video-overlay-bottom row row-no-padding vertical-align">
                                                     <div class="col-md-3 max-width">
+                                                        <div class="video-overlay-rth column-vertical-center no-side-padding">
                                                             <form method="post" action="@toggle_record_video_action_url" data-toggle="ajax-request" autocomplete="off">
-                                                            <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.START" checked>
-                                                            <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.STOP">
-                                                            <button type="submit" class="btn-transparent-bg video-overlay-record-icon" title="Toggle Video Recording">
-                                                                <i class="fad fa-hospital-symbol" style="--fa-secondary-opacity: 0.4;  "></i>
-                                                            </button>
+                                                                <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.START" checked>
+                                                                <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.STOP">
+                                                                <button type="submit" class="btn-transparent-bg video-overlay-record-icon" title="Toggle Video Recording">
+                                                                    <img class="fit-to-parent" src="/images/assets/video-btn-home.svg">
+                                                                </button>
                                                             </form>
-                                                    </div>
+                                                            </div>
+                                                        </div>
                                                     <div class="col-md-3 max-width"></div>
                                                     <div class="col-md-3 max-width"></div>
                                                     <div class="col-md-3 max-width">
                                                         <div class="video-overlay-record-rectangle">
-                                                            <form method="post" action="@take_picture_action_url" data-toggle="ajax-request" autocomplete="off">
-                                                                <input type="radio" name="@nameof(DroneTakePictureRequest.ActionType)" value="@ActionType.START" checked>
-                                                                <input type="radio" name="@nameof(DroneTakePictureRequest.ActionType)" value="@ActionType.STOP">
-                                                                <button type="submit" class="btn-transparent-bg video-overlay-photo-icon" title="Take Picture">
-                                                                    <i class="fad fa-camera" style="--fa-secondary-color:red;--fa-secondary-opacity: 1.0;  "></i>
-                                                                </button>
-                                                            </form>
-                                                            <form method="post" action="@toggle_record_video_action_url" data-toggle="ajax-request" autocomplete="off">
-                                                            <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.START" checked>
-                                                            <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.STOP">
-                                                            <button type="submit" class="btn-transparent-bg video-overlay-record-icon" title="Toggle Video Recording">
-                                                                <i class="fad fa-record-vinyl" style="--fa-secondary-color:red;--fa-secondary-opacity: 1.0;  "></i>
-                                                            </button>
-                                                            </form>
+                                                            <div class="col-md-6 column-vertical-center no-side-padding" >
+                                                                <form method="post" action="@take_picture_action_url" data-toggle="ajax-request" autocomplete="off">
+                                                                    <input type="radio" name="@nameof(DroneTakePictureRequest.ActionType)" value="@ActionType.START" checked>
+                                                                    <input type="radio" name="@nameof(DroneTakePictureRequest.ActionType)" value="@ActionType.STOP">
+                                                                    <button type="submit" class="btn-transparent-bg video-overlay-photo-icon" title="Take Picture">
+                                                                        <img class="fit-to-parent" src="/images/assets/video-btn-camera.svg">
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                            <div class="col-md-6 column-vertical-center  no-side-padding" >
+                                                                <form method="post" action="@toggle_record_video_action_url" data-toggle="ajax-request" autocomplete="off">
+                                                                    <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.START" checked>
+                                                                    <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.STOP">
+                                                                    <button type="submit" class="btn-transparent-bg video-overlay-record-icon" title="Toggle Video Recording">
+                                                                        <img class="fit-to-parent" src="/images/assets/video-btn-record.svg">
+                                                                    </button>
+                                                                </form>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     @* <div class="row video-overlay-centered">

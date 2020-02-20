@@ -40,7 +40,7 @@ $(function () {
                     let device_type = element.data('device-type');
                     let device_serial = element.data('serial');
                     let device_svg_marker = element.data('marker-svg-path');
-                    if (device_coords == null || device_type == null || device_serial == null) {
+                    if (device_coords == null || device_type == null || device_serial == null || device_svg_marker == null) {
                         console.warn("A rendering was requested but not all fields are set");
                         return;
                     }
@@ -48,11 +48,11 @@ $(function () {
                     let icon_url = `${window.location.origin}/${device_svg_marker}`
                     let marker_icon = {
                         url: icon_url, // url
-                        scaledSize: new google.maps.Size(50, 50), // scaled size
+                        rotation: 45,
+                        scaledSize: new google.maps.Size(35, 25), // scaled size
                         origin: new google.maps.Point(0, 0), // origin
                         anchor: new google.maps.Point(0, 0) // anchorscaledSize: new google.maps.Size(50, 50), // scaled size
-                    }
-
+                    };
                     let marker = null;
                     if ((marker = _getMarker(device_type, device_serial)) != null) {
                         marker.setPosition({ lat: device_coords.Latitude, lng: device_coords.Longitude });
@@ -60,14 +60,16 @@ $(function () {
                     else {
                         marker = new google.maps.Marker({
                             position: new google.maps.LatLng(device_coords.Latitude, device_coords.Longitude),
-                            // icon: marker_icon,
+                            icon: marker_icon,
                             map: maps[device_serial],
                             serial: device_serial,
                             device_type: device_type
                         });
                         _setMarker(marker, device_type, device_serial);
                     }
-
+                    $('img[src="' + icon_url + '"]').css({
+                        'transform': 'rotate(' + (45) + 'deg)'
+                    });
                     if (element.hasClass('main-marker')) {
                         marker.map.panTo(marker.position);
                         marker.map.setZoom(20);
@@ -85,90 +87,170 @@ $(function () {
                         element = $(element);
                         element.click(data_function_table[element.data('toggle')].bind(null, index, element));
                     }
-                    jquery_element = $(element);
-                    serial_number = jquery_element.data('serial');
+                    let jquery_element = $(element);
+                    let serial_number = jquery_element.data('serial');
                     if (serial_number == null)
                         console.error("Could not initialize map because we found not data-serial");
                     styles = [
-                        { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
-                        { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
-                        { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
                         {
-                            featureType: 'administrative.locality',
-                            elementType: 'labels.text.fill',
-                            stylers: [{ color: '#d59563' }]
+                            "elementType": "geometry",
+                            "stylers": [
+                                {
+                                    "color": "#f5f5f5"
+                                }
+                            ]
                         },
                         {
-                            featureType: 'poi',
-                            elementType: 'labels.text.fill',
-                            stylers: [{ color: '#d59563' }]
+                            "elementType": "labels.icon",
+                            "stylers": [
+                                {
+                                    "visibility": "off"
+                                }
+                            ]
                         },
                         {
-                            featureType: 'poi.park',
-                            elementType: 'geometry',
-                            stylers: [{ color: '#263c3f' }]
+                            "elementType": "labels.text.fill",
+                            "stylers": [
+                                {
+                                    "color": "#616161"
+                                }
+                            ]
                         },
                         {
-                            featureType: 'poi.park',
-                            elementType: 'labels.text.fill',
-                            stylers: [{ color: '#6b9a76' }]
+                            "elementType": "labels.text.stroke",
+                            "stylers": [
+                                {
+                                    "color": "#f5f5f5"
+                                }
+                            ]
                         },
                         {
-                            featureType: 'road',
-                            elementType: 'geometry',
-                            stylers: [{ color: '#38414e' }]
+                            "featureType": "administrative.land_parcel",
+                            "elementType": "labels.text.fill",
+                            "stylers": [
+                                {
+                                    "color": "#bdbdbd"
+                                }
+                            ]
                         },
                         {
-                            featureType: 'road',
-                            elementType: 'geometry.stroke',
-                            stylers: [{ color: '#212a37' }]
+                            "featureType": "poi",
+                            "elementType": "geometry",
+                            "stylers": [
+                                {
+                                    "color": "#eeeeee"
+                                }
+                            ]
                         },
                         {
-                            featureType: 'road',
-                            elementType: 'labels.text.fill',
-                            stylers: [{ color: '#9ca5b3' }]
+                            "featureType": "poi",
+                            "elementType": "labels.text.fill",
+                            "stylers": [
+                                {
+                                    "color": "#757575"
+                                }
+                            ]
                         },
                         {
-                            featureType: 'road.highway',
-                            elementType: 'geometry',
-                            stylers: [{ color: '#746855' }]
+                            "featureType": "poi.park",
+                            "elementType": "geometry",
+                            "stylers": [
+                                {
+                                    "color": "#e5e5e5"
+                                }
+                            ]
                         },
                         {
-                            featureType: 'road.highway',
-                            elementType: 'geometry.stroke',
-                            stylers: [{ color: '#1f2835' }]
+                            "featureType": "poi.park",
+                            "elementType": "labels.text.fill",
+                            "stylers": [
+                                {
+                                    "color": "#9e9e9e"
+                                }
+                            ]
                         },
                         {
-                            featureType: 'road.highway',
-                            elementType: 'labels.text.fill',
-                            stylers: [{ color: '#f3d19c' }]
+                            "featureType": "road",
+                            "elementType": "geometry",
+                            "stylers": [
+                                {
+                                    "color": "#ffffff"
+                                }
+                            ]
                         },
                         {
-                            featureType: 'transit',
-                            elementType: 'geometry',
-                            stylers: [{ color: '#2f3948' }]
+                            "featureType": "road.arterial",
+                            "elementType": "labels.text.fill",
+                            "stylers": [
+                                {
+                                    "color": "#757575"
+                                }
+                            ]
                         },
                         {
-                            featureType: 'transit.station',
-                            elementType: 'labels.text.fill',
-                            stylers: [{ color: '#d59563' }]
+                            "featureType": "road.highway",
+                            "elementType": "geometry",
+                            "stylers": [
+                                {
+                                    "color": "#dadada"
+                                }
+                            ]
                         },
                         {
-                            featureType: 'water',
-                            elementType: 'geometry',
-                            stylers: [{ color: '#17263c' }]
+                            "featureType": "road.highway",
+                            "elementType": "labels.text.fill",
+                            "stylers": [
+                                {
+                                    "color": "#616161"
+                                }
+                            ]
                         },
                         {
-                            featureType: 'water',
-                            elementType: 'labels.text.fill',
-                            stylers: [{ color: '#515c6d' }]
+                            "featureType": "road.local",
+                            "elementType": "labels.text.fill",
+                            "stylers": [
+                                {
+                                    "color": "#9e9e9e"
+                                }
+                            ]
                         },
                         {
-                            featureType: 'water',
-                            elementType: 'labels.text.stroke',
-                            stylers: [{ color: '#17263c' }]
+                            "featureType": "transit.line",
+                            "elementType": "geometry",
+                            "stylers": [
+                                {
+                                    "color": "#e5e5e5"
+                                }
+                            ]
+                        },
+                        {
+                            "featureType": "transit.station",
+                            "elementType": "geometry",
+                            "stylers": [
+                                {
+                                    "color": "#eeeeee"
+                                }
+                            ]
+                        },
+                        {
+                            "featureType": "water",
+                            "elementType": "geometry",
+                            "stylers": [
+                                {
+                                    "color": "#c9c9c9"
+                                }
+                            ]
+                        },
+                        {
+                            "featureType": "water",
+                            "elementType": "labels.text.fill",
+                            "stylers": [
+                                {
+                                    "color": "#9e9e9e"
+                                }
+                            ]
                         }
-                    ]
+                    ];
 
                     maps[serial_number] = new google.maps.Map(element, {
                         zoom: 8,
@@ -211,7 +293,7 @@ $(function () {
         }
 
         function _addStep (min, max, element_classes) {
-            split_classes = element_classes.split(/\s+/).filter(Boolean);
+            let split_classes = element_classes.split(/\s+/).filter(Boolean);
             _classes.push({ min: min, max: max, class: split_classes });
             split_classes.forEach(item => _available_classes.add(item));
         }
@@ -243,8 +325,8 @@ $(function () {
         }
     };
 
-    TelemetryClass = function () {
-        var _FunctionTable = {};
+    let TelemetryClass = function () {
+        let _FunctionTable = {};
 
         _signalr_connection = null;
         _map_class_instance = null;
@@ -255,10 +337,13 @@ $(function () {
 
         function _renderTelemetry(index, element) {
             element = $(element);
-            fn = element.data('renderer');
+            let fn = element.data('renderer');
             if (!fn)
                 return;
-            _FunctionTable[fn](index, element);
+            if (fn in _FunctionTable)
+                _FunctionTable[fn](index, element);
+            else
+                console.error("Cannot find renderer " + fn);
         }
 
         function _renderLiveVideo(_, element) {
@@ -278,14 +363,24 @@ $(function () {
             }
         }
 
+        function _renderSatelliteCount(_, element) {
+            $(element).text("8");
+        }
+
+        function _renderAltitude(_, element) {
+            element = $(element);
+            let position = JSON.parse(element.attr('data-telemetry'));
+            if (position == null)
+                return;
+            element.text(`${position.Altitude.toFixed(1)}m`);
+        }
+
         function _renderFlyingState(_, element) {
             element = $(element);
-            flying_state = JSON.parse(element.attr('data-telemetry'));
+            let flying_state = JSON.parse(element.attr('data-telemetry'));
             if (!flying_state)
                 return;
 
-            element.removeClass('label-default');
-            element.addClass('label-primary');
             switch (flying_state.State) {
                 case 0:
                     element.text("Landed");
@@ -398,7 +493,7 @@ $(function () {
         }
 
         function _updateTelemetry(selector, telemetry_json) {
-            telemetry = JSON.parse(telemetry_json);
+            let telemetry = JSON.parse(telemetry_json);
             if (!telemetry)
                 return;
 
@@ -426,9 +521,12 @@ $(function () {
                 _FunctionTable["renderFlightTimeText"] = _renderFlightTimeText;
                 _FunctionTable["renderLiveVideo"] = _renderLiveVideo;
                 _FunctionTable["renderMapMarker"] = _map_class_instance.renderMapMarker;
+                _FunctionTable["renderSatelliteCount"] = _renderSatelliteCount;
+                _FunctionTable["renderAltitude"] = _renderAltitude;
 
                 _signalr_connection.on("DronePosition", function (message) {
                     _updateTelemetry('.main-marker', message);
+                    _updateTelemetry('.position', message);
                 });
 
                 _signalr_connection.on("DroneBatteryLevel", function (message) {
@@ -526,10 +624,12 @@ $(function () {
     //     position = `{"__isset":{"latitude":false,"longitude":false,"altitude":false,"serial":false,"timestamp":false},"Id":412,"Latitude":48.878692719478146,"Longitude":2.4971${i},"Altitude":5.1912965774536133,"Serial":"000000000000000000","Timestamp":1577126313}`;
     //     test_connection.invoke("DronePosition", position)
     // }
-    // TelemetryClass.updateTelemetry('.marker', `{"__isset":{"latitude":false,"longitude":false,"altitude":false,"serial":false,"timestamp":false},"Id":1,"Latitude":48.878692719478146,"Longitude":2.4971,"Altitude":5.1912965774536133,"Serial":"PI040416BA8H083705","Timestamp":1577126313}`);
-    // TelemetryClass.updateTelemetry('.battery-level', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 10, "Serial": "PI040416BA8H083705", "Timestamp": 1577126258 }');
-    // TelemetryClass.updateTelemetry('.battery-level-icon', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 99, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
+    TelemetryClass.updateTelemetry('.position', `{"__isset":{"latitude":false,"longitude":false,"altitude":false,"serial":false,"timestamp":false},"Id":1,"Latitude":48.878692719478146,"Longitude":2.4971,"Altitude":5.1912965774536133, "Heading": 100, "Serial":"PI040416BA8H083705","Timestamp":1577126313}`);
+    TelemetryClass.updateTelemetry('.marker', `{"__isset":{"latitude":false,"longitude":false,"altitude":false,"serial":false,"timestamp":false},"Id":1,"Latitude":48.878692719478146,"Longitude":2.4971,"Altitude":5.1912965774536133, "Heading": 100, "Serial":"PI040416BA8H083705","Timestamp":1577126313}`);
+    TelemetryClass.updateTelemetry('.battery-level', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 10, "Serial": "PI040416BA8H083705", "Timestamp": 1577126258 }');
+    TelemetryClass.updateTelemetry('.battery-level-icon', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 99, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
+    TelemetryClass.updateTelemetry('.satellite-count', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 99, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
     // TelemetryClass.updateTelemetry('.battery-level-icon', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "BatteryLevelPercent": 29, "Serial": "000000000000000000", "Timestamp": 1577126258 }');
     TelemetryClass.updateTelemetry('.radio-signal', '{ "__isset": { "rssi": true, "signal_quality": true, "serial": false, "timestamp": false }, "Id": 12, "Rssi": -50, "SignalQuality": 5, "Serial": "PI040416BA8H083705", "Timestamp": 1577126258 }');
-    // TelemetryClass.updateTelemetry('.flying-state-text', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "State": 6, "Serial": "PI040416BA8H083705", "Timestamp": 1577126258 }');
+    TelemetryClass.updateTelemetry('.flying-state-text', '{ "__isset": { "battery_level_percent": true, "serial": false, "timestamp": false }, "Id": 12, "State": 6, "Serial": "PI040416BA8H083705", "Timestamp": 1577126258 }');
 })

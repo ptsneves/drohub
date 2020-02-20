@@ -37,6 +37,19 @@ for details on configuring this project to bundle and minify static web assets. 
 .telemetry-single-data {
     padding: 5px;
 }
+.device-video-overlay-animation {
+    opacity: 0;
+    filter:alpha(opacity=0);
+    -webkit-transition: all 400ms ease-in-out;
+    -moz-transition: all 400ms ease-in-out;
+    -ms-transition: all 400ms ease-in-out;
+    -o-transition: all 400ms ease-in-out;
+}
+
+.device-video-overlay-animation:hover, .device-video-overlay-animation:active {
+    opacity: 100%;
+    filter:alpha(opacity=100);
+}
 
 .device-video-overlay {
     position: absolute;
@@ -62,6 +75,7 @@ for details on configuring this project to bundle and minify static web assets. 
     position: absolute;
     bottom: 5%;
     width: 100%;
+    height: 16%;
 }
 
 .no-side-padding {
@@ -71,6 +85,7 @@ for details on configuring this project to bundle and minify static web assets. 
 
 .max-width {
     width: 100%;
+    height: 100%;
 }
 
 .video-overlay-top {
@@ -80,7 +95,7 @@ for details on configuring this project to bundle and minify static web assets. 
     padding-bottom: 1%;
     width: 100%;
     border-radius: 6px;
-    background-color: rgba(0,0,0,0.5);
+    background-color: rgba(0,0,0,0.8);
 }
 
 .video-overlay-circle {
@@ -95,30 +110,35 @@ for details on configuring this project to bundle and minify static web assets. 
 }
 
 .video-overlay-record-rectangle {
-  font-size: 50px;
   border-bottom-left-radius: 100px;
   border-top-left-radius: 100px;
+  background-color: rgba(0,0,0,0.8);
   float: right;
-  background-color: rgba(0,0,0,0.5);
-  display: inline-flex;
+  height: 100%;
+  display: flex;
 }
+.video-overlay-rth {
+    border-bottom-right-radius: 100px;
+    border-top-right-radius: 100px;
+    background-color: rgba(0,0,0,0.8);
+    float: left;
+    height: 100%;
+    display: flex;
+}
+
 
 .row-no-padding > [class*="col-"] {
     padding-left: 0 !important;
     padding-right: 0 !important;
 }
 
-.video-overlay-photo-icon {
-    font-size: 35px;
-}
-
-.video-overlay-record-icon {
-    font-size: 45px;
-}
-
 .video-overlay-left {
     position: absolute;
     left: 0;
+}
+
+.minimum-size {
+    display: inline-block;
 }
 
 .video-overlay-horizontal-centered {
@@ -136,24 +156,45 @@ for details on configuring this project to bundle and minify static web assets. 
 
 }
 
+.video-overlay-photo-icon {
+    border-bottom-width: 0px;
+    border-bottom-style: solid;
+    border-top-width: 0px;
+    border-top-style: solid;
+    padding-left: 15px;
+    padding-right: 0px;
+    border-right-width: 0px;
+    border-right-style: solid;
+    border-left-width: 2px;
+    border-left-style: solid;
+    margin-left: 0px;
+}
+
+
+div.col-md-6:nth-child(2) > form:nth-child(1) > button:nth-child(3) {
+    border-top-width: 0px;
+    border-top-style: solid;
+    border-bottom-width: 0px;
+    border-bottom-style: solid;
+    padding-right: 0px;
+    padding-left: 0px;
+}
+
+
+.fit-to-parent {
+    height: 85%;
+    width: 85%;
+    object-fit: contain;
+}
+
 .video-overlay-centered {
     text-align: center;
 }
 
-.plus-right::after {
-    content: '\f067';
-    padding-left: 10px;
-    font-weight: 900;
-    font-size: 16px;
-    font-family: "Font Awesome 5 Pro";
-}
-
-.minus-right::after {
-    content: '\f068';
-    padding-left: 10px;
-    font-weight: 900;
-    font-size: 16px;
-    font-family: "Font Awesome 5 Pro";
+.column-vertical-center {
+    display: grid;
+    align-items: center;
+    height: 100%;
 }
 
 .link-unstyled, .link-unstyled:link, .link-unstyled:hover {
