@@ -100,7 +100,7 @@ namespace DroHub
 
             app.UseStaticFiles();
             app.UseCookiePolicy();
-
+            app.MapWebSocketManager("/ws");
             app.UseAuthentication();
             app.UseMvc(routes =>
             {
