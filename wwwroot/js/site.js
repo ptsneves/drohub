@@ -35,6 +35,11 @@ $(async function () {
 
                 $('a[data-toggle="ajax-modal"]').click(makeModal);
                 $('button[data-toggle="ajax-modal"]').click(makeModal);
+                $(document).keydown(function(event) {
+                    if (event.keyCode == 27) {
+                        PlaceholderElement.find('.modal').modal('hide');
+                    }
+                });
             }
         }
     }();
