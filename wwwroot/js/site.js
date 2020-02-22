@@ -6,8 +6,10 @@
 $(async function () {
     ModalClass = function () {
         var PlaceholderElement = $('#modal-placeholder');
+        let should_reload = false;
         function makeModal(event) {
             var url = $(this).data('url');
+            should_reload = $(this).data('reload') === true;
             $.get(url).done(function (data) {
                 PlaceholderElement.html(data);
                 PlaceholderElement.find('.modal').modal({ focus: true, show: true, keyboard: true });
@@ -28,7 +30,10 @@ $(async function () {
 
                         var isValid = newBody.find('[name="IsValid"]').val() == 'True';
                         if (isValid) {
-                            PlaceholderElement.find('.modal').modal('hide');
+                            if (should_reload === true)
+                                location.reload();
+                            else
+                                PlaceholderElement.find('.modal').modal('hide');
                         }
                     });
                 });
