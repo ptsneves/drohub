@@ -114,7 +114,8 @@ namespace DroHub.Tests.TestInfrastructure
 
         public static async ValueTask<HttpClientHelper> createDevice(DroHubFixture test_fixture, string device_name, string device_serial, string user, string password, bool create_user = false) {
             HttpClientHelper http_helper;
-            (await HttpClientHelper.addUser(test_fixture, user, password)).Dispose();
+            if (create_user)
+                (await HttpClientHelper.addUser(test_fixture, user, password)).Dispose();
             http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user, password);
 
             var content = await http_helper.Response.Content.ReadAsStringAsync();
