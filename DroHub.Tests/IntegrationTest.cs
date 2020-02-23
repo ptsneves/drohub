@@ -27,8 +27,8 @@ namespace DroHub.Tests
 
         [InlineData("admin", null, false)]
         [InlineData("admin", "1", true, false)]
-        [InlineData("guest@drohub.xyz", "1", false, true)]
-        [InlineData("guest", "1", true, true, false, true)] //The create does not fail but the user is actually not created thus login and delete fail
+        [InlineData("guest@drohub.xyz", "1234567", false, true, false, false)]
+        [InlineData("guest", "1", true, true, true, true)] //The create does not fail but the user is actually not created thus login and delete fail
         [Theory]
         public async void TestUserCreateAndLogin(string user, string password, bool expect_login_fail, bool create =false,
                 bool expect_create_fail = false, bool expect_delete_fail = false)
@@ -37,7 +37,7 @@ namespace DroHub.Tests
                 if (!expect_create_fail)
                     using (var http_client_helper = await HttpClientHelper.addUser(_fixture, user, password)) { }
                 else
-                    await Assert.ThrowsAsync<System.InvalidProgramException>(async () => (await HttpClientHelper.addUser(_fixture, user, password)).Dispose());
+                    await Assert.ThrowsAsync<System.InvalidOperationException>(async () => (await HttpClientHelper.addUser(_fixture, user, password)).Dispose());
             }
             try
             {
@@ -160,7 +160,7 @@ namespace DroHub.Tests
             }
         }
 
-        [InlineData("ThriftSerial1", "mysuser@drohub.com", "pass", true, 4, false)]
+        [InlineData("ThriftSerial1", "mysuser@drohub.com", "pass12345", true, 4, false)]
         [Theory]
         public async void TestThriftDrone(string device_serial, string user, string password,
                 bool create_users, int concurrent_devices, bool single_user_multiple_devices)

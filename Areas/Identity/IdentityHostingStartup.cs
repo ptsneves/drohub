@@ -28,8 +28,8 @@ namespace DroHub.Areas.Identity
                     options.Password.RequireLowercase = false;       // Default true
                     options.Password.RequireNonAlphanumeric = false; // Default true
                     options.Password.RequireUppercase = false;       // Default true
-                    options.Password.RequiredLength = 1;             // Default 6
-                    options.Password.RequiredUniqueChars = 1;        // Default 1
+                    options.Password.RequiredLength = 6;             // Default 6
+                    options.Password.RequiredUniqueChars = 2;        // Default 1
                 });
             });
         }
