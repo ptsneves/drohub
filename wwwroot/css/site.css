@@ -32,6 +32,12 @@ for details on configuring this project to bundle and minify static web assets. 
     color: white;
 }
 
+.btn-box-tool-drohub {
+    padding: 5px;
+    font-size: 12px;
+    color: black;
+}
+
 .btn-drohub {
     background-color: #2d3c4a;
 }
