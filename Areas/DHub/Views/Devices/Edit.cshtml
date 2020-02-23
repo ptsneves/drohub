@@ -57,7 +57,7 @@
                         </div>
                     </div>
                     <div class="box-footer text-right">
-                        <a asp-area="DHub" asp-controller="Devices" asp-action="" class="btn btn-warning" title="Back to devices list">Back to list</a>
+                        <a asp-action="Delete" asp-route-id="@Model.Id"  class="btn btn-danger" title="Back to devices list">Delete Device</a>
                         <input type="submit" value="Save" title="Save device changes" class="btn btn-success" />
                     </div>
                 </form>

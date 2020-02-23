@@ -547,7 +547,7 @@ namespace DroHub.Areas.DHub.Controllers
             _context.UserDevices.Remove(ud);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Create));
+            return RedirectToAction("Dashboard", "DeviceRepository");
         }
 
         private bool DeviceExists(int id)
