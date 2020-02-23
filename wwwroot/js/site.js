@@ -5,46 +5,42 @@
 
 $(async function () {
     ModalClass = function () {
-        var PlaceholderElement = $('#modal-placeholder');
+        let PlaceholderElement = $('#modal-placeholder');
         let should_reload = false;
         function makeModal(event) {
-            var url = $(this).data('url');
+            let url = $(this).data('url');
             should_reload = $(this).data('reload') === true;
             $.get(url).done(function (data) {
                 PlaceholderElement.html(data);
                 PlaceholderElement.find('.modal').modal({ focus: true, show: true, keyboard: true });
             });
         }
+
+        function _submit (event) {
+            event.preventDefault();
+
+            let form = $(this).parents('.modal').find('form');
+            let actionUrl = form.attr('action');
+            let dataToSend = form.serialize();
+
+            $.post(actionUrl, dataToSend).done(function (data) {
+                let newBody = $('.modal-body', data);
+                PlaceholderElement.find('.modal-body').replaceWith(newBody);
+
+                let isValid = newBody.find('[name="IsValid"]').val() == 'True';
+                if (isValid) {
+                    if (should_reload === true)
+                        location.reload();
+                    else
+                        PlaceholderElement.find('.modal').modal('hide');
+                }
+            });
+        }
         return {
             "init": function () {
-                PlaceholderElement.on('click', '[data-save="modal"]', function (event) {
-                    event.preventDefault();
-
-                    var form = $(this).parents('.modal').find('form');
-                    var actionUrl = form.attr('action');
-                    var dataToSend = form.serialize();
-
-                    $.post(actionUrl, dataToSend).done(function (data) {
-                        var newBody = $('.modal-body', data);
-                        PlaceholderElement.find('.modal-body').replaceWith(newBody);
-
-                        var isValid = newBody.find('[name="IsValid"]').val() == 'True';
-                        if (isValid) {
-                            if (should_reload === true)
-                                location.reload();
-                            else
-                                PlaceholderElement.find('.modal').modal('hide');
-                        }
-                    });
-                });
-
+                PlaceholderElement.on('click', '[data-save="modal"]', _submit);
                 $('a[data-toggle="ajax-modal"]').click(makeModal);
                 $('button[data-toggle="ajax-modal"]').click(makeModal);
-                $(document).keydown(function(event) {
-                    if (event.keyCode == 27) {
-                        PlaceholderElement.find('.modal').modal('hide');
-                    }
-                });
             }
         }
     }();
