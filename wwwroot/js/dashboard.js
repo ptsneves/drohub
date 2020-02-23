@@ -605,6 +605,21 @@ $(function () {
     MapClass.init();
     TelemetryClass.init(SignalRConnectionClass.getConnection(), MapClass);
 
+
+    $('a.in-relocatable-box-move-up').each(function () {
+       $(this).click(function() {
+           let current_box = $(this).closest('div.box');
+           current_box.insertBefore(current_box.prev('div.box'));
+       });
+    });
+
+    $('a.in-relocatable-box-move-down').each(function () {
+        $(this).click(function() {
+            let current_box = $(this).closest('div.box');
+            current_box.insertAfter(current_box.next('div.box'));
+        });
+    });
+
     $('a[data-toggle="drone-control-box"]').each(function () {
         $(this).click(function () {
             $(this).toggleClass('plus-right');
