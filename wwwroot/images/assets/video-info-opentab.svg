@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 58 (84663) - https://sketch.com -->
+    <title>video-info-opentab</title>
+    <desc>Created with Sketch.</desc>
+    <g id="video-info-opentab" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Icon-/-Device-/-Video-/-Info-/-New-Tab" fill="#FFFFFF">
+            <rect id="Rectangle" fill-rule="evenodd" x="12" y="2.4" width="9.6" height="2.4"></rect>
+            <rect id="Rectangle-Copy-2" fill-rule="evenodd" transform="translate(20.400000, 7.200000) rotate(-90.000000) translate(-20.400000, -7.200000) " x="15.6" y="6" width="9.6" height="2.4"></rect>
+            <path d="M9.599,4.8 L9.599,7.2 L4.8,7.2 L4.8,19.2 L16.8,19.2 L16.799,14.399 L19.2,14.399 L19.2,21.6 L2.4,21.6 L2.4,4.8 L9.599,4.8 Z" id="Combined-Shape" fill-rule="nonzero"></path>
+            <polygon id="Rectangle" fill-rule="evenodd" transform="translate(15.466905, 8.400000) rotate(-45.000000) translate(-15.466905, -8.400000) " points="8.36984848 7.2 22.563961 7.2 22.563961 9.6 8.36984848 9.6"></polygon>
+        </g>
+    </g>
+</svg>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 58 (84663) - https://sketch.com -->
+    <title>video-info-signal-bad</title>
+    <desc>Created with Sketch.</desc>
+    <g id="video-info-signal-bad" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Icon-/-Device-/-Video-/-Info-/-Signal-/-Bad" fill="#FFFFFF">
+            <g id="Video---Info---Signal---Good" transform="translate(2.400000, 3.600000)">
+                <path d="M15.6,15.6 L15.6,3 L19.2,0 L19.2,15.6 L15.6,15.6 Z M9.6,15.6 L9.6,7.8 L13.2,4.8 L13.2,15.6 L9.6,15.6 Z M0,15.6 L7.2,9.6 L7.2,15.6 L0,15.6 Z" id="Shape" opacity="0.25"></path>
+                <polygon id="Shape-Copy" points="0 15.6 7.2 9.6 7.2 15.6"></polygon>
+            </g>
+        </g>
+    </g>
+</svg>
