@@ -48,16 +48,12 @@ namespace DroHub.IdentityClaims
                     UserName = AdminUserName
                 };
                 await user_manager.CreateAsync(user, admin_password);
+                foreach (var claim in DroHubUser.UserClaims[DroHubUser.ADMIN_POLICY_CLAIMS]) {
+                    await user_manager.AddClaimAsync(user, claim);
+                };
             }
 
             return user.Id;
-        }
-
-
-        public static void AddIsAdminPolicy(this AuthorizationOptions options)
-        {
-            options.AddPolicyEx("IsAdmin", policy =>
-                                policy.RequireClaim("Role", "Admin"));
         }
 
         //Taken https://stackoverflow.com/a/38997554/227990
@@ -129,23 +125,6 @@ namespace DroHub.IdentityClaims
 
                 return new string(characterBuffer);
             }
-        }
-    }
-    public class DroHubClaimsPrincipalFactory : UserClaimsPrincipalFactory<DroHubUser>
-    {
-        public DroHubClaimsPrincipalFactory(
-            UserManager<DroHubUser> userManager,
-            IOptions<IdentityOptions> optionsAccessor)
-                : base(userManager, optionsAccessor)
-        {
-        }
-
-        protected override async Task<ClaimsIdentity> GenerateClaimsAsync(DroHubUser user)
-        {
-            var identity = await base.GenerateClaimsAsync(user);
-            if (user.UserName == InitializeAdminUserHelper.AdminUserName)
-                identity.AddClaim(new Claim("Role", "Admin"));
-            return identity;
         }
     }
 }

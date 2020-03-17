@@ -1,10 +1,9 @@
 
 @page
 @using Microsoft.AspNetCore.Authorization
-@using System.Security.Claims
-@using Microsoft.AspNetCore.Identity;
 @inject IAuthorizationService AuthorizationService
 @inject IUserClaimsPrincipalFactory<DroHubUser> UserClaimsPrincipalFactory
+@inject UserManager<DroHubUser> UserManager
 @model RegisterModel
 
  <div class="bs-example" data-example-id="hoverable-table">
@@ -67,6 +66,13 @@
                 <input asp-for="Input.ConfirmPassword" class="form-control" placeholder="Retype Password" />
                 <span class="glyphicon glyphicon-lock form-control-feedback"></span>
                 <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+            </div>
+            <div class="form-group has-feedback">
+                <select asp-for="Input.ActingType" class="form-control" asp-items="await RegisterModel.getAuthorizedUsersToAdd(
+                    AuthorizationService, UserClaimsPrincipalFactory, (DroHubUser)await UserManager.GetUserAsync(HttpContext.User))"> placeholder="Select a user role" />
+                    <option selected="selected" value="">Please select</option>
+                </select>
+                <span asp-validation-for="Input.ActingType" class="text-danger"></span>
             </div>
             <div class="row">
                 <div class="col-xs-8">
