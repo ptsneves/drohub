@@ -14,34 +14,44 @@ namespace DroHub.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "2.2.6-servicing-10079")
+                .HasAnnotation("ProductVersion", "3.1.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("DroHub.Areas.DHub.Models.Device", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.Property<string>("Apperture");
+                    b.Property<string>("Apperture")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
-                    b.Property<DateTime>("CreationDate");
+                    b.Property<DateTime>("CreationDate")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("DropboxConnectState")
+                        .HasColumnType("varchar(32) CHARACTER SET utf8mb4")
                         .HasMaxLength(32);
 
-                    b.Property<string>("DropboxToken");
+                    b.Property<string>("DropboxToken")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
-                    b.Property<string>("FocusMode");
+                    b.Property<string>("FocusMode")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
-                    b.Property<string>("ISO");
+                    b.Property<string>("ISO")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
-                    b.Property<string>("LiveVideoSecret");
+                    b.Property<string>("LiveVideoSecret")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("Name")
-                        .IsRequired();
+                        .IsRequired()
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("SerialNumber")
                         .IsRequired()
+                        .HasColumnType("varchar(256) CHARACTER SET utf8mb4")
                         .HasMaxLength(256);
 
                     b.HasKey("Id");
@@ -55,23 +65,30 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("DroHub.Areas.DHub.Models.LogEntry", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.Property<string>("EventId");
+                    b.Property<string>("EventId")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
-                    b.Property<string>("Exception");
+                    b.Property<string>("Exception")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("Level")
-                        .IsRequired();
+                        .IsRequired()
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("Message")
-                        .IsRequired();
+                        .IsRequired()
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("SourceContext")
                         .IsRequired()
+                        .HasColumnType("varchar(100) CHARACTER SET utf8mb4")
                         .HasMaxLength(100);
 
-                    b.Property<DateTime>("Timestamp");
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
@@ -80,9 +97,11 @@ namespace DroHub.Data.Migrations
 
             modelBuilder.Entity("DroHub.Areas.DHub.Models.UserDevice", b =>
                 {
-                    b.Property<int>("DeviceId");
+                    b.Property<int>("DeviceId")
+                        .HasColumnType("int");
 
-                    b.Property<string>("DroHubUserId");
+                    b.Property<string>("DroHubUserId")
+                        .HasColumnType("varchar(255) CHARACTER SET utf8mb4");
 
                     b.HasKey("DeviceId", "DroHubUserId");
 
@@ -94,48 +113,53 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("DroHub.Areas.Identity.Data.DroHubUser", b =>
                 {
                     b.Property<string>("Id")
-                        .ValueGeneratedOnAdd();
+                        .HasColumnType("varchar(255) CHARACTER SET utf8mb4");
 
-                    b.Property<int>("AccessFailedCount");
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
 
                     b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken();
-
-                    b.Property<string>("ConnectState")
-                        .HasMaxLength(32);
-
-                    b.Property<DateTime>("CreationDate");
-
-                    b.Property<string>("DropboxToken");
+                        .IsConcurrencyToken()
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("Email")
+                        .HasColumnType("varchar(256) CHARACTER SET utf8mb4")
                         .HasMaxLength(256);
 
-                    b.Property<bool>("EmailConfirmed");
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("tinyint(1)");
 
-                    b.Property<DateTime>("LastLogin");
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("tinyint(1)");
 
-                    b.Property<bool>("LockoutEnabled");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd");
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("NormalizedEmail")
+                        .HasColumnType("varchar(256) CHARACTER SET utf8mb4")
                         .HasMaxLength(256);
 
                     b.Property<string>("NormalizedUserName")
+                        .HasColumnType("varchar(256) CHARACTER SET utf8mb4")
                         .HasMaxLength(256);
 
-                    b.Property<string>("PasswordHash");
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
-                    b.Property<string>("PhoneNumber");
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
-                    b.Property<bool>("PhoneNumberConfirmed");
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("tinyint(1)");
 
-                    b.Property<string>("SecurityStamp");
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
-                    b.Property<bool>("TwoFactorEnabled");
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("UserName")
+                        .HasColumnType("varchar(256) CHARACTER SET utf8mb4")
                         .HasMaxLength(256);
 
                     b.HasKey("Id");
@@ -153,14 +177,18 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("DroneBatteryLevel", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.Property<double>("BatteryLevelPercent");
+                    b.Property<double>("BatteryLevelPercent")
+                        .HasColumnType("double");
 
                     b.Property<string>("Serial")
-                        .IsRequired();
+                        .IsRequired()
+                        .HasColumnType("varchar(256) CHARACTER SET utf8mb4");
 
-                    b.Property<long>("Timestamp");
+                    b.Property<long>("Timestamp")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -172,14 +200,18 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("DroneFlyingState", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
                     b.Property<string>("Serial")
-                        .IsRequired();
+                        .IsRequired()
+                        .HasColumnType("varchar(256) CHARACTER SET utf8mb4");
 
-                    b.Property<int>("State");
+                    b.Property<int>("State")
+                        .HasColumnType("int");
 
-                    b.Property<long>("Timestamp");
+                    b.Property<long>("Timestamp")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -191,14 +223,18 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("DroneLiveVideoStateResult", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
                     b.Property<string>("Serial")
-                        .IsRequired();
+                        .IsRequired()
+                        .HasColumnType("varchar(256) CHARACTER SET utf8mb4");
 
-                    b.Property<int>("State");
+                    b.Property<int>("State")
+                        .HasColumnType("int");
 
-                    b.Property<long>("Timestamp");
+                    b.Property<long>("Timestamp")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -210,18 +246,24 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("DronePosition", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.Property<double>("Altitude");
+                    b.Property<double>("Altitude")
+                        .HasColumnType("double");
 
-                    b.Property<double>("Latitude");
+                    b.Property<double>("Latitude")
+                        .HasColumnType("double");
 
-                    b.Property<double>("Longitude");
+                    b.Property<double>("Longitude")
+                        .HasColumnType("double");
 
                     b.Property<string>("Serial")
-                        .IsRequired();
+                        .IsRequired()
+                        .HasColumnType("varchar(256) CHARACTER SET utf8mb4");
 
-                    b.Property<long>("Timestamp");
+                    b.Property<long>("Timestamp")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -233,16 +275,21 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("DroneRadioSignal", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.Property<double>("Rssi");
+                    b.Property<double>("Rssi")
+                        .HasColumnType("double");
 
                     b.Property<string>("Serial")
-                        .IsRequired();
+                        .IsRequired()
+                        .HasColumnType("varchar(256) CHARACTER SET utf8mb4");
 
-                    b.Property<double>("SignalQuality");
+                    b.Property<double>("SignalQuality")
+                        .HasColumnType("double");
 
-                    b.Property<long>("Timestamp");
+                    b.Property<long>("Timestamp")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -254,16 +301,21 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("DroneReply", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.Property<string>("ActionName");
+                    b.Property<string>("ActionName")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
-                    b.Property<bool>("Result");
+                    b.Property<bool>("Result")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Serial")
-                        .IsRequired();
+                        .IsRequired()
+                        .HasColumnType("varchar(256) CHARACTER SET utf8mb4");
 
-                    b.Property<long>("Timestamp");
+                    b.Property<long>("Timestamp")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -275,15 +327,18 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
-                        .ValueGeneratedOnAdd();
+                        .HasColumnType("varchar(255) CHARACTER SET utf8mb4");
 
                     b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken();
+                        .IsConcurrencyToken()
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("Name")
+                        .HasColumnType("varchar(256) CHARACTER SET utf8mb4")
                         .HasMaxLength(256);
 
                     b.Property<string>("NormalizedName")
+                        .HasColumnType("varchar(256) CHARACTER SET utf8mb4")
                         .HasMaxLength(256);
 
                     b.HasKey("Id");
@@ -298,14 +353,18 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.Property<string>("ClaimType");
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
-                    b.Property<string>("ClaimValue");
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("RoleId")
-                        .IsRequired();
+                        .IsRequired()
+                        .HasColumnType("varchar(255) CHARACTER SET utf8mb4");
 
                     b.HasKey("Id");
 
@@ -317,14 +376,18 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.Property<string>("ClaimType");
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
-                    b.Property<string>("ClaimValue");
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("UserId")
-                        .IsRequired();
+                        .IsRequired()
+                        .HasColumnType("varchar(255) CHARACTER SET utf8mb4");
 
                     b.HasKey("Id");
 
@@ -336,15 +399,19 @@ namespace DroHub.Data.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
                     b.Property<string>("LoginProvider")
+                        .HasColumnType("varchar(128) CHARACTER SET utf8mb4")
                         .HasMaxLength(128);
 
                     b.Property<string>("ProviderKey")
+                        .HasColumnType("varchar(128) CHARACTER SET utf8mb4")
                         .HasMaxLength(128);
 
-                    b.Property<string>("ProviderDisplayName");
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("UserId")
-                        .IsRequired();
+                        .IsRequired()
+                        .HasColumnType("varchar(255) CHARACTER SET utf8mb4");
 
                     b.HasKey("LoginProvider", "ProviderKey");
 
@@ -355,9 +422,11 @@ namespace DroHub.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
-                    b.Property<string>("UserId");
+                    b.Property<string>("UserId")
+                        .HasColumnType("varchar(255) CHARACTER SET utf8mb4");
 
-                    b.Property<string>("RoleId");
+                    b.Property<string>("RoleId")
+                        .HasColumnType("varchar(255) CHARACTER SET utf8mb4");
 
                     b.HasKey("UserId", "RoleId");
 
@@ -368,15 +437,19 @@ namespace DroHub.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.Property<string>("UserId");
+                    b.Property<string>("UserId")
+                        .HasColumnType("varchar(255) CHARACTER SET utf8mb4");
 
                     b.Property<string>("LoginProvider")
+                        .HasColumnType("varchar(128) CHARACTER SET utf8mb4")
                         .HasMaxLength(128);
 
                     b.Property<string>("Name")
+                        .HasColumnType("varchar(128) CHARACTER SET utf8mb4")
                         .HasMaxLength(128);
 
-                    b.Property<string>("Value");
+                    b.Property<string>("Value")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.HasKey("UserId", "LoginProvider", "Name");
 
@@ -388,12 +461,14 @@ namespace DroHub.Data.Migrations
                     b.HasOne("DroHub.Areas.DHub.Models.Device", "Device")
                         .WithMany("UserDevices")
                         .HasForeignKey("DeviceId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("DroHub.Areas.Identity.Data.DroHubUser", "DroHubUser")
                         .WithMany("UserDevices")
                         .HasForeignKey("DroHubUserId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("DroneBatteryLevel", b =>
@@ -402,7 +477,8 @@ namespace DroHub.Data.Migrations
                         .WithMany("battery_levels")
                         .HasForeignKey("Serial")
                         .HasPrincipalKey("SerialNumber")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("DroneFlyingState", b =>
@@ -411,7 +487,8 @@ namespace DroHub.Data.Migrations
                         .WithMany("flying_states")
                         .HasForeignKey("Serial")
                         .HasPrincipalKey("SerialNumber")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("DroneLiveVideoStateResult", b =>
@@ -420,7 +497,8 @@ namespace DroHub.Data.Migrations
                         .WithMany("drone_video_states")
                         .HasForeignKey("Serial")
                         .HasPrincipalKey("SerialNumber")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("DronePosition", b =>
@@ -429,7 +507,8 @@ namespace DroHub.Data.Migrations
                         .WithMany("positions")
                         .HasForeignKey("Serial")
                         .HasPrincipalKey("SerialNumber")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("DroneRadioSignal", b =>
@@ -438,7 +517,8 @@ namespace DroHub.Data.Migrations
                         .WithMany("radio_signals")
                         .HasForeignKey("Serial")
                         .HasPrincipalKey("SerialNumber")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("DroneReply", b =>
@@ -447,52 +527,59 @@ namespace DroHub.Data.Migrations
                         .WithMany("drone_replies")
                         .HasForeignKey("Serial")
                         .HasPrincipalKey("SerialNumber")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole")
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("DroHub.Areas.Identity.Data.DroHubUser")
+                    b.HasOne("DroHub.Areas.Identity.Data.DroHubUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("DroHub.Areas.Identity.Data.DroHubUser")
+                    b.HasOne("DroHub.Areas.Identity.Data.DroHubUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole")
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.HasOne("DroHub.Areas.Identity.Data.DroHubUser")
+                    b.HasOne("DroHub.Areas.Identity.Data.DroHubUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("DroHub.Areas.Identity.Data.DroHubUser")
+                    b.HasOne("DroHub.Areas.Identity.Data.DroHubUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }
