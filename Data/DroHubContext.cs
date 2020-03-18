@@ -2,9 +2,6 @@ using DroHub.Areas.Identity.Data;
 using DroHub.Areas.DHub.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
-
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace DroHub.Data
 {
     public class DroHubContext : IdentityDbContext<DroHubUser>
@@ -27,24 +24,13 @@ namespace DroHub.Data
         public DbSet<DroneReply> DroneReplies { get; set; }
         public DbSet<DroneLiveVideoStateResult> DroneVideoStatesResults { get; set; }
         public DbSet<UserDevice> UserDevices { get; set; }
-        //public DbSet<DeviceSettings> DeviceSettings { get; set; }
+
+        public DbSet<Subscription> Subscriptions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            // builder.Ignore<DroneBatteryLevel.Isset>();
-
-            // foreach (var property in builder.Model.GetEntityTypes()
-            //     .SelectMany(t => t.GetProperties())
-            //     .Where(p => p.ClrType == typeof(string)))
-            // {
-            //     if (property.GetMaxLength() == null)
-            //         property.SetMaxLength(450);
-            // }]
 
             base.OnModelCreating(builder);
-            // Customize the ASP.NET Identity model and override the defaults if needed.
-            // For example, you can rename the ASP.NET Identity table names and more.
-            // Add your customizations after calling base.OnModelCreating(builder);
 
             builder.Entity<Device>(entity => entity.Property(m => m.SerialNumber).HasMaxLength(256));
             // ----- KEYS AND INDEXES -------------------------------
