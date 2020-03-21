@@ -15,7 +15,6 @@ namespace DroHub.Areas.Identity
             {
                 services.AddDefaultIdentity<DroHubUser>()
                     .AddEntityFrameworkStores<DroHubContext>();
-
                 // Passwords validation settings.
                 // https://docs.microsoft.com/en-us/aspnet/core/security/authentication/identity-configuration?view=aspnetcore-2.1#password
                 services.Configure<IdentityOptions>(options =>
@@ -26,6 +25,11 @@ namespace DroHub.Areas.Identity
                     options.Password.RequireUppercase = false;       // Default true
                     options.Password.RequiredLength = 6;             // Default 6
                     options.Password.RequiredUniqueChars = 2;        // Default 1
+
+                    // options.Lockout.MaxFailedAccessAttempts = 5;
+                    // options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(3);
+                    //
+                    // options.User.RequireUniqueEmail = true;
                 });
             });
         }
