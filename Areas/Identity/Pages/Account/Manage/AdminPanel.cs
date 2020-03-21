@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
+using DroHub.Data;
+using DroHub.Helpers;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -16,28 +18,31 @@ using Microsoft.Extensions.Logging;
 
 namespace DroHub.Areas.Identity.Pages.Account
 {
-    [Authorize(Policy = "CanActAsOwner")]
+    [ClaimRequirement(DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.CLAIM_VALID_VALUE)]
     public class RegisterModel : PageModel
     {
-        private readonly SignInManager<DroHubUser> _signInManager;
-        private readonly UserManager<DroHubUser> _userManager;
+        private readonly SignInManager<DroHubUser> _signin_manager;
+        private readonly UserManager<DroHubUser> _user_manager;
+        private readonly DroHubContext _db_context;
         private readonly ILogger<RegisterModel> _logger;
-        private readonly IEmailSender _emailSender;
+        private readonly IEmailSender _email_sender;
 
-        public UserManager<DroHubUser> UserManager { get { return _userManager; } }
+        public UserManager<DroHubUser> UserManager => _user_manager;
         public List<DroHubUser> Users { get; private set; }
+        public string CurrentUserOrganizationName { get; private set; }
 
         public RegisterModel(
-            UserManager<DroHubUser> userManager,
-            SignInManager<DroHubUser> signInManager,
+            UserManager<DroHubUser> user_manager,
+            SignInManager<DroHubUser> signin_manager,
+            DroHubContext db_context,
             ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
-        {
-            _userManager = userManager;
-            _signInManager = signInManager;
+            IEmailSender email_sender) {
+            Users = new List<DroHubUser>();
+            _user_manager = user_manager;
+            _signin_manager = signin_manager;
+            _db_context = db_context;
             _logger = logger;
-            _emailSender = emailSender;
-            Users = _userManager.Users.Include(u => u.UserDevices).ThenInclude(ud => ud.Device).ToList();
+            _email_sender = email_sender;
         }
 
         [BindProperty]
@@ -66,79 +71,186 @@ namespace DroHub.Areas.Identity.Pages.Account
             [Display(Name = "User wil act as")]
             [DataType(DataType.Text)]
             public string ActingType { get; set; }
+
+            [Display(Name = "Name of your organization")]
+            [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 2)]
+            [DataType(DataType.Text)]
+            public string OrganizationName { get; set; }
+
+            [Display(Name = "Allowed Organization Flight Time in Minutes")]
+            [Range(1, 50338)] // MySQL allows maximum 838:59:59.000000 so in minutes 838*60+58 = 50338 minutes
+            public int? AllowedFlightTime { get; set; }
+
+            [Display(Name = "Number of allowed users")]
+            [Range(1, Int32.MaxValue)]
+            public int? AllowedUserCount { get; set; }
         }
 
-        public void OnGet(string returnUrl = null)
-        {
-            ReturnUrl = returnUrl;
-        }
+        private async Task prepareProperties(){
+            var user_id = _user_manager.GetUserId(HttpContext.User);
+            var can_see_not_own_subs = HttpContext.User.HasClaim(Subscription.CAN_SEE_NOT_OWN_SUBSCRIPTION,
+                Subscription.CLAIM_VALID_VALUE);
 
-        public static async Task<IEnumerable<SelectListItem>> getAuthorizedUsersToAdd(
-                IAuthorizationService authorization_service, IUserClaimsPrincipalFactory<DroHubUser> claims_principal_factory,
-                DroHubUser user) {
-            var authorized_roles = new List<SelectListItem>();
-            var s = await claims_principal_factory.CreateAsync(user);
+            if (!can_see_not_own_subs) {
+                var cur_user = await _user_manager.Users
+                    .Include(u => u.Subscription)
+                    .SingleAsync(u => u.Id == user_id);
 
-            var authorized = (await authorization_service.AuthorizeAsync(s, null,
-                "CanActAsAdmin")).Succeeded;
-            authorized_roles.Add(new SelectListItem(DroHubUser.ADMIN_POLICY_CLAIMS,
-                DroHubUser.ADMIN_POLICY_CLAIMS, authorized));
-
-            authorized = (await authorization_service.AuthorizeAsync(s, null,
-                "CanActAsSubscriber")).Succeeded;
-            authorized_roles.Add(new SelectListItem(DroHubUser.SUBSCRIBER_POLICY_CLAIMS,
-                DroHubUser.SUBSCRIBER_POLICY_CLAIMS, authorized));
-
-            authorized = (await authorization_service.AuthorizeAsync(s, null, "CanActAsOwner")).Succeeded;
-            authorized_roles.Add(new SelectListItem(DroHubUser.OWNER_POLICY_CLAIMS,
-                DroHubUser.OWNER_POLICY_CLAIMS, authorized));
-
-            authorized_roles.Add(new SelectListItem(DroHubUser.PILOT_POLICY_CLAIMS,
-                DroHubUser.PILOT_POLICY_CLAIMS, true));
-
-            authorized_roles.Add(new SelectListItem(DroHubUser.GUEST_POLICY_CLAIMS,
-                DroHubUser.GUEST_POLICY_CLAIMS, true));
-            return authorized_roles;
-        }
-
-        public async Task<IActionResult> OnPostAsync(string returnUrl = null)
-        {
-            returnUrl = returnUrl ?? Url.Content("~/");
-            if (!DroHubUser.UserClaims.ContainsKey(Input.ActingType))
-                ModelState.AddModelError("InvalidPolicy", "You chose an invalid option for user act");
-            else if (ModelState.IsValid)
-            {
-                var user = new DroHubUser { UserName = Input.Email, Email = Input.Email };
-                var result = await _userManager.CreateAsync(user, Input.Password);
-                if (result.Succeeded)
-                {
-                    _logger.LogInformation("User created a new account with password.");
-
-                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    var callbackUrl = Url.Page(
-                        "/Account/ConfirmEmail",
-                        pageHandler: null,
-                        values: new { userId = user.Id, code = code },
-                        protocol: Request.Scheme);
-
-                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
-
-                    foreach (var claim in DroHubUser.UserClaims[Input.ActingType])
-                        await _userManager.AddClaimAsync(user, claim);
-
-                    await _signInManager.SignInAsync(user, isPersistent: false);
-
-                    return LocalRedirect(returnUrl);
-                }
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
+                CurrentUserOrganizationName = cur_user.Subscription.OrganizationName;
             }
 
-            // If we got this far, something failed, redisplay form
-            return Page();
+            Users = _user_manager.Users
+                .Include(u => u.Subscription)
+                .Where(u => can_see_not_own_subs || u.Subscription.OrganizationName == CurrentUserOrganizationName)
+                .Include(u => u.UserDevices)
+                .ThenInclude(ud => ud.Device)
+                .ToList();
+        }
+
+        public async Task OnGetAsync(string return_url = null){
+            await prepareProperties();
+            ReturnUrl = return_url;
+        }
+
+        public SelectList getAuthorizedUsersToAdd() {
+
+            var authorized_roles = new List<string>();
+
+            if (User.HasClaim(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.CLAIM_VALID_VALUE))
+                authorized_roles.Add(DroHubUser.ADMIN_POLICY_CLAIM);
+
+            if (User.HasClaim(DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.CLAIM_VALID_VALUE))
+                authorized_roles.Add(DroHubUser.SUBSCRIBER_POLICY_CLAIM);
+
+            if (User.HasClaim(DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.CLAIM_VALID_VALUE))
+                authorized_roles.Add(DroHubUser.OWNER_POLICY_CLAIM);
+
+            authorized_roles.Add(DroHubUser.PILOT_POLICY_CLAIM);
+
+            authorized_roles.Add(DroHubUser.GUEST_POLICY_CLAIM);
+            return new SelectList(authorized_roles);
+        }
+
+        private bool isValidActingClaim(){
+            var authorized_users_to_add = getAuthorizedUsersToAdd();
+
+            if (DroHubUser.UserClaims.ContainsKey(Input.ActingType) && authorized_users_to_add.Any(i => i.Text == Input.ActingType))
+                return true;
+
+            ModelState.AddModelError("InvalidPolicy", "You chose an invalid option for user act");
+            return false;
+        }
+
+        private bool isAuthorizedToAddSubscription()
+        {
+            if (User.HasClaim(Subscription.CAN_ADD_CLAIM, Subscription.CLAIM_VALID_VALUE))
+                return true;
+
+            return false;
+        }
+
+        private bool isAuthorizedToAddUserToSubscription() {
+            if (User.HasClaim(Subscription.CAN_EDIT_USERS_IN_OWN_SUBSCRIPTION, Subscription.CLAIM_VALID_VALUE))
+                return true;
+
+            ModelState.AddModelError("Not authorized", "Not authorized to edit users in subscription");
+            return false;
+        }
+
+        private bool doesSubscriptionAuthorizeNewUser(Subscription subscription) {
+            if (subscription.AllowedUserCount > subscription.Users.Count)
+                return true;
+
+            ModelState.AddModelError("Not authorized",
+                $"You have reached the maximum number of users in your subscription of {subscription.AllowedUserCount}");
+            return false;
+        }
+
+        private class UserCreateException : InvalidOperationException {
+        }
+
+        [ClaimRequirement(Subscription.CAN_EDIT_USERS_IN_OWN_SUBSCRIPTION, Subscription.CLAIM_VALID_VALUE)]
+        private async Task<Subscription> createSubscriptionOrDefault(){
+            var subscription = await _db_context.Subscriptions.SingleOrDefaultAsync(
+                d => d.OrganizationName == Input.OrganizationName);
+
+            if (subscription != null) return subscription;
+
+            if (Input.AllowedFlightTime == null || Input.AllowedUserCount == null || Input.OrganizationName == null)
+            {
+                ModelState.AddModelError(string.Empty,
+                    "Allowed Organization Name, Flight time and Allowed User Count are mandatory");
+                throw new UserCreateException();
+            }
+
+            subscription = new Subscription()
+            {
+                OrganizationName = Input.OrganizationName,
+                AllowedFlightTime = TimeSpan.FromMinutes((double) Input.AllowedFlightTime),
+                AllowedUserCount = (int) Input.AllowedUserCount
+            };
+            _db_context.Subscriptions.Add(subscription);
+            await _db_context.SaveChangesAsync();
+
+            return subscription;
+        }
+
+        public async Task<IActionResult> OnPostAsync(string return_url = null)
+        {
+            try {
+                await prepareProperties();
+                if (!ModelState.IsValid)
+                    throw new UserCreateException();
+                if (!isValidActingClaim())
+                    throw new UserCreateException();
+
+                Subscription subscription;
+                if (isAuthorizedToAddSubscription()) {
+                    subscription = await createSubscriptionOrDefault();
+                }
+                else {
+                    if (!isAuthorizedToAddUserToSubscription())
+                        throw new UserCreateException();
+
+                    var cur_user = await _user_manager.GetUserAsync(User);
+                    subscription = cur_user.Subscription;
+                    if (!doesSubscriptionAuthorizeNewUser(subscription))
+                        throw new UserCreateException();
+                }
+
+                var user = new DroHubUser {UserName = Input.Email, Email = Input.Email, Subscription = subscription};
+                var result = await _user_manager.CreateAsync(user, Input.Password);
+                if (!result.Succeeded) {
+                    foreach (var error in result.Errors) {
+                        ModelState.AddModelError(string.Empty, error.Description);
+                    }
+                    throw new UserCreateException();
+                }
+
+                _logger.LogInformation("User created a new account with password.");
+
+                var code = await _user_manager.GenerateEmailConfirmationTokenAsync(user);
+                var callback_url = Url.Page(
+                    "/Account/ConfirmEmail",
+                    pageHandler: null,
+                    values: new {userId = user.Id},
+                    protocol: Request.Scheme);
+
+                await _email_sender.SendEmailAsync(Input.Email, "Confirm your email",
+                    $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callback_url)}'>clicking here</a>.");
+
+
+                foreach (var claim in DroHubUser.UserClaims[Input.ActingType])
+                    await _user_manager.AddClaimAsync(user, claim);
+
+                await _signin_manager.SignInAsync(user, isPersistent: false);
+
+                return_url ??= Url.Content("~/");
+                return LocalRedirect(return_url);
+            }
+            catch (UserCreateException) {
+                return Page();
+            }
         }
     }
 }

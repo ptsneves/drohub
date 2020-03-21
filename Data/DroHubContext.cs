@@ -74,6 +74,9 @@ namespace DroHub.Data
             builder.Entity<LogEntry>()
                 .HasKey(d => d.Id);
 
+            builder.Entity<Subscription>()
+                .HasKey(d => d.OrganizationName);
+
             // ----- REQUIRED ATTRIBUTES ----------------------------
             builder.Entity<Device>()
                 .Property(d => d.SerialNumber)
@@ -157,6 +160,10 @@ namespace DroHub.Data
                 .HasOne<DroHubUser>(ud => ud.DroHubUser)
                 .WithMany(u => u.UserDevices)
                 .HasForeignKey(ud => ud.DroHubUserId);
+
+            builder.Entity<Subscription>()
+                .HasMany(d => d.Users)
+                .WithOne(u => u.Subscription);
         }
     }
 }

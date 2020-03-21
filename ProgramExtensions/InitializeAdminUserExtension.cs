@@ -8,6 +8,8 @@ using System;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
+using DroHub.Areas.DHub.Models;
+using DroHub.Data;
 using Microsoft.AspNetCore.Authorization;
 using DroHub.IdentityClaims;
 
@@ -15,7 +17,7 @@ namespace Microsoft.AspNetCore.Hosting
 {
     public static partial class IWebHostExtensions
     {
-        public async static Task<IWebHost> InitializeAdminUser<T>(this IWebHost webHost) where T : DbContext
+        public async static Task<IWebHost> InitializeAdminUser<T>(this IWebHost webHost) where T : DroHubContext
         {
             using (var scope = webHost.Services.CreateScope())
             {
@@ -23,7 +25,7 @@ namespace Microsoft.AspNetCore.Hosting
                 var db = services.GetRequiredService<T>();
                 var logger = services.GetRequiredService<ILogger<T>>();
                 var user_manager = services.GetRequiredService<UserManager<DroHubUser>>();
-                await InitializeAdminUserHelper.createAdminUser(logger, user_manager);
+                await InitializeAdminUserHelper.createAdminUser(logger, user_manager, db);
             }
             return webHost;
         }
@@ -35,23 +37,34 @@ namespace DroHub.IdentityClaims
     public static class InitializeAdminUserHelper
     {
         public static string AdminUserName = "admin";
-        internal async static Task<string> createAdminUser(ILogger logger, UserManager<DroHubUser> user_manager)
+        internal static async Task<string> createAdminUser(ILogger logger, UserManager<DroHubUser> user_manager,
+            DroHubContext db_context)
         {
             var user = await user_manager.FindByNameAsync(AdminUserName);
-            if (user == null)
+            if (user != null) return user.Id;
+
+            var subscription = new Subscription()
             {
-                var admin_password = generatePassword(10, 0);
-                logger.LogWarning("Initialized admin password. Please change it. GENERATED ROOT PASSWORD {admin}\n", admin_password);
-                user = new DroHubUser
-                {
-                    EmailConfirmed = true,
-                    UserName = AdminUserName
-                };
-                await user_manager.CreateAsync(user, admin_password);
-                foreach (var claim in DroHubUser.UserClaims[DroHubUser.ADMIN_POLICY_CLAIMS]) {
-                    await user_manager.AddClaimAsync(user, claim);
-                };
-            }
+                OrganizationName = "Administrators",
+                AllowedFlightTime = TimeSpan.FromMinutes(50338), // MySQL allows maximum 838:59:59.000000 so in minutes 838*60+58 = 50338 minutes,
+                AllowedUserCount = Int32.MaxValue
+            };
+
+            db_context.Subscriptions.Add(subscription);
+            await db_context.SaveChangesAsync();
+
+            var admin_password = generatePassword(10, 0);
+            logger.LogWarning("Initialized admin password. Please change it. GENERATED ROOT PASSWORD {admin}\n", admin_password);
+            user = new DroHubUser
+            {
+                EmailConfirmed = true,
+                UserName = AdminUserName,
+                Subscription = subscription
+            };
+            await user_manager.CreateAsync(user, admin_password);
+            foreach (var claim in DroHubUser.UserClaims[DroHubUser.ADMIN_POLICY_CLAIM]) {
+                await user_manager.AddClaimAsync(user, claim);
+            };
 
             return user.Id;
         }

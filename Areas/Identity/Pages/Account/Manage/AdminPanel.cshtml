@@ -1,35 +1,44 @@
 
 @page
+@using DroHub.Areas.DHub.Models
+@using DroHub.Data
 @using Microsoft.AspNetCore.Authorization
 @inject IAuthorizationService AuthorizationService
 @inject IUserClaimsPrincipalFactory<DroHubUser> UserClaimsPrincipalFactory
 @inject UserManager<DroHubUser> UserManager
+@inject SignInManager<DroHubUser> SignInManager
+@inject DroHubContext DbContext
 @model RegisterModel
 
- <div class="bs-example" data-example-id="hoverable-table">
+ <div class="bs-example" data-example-id="hoverable-table" asp-authorize asp-require-claim asp-claim-type="@Subscription.CAN_SEE_OWN_SUBSCRIPTION" asp-claim-value="@Subscription.CLAIM_VALID_VALUE">
     <table class="table table-hover">
       <thead>
-        <tr>
+      <tr>
+          <th>Organization</th>
           <th>User Name</th>
-          <th>Policies</th>
+          <th>Claims</th>
           <th>Last Login</th>
           <th>Devices Serial Numbers</th>
           <th>Lock Out</th>
-        </tr>
+      </tr>
       </thead>
       <tbody>
         @foreach(var user in @Model.Users) {
         <tr>
+          <td>@user.Subscription.OrganizationName</td>
           <td>@user.UserName</td>
-          <td>
-          @foreach(var policy in AuthorizationOptionsExtension.Policies) {
-            var s = await UserClaimsPrincipalFactory.CreateAsync(user);
-            @if ((await AuthorizationService.AuthorizeAsync(s, null, policy.Key)).Succeeded)
-            {
-                <p>@policy.Key</p>
-            }
-          }
-          </td>
+            <td>
+                @{
+                    var user_principal = await SignInManager.CreateUserPrincipalAsync(user);
+                    var user_claims = user_principal.Claims;
+                }
+
+                @foreach (var claim in user_claims) {
+                    @if (claim.Value == Subscription.CLAIM_VALID_VALUE) {
+                        <p>@claim.Type</p>
+                    }
+                }
+            </td>
           <td>@user.LastLogin</td>
           <td>
           @foreach(var ud in user.UserDevices) {
@@ -68,11 +77,28 @@
                 <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
             </div>
             <div class="form-group has-feedback">
-                <select asp-for="Input.ActingType" class="form-control" asp-items="await RegisterModel.getAuthorizedUsersToAdd(
-                    AuthorizationService, UserClaimsPrincipalFactory, (DroHubUser)await UserManager.GetUserAsync(HttpContext.User))"> placeholder="Select a user role" />
+                <select asp-for="Input.ActingType" class="form-control" asp-items="@Model.getAuthorizedUsersToAdd()"> placeholder="Select a user role" />
                     <option selected="selected" value="">Please select</option>
                 </select>
                 <span asp-validation-for="Input.ActingType" class="text-danger"></span>
+            </div>
+            <div class="form-group has-feedback" asp-require-claim asp-claim-type="@Subscription.CAN_ADD_CLAIM" asp-claim-value="">
+                <input type="hidden" asp-for="Input.OrganizationName" class="form-control" placeholder="Organization Name" value="" />
+            </div>
+            <div class="form-group has-feedback" asp-require-claim asp-claim-type="@Subscription.CAN_ADD_CLAIM" asp-claim-value="@Subscription.CLAIM_VALID_VALUE">
+                <input asp-for="Input.OrganizationName" class="form-control" placeholder="Organization Name" value="" />
+                <span class="glyphicon glyphicon-briefcase form-control-feedback"></span>
+                <span asp-validation-for="Input.OrganizationName" class="text-danger"></span>
+            </div>
+            <div class="form-group has-feedback" asp-require-claim asp-claim-type="@Subscription.CAN_ADD_CLAIM" asp-claim-value="@Subscription.CLAIM_VALID_VALUE">
+                <input asp-for="Input.AllowedFlightTime" class="form-control" placeholder="Allowed Flight Time in Minutes" />
+                <span class="glyphicon glyphicon-hourglass form-control-feedback"></span>
+                <span asp-validation-for="Input.AllowedFlightTime" class="text-danger"></span>
+            </div>
+            <div class="form-group has-feedback" asp-require-claim asp-claim-type="@Subscription.CAN_ADD_CLAIM" asp-claim-value="@Subscription.CLAIM_VALID_VALUE">
+                <input asp-for="Input.AllowedUserCount" class="form-control" placeholder="Allowed User Count" />
+                <span class="glyphicon glyphicon-user form-control-feedback"></span>
+                <span asp-validation-for="Input.AllowedUserCount" class="text-danger"></span>
             </div>
             <div class="row">
                 <div class="col-xs-8">
