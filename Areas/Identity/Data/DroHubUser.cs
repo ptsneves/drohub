@@ -73,6 +73,7 @@ namespace DroHub.Areas.Identity.Data
 
         };
 
+        public string BaseActingType { get; set; }
         public DateTime LastLogin { get; }
 
         public IList<UserDevice> UserDevices { get; set; }

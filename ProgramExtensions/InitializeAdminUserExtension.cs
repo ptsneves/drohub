@@ -59,7 +59,8 @@ namespace DroHub.IdentityClaims
             {
                 EmailConfirmed = true,
                 UserName = AdminUserName,
-                Subscription = subscription
+                Subscription = subscription,
+                BaseActingType = DroHubUser.ADMIN_POLICY_CLAIM
             };
             await user_manager.CreateAsync(user, admin_password);
             foreach (var claim in DroHubUser.UserClaims[DroHubUser.ADMIN_POLICY_CLAIM]) {

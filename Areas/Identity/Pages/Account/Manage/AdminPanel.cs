@@ -218,7 +218,13 @@ namespace DroHub.Areas.Identity.Pages.Account
                         throw new UserCreateException();
                 }
 
-                var user = new DroHubUser {UserName = Input.Email, Email = Input.Email, Subscription = subscription};
+                var user = new DroHubUser {
+                    UserName = Input.Email,
+                    Email = Input.Email,
+                    Subscription = subscription,
+                    BaseActingType = Input.ActingType
+                };
+
                 var result = await _user_manager.CreateAsync(user, Input.Password);
                 if (!result.Succeeded) {
                     foreach (var error in result.Errors) {
