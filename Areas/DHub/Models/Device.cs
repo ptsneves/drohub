@@ -15,9 +15,7 @@ namespace DroHub.Areas.DHub.Models
         [Display(Name = "Serial Number")]
         [Required]
         public string SerialNumber { get; set; }
-        public string DropboxToken { get; set; }
-        [StringLength(32)]
-        public string DropboxConnectState { get; set; }
+
         public string ISO { get; set; }
         public string Apperture { get; set; }
         [Display(Name = "Focus Mode")]

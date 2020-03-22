@@ -56,7 +56,6 @@ namespace DroHub
                 }
             });
 
-            services.Configure<DropboxRepositorySettings>(Configuration.GetSection("RepositoriesConfiguration").GetSection("Dropbox"));
             services.Configure<RepositoryOptions>(Configuration.GetSection("RepositoriesConfiguration"));
             services.Configure<CookiePolicyOptions>(options =>
             {

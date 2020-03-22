@@ -72,7 +72,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dropbox.Api" Version="4.9.2" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel.Https" Version="2.2.0" />
   </ItemGroup>
 
