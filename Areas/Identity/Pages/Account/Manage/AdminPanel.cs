@@ -1,8 +1,7 @@
 using System;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.Models;
@@ -14,6 +13,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace DroHub.Areas.Identity.Pages.Account
@@ -87,7 +87,7 @@ namespace DroHub.Areas.Identity.Pages.Account
         }
 
         private async Task prepareProperties(){
-            var user_id = _user_manager.GetUserId(HttpContext.User);
+            var user_id = _user_manager.GetUserId(User);
             var can_see_not_own_subs = HttpContext.User.HasClaim(Subscription.CAN_SEE_NOT_OWN_SUBSCRIPTION,
                 Subscription.CLAIM_VALID_VALUE);
 
@@ -101,9 +101,8 @@ namespace DroHub.Areas.Identity.Pages.Account
 
             Users = _user_manager.Users
                 .Include(u => u.Subscription)
+                .ThenInclude(s => s.Devices)
                 .Where(u => can_see_not_own_subs || u.Subscription.OrganizationName == CurrentUserOrganizationName)
-                .Include(u => u.UserDevices)
-                .ThenInclude(ud => ud.Device)
                 .ToList();
         }
 

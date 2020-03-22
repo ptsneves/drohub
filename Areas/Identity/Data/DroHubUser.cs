@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using DroHub.Areas.DHub.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 
 namespace DroHub.Areas.Identity.Data
 {
@@ -58,7 +61,24 @@ namespace DroHub.Areas.Identity.Data
         public string BaseActingType { get; set; }
         public DateTime LastLogin { get; }
 
-        public IList<UserDevice> UserDevices { get; set; }
         public Subscription Subscription { get; set; }
+    }
+
+    public static class DroHubUserLinqExtensions {
+        public static IIncludableQueryable<DroHubUser, Subscription> getCurrentUserWithSubscription(UserManager<DroHubUser> user_manager, ClaimsPrincipal user){
+            return user_manager.Users
+                .Where(u => u.Id == user_manager.GetUserId(user))
+                .Include(u => u.Subscription);
+        }
+
+        public static IQueryable<Subscription> getCurrentUserSubscription(this IIncludableQueryable<DroHubUser, Subscription> users) {
+            return users
+                .ThenInclude(s => s.Devices)
+                .Select(u => u.Subscription);
+        }
+
+        public static IQueryable<Device> getSubscriptionDevices(this IQueryable<Subscription> subscriptions) {
+            return subscriptions.SelectMany(s => s.Devices);
+        }
     }
 }

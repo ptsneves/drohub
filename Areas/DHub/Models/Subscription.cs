@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using DroHub.Areas.Identity.Data;
-using Microsoft.AspNetCore.Authorization;
 
 namespace DroHub.Areas.DHub.Models
 {
@@ -25,6 +24,9 @@ namespace DroHub.Areas.DHub.Models
         public TimeSpan AllowedFlightTime { get; set; }
 
         public ICollection<DroHubUser> Users { get; set; }
+
+        public ICollection<Device> Devices { get; set; }
+
     }
 
 }

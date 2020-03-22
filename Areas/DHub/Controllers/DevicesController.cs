@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.Models;
@@ -33,7 +34,7 @@ namespace DroHub.Areas.DHub.Controllers
     public class DevicesController : AuthorizedController
     {
         private readonly DroHubContext _context;
-        private readonly UserManager<DroHubUser> _userManager;
+        private readonly UserManager<DroHubUser> _user_manager;
         // --- Default device settings values for new devices (used on create POST method)
         private const string DefaultApperture = "f/4"; // TODO Get value directly from above lists
         private const string DefaultFocusMode = "Auto"; // TODO Get values directly from above lists
@@ -45,13 +46,13 @@ namespace DroHub.Areas.DHub.Controllers
 
         private readonly JanusServiceOptions _janus_options;
 
-        public DevicesController(DroHubContext context, UserManager<DroHubUser> userManager,
+        public DevicesController(DroHubContext context, UserManager<DroHubUser> user_manager,
             IHubContext<NotificationsHub> hubContext, ILogger<DevicesController> logger,
              ConnectionManager device_connection_manager,
              IOptionsMonitor<JanusServiceOptions> janus_options)
         {
             _context = context;
-            _userManager = userManager;
+            _user_manager = user_manager;
             _notifications_hubContext = hubContext;
             _logger = logger;
             _device_connection_manager = device_connection_manager;
@@ -125,14 +126,21 @@ namespace DroHub.Areas.DHub.Controllers
             return selectList;
         }
 
-        // GET: DroHub/GetDevicesList
-        public async Task<IActionResult> GetDevicesList() {
-            var currentUser = await _userManager.GetUserAsync(User);
-
-            var device_list = await _context.UserDevices
-                .Where(ud => ud.DroHubUser == currentUser)
-                .Select(ud => ud.Device)
+        public static Task<List<Device>> getSubscribedDevices(UserManager<DroHubUser> user_manager,
+            ClaimsPrincipal user) {
+            DroHubUserLinqExtensions.getCurrentUserWithSubscription(user_manager, user)
+                .getCurrentUserSubscription()
+                .getSubscriptionDevices()
+                .ToListAsync().GetAwaiter().GetResult();
+            return DroHubUserLinqExtensions.getCurrentUserWithSubscription(user_manager, user)
+                .getCurrentUserSubscription()
+                .getSubscriptionDevices()
                 .ToListAsync();
+        }
+
+        // GET: DroHub/GetDevicesList
+        public async Task<IActionResult> GetDevicesList(){
+            var device_list = await getSubscribedDevices(_user_manager, User);
 
             if (device_list.Any() == false)
                 return NoContent();
@@ -145,15 +153,15 @@ namespace DroHub.Areas.DHub.Controllers
 
             if (id == null || start_index < 1 || end_index < start_index ) return BadRequest();
 
-            var current_user = await _userManager.GetUserAsync(User);
-            var telemetries = await _context.UserDevices
-                    .Where(ud => _userManager.GetUserId(User) == ud.DroHubUserId && ud.Device.Id == id)
-                    .Select(ud => ud.Device)
-                    .OrderByDescending(d => d.Id)
-                    .IncludeTelemetry(include_delegate)
-                    .Skip(start_index-1)
-                    .Take(Math.Min(end_index-start_index+1, 10))
-                    .ToArrayAsync();
+            var telemetries = await DroHubUserLinqExtensions.getCurrentUserWithSubscription(_user_manager, User)
+                .getCurrentUserSubscription()
+                .getSubscriptionDevices()
+                .Where(d => d.Id == id)
+                .OrderByDescending(d => d.Id)
+                .IncludeTelemetry(include_delegate)
+                .Skip(start_index-1)
+                .Take(Math.Min(end_index-start_index+1, 10))
+                .ToArrayAsync();
             return Json(telemetries);
         }
 
@@ -217,12 +225,6 @@ namespace DroHub.Areas.DHub.Controllers
             return (device == null ? (IActionResult) NotFound() : View(device));
         }
 
-        public async Task<IActionResult> getDevicePositions(int? id) {
-            var device = await getDeviceById(id, true);
-
-            return (device == null ? (IActionResult) NotFound() : Json(device.positions));
-        }
-
         // GET: DroHub/Devices/Camera/5
         public async Task<IActionResult> Camera(int? id)
         {
@@ -247,21 +249,15 @@ namespace DroHub.Areas.DHub.Controllers
             Land = 1001
         }
 
-        private async Task<Device> getDeviceById(int? id, bool include_positions = false) {
-            if (id == null) return null;
+        public static Task<Device> getDeviceById(UserManager<DroHubUser> user_manager, ClaimsPrincipal user, int? id) {
+            return DroHubUserLinqExtensions.getCurrentUserWithSubscription(user_manager, user)
+                .getCurrentUserSubscription()
+                .getSubscriptionDevices()
+                .SingleAsync(d => d.Id == id);
+        }
 
-            if (include_positions)
-            {
-                return await _context.UserDevices
-                    .Where(ud => _userManager.GetUserId(User) == ud.DroHubUserId && ud.Device.Id == id)
-                    .Select(ud => ud.Device)
-                    .FirstOrDefaultAsync();
-            }
-            else
-                return await _context.UserDevices
-                    .Where(ud => _userManager.GetUserId(User) == ud.DroHubUserId && ud.Device.Id == id)
-                    .Select(ud => ud.Device)
-                    .FirstOrDefaultAsync();
+        private async Task<Device> getDeviceById(int? id){
+            return await getDeviceById(_user_manager, User, id);
         }
 
         public async Task<IActionResult> TakeOff(int id) {
@@ -441,7 +437,6 @@ namespace DroHub.Areas.DHub.Controllers
                 device.ISO = DefaultIso;
                 device.Apperture = DefaultApperture;
                 device.FocusMode = DefaultFocusMode;
-                device.UserDevices = new List<UserDevice>();
                 device_to_operate = device;
                 _context.Add(device_to_operate);
             }
@@ -449,18 +444,12 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         private async Task<IActionResult> Edit(Device device) {
-            if (device.UserDevices == null)
-            {
-                device.UserDevices = new List<UserDevice>();
+            if (device.Subscription == null) {
+                device.Subscription = await DroHubUserLinqExtensions.getCurrentUserWithSubscription(_user_manager, User)
+                    .getCurrentUserSubscription()
+                    .SingleAsync();
             }
 
-            device.UserDevices.Add(
-                new UserDevice
-                {
-                    Device = device,
-                    DroHubUser = await _userManager.GetUserAsync(User)
-                }
-            );
             try
             {
                 await _context.SaveChangesAsync();
@@ -533,23 +522,13 @@ namespace DroHub.Areas.DHub.Controllers
         [HttpPost]
         [ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var ud = _context.UserDevices.Single(d => d.DeviceId == id);
-            if (ud == null)
-            {
-                return NotFound();
-            }
+        public async Task<IActionResult> DeleteConfirmed(int id){
+            var d = await getDeviceById(id);
 
-            _context.UserDevices.Remove(ud);
+            _context.Devices.Remove(d);
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Dashboard", "DeviceRepository");
-        }
-
-        private bool DeviceExists(int id)
-        {
-            return _context.Devices.Any(d => d.Id == id);
         }
     }
 }

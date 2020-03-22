@@ -1,16 +1,16 @@
 using System;
-using System.Threading.Tasks;
-using System.Threading;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using DroHub.Areas.DHub.Models;
-using Newtonsoft.Json;
-using DroHub.Data;
 using System.Collections.Generic;
-using DroHub.Areas.DHub.SignalRHubs;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using DroHub.Areas.DHub.Models;
+using DroHub.Areas.DHub.SignalRHubs;
+using DroHub.Data;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace DroHub.Helpers.Thrift
 {
@@ -69,7 +69,12 @@ namespace DroHub.Helpers.Thrift
         }
 
         private async Task BroadcastToSignalR(string t_name, IDroneTelemetry telemetry, DroHubContext context, Device device, CancellationToken token) {
-            var user_list = await context.UserDevices.Where(ud => ud.DeviceId == device.Id).Select(ud => ud.DroHubUser.Id).ToListAsync();
+            var user_list = await context.Subscriptions
+                .Include(u => u.Users)
+                .SelectMany(s => s.Users)
+                .Select(u => u.Id)
+                .ToListAsync(token);
+
             await _hub.Clients.Users(user_list).SendAsync(t_name, JsonConvert.SerializeObject(telemetry), token);
         }
 

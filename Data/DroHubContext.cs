@@ -1,7 +1,8 @@
-using DroHub.Areas.Identity.Data;
 using DroHub.Areas.DHub.Models;
+using DroHub.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+
 namespace DroHub.Data
 {
     public class DroHubContext : IdentityDbContext<DroHubUser>
@@ -23,7 +24,6 @@ namespace DroHub.Data
         public DbSet<DroneFlyingState> DroneFlyingStates { get; set; }
         public DbSet<DroneReply> DroneReplies { get; set; }
         public DbSet<DroneLiveVideoStateResult> DroneVideoStatesResults { get; set; }
-        public DbSet<UserDevice> UserDevices { get; set; }
 
         public DbSet<Subscription> Subscriptions { get; set; }
 
@@ -148,21 +148,12 @@ namespace DroHub.Data
                 .WithOne(p => p.Device)
                 .IsRequired();
 
-            builder.Entity<UserDevice>()
-                .HasKey(ud => new { ud.DeviceId, ud.DroHubUserId });
-
-            builder.Entity<UserDevice>()
-                .HasOne<Device>(ud => ud.Device)
-                .WithMany(d => d.UserDevices)
-                .HasForeignKey(ud => ud.DeviceId);
-
-            builder.Entity<UserDevice>()
-                .HasOne<DroHubUser>(ud => ud.DroHubUser)
-                .WithMany(u => u.UserDevices)
-                .HasForeignKey(ud => ud.DroHubUserId);
-
             builder.Entity<Subscription>()
                 .HasMany(d => d.Users)
+                .WithOne(u => u.Subscription);
+
+            builder.Entity<Subscription>()
+                .HasMany(d => d.Devices)
                 .WithOne(u => u.Subscription);
         }
     }

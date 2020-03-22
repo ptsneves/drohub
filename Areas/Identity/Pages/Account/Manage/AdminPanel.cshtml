@@ -1,13 +1,13 @@
 
 @page
-@using DroHub.Areas.DHub.Models
-@using DroHub.Data
-@using Microsoft.AspNetCore.Authorization
 @inject IAuthorizationService AuthorizationService
 @inject IUserClaimsPrincipalFactory<DroHubUser> UserClaimsPrincipalFactory
 @inject UserManager<DroHubUser> UserManager
 @inject SignInManager<DroHubUser> SignInManager
 @inject DroHubContext DbContext
+@using DroHub.Areas.DHub.Models
+@using DroHub.Data
+@using Microsoft.AspNetCore.Authorization
 @model RegisterModel
 
  <div class="bs-example" data-example-id="hoverable-table" asp-authorize asp-require-claim asp-claim-type="@Subscription.CAN_SEE_OWN_SUBSCRIPTION" asp-claim-value="@Subscription.CLAIM_VALID_VALUE">
@@ -41,8 +41,8 @@
             </td>
           <td>@user.LastLogin</td>
           <td>
-          @foreach(var ud in user.UserDevices) {
-              <p>@ud.Device.SerialNumber</p>
+          @foreach(var d in user.Subscription.Devices) {
+              <p>@d.SerialNumber</p>
           }
           </td>
           <td>

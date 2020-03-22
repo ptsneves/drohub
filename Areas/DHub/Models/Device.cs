@@ -26,7 +26,7 @@ namespace DroHub.Areas.DHub.Models
         public DateTime CreationDate { get; set; }
 
         public string LiveVideoSecret { get; set; }
-        public IList<UserDevice> UserDevices { get; set; }
+        public Subscription Subscription { get; set; }
 
         public ICollection<DronePosition> positions { get; set; }
         public ICollection<DroneBatteryLevel> battery_levels { get; set; }
