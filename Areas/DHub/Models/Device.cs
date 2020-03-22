@@ -1,27 +1,30 @@
-using DroHub.Areas.Identity.Data;
 using System;
-using System.ComponentModel.DataAnnotations;
 using System.Collections.Generic;
-using Newtonsoft.Json;
-
+using System.ComponentModel.DataAnnotations;
 
 namespace DroHub.Areas.DHub.Models
 {
     public class Device
     {
         public int Id { get; set; }
+
         [Required]
         public string Name { get; set; }
+
         [Display(Name = "Serial Number")]
         [Required]
         public string SerialNumber { get; set; }
 
         public string ISO { get; set; }
+
         public string Apperture { get; set; }
+
         [Display(Name = "Focus Mode")]
         public string FocusMode { get; set; }
+
         [Display(Name = "Registration Date")]
         public DateTime CreationDate { get; set; }
+
         public string LiveVideoSecret { get; set; }
         public IList<UserDevice> UserDevices { get; set; }
 
@@ -32,5 +35,10 @@ namespace DroHub.Areas.DHub.Models
         public ICollection<DroneReply> drone_replies { get; set; }
         public ICollection<DroneLiveVideoStateResult> drone_video_states { get; set; }
 
+        public const string CLAIM_VALID_VALUE = "Yes";
+        public const string CAN_MODIFY_CLAIM = "CanModifyDevice";
+        public const string CAN_ADD_CLAIM = "CanAddDevice";
+        public const string CAN_PERFORM_FLIGHT_ACTIONS = "CanPerformFlightActions";
+        public const string CAN_PERFORM_CAMERA_ACTION = "CanPerformCameraActions";
     }
 }

@@ -1,26 +1,22 @@
-using DroHub.Areas.DHub.Models;
-using DroHub.Areas.Identity.Data;
-using Microsoft.AspNetCore.SignalR;
-using DroHub.Areas.DHub.SignalRHubs;
-using DroHub.Data;
-using System.Data.SqlClient;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Microsoft.Extensions.Logging;
+using DroHub.Areas.DHub.Models;
+using DroHub.Areas.DHub.SignalRHubs;
+using DroHub.Areas.Identity.Data;
+using DroHub.Data;
 using DroHub.Helpers;
-using Microsoft.Extensions.Hosting;
 using DroHub.Helpers.Thrift;
-using System.IO;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Text.RegularExpressions;
 
 namespace DroHub.Areas.DHub.Controllers
 {
@@ -425,6 +421,7 @@ namespace DroHub.Areas.DHub.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [ClaimRequirement(Device.CAN_ADD_CLAIM, Device.CLAIM_VALID_VALUE)]
         public async Task<IActionResult> Create([Bind("Id,Name,SerialNumber,CreationDate,ISO,Apperture,FocusMode")]
             Device device)
         {

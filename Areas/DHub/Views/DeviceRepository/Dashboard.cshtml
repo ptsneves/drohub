@@ -43,7 +43,7 @@
         }
         </style>
         <div class="container-fluid" style="padding-bottom: 15px;">
-        <a class="btn btn-primary btn-lg btn-drohub btn-social" data-toggle="ajax-modal" data-reload="true" data-target="#modal-add-device" data-url='@Url.Action("Create", "Devices", new {Area = "DHub"})'>
+        <a class="btn btn-primary btn-lg btn-drohub btn-social" data-toggle="ajax-modal" data-reload="true" asp-require-claim asp-claim-type="@Device.CAN_ADD_CLAIM" asp-claim-value="@Device.CLAIM_VALID_VALUE" data-target="#modal-add-device" data-url='@Url.Action("Create", "Devices", new {Area = "DHub"})'>
             <i class="fa fa-plus"></i>Add New Device
         </a>
         </div>
