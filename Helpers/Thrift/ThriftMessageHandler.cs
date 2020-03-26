@@ -261,38 +261,40 @@ namespace DroHub.Helpers.Thrift
         {
             WebSocketReceiveResult result = null;
             var buffer = new byte[1024 * 4];
-            try
-            {
+            try {
                 while (socket.State != WebSocketState.Closed && socket.State != WebSocketState.Aborted
-                    && !_cancellation_token_src.Token.IsCancellationRequested)
-                {
+                                                             && !_cancellation_token_src.Token
+                                                                 .IsCancellationRequested) {
                     result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), _cancellation_token_src.Token);
-                    if (!_cancellation_token_src.Token.IsCancellationRequested)
-                    {
-                        if (socket.State == WebSocketState.CloseReceived && result.MessageType == WebSocketMessageType.Close)
-                        {
+                    if (!_cancellation_token_src.Token.IsCancellationRequested) {
+                        if (socket.State == WebSocketState.CloseReceived &&
+                            result.MessageType == WebSocketMessageType.Close) {
                             _logger.LogDebug("Acknowledging Close frame received from client");
                             _cancellation_token_src.Cancel();
-                            await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", CancellationToken.None);
+                            await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame",
+                                CancellationToken.None);
                         }
 
-                        if (socket.State == WebSocketState.Open)
-                        {
-                            if (result.MessageType == WebSocketMessageType.Binary)
-                            {
+                        if (socket.State == WebSocketState.Open) {
+                            if (result.MessageType == WebSocketMessageType.Binary) {
                                 populateInputStreams(buffer, 0, result.Count);
                             }
                         }
                     }
                 }
-                await socket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
+
+                await socket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription,
+                    CancellationToken.None);
+            }
+            catch (Exception) {
+                ;
             }
             finally
             {
                 if (!_cancellation_token_src.IsCancellationRequested)
                     _cancellation_token_src.Cancel();
                 _logger.LogDebug($"Finished processing received loop in state {socket.State}");
-           }
+            }
         }
     }
 }
