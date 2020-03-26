@@ -53,8 +53,11 @@ namespace DroHub.Tests.TestInfrastructure
             foreach (var telemetry_item in TelemetryItems)
             {
                 Type telemetry_type = telemetry_item.Key;
-                MethodInfo get_device_telemetry = typeof(HttpClientHelper).GetMethod("getDeviceTelemetry").MakeGenericMethod(telemetry_type);
-                dynamic awaitable = get_device_telemetry.Invoke(null, new object[] { fixture, _device_serial, _user_name, _password, 1, 10 });
+                MethodInfo get_device_telemetry = typeof(HttpClientHelper).GetMethod("getDeviceTelemetry")
+                    .MakeGenericMethod(telemetry_type);
+                dynamic awaitable = get_device_telemetry
+                    .Invoke(null, new object[] { fixture, _device_serial, _user_name, _password, 1, 10 });
+
                 await awaitable;
                 dynamic result_list = awaitable.GetAwaiter().GetResult();
                 ((IEnumerable)result_list).Cast<dynamic>().Single(s => s.Timestamp == telemetry_item.Value.Telemetry.Timestamp);
@@ -96,11 +99,13 @@ namespace DroHub.Tests.TestInfrastructure
 
         public async Task WaitForServer() {
             var tasks = TelemetryItems.Select(item => ((TelemetryMock.BaseTelemetryItem)item.Value).TaskSource.Task);
-            await Task.WhenAny(Task.WhenAll(tasks), Task.Delay(4000));
+            await Task.WhenAny(Task.WhenAll(tasks), Task.Delay(10000));
         }
 
         private HubConnection _connection;
-        public async Task startMock(DroHubFixture fixture, string hub_uri, string user, string password, bool create_user = false, bool create_device = false)
+        public async Task startMock(DroHubFixture fixture, string user, string password, string organization_name,
+            string user_base_type, int allowed_flight_time_minutes, int allowed_user_count, string hub_uri,
+            bool create_user = false, bool create_device = false)
         {
             _fixture = fixture;
             _user_name = user;
@@ -108,7 +113,9 @@ namespace DroHub.Tests.TestInfrastructure
 
             if (create_device)
             {
-                http_helper = await HttpClientHelper.createDevice(_fixture, _device_serial, _device_serial, user, password, create_user);
+                http_helper = await HttpClientHelper.createDevice(_fixture, user,
+                    password, organization_name, user_base_type, allowed_flight_time_minutes, allowed_user_count,
+                    _device_serial, _device_serial, create_user);
                 must_delete_device = true;
                 must_delete_user = create_user;
             }
@@ -118,9 +125,9 @@ namespace DroHub.Tests.TestInfrastructure
             }
 
             _connection = new HubConnectionBuilder()
-                .WithUrl(new Uri("ws://localhost:5000/telemetryhub"), options => { options.Cookies.Add(http_helper.loginCookie); })
+                .WithUrl(new Uri(hub_uri), options => { options.Cookies.Add(http_helper.loginCookie); })
                 .Build();
-            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             TelemetryItems = new Dictionary<Type, TelemetryItem<IDroneTelemetry>>();
 
             AddTelemetryItem<DronePosition>(

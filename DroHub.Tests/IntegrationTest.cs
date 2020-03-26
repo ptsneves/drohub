@@ -25,29 +25,38 @@ namespace DroHub.Tests
                     http_helper.Response.RequestMessage.RequestUri);
         }
 
-        [InlineData("admin", null, false)]
-        [InlineData("admin", "1", true, false)]
-        [InlineData("guest@drohub.xyz", "1234567", false, true, false, false)]
-        [InlineData("guest", "1", true, true, true, true)] //The create does not fail but the user is actually not created thus login and delete fail
+        private async Task testLogin(string user, string password, bool expect_login_fail) {
+            if (expect_login_fail)
+                await Assert.ThrowsAsync<System.InvalidProgramException>(async () => (await HttpClientHelper.createLoggedInUser(_fixture, user, password)).Dispose());
+            else
+                using (var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, user, password)) { }
+        }
+
+        [InlineData(null, false)]
+        [InlineData("1", true)]
         [Theory]
-        public async void TestUserCreateAndLogin(string user, string password, bool expect_login_fail, bool create =false,
+        public async void TestAdminAccount(string password, bool expect_login_fail) {
+            await testLogin("admin", password ?? _fixture.AdminPassword, expect_login_fail);
+        }
+
+        [InlineData("guest@drohub.xyz", "1234567", "UN", "ActingGuest", 10, 3, false, true, false, false)]
+        [InlineData("guest", "1" , "UN", "ActingGuest", 10, 3, true, true, true, true)]
+        [Theory]
+        public async void TestUserCreateAndLogin(string user, string password, string organization, string user_base_type,
+            int allowed_flight_time_minutes, int allowed_user_count, bool expect_login_fail, bool create =false,
                 bool expect_create_fail = false, bool expect_delete_fail = false)
         {
             if(create) {
                 if (!expect_create_fail)
-                    using (var http_client_helper = await HttpClientHelper.addUser(_fixture, user, password)) { }
+                    using (var http_client_helper = await HttpClientHelper.addUser(_fixture, user, password,
+                        organization, user_base_type, allowed_flight_time_minutes, allowed_user_count)) { }
                 else
-                    await Assert.ThrowsAsync<System.InvalidOperationException>(async () => (await HttpClientHelper.addUser(_fixture, user, password)).Dispose());
+                    await Assert.ThrowsAsync<System.InvalidOperationException>(async () =>
+                        (await HttpClientHelper.addUser(_fixture, user, password,
+                            organization, user_base_type, allowed_flight_time_minutes, allowed_user_count)).Dispose());
             }
-            try
-            {
-                if (password == null)
-                    password = _fixture.AdminPassword;
-
-                if (expect_login_fail)
-                    await Assert.ThrowsAsync<System.InvalidProgramException>(async () => (await HttpClientHelper.createLoggedInUser(_fixture, user, password)).Dispose());
-                else
-                    using (var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, user, password)) { }
+            try {
+                await testLogin(user, password, expect_login_fail);
             }
             finally {
                 if (create)
@@ -77,19 +86,26 @@ namespace DroHub.Tests
             }
         }
 
-        [InlineData(true, "MyAnafi", "000000")]
-        [InlineData(false, "MyAnafi", null)]
-        [InlineData(false, null, null)]
-        [InlineData(false, null, "000000")]
+        [InlineData("admin", null, "MyAnafi", "000000", null, null, null, null, true)]
+        [InlineData("admin", null, "MyAnafi", null, null, null, null, null, false)]
+        [InlineData("admin", null, null, null, null, null, null, null, false)]
+        [InlineData("admin", null, null, "000000",  null, null, null, null, false)]
         [Theory]
-        public async void TestCreateAndDeleteDevice(bool expect_created, string device_name, string device_serial)
-        {
+        public async void TestCreateAndDeleteDevice(string user, string password,
+            string device_name, string device_serial, string organization, string user_base_type,
+            int allowed_flight_time_minutes, int allowed_user_count, bool expect_created) {
+
+            if (password == null)
+                password = _fixture.AdminPassword;
+
             try
             {
                 if (expect_created)
                 {
-                    using (var helper = await HttpClientHelper.createDevice(_fixture, device_name, device_serial, "admin", _fixture.AdminPassword)) { }
-                    var devices_list = await HttpClientHelper.getDeviceList(_fixture, "admin", _fixture.AdminPassword);
+                    using (var helper = await HttpClientHelper.createDevice(_fixture, user, password,
+                        organization, user_base_type, allowed_flight_time_minutes, allowed_user_count, device_name,
+                        device_serial, false)) { }
+                    var devices_list = await HttpClientHelper.getDeviceList(_fixture, user, password);
                     Assert.NotNull(devices_list);
                     devices_list.Single(d => d.serialNumber == device_serial);
                 }
@@ -97,21 +113,23 @@ namespace DroHub.Tests
                 {
                     await Assert.ThrowsAsync<System.InvalidOperationException>(async () =>
                     {
-                        using (var helper = await HttpClientHelper.createDevice(_fixture, device_name, device_serial, "admin", _fixture.AdminPassword)) { }
+                        using (var helper = await HttpClientHelper.createDevice(_fixture, user, password,
+                            organization, user_base_type, allowed_flight_time_minutes, allowed_user_count, device_name,
+                            device_serial, false)) { }
                     });
-                    Assert.Null(await HttpClientHelper.getDeviceList(_fixture, "admin", _fixture.AdminPassword));
+                    Assert.Null(await HttpClientHelper.getDeviceList(_fixture, user, password));
                 }
             }
             finally {
                 if (expect_created)
-                    (await HttpClientHelper.deleteDevice(_fixture, device_serial, "admin", _fixture.AdminPassword)).Dispose();
+                    (await HttpClientHelper.deleteDevice(_fixture, device_serial, user, password)).Dispose();
                 else
                 {
                     if (device_serial != null && device_name != null)
-                        (await HttpClientHelper.deleteDevice(_fixture, device_serial, "admin", _fixture.AdminPassword)).Dispose();
+                        (await HttpClientHelper.deleteDevice(_fixture, device_serial, user, password)).Dispose();
                 }
 
-                var devices_list = await HttpClientHelper.getDeviceList(_fixture,  "admin", _fixture.AdminPassword);
+                var devices_list = await HttpClientHelper.getDeviceList(_fixture,  user, password);
                     Assert.ThrowsAny<ArgumentNullException>(() => devices_list.First(d => d.serialNumber == device_serial));
             }
         }
@@ -125,23 +143,29 @@ namespace DroHub.Tests
             }
         }
 
-        [InlineData("ASerial", false, true)]
-        [InlineData(null, true, false)]
+        [InlineData("admin", null, "ASerial", "AName", null, null, null, null, false, true)]
+        [InlineData("admin", null, null, "AName", null, null, null, null, true, false)]
         [Theory]
-        public async void TestWebSocketConnection(string serial_field, bool expect_throw, bool create_delete_device)
+        public async void TestWebSocketConnection(string user, string password,
+            string device_serial, string device_name, string organization, string user_base_type,
+            int allowed_flight_time_minutes, int allowed_user_count, bool expect_throw, bool create_delete_device)
         {
+            if (password == null)
+                password = _fixture.AdminPassword;
+
             if (create_delete_device)
             {
-                using (var helper = await HttpClientHelper.createDevice(_fixture, "SomeName", serial_field, "admin", _fixture.AdminPassword)){ }
+                using (var helper = await HttpClientHelper.createDevice(_fixture, user, password, organization, user_base_type,
+                    allowed_flight_time_minutes, allowed_user_count, device_name, device_serial)){ }
             }
             try
             {
                 using (var ws_transport = new TWebSocketClient(_fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text))
                 {
                     ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
-                    if (serial_field != null)
+                    if (device_serial != null)
                     {
-                        ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", serial_field);
+                        ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
                         ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", "admin");
                         ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-password", _fixture.AdminPassword);
                     }
@@ -155,12 +179,12 @@ namespace DroHub.Tests
             {
                 if (create_delete_device)
                 {
-                    (await HttpClientHelper.deleteDevice(_fixture, serial_field, "admin", _fixture.AdminPassword)).Dispose();
+                    (await HttpClientHelper.deleteDevice(_fixture, device_serial, user, password)).Dispose();
                 }
             }
         }
 
-        [InlineData("ThriftSerial1", "mysuser@drohub.com", "pass12345", true, 4, false)]
+        [InlineData("ThriftSerial1", "mysuser@drohub.com", "pass12345", true, 1, false)]
         [Theory]
         public async void TestThriftDrone(string device_serial, string user, string password,
                 bool create_users, int concurrent_devices, bool single_user_multiple_devices)
@@ -170,15 +194,13 @@ namespace DroHub.Tests
             var users = new List<string>();
             for (var i = 0; i < concurrent_devices; i++) {
                 telemetry_mocks.Add(new TelemetryMock($"{device_serial}_{i}"));
-                if (single_user_multiple_devices)
-                    users.Add(user);
-                else
-                    users.Add($"{user}{i}");
+                users.Add(single_user_multiple_devices ? user : $"{user}{i}");
 
-                await telemetry_mocks[i].startMock(_fixture, "ws://localhost:5000/telemetryhub", users[i], password, create_users, true);
+                await telemetry_mocks[i].startMock(_fixture, users[i], password, "org",
+                    "ActingPilot", 3, 3,
+                    "ws://localhost:5000/telemetryhub", create_users, true );
 
                 drone_rpcs.Add(new DroneRPC(telemetry_mocks[i]));
-
             }
             try
             {

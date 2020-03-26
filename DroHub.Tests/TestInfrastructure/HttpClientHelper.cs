@@ -4,6 +4,7 @@ using System.Net;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using DroHub.Areas.Identity.Data;
 
 namespace DroHub.Tests.TestInfrastructure
 {
@@ -26,22 +27,29 @@ namespace DroHub.Tests.TestInfrastructure
             Client = new HttpClient(handlerHttp);
         }
 
-        public static async ValueTask<HttpClientHelper> addUser(DroHubFixture test_fixture, string user_email, string user_password) {
+        private static void setIfNotNull(Dictionary<string, string> d, string key, string value) {
+            if (value != null)
+                d[key] = value;
+        }
+
+        public static async ValueTask<HttpClientHelper> addUser(DroHubFixture test_fixture, string user_email, string user_password,
+            string organization, string user_base_type, int allowed_flight_time_minutes, int allowed_user_count) {
             var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, "admin", test_fixture.AdminPassword);
-            var content = await http_helper.Response.Content.ReadAsStringAsync();
+            await http_helper.Response.Content.ReadAsStringAsync();
             var create_user_url = new Uri(test_fixture.SiteUri, "Identity/Account/Manage/AdminPanel");
             using (var create_page_response = await http_helper.Client.GetAsync(create_user_url))
             {
                 create_page_response.EnsureSuccessStatusCode();
                 var verification_token = DroHubFixture.getVerificationToken(await create_page_response.Content.ReadAsStringAsync());
                 var data_dic = new Dictionary<string, string>();
-                if (user_email != null)
-                    data_dic["Email"] = user_email;
-                if (user_password != null)
-                {
-                    data_dic["Password"] = user_password;
-                    data_dic["ConfirmPassword"] = user_password;
-                }
+                setIfNotNull(data_dic, "Email", user_email);
+                setIfNotNull(data_dic, "Password", user_password);
+                setIfNotNull(data_dic, "ConfirmPassword", user_password);
+                setIfNotNull(data_dic, "ActingType", user_base_type);
+                setIfNotNull(data_dic, "OrganizationName", organization);
+                setIfNotNull(data_dic, "AllowedFlightTime", allowed_flight_time_minutes.ToString());
+                setIfNotNull(data_dic, "AllowedUserCount", allowed_user_count.ToString());
+
                 data_dic["__RequestVerificationToken"] = verification_token;
                 var urlenc = new FormUrlEncodedContent(data_dic);
                 http_helper.Response?.Dispose();
@@ -55,18 +63,14 @@ namespace DroHub.Tests.TestInfrastructure
         }
 
         public static async ValueTask<HttpClientHelper> deleteUser(DroHubFixture test_fixture, string user_email, string user_password) {
-            var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user_email, user_password);
-            var content = await http_helper.Response.Content.ReadAsStringAsync();
+            var http_helper = await createLoggedInUser(test_fixture, user_email, user_password);
             var create_device_url = new Uri(test_fixture.SiteUri, "Identity/Account/Manage/DeletePersonalData");
             using (var create_page_response = await http_helper.Client.GetAsync(create_device_url))
             {
                 create_page_response.EnsureSuccessStatusCode();
                 var verification_token = DroHubFixture.getVerificationToken(await create_page_response.Content.ReadAsStringAsync());
                 var data_dic = new Dictionary<string, string>();
-                if (user_password != null)
-                {
-                    data_dic["Password"] = user_password;
-                }
+                setIfNotNull(data_dic, "Password", user_password);
                 data_dic["__RequestVerificationToken"] = verification_token;
                 var urlenc = new FormUrlEncodedContent(data_dic);
                 http_helper.Response?.Dispose();
@@ -115,10 +119,13 @@ namespace DroHub.Tests.TestInfrastructure
             }
         }
 
-        public static async ValueTask<HttpClientHelper> createDevice(DroHubFixture test_fixture, string device_name, string device_serial, string user, string password, bool create_user = false) {
+        public static async ValueTask<HttpClientHelper> createDevice(DroHubFixture test_fixture, string user, string password,
+            string organization, string user_base_type, int allowed_flight_time_minutes, int allowed_user_count,
+            string device_name, string device_serial, bool create_user = false) {
             HttpClientHelper http_helper;
             if (create_user)
-                (await HttpClientHelper.addUser(test_fixture, user, password)).Dispose();
+                (await addUser(test_fixture, user, password, organization, user_base_type,
+                    allowed_flight_time_minutes, allowed_user_count)).Dispose();
             http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user, password);
 
             var content = await http_helper.Response.Content.ReadAsStringAsync();
