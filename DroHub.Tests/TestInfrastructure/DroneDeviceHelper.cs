@@ -147,7 +147,10 @@ namespace DroHub.Tests.TestInfrastructure
         {
             if (must_delete_device)
                 (await HttpClientHelper.deleteDevice(_fixture, _device_serial, _user_name, _password)).Dispose();
+            if (must_delete_user)
+                (await HttpClientHelper.deleteUser(_fixture, _user_name, _password)).Dispose();
         }
+
         public Dictionary<Type, TelemetryItem<IDroneTelemetry>> TelemetryItems { get; private set; }
         private string _device_serial;
         public string SerialNumber {get { return _device_serial; } }
