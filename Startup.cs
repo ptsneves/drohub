@@ -1,25 +1,18 @@
+using System;
+using System.Net;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.DHub.SignalRHubs;
 using DroHub.Data;
+using DroHub.Helpers;
+using DroHub.Helpers.Thrift;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
-using System;
-using System.Net;
-
-using DroHub.Helpers;
-using DroHub.Helpers.Thrift;
-using Microsoft.AspNetCore.HttpOverrides;
-
-using Thrift.Protocol;
-using Thrift.Server;
-using Thrift.Transport;
-using Thrift.Transport.Server;
 
 namespace DroHub
 {
