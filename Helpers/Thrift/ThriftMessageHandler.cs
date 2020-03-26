@@ -1,20 +1,20 @@
-using System.Threading.Tasks;
-using System.Threading;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
-using System;
-using System.Linq;
-using Microsoft.Extensions.Logging;
+using System.Threading;
+using System.Threading.Tasks;
+using DroHub.Areas.Identity.Data;
 using Microsoft.AspNetCore.Http;
-using System.IO;
-using System.Collections.Generic;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
+using Thrift;
+using Thrift.Protocol;
 using Thrift.Transport;
 using Thrift.Transport.Client;
-using Thrift.Protocol;
-using Thrift;
-using Microsoft.AspNetCore.Identity;
-using DroHub.Areas.Identity.Data;
 
 namespace DroHub.Helpers.Thrift
 {
@@ -158,13 +158,6 @@ namespace DroHub.Helpers.Thrift
                 return;
             }
 
-            // if (context.Request.ContentType != "application/x-thrift")
-            // {
-            //     _logger.LogInformation("Got a non thrift message");
-            //     context.Response.StatusCode = 400;
-            //     return;
-            // }
-
             if (context.Request.Headers["x-device-expected-serial"] == StringValues.Empty)
             {
                 _logger.LogInformation("Peer did not provide a serial");
@@ -178,9 +171,7 @@ namespace DroHub.Helpers.Thrift
                 return;
             }
             else {
-                // _signin_manager.
                 var result = await _signin_manager.PasswordSignInAsync(context.Request.Headers["x-drohub-user"],
-                // _signin_manager.
                 context.Request.Headers["x-drohub-password"], false, lockoutOnFailure: true);
                 if (!result.Succeeded) {
                     _logger.LogInformation($"Failed authentication for {context.Request.Headers["x-drohub-user"]} {context.Request.Headers["x-drohub-password"]}");
@@ -236,7 +227,7 @@ namespace DroHub.Helpers.Thrift
         {
             if (!_is_disposed && disposing)
             {
-               
+
             }
             _is_disposed = true;
         }
