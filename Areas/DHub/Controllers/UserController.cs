@@ -1,11 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using DroHub.Areas.Identity.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 
 namespace DroHub.Areas.DHub.Controllers
 {
@@ -34,12 +34,9 @@ namespace DroHub.Areas.DHub.Controllers
 
         [AllowAnonymous]
         [HttpPost]
-        
+
     public async Task<IActionResult> Authenticate([FromBody]InputModel input)
         {
-            // This doesn't count login failures towards account lockout
-            // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-            Console.WriteLine("he.");
             var result = await _signin_manager.PasswordSignInAsync(input.UserName, input.Password, false, lockoutOnFailure: true);
             var response = new Dictionary<string, string>();
             if (result.Succeeded)
