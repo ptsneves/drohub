@@ -59,23 +59,20 @@ namespace DroHub.Helpers.Thrift
             return result;
         }
 
-        private async Task RecordTelemetry(IDroneTelemetry telemetry_data, DroHubContext context, CancellationToken token)
+        private async Task RecordTelemetry(IDroneTelemetry telemetry_data, DroHubContext context)
         {
-            if (token.IsCancellationRequested)
-                return;
-
             context.Add(telemetry_data);
             await context.SaveChangesAsync();
         }
 
-        private async Task BroadcastToSignalR(string t_name, IDroneTelemetry telemetry, DroHubContext context, Device device, CancellationToken token) {
+        private async Task BroadcastToSignalR(string t_name, IDroneTelemetry telemetry, DroHubContext context) {
             var user_list = await context.Subscriptions
                 .Include(u => u.Users)
                 .SelectMany(s => s.Users)
                 .Select(u => u.Id)
-                .ToListAsync(token);
+                .ToListAsync();
 
-            await _hub.Clients.Users(user_list).SendAsync(t_name, JsonConvert.SerializeObject(telemetry), token);
+            await _hub.Clients.Users(user_list).SendAsync(t_name, JsonConvert.SerializeObject(telemetry));
         }
 
         protected delegate Task<T> DeviceActionDelegate<T>(Drone.Client client,
@@ -104,20 +101,17 @@ namespace DroHub.Helpers.Thrift
                 using (var client = handler.getClient<Drone.Client>(_logger))
                 {
                     T telemetry = await del(client.Client, token);
-                    if (!token.IsCancellationRequested)
-                    {
-                        using (var scope = _services.CreateScope()) {
-                            var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
-                            var device = await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == telemetry.Serial, token);
-                            if (device == null || token.IsCancellationRequested)
-                            {
-                                _logger.LogDebug("Not saving received telemetry for unregistered device {serial}", telemetry.Serial);
-                                return;
-                            }
-                            _logger.LogDebug($"received {t_name} {telemetry}", telemetry);
-                            await BroadcastToSignalR(t_name, telemetry, context, device, token);
-                            await RecordTelemetry(telemetry, context, token);
+                    using (var scope = _services.CreateScope()) {
+                        var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
+                        var device = await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == telemetry.Serial, token);
+                        if (device == null || token.IsCancellationRequested)
+                        {
+                            _logger.LogDebug("Not saving received telemetry for unregistered device {serial}", telemetry.Serial);
+                            return;
                         }
+                        _logger.LogWarning($"received {t_name} {telemetry}", telemetry);
+                        await BroadcastToSignalR(t_name, telemetry, context);
+                        await RecordTelemetry(telemetry, context);
                     }
                 }
             }
