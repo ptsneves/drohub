@@ -430,16 +430,29 @@ namespace DroHub.Areas.DHub.Controllers
             Device device_to_operate = null;
             if (exists)
             {
-                device_to_operate = _context.Devices.Single(d => d.SerialNumber == device.SerialNumber);
+                device_to_operate = await _context.Devices
+                    .Include(d => d.Subscription)
+                    .SingleAsync(d => d.SerialNumber == device.SerialNumber);
+
+                var user = await DroHubUserLinqExtensions
+                    .getCurrentUserWithSubscription(_user_manager, User)
+                    .SingleAsync();
+
+                if (device_to_operate.Subscription.OrganizationName == user.Subscription.OrganizationName)
+                    return await Edit(device_to_operate);
+
+                ModelState.AddModelError("",
+                    "Device already exists in another subscription. Contact support");
+
+                return Ok();
             }
-            else {
-                device.CreationDate = DateTime.Now;
-                device.ISO = DefaultIso;
-                device.Apperture = DefaultApperture;
-                device.FocusMode = DefaultFocusMode;
-                device_to_operate = device;
-                _context.Add(device_to_operate);
-            }
+
+            device.CreationDate = DateTime.Now;
+            device.ISO = DefaultIso;
+            device.Apperture = DefaultApperture;
+            device.FocusMode = DefaultFocusMode;
+            device_to_operate = device;
+            _context.Add(device_to_operate);
             return await Edit(device_to_operate);
         }
 
