@@ -195,7 +195,7 @@ nat: {
 	# to enforce. This is especially useful if the server hosting the gateway
 	# has several interfaces, and you only want a subset to be used. Any of
 	# the following examples are valid:
-	     ice_enforce_list = "wg1"
+	     ice_enforce_list = "wg1,wlan0"
 	#     ice_enforce_list = "eth0,eth1"
 	#     ice_enforce_list = "eth0,192.168."
 	#     ice_enforce_list = "eth0,192.168.0.1"
