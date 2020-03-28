@@ -35,11 +35,7 @@ namespace DroHub.Areas.DHub.Controllers
         }
         #endregion
 
-        private async Task<Device> getDeviceById(int? id) {
-            return await DevicesController.getDeviceById(_user_manager, User, id);
-        }
-
-        public async Task<IActionResult> Index(int? id)
+        public async Task<IActionResult> Index()
         {
             return await Dashboard();
         }
