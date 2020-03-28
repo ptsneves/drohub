@@ -117,36 +117,42 @@ namespace DroHub.Tests
             }
         }
 
-        [InlineData("admin", null, "MyAnafi", "000000", null, null, null, null, true)]
-        [InlineData("admin", null, "MyAnafi", null, null, null, null, null, false)]
-        [InlineData("admin", null, null, null, null, null, null, null, false)]
-        [InlineData("admin", null, null, "000000",  null, null, null, null, false)]
+        [InlineData("admin", null, null, "MyAnafi", "000000", true)]
+        [InlineData("admin", null, null, "MyAnafi", null, false)]
+        [InlineData("admin", null, null, null, null, false)]
+        [InlineData("admin", null, null, null, "000000", false)]
         [Theory]
-        public async void TestCreateAndDeleteDevice(string user, string password,
-            string device_name, string device_serial, string organization, string user_base_type,
-            int allowed_flight_time_minutes, int allowed_user_count, bool expect_created) {
+        public async void TestCreateAndDeleteDevice(string user, string password, string user_base_type,
+            string device_name, string device_serial, bool expect_created) {
 
-            if (password == null)
+            var create_user = true;
+            const string ORGANIZATION = "UN";
+            const int ALLOWED_FLIGHT_TIME_MINUTES = 10;
+            const int ALLOWED_USER_COUNT = 10;
+
+            if (password == null) {
                 password = _fixture.AdminPassword;
+                create_user = false;
+            }
 
             try
             {
                 if (expect_created)
                 {
                     using (var helper = await HttpClientHelper.createDevice(_fixture, user, password,
-                        organization, user_base_type, allowed_flight_time_minutes, allowed_user_count, device_name,
-                        device_serial, false)) { }
+                        ORGANIZATION, user_base_type, ALLOWED_FLIGHT_TIME_MINUTES, ALLOWED_USER_COUNT, device_name,
+                        device_serial, create_user)) { }
                     var devices_list = await HttpClientHelper.getDeviceList(_fixture, user, password);
                     Assert.NotNull(devices_list);
                     devices_list.Single(d => d.serialNumber == device_serial);
                 }
                 else
                 {
-                    await Assert.ThrowsAsync<System.InvalidOperationException>(async () =>
+                    await Assert.ThrowsAsync<InvalidOperationException>(async () =>
                     {
                         using (var helper = await HttpClientHelper.createDevice(_fixture, user, password,
-                            organization, user_base_type, allowed_flight_time_minutes, allowed_user_count, device_name,
-                            device_serial, false)) { }
+                            ORGANIZATION, user_base_type, ALLOWED_FLIGHT_TIME_MINUTES, ALLOWED_USER_COUNT, device_name,
+                            device_serial, create_user)) { }
                     });
                     Assert.Null(await HttpClientHelper.getDeviceList(_fixture, user, password));
                 }
@@ -162,6 +168,10 @@ namespace DroHub.Tests
 
                 var devices_list = await HttpClientHelper.getDeviceList(_fixture,  user, password);
                     Assert.ThrowsAny<ArgumentNullException>(() => devices_list.First(d => d.serialNumber == device_serial));
+
+                if (create_user)
+                    (await HttpClientHelper.deleteDevice(_fixture, device_serial, user, password)).Dispose();
+
             }
         }
 
