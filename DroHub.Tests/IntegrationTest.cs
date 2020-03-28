@@ -117,20 +117,22 @@ namespace DroHub.Tests
             }
         }
 
-        [InlineData("admin", null, null, "MyAnafi", "000000", true)]
-        [InlineData("admin", null, null, "MyAnafi", null, false)]
-        [InlineData("admin", null, null, null, null, false)]
-        [InlineData("admin", null, null, null, "000000", false)]
+        [InlineData("admin", null, "MyAnafi", "000000", true)]
+        [InlineData("admin", null, "MyAnafi", null, false)]
+        [InlineData("admin", null, null, null, false)]
+        [InlineData("admin", null, null, "000000", false)]
         [Theory]
-        public async void TestCreateAndDeleteDevice(string user, string password, string user_base_type,
+        public async void TestCreateAndDeleteDevice(string user, string user_base_type,
             string device_name, string device_serial, bool expect_created) {
 
             var create_user = true;
+
             const string ORGANIZATION = "UN";
             const int ALLOWED_FLIGHT_TIME_MINUTES = 10;
             const int ALLOWED_USER_COUNT = 10;
+            var password = "default";
 
-            if (password == null) {
+            if (user == "admin") {
                 password = _fixture.AdminPassword;
                 create_user = false;
             }
