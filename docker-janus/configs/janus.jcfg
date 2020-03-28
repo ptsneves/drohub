@@ -150,8 +150,8 @@ media: {
 # be used for gathering candidates, and enable or disable the
 # internal libnice debugging, if needed.
 nat: {
-	stun_server = "eu-turn5.xirsys.com"
-	stun_port = 3478
+	stun_server = "w1.xirsys.com"
+	stun_port = 80
 	#nice_debug = true
 	#full_trickle = true
 	#ice_lite = true
@@ -171,7 +171,7 @@ nat: {
 	# statically configured TURN server, and thus provide the address of the
 	# TURN server, the transport (udp/tcp/tls) to use, and a set of valid
 	# credentials to authenticate...
-	turn_server = "eu-turn5.xirsys.com"
+	turn_server = "w1.xirsys.com"
 	turn_port = 80
 	turn_type = "udp"
 	turn_user = "XXXXX"
