@@ -4,7 +4,6 @@ using System.Net;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using DroHub.Areas.Identity.Data;
 
 namespace DroHub.Tests.TestInfrastructure
 {
@@ -193,6 +192,54 @@ namespace DroHub.Tests.TestInfrastructure
                 http_helper.Response = await http_helper.Client.PostAsync(create_device_url, urlenc);
                 return Newtonsoft.Json.JsonConvert.DeserializeObject<List<List<T>>>(await http_helper.Response.Content.ReadAsStringAsync()).First();
             }
+        }
+
+        private static async ValueTask<Dictionary<string, string>> runJsonQuery(DroHubFixture test_fixture, Uri uri,
+            Dictionary<string, string> form) {
+
+            var http_helper = await createHttpClient(test_fixture);
+
+            http_helper.Response.Dispose();
+            http_helper.Response = await http_helper.Client.PostAsJsonAsync(uri, form);
+            http_helper.Response.EnsureSuccessStatusCode();
+            var res = await http_helper.Response.Content.ReadAsStringAsync();
+            if (http_helper.Response.RequestMessage.RequestUri == uri) {
+                return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,string>>(res);
+            }
+
+            throw new InvalidProgramException($"Unexpected Redirect... ");
+        }
+
+        public static async ValueTask<Dictionary<string, string>> getApplicationToken(DroHubFixture test_fixture, string user_name,
+            string password) {
+            var auth_token_uri = new Uri(test_fixture.SiteUri, "api/User/GetApplicationToken");
+            var content_to_send = new Dictionary<string,string>()
+            {
+                {"UserName", user_name},
+                {"Password", password}
+            };
+            return await runJsonQuery(test_fixture, auth_token_uri, content_to_send);
+        }
+
+        public static async ValueTask<Dictionary<string, string>> authenticateToken(DroHubFixture test_fixture,
+            string user_name, string token) {
+            var auth_token_uri = new Uri(test_fixture.SiteUri, "api/User/AuthenticateToken");
+            var http_helper = await createHttpClient(test_fixture);
+            var content_to_send = new Dictionary<string,string>()
+            {
+                {"UserName", user_name},
+                {"Token", token}
+            };
+
+            http_helper.Response.Dispose();
+            http_helper.Response = await http_helper.Client.PostAsJsonAsync(auth_token_uri, content_to_send);
+            http_helper.Response.EnsureSuccessStatusCode();
+            var res = await http_helper.Response.Content.ReadAsStringAsync();
+            if (http_helper.Response.RequestMessage.RequestUri == auth_token_uri) {
+                return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,string>>(res);
+            }
+
+            throw new InvalidProgramException($"Token creation failed." );
         }
 
         protected virtual void Dispose(bool disposing)

@@ -1,6 +1,5 @@
 package com.drohub;
 
-import android.accounts.Account;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -8,8 +7,6 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -27,9 +24,9 @@ import com.parrot.drone.groundsdk.device.Drone;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-
-public class MainActivity extends GroundSdkActivityBase implements AdapterView.OnItemClickListener {
+public class MainActivity extends GroundSdkActivityBase {
+    public static final String USER_EMAIL_STORE_KEY = "USER_NAME";
+    public static final String USER_AUTH_TOKEN_STORE_KEY = "USER_AUTH_TOKEN";
     private static String TAG = "MainActivity";
     private static final String ACCOUNTS = "com.drohub.accounts";
     private SharedPreferences _saved_accounts;
@@ -42,36 +39,40 @@ public class MainActivity extends GroundSdkActivityBase implements AdapterView.O
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initializeVolley();
         _saved_accounts = getSharedPreferences(ACCOUNTS, MODE_PRIVATE);
-        if (_saved_accounts != null) {
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                    android.R.layout.select_dialog_item, new ArrayList<>(_saved_accounts.getAll().keySet()));
-            AutoCompleteTextView email_ctrl = findViewById(R.id.email_input);
-            email_ctrl.setThreshold(1);
-            email_ctrl.setAdapter(adapter);
-            email_ctrl.setOnItemClickListener(this);
-        }
+        if (_saved_accounts == null)
+            return;
 
-        _connected_drone = null;
-        _volley_network = null;
-        _volley_cache = null;
-        _request_queue = null;
+        user_auth_token = _saved_accounts.getString(USER_AUTH_TOKEN_STORE_KEY, null);
+        user_email = _saved_accounts.getString(USER_EMAIL_STORE_KEY, null);
+        if (user_auth_token != null && user_email != null) {
+            validateAndLaunchIfPossible();
+        }
+    }
+
+    private void initializeVolley() {
+            _volley_cache = new DiskBasedCache(getCacheDir(), 1024); // 1kB cap
+            _volley_network = new BasicNetwork(new HurlStack());
+            _request_queue = new RequestQueue(_volley_cache, _volley_network);
+            _request_queue.start();
     }
 
     private void launchCopterHudActivity() {
+        if (_connected_drone == null || user_email == null || user_auth_token == null)
+            return;
+
         Intent intent = new Intent(this, CopterHudActivity.class);
         intent.putExtra(EXTRA_DEVICE_UID, _connected_drone.getUid());
         intent.putExtra(EXTRA_USER_EMAIL, user_email);
-        intent.putExtra(EXTRA_USER_PASSWORD, password);
+        intent.putExtra(EXTRA_USER_AUTH_TOKEN, user_auth_token);
         this.startActivity(intent);
     }
 
     @Override
     protected void onDroneConnected(Drone drone) {
         _connected_drone = drone;
-        if (password != null && user_email != null) {
-            launchCopterHudActivity();
-        }
+        validateAndLaunchIfPossible(); //racing with GUI validateAndLaunch
     }
 
     @Override
@@ -97,69 +98,87 @@ public class MainActivity extends GroundSdkActivityBase implements AdapterView.O
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
-    public void tryPilotLogin(View view) throws JSONException {
-        if (_volley_cache == null) {
-            _volley_cache = new DiskBasedCache(getCacheDir(), 1024); // 1kB cap
-        }
-        if (_volley_network == null) {
-            _volley_network = new BasicNetwork(new HurlStack());
-        }
+    private void validateAndLaunchIfPossible() {
+        String url = getString(R.string.drohub_url) + "/api/User/AuthenticateToken";
+        JSONObject request = new JSONObject();
+        try {
+            request.put("UserName", user_email);
+            request.put("Token", user_auth_token);
+            setLoginStatusText("Validating token", Color.BLACK);
+            JsonObjectRequest token_validation_request = new JsonObjectRequest(Request.Method.POST,
+                    url, request, response -> {
+                try {
+                    if (!response.getString("result").equals("ok")) {
+                        setLoginStatusText("Token Stored is invalid?", Color.RED);
+                        findViewById(R.id.login_group).setVisibility(View.VISIBLE);
+                        return;
+                    }
+                } catch (JSONException e) {
+                    setLoginStatusText("Unexpected answer" + response.toString(), Color.RED);
+                }
 
-        if (_request_queue == null) {
-            _request_queue = new RequestQueue(_volley_cache, _volley_network);
-            _request_queue.start();
+                showWaitingScreen();
+                launchCopterHudActivity();
+            }, error -> setLoginStatusText("Error Could not authenticate token", Color.RED));
+            token_validation_request.setShouldCache(false);
+            _request_queue.add(token_validation_request);
         }
+        catch (JSONException e) {
+            setLoginStatusText("Could not create a json query", Color.RED);
+        }
+    }
+
+    public void showWaitingScreen() {
+        hideKeyboard(this);
+        setLoginStatusText(
+                "Successfully authenticated user. Waiting for drone to be connected",
+                Color.GREEN);
+        findViewById(R.id.login_group).setVisibility(View.GONE);
+    }
+
+    public void tryPilotLogin(View view) {
         AutoCompleteTextView email_ctrl = findViewById(R.id.email_input);
         EditText password_ctrl = findViewById(R.id.password_input);
 
 
-        String email = email_ctrl.getText().toString();
+        user_email = email_ctrl.getText().toString();
         String password = password_ctrl.getText().toString();
-        String url = getString(R.string.drohub_url) + "/api/User/Authenticate";
+        String url = getString(R.string.drohub_url) + "/api/User/GetApplicationToken";
         JSONObject request = new JSONObject();
-        request.put("UserName", email);
-        request.put("Password", password);
+        try {
+            request.put("UserName", user_email);
+            request.put("Password", password);
+        }
+        catch (JSONException e) {
+            setLoginStatusText("The server returned an unexpected answer", Color.RED);
+        }
 
+        setLoginStatusText("Retrieving token...", Color.BLACK);
         JsonObjectRequest login_request = new JsonObjectRequest(Request.Method.POST,
-                url, request, (JSONObject response) -> {
+                url, request, response ->
+        {
+            String result = null;
             try {
-                String result = response.getString("result");
-                if (result.equals("ok")) {
-                    this.user_email = email;
-                    this.password = password;
-                    SharedPreferences.Editor ed = _saved_accounts.edit();
-                    ed.putString(email, password);
-                    ed.commit();
-                    hideKeyboard(this);
-                    setLoginStatusText(
-                            "Successfully authenticated user. Waiting for drone to be connected",
-                            Color.GREEN);
-                    findViewById(R.id.login_group).setVisibility(View.GONE);
-
-
-                    if (_connected_drone != null) {
-                        launchCopterHudActivity();
-                    }
-                }
-                else if (result.equals("nok")) {
-                    setLoginStatusText("Credentials provided are incorrect", Color.RED);
-                }
-                else {
-                    setLoginStatusText("Unexpected answer from server: " + result, Color.RED);
-                }
+                result = response.getString("result");
             } catch (JSONException e) {
-                setLoginStatusText("The server returned an unexpected answer" + response.toString(), Color.RED);
+                setLoginStatusText("Unexpected server response" + response, Color.RED);
+            }
+
+            if (result.equals("nok")) {
+                setLoginStatusText("Credentials provided are incorrect", Color.RED);
+            }
+
+            else {
+                user_auth_token = result;
+                SharedPreferences.Editor ed = _saved_accounts.edit();
+                ed.putString(USER_EMAIL_STORE_KEY, user_email);
+                ed.putString(USER_AUTH_TOKEN_STORE_KEY, user_auth_token);
+                ed.commit();
+                validateAndLaunchIfPossible();
             }
         },
         error -> setLoginStatusText("An error occurred contacting Drohub servers" + request.toString(), Color.RED));
         login_request.setShouldCache(false);
         _request_queue.add(login_request);
-    }
-
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        String item = parent.getItemAtPosition(position).toString();
-        EditText password_ctrl = findViewById(R.id.password_input);
-        password_ctrl.setText(_saved_accounts.getString(item, null));
     }
 }

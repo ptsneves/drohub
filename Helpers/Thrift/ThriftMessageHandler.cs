@@ -6,6 +6,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.Identity.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -149,36 +150,41 @@ namespace DroHub.Helpers.Thrift
             _signin_manager = signin_manager;
         }
 
-        public async Task runHandler(HttpContext context, IThriftTasks tasks) {
-
+        private async Task<bool> passesHeaderChecks(HttpContext context) {
             if (!context.WebSockets.IsWebSocketRequest)
             {
                 _logger.LogDebug("Got a non websocket request.");
                 context.Response.StatusCode = 400;
-                return;
+                return false;
             }
 
             if (context.Request.Headers["x-device-expected-serial"] == StringValues.Empty)
             {
                 _logger.LogInformation("Peer did not provide a serial");
                 context.Response.StatusCode = 400;
-                return;
+                return false;
             }
 
-            if (context.Request.Headers["x-drohub-user"] == StringValues.Empty || context.Request.Headers["x-drohub-password"] == String.Empty) {
-                _logger.LogInformation("User did not provide a user or password");
+            if (context.Request.Headers["x-drohub-user"] == StringValues.Empty ||
+                context.Request.Headers["x-drohub-token"] == String.Empty) {
+
+                _logger.LogInformation("User did not provide a user or token");
                 context.Response.StatusCode = 401;
+                return false;
+            }
+
+            if (await UserController.authenticateToken(_signin_manager, context.Request.Headers["x-drohub-user"],
+                context.Request.Headers["x-drohub-token"]))
+                return true;
+
+            _logger.LogInformation($"Failed authentication for {context.Request.Headers["x-drohub-user"]} {context.Request.Headers["x-drohub-token"]}");
+            context.Response.StatusCode = 401;
+            return false;
+        }
+
+        public async Task runHandler(HttpContext context, IThriftTasks tasks) {
+            if (!await passesHeaderChecks(context))
                 return;
-            }
-            else {
-                var result = await _signin_manager.PasswordSignInAsync(context.Request.Headers["x-drohub-user"],
-                context.Request.Headers["x-drohub-password"], false, lockoutOnFailure: true);
-                if (!result.Succeeded) {
-                    _logger.LogInformation($"Failed authentication for {context.Request.Headers["x-drohub-user"]} {context.Request.Headers["x-drohub-password"]}");
-                    context.Response.StatusCode = 401;
-                    return;
-                }
-            }
 
             try
             {

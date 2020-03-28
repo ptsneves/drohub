@@ -77,8 +77,8 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
     }
 
     public static final String EXTRA_DEVICE_UID = withKey("DEVICE_UID");
+    public static final String EXTRA_USER_AUTH_TOKEN = withKey("USER_AUTH_TOKEN");
     public static final String EXTRA_USER_EMAIL = withKey("USER_EMAIL");
-    public static final String EXTRA_USER_PASSWORD = withKey("USER_PASSWORD");
     /** Logging tag. */
     private static final ULogTag TAG = new ULogTag("DROHUB");
 
@@ -98,8 +98,8 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
     /** Ground SDK interface. */
     private GroundSdk mGroundSdk;
     protected ThriftConnection _thrift_connection;
+    protected String user_auth_token;
     protected String user_email;
-    protected String password;
 
     /**
      * Gets GroundSDK interface.
@@ -128,8 +128,7 @@ public abstract class GroundSdkActivityBase extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        user_email = getIntent().getStringExtra(EXTRA_USER_EMAIL); //Can be null
-        password = getIntent().getStringExtra(EXTRA_USER_PASSWORD); //Can be null
+        user_auth_token = getIntent().getStringExtra(EXTRA_USER_AUTH_TOKEN); //Can be null
 
 
         mGroundSdk = ManagedGroundSdk.obtainSession(this);

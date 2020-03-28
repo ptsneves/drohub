@@ -19,18 +19,17 @@ namespace DroHub.Tests.TestInfrastructure
     {
         public delegate Task DroneTestDelegate();
         public static async Task mockDrone(DroHubFixture fixture, DroneRPC drone_rpc, string device_serial, DroneTestDelegate test_delegate,
-                string user, string password)
+                string user, string token)
         {
             var loggerFactory = new LoggerFactory();
             using (var ws_transport = new TWebSocketClient(fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Binary))
             using (var reverse_tunnel_transport = new TReverseTunnelServer(ws_transport, 1))
             {
-
                 ws_transport.WebSocketOptions.SetRequestHeader("User-Agent", "AirborneProjets");
                 ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
                 ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
                 ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", user);
-                ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-password", password);
+                ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-token", token);
 
                 var message_validator_factory = new TAMessageValidatorProtocol.Factory(new TAJsonProtocol.Factory(),
                         TAMessageValidatorProtocol.ValidationModeEnum.KEEP_READING,

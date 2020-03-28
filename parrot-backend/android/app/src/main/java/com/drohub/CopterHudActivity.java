@@ -168,9 +168,9 @@ public class CopterHudActivity extends GroundSdkActivityBase
         super.onCreate(savedInstanceState);
         String device_uid = getIntent().getStringExtra(EXTRA_DEVICE_UID);
         String user_email = getIntent().getStringExtra(EXTRA_USER_EMAIL);
-        String password = getIntent().getStringExtra(EXTRA_USER_PASSWORD);
-        if (device_uid == null || user_email == null || password == null) {
-            Log.e(TAG, "Device uid, user or password were not passed in intent");
+        String auth_token = getIntent().getStringExtra(EXTRA_USER_AUTH_TOKEN);
+        if (device_uid == null || user_email == null || auth_token == null) {
+            Log.e(TAG, "Device uid, user or auth_token were not passed in intent");
             finish();
             return;
         }
@@ -505,7 +505,7 @@ public class CopterHudActivity extends GroundSdkActivityBase
         _thrift_connection.onStart(mDrone.getUid(),
                 getString(R.string.drohub_ws_url),
                 getString(R.string.janus_websocket_uri),
-                this, user_email, password);
+                this, user_email, auth_token);
         Log.w("COPTER", "Started thrift connection to " + getString(R.string.drohub_ws_url) );
 
     }

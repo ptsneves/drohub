@@ -11,10 +11,11 @@ namespace DroHub.Areas.Identity
     {
         public void Configure(IWebHostBuilder builder)
         {
-            builder.ConfigureServices((context, services) =>
-            {
+            builder.ConfigureServices((context, services) => {
                 services.AddDefaultIdentity<DroHubUser>()
-                    .AddEntityFrameworkStores<DroHubContext>();
+                    .AddEntityFrameworkStores<DroHubContext>()
+                    .AddDefaultTokenProviders();
+
                 // Passwords validation settings.
                 // https://docs.microsoft.com/en-us/aspnet/core/security/authentication/identity-configuration?view=aspnetcore-2.1#password
                 services.Configure<IdentityOptions>(options =>

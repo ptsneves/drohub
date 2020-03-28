@@ -3,11 +3,8 @@ using Xunit;
 using DroHub.Tests.TestInfrastructure;
 using System.Threading.Tasks;
 using System.Linq;
-using Microsoft.AspNetCore.SignalR.Client;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Net.Http;
-using System.Collections;
+using DroHub.Areas.Identity.Data;
 
 namespace DroHub.Tests
 {
@@ -83,6 +80,40 @@ namespace DroHub.Tests
                     response.EnsureSuccessStatusCode();
                     Assert.Equal(new Uri(_fixture.SiteUri, "Identity/Account/Login?ReturnUrl=%2FIdentity%2FAccount%2FManage"), response.RequestMessage.RequestUri);
                 }
+            }
+        }
+
+        // [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, true)]
+        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, true)]
+        [InlineData(DroHubUser.OWNER_POLICY_CLAIM, true)]
+        [InlineData(DroHubUser.PILOT_POLICY_CLAIM, true)]
+        [InlineData(DroHubUser.GUEST_POLICY_CLAIM, false)]
+        [Theory]
+        public async void TestAuthenticationToken(string user_base_type, bool expect_get_token_success) {
+            const string USER = "auser@drohub.xyz";
+            const string PASSWORD = "password1234";
+            const string ORGANIZATION = "Org";
+            const int ALLOWED_FLIGHT_TIME_MINUTES = 3;
+            const int ALLOWED_USER_COUNT = 3;
+
+            try {
+                await HttpClientHelper.addUser(_fixture, USER, PASSWORD,
+                    ORGANIZATION, user_base_type, ALLOWED_FLIGHT_TIME_MINUTES, ALLOWED_USER_COUNT);
+
+                var res = await HttpClientHelper.getApplicationToken(_fixture, USER, PASSWORD);
+                Assert.NotEmpty(res["result"]);
+                if (expect_get_token_success) {
+                    Assert.NotEqual("nok", res["result"]);
+                    var token = res["result"];
+                    res = await HttpClientHelper.authenticateToken(_fixture, USER, token);
+                    Assert.Equal("ok", res["result"]);
+                }
+                else {
+                    Assert.Equal("nok", res["result"]);
+                }
+            }
+            finally {
+                await HttpClientHelper.deleteUser(_fixture, USER, PASSWORD);
             }
         }
 
@@ -167,7 +198,8 @@ namespace DroHub.Tests
                     {
                         ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
                         ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", "admin");
-                        ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-password", _fixture.AdminPassword);
+                        var token = (await HttpClientHelper.getApplicationToken(_fixture, user, _fixture.AdminPassword))["result"];
+                        ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-token", token);
                     }
                     if (expect_throw)
                         await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());
@@ -205,8 +237,12 @@ namespace DroHub.Tests
             try
             {
                 for (var i = 0; i < concurrent_devices; i++) {
-                    await DroneDeviceHelper.mockDrone(_fixture, drone_rpcs[i], telemetry_mocks[i].SerialNumber, telemetry_mocks[i].WaitForServer,
-                            users[i], password);
+                    var token = (await HttpClientHelper.getApplicationToken(_fixture, users[i],
+                        password))["result"];
+
+                    await DroneDeviceHelper.mockDrone(_fixture, drone_rpcs[i], telemetry_mocks[i].SerialNumber,
+                        telemetry_mocks[i].WaitForServer,
+                            users[i], token);
                 }
 
                 for (var i = 0; i < concurrent_devices; i++)

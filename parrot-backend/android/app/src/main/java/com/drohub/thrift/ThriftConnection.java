@@ -27,7 +27,7 @@ public class ThriftConnection {
         http_headers.put("User-Agent", "AirborneProjects");
         http_headers.put("Content-Type", "application/x-thrift");
         http_headers.put("x-drohub-user", user);
-        http_headers.put("x-drohub-password", password);
+        http_headers.put("x-drohub-token", password);
         http_headers.put("x-device-expected-serial", drone_serial);
         TWebSocketClient tws = new TWebSocketClient(thrift_ws_url, http_headers);
 
