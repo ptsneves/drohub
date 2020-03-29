@@ -121,6 +121,10 @@ namespace DroHub.Tests
         [InlineData("admin", null, "MyAnafi", null, false)]
         [InlineData("admin", null, null, null, false)]
         [InlineData("admin", null, null, "000000", false)]
+        [InlineData("user@drohub.xyz", DroHubUser.SUBSCRIBER_POLICY_CLAIM, "MyAnafi", "000000", true)]
+        [InlineData("user@drohub.xyz", DroHubUser.OWNER_POLICY_CLAIM, "MyAnafi", "000000", true)]
+        [InlineData("user@drohub.xyz", DroHubUser.PILOT_POLICY_CLAIM, "MyAnafi", "000000", true)]
+        [InlineData("user@drohub.xyz", DroHubUser.GUEST_POLICY_CLAIM, "MyAnafi", "000000", false)]
         [Theory]
         public async void TestCreateAndDeleteDevice(string user, string user_base_type,
             string device_name, string device_serial, bool expect_created) {
@@ -162,18 +166,12 @@ namespace DroHub.Tests
             finally {
                 if (expect_created)
                     (await HttpClientHelper.deleteDevice(_fixture, device_serial, user, password)).Dispose();
-                else
-                {
-                    if (device_serial != null && device_name != null)
-                        (await HttpClientHelper.deleteDevice(_fixture, device_serial, user, password)).Dispose();
-                }
 
                 var devices_list = await HttpClientHelper.getDeviceList(_fixture,  user, password);
                     Assert.ThrowsAny<ArgumentNullException>(() => devices_list.First(d => d.serialNumber == device_serial));
 
                 if (create_user)
-                    (await HttpClientHelper.deleteDevice(_fixture, device_serial, user, password)).Dispose();
-
+                    (await HttpClientHelper.deleteUser(_fixture, user, password)).Dispose();
             }
         }
 
