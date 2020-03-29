@@ -212,7 +212,7 @@ namespace DroHub.Tests.TestInfrastructure
 
         public static async ValueTask<Dictionary<string, string>> getApplicationToken(DroHubFixture test_fixture, string user_name,
             string password) {
-            var auth_token_uri = new Uri(test_fixture.SiteUri, "api/User/GetApplicationToken");
+            var auth_token_uri = new Uri(test_fixture.SiteUri, "api/AndroidApplication/GetApplicationToken");
             var content_to_send = new Dictionary<string,string>()
             {
                 {"UserName", user_name},
@@ -223,7 +223,7 @@ namespace DroHub.Tests.TestInfrastructure
 
         public static async ValueTask<Dictionary<string, string>> authenticateToken(DroHubFixture test_fixture,
             string user_name, string token) {
-            var auth_token_uri = new Uri(test_fixture.SiteUri, "api/User/AuthenticateToken");
+            var auth_token_uri = new Uri(test_fixture.SiteUri, "api/AndroidApplication/AuthenticateToken");
             var http_helper = await createHttpClient(test_fixture);
             var content_to_send = new Dictionary<string,string>()
             {

@@ -173,7 +173,7 @@ namespace DroHub.Helpers.Thrift
                 return false;
             }
 
-            if (await UserController.authenticateToken(_signin_manager, context.Request.Headers["x-drohub-user"],
+            if (await AndroidApplicationController.authenticateToken(_signin_manager, context.Request.Headers["x-drohub-user"],
                 context.Request.Headers["x-drohub-token"]))
                 return true;
 

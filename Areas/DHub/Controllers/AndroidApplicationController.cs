@@ -13,7 +13,7 @@ namespace DroHub.Areas.DHub.Controllers
     [Authorize]
     [ApiController]
     [Route("api/[controller]/[action]")]
-    public class UserController : ControllerBase
+    public class AndroidApplicationController : ControllerBase
     {
         private const string _APP_TOKEN_PURPOSE = "DroHubApp";
         private static readonly string TokenProvider = TokenOptions.DefaultProvider;
@@ -37,7 +37,7 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         private readonly SignInManager<DroHubUser> _signin_manager;
-        public UserController(SignInManager<DroHubUser> signin_manager) : base()
+        public AndroidApplicationController(SignInManager<DroHubUser> signin_manager) : base()
         {
             _signin_manager = signin_manager;
         }

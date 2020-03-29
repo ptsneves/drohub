@@ -99,7 +99,7 @@ public class MainActivity extends GroundSdkActivityBase {
     }
 
     private void validateAndLaunchIfPossible() {
-        String url = getString(R.string.drohub_url) + "/api/User/AuthenticateToken";
+        String url = getString(R.string.drohub_url) + "/api/AndroidApplication/AuthenticateToken";
         JSONObject request = new JSONObject();
         try {
             request.put("UserName", user_email);
@@ -143,7 +143,7 @@ public class MainActivity extends GroundSdkActivityBase {
 
         user_email = email_ctrl.getText().toString();
         String password = password_ctrl.getText().toString();
-        String url = getString(R.string.drohub_url) + "/api/User/GetApplicationToken";
+        String url = getString(R.string.drohub_url) + "/api/AndroidApplication/GetApplicationToken";
         JSONObject request = new JSONObject();
         try {
             request.put("UserName", user_email);
