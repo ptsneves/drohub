@@ -428,66 +428,40 @@ namespace DroHub.Areas.DHub.Controllers
             return PartialView("Create", new Device{});
         }
 
+        [NonAction]
+        [ClaimRequirement(Device.CAN_ADD_CLAIM, Device.CLAIM_VALID_VALUE)]
+        public static async Task Create(DroHubContext context, Device device) {
+            if (device.Subscription == null) {
+                throw new InvalidDataException("Tried to add a device without associated subscription");
+            }
+            await context.Devices.AddAsync(device);
+            await context.SaveChangesAsync();
+        }
+
         // POST: DroHub/Devices/Create
         // To protect from overposting attacks, please enable the specific properties you want to bind to, for
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         [ClaimRequirement(Device.CAN_ADD_CLAIM, Device.CLAIM_VALID_VALUE)]
-        public async Task<IActionResult> Create([Required][Bind("Id,Name,SerialNumber,CreationDate,ISO,Apperture,FocusMode")]
+        public async Task<IActionResult> Create([Required][Bind("Id,Name,SerialNumber")]
             Device device)
         {
-            if (!ModelState.IsValid)
-            {
+            if (!ModelState.IsValid) {
                 return View(device);
             }
 
-            bool exists = _context.Devices.Any(d => d.SerialNumber == device.SerialNumber);
-            Device device_to_operate = null;
-            if (exists)
-            {
-                device_to_operate = await _context.Devices
-                    .Include(d => d.Subscription)
-                    .SingleAsync(d => d.SerialNumber == device.SerialNumber);
-
-                var user = await DroHubUserLinqExtensions
+            if (!await _context.Devices.AnyAsync(d => d.SerialNumber == device.SerialNumber)) {
+                device.Subscription = await DroHubUserLinqExtensions
                     .getCurrentUserWithSubscription(_user_manager, User)
-                    .SingleAsync();
-
-                if (device_to_operate.Subscription.OrganizationName == user.Subscription.OrganizationName)
-                    return await Edit(device_to_operate);
-
-                ModelState.AddModelError("",
-                    "Device already exists in another subscription. Contact support");
-
-                return Ok();
-            }
-
-            device.CreationDate = DateTime.Now;
-            device.ISO = DefaultIso;
-            device.Apperture = DefaultApperture;
-            device.FocusMode = DefaultFocusMode;
-            device_to_operate = device;
-            _context.Add(device_to_operate);
-            return await Edit(device_to_operate);
-        }
-
-        private async Task<IActionResult> Edit(Device device) {
-            if (device.Subscription == null) {
-                device.Subscription = await DroHubUserLinqExtensions.getCurrentUserWithSubscription(_user_manager, User)
                     .getCurrentUserSubscription()
                     .SingleAsync();
+
+                await Create(_context, device);
+                return View(device);
             }
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException e)
-            {
-                ModelState.AddModelError("", "Failed to add this device to the user");
-
-            }
+            ModelState.AddModelError("", "Device already exists. Edit instead of create");
             return View(device);
         }
 
@@ -519,11 +493,16 @@ namespace DroHub.Areas.DHub.Controllers
         {
             if (id != device.Id) return NotFound();
 
-            if (!ModelState.IsValid)
-            {
+            if (!ModelState.IsValid)  {
                 return View(device);
             }
-            return await Edit(device);
+            try {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException e) {
+                ModelState.AddModelError("", "Failed to add this device to the user");
+            }
+            return View(device);
         }
 
         // GET: DroHub/Devices/Delete/5
