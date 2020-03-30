@@ -1,12 +1,10 @@
 package com.drohub;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -34,11 +32,13 @@ public class MainActivity extends GroundSdkActivityBase {
     private Cache _volley_cache;
     private Network _volley_network;
     private RequestQueue _request_queue;
+    private TextView status_view;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        status_view = findViewById(R.id.login_status);
         initializeVolley();
         _saved_accounts = getSharedPreferences(ACCOUNTS, MODE_PRIVATE);
         if (_saved_accounts == null)
@@ -47,7 +47,7 @@ public class MainActivity extends GroundSdkActivityBase {
         user_auth_token = _saved_accounts.getString(USER_AUTH_TOKEN_STORE_KEY, null);
         user_email = _saved_accounts.getString(USER_EMAIL_STORE_KEY, null);
         if (user_auth_token != null && user_email != null) {
-            validateAndLaunchIfPossible();
+            validateTokenAndLaunchIfPossible();
         }
     }
 
@@ -58,21 +58,44 @@ public class MainActivity extends GroundSdkActivityBase {
             _request_queue.start();
     }
 
-    private void launchCopterHudActivity() {
+    private void validateDeviceRegisteredAndLaunchIfPossible() {
         if (_connected_drone == null || user_email == null || user_auth_token == null)
             return;
-
-        Intent intent = new Intent(this, CopterHudActivity.class);
-        intent.putExtra(EXTRA_DEVICE_UID, _connected_drone.getUid());
-        intent.putExtra(EXTRA_USER_EMAIL, user_email);
-        intent.putExtra(EXTRA_USER_AUTH_TOKEN, user_auth_token);
-        this.startActivity(intent);
+        String url = getString(R.string.drohub_url) + "/api/AndroidApplication/QueryDeviceInfo";
+        JSONObject request = new JSONObject();
+        try {
+            request.put("UserName", user_email);
+            request.put("Token", user_auth_token);
+            request.put("DeviceSerialNumber", _connected_drone.getUid());
+        }
+         catch (JSONException e) {
+            setStatusText(status_view,"Could not create a json query", Color.RED);
+        }
+        setStatusText(status_view,"Retrieving device info", Color.BLACK);
+        JsonObjectRequest token_validation_request = new JsonObjectRequest(Request.Method.POST,
+                url, request, response -> {
+            if (!response.isNull("result")) { //We just care that there is something on the system
+                Intent intent = new Intent(this, CopterHudActivity.class);
+                addThriftDataToIntent(intent, user_email, user_auth_token, _connected_drone.getUid());
+                this.startActivity(intent);
+            }
+            else {
+                Intent intent = new Intent(this, CreateDeviceActivity.class);
+                addThriftDataToIntent(intent, user_email, user_auth_token, _connected_drone.getUid());
+                this.startActivity(intent);
+            }
+        }, error -> {
+            setStatusText(status_view,"Error Could not Query device info..", Color.RED);
+            findViewById(R.id.login_group).setVisibility(View.VISIBLE);
+        });
+        token_validation_request.setShouldCache(false);
+        _request_queue.add(token_validation_request);
     }
 
     @Override
     protected void onDroneConnected(Drone drone) {
         _connected_drone = drone;
-        validateAndLaunchIfPossible(); //racing with GUI validateAndLaunch
+        validateTokenAndLaunchIfPossible(); //racing with GUI validateAndLaunch
     }
 
     @Override
@@ -80,57 +103,37 @@ public class MainActivity extends GroundSdkActivityBase {
         _connected_drone = null;
     }
 
-    private void setLoginStatusText(String text, int color) {
-        TextView login_status = findViewById(R.id.login_status);
-        login_status.setText(text);
-        login_status.setTextColor(color);
-        login_status.setVisibility(View.VISIBLE);
-    }
-
-    public static void hideKeyboard(Activity activity) {
-        InputMethodManager imm = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
-        //Find the currently focused view, so we can grab the correct window token from it.
-        View view = activity.getCurrentFocus();
-        //If no view currently has focus, create a new one, just so we can grab a window token from it
-        if (view == null) {
-            view = new View(activity);
-        }
-        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-    }
-
-    private void validateAndLaunchIfPossible() {
+    private void validateTokenAndLaunchIfPossible() {
         String url = getString(R.string.drohub_url) + "/api/AndroidApplication/AuthenticateToken";
         JSONObject request = new JSONObject();
         try {
             request.put("UserName", user_email);
             request.put("Token", user_auth_token);
-            setLoginStatusText("Validating token", Color.BLACK);
+            setStatusText(status_view,"Validating token", Color.BLACK);
             JsonObjectRequest token_validation_request = new JsonObjectRequest(Request.Method.POST,
                     url, request, response -> {
                 try {
                     if (!response.getString("result").equals("ok")) {
-                        setLoginStatusText("Token Stored is invalid?", Color.RED);
-                        findViewById(R.id.login_group).setVisibility(View.VISIBLE);
+                        setStatusText(status_view,"Token Stored is invalid?", Color.RED);
                         return;
                     }
                 } catch (JSONException e) {
-                    setLoginStatusText("Unexpected answer" + response.toString(), Color.RED);
+                    setStatusText(status_view,"Unexpected answer" + response.toString(), Color.RED);
                 }
-
                 showWaitingScreen();
-                launchCopterHudActivity();
-            }, error -> setLoginStatusText("Error Could not authenticate token", Color.RED));
+                validateDeviceRegisteredAndLaunchIfPossible();
+            }, error -> setStatusText(status_view,"Error Could not authenticate token", Color.RED));
             token_validation_request.setShouldCache(false);
             _request_queue.add(token_validation_request);
         }
         catch (JSONException e) {
-            setLoginStatusText("Could not create a json query", Color.RED);
+            setStatusText(status_view,"Could not create a json query", Color.RED);
         }
     }
 
     public void showWaitingScreen() {
         hideKeyboard(this);
-        setLoginStatusText(
+        setStatusText(status_view,
                 "Successfully authenticated user. Waiting for drone to be connected",
                 Color.GREEN);
         findViewById(R.id.login_group).setVisibility(View.GONE);
@@ -150,10 +153,10 @@ public class MainActivity extends GroundSdkActivityBase {
             request.put("Password", password);
         }
         catch (JSONException e) {
-            setLoginStatusText("The server returned an unexpected answer", Color.RED);
+            setStatusText(status_view,"The server returned an unexpected answer", Color.RED);
         }
 
-        setLoginStatusText("Retrieving token...", Color.BLACK);
+        setStatusText(status_view,"Retrieving token...", Color.BLACK);
         JsonObjectRequest login_request = new JsonObjectRequest(Request.Method.POST,
                 url, request, response ->
         {
@@ -161,11 +164,11 @@ public class MainActivity extends GroundSdkActivityBase {
             try {
                 result = response.getString("result");
             } catch (JSONException e) {
-                setLoginStatusText("Unexpected server response" + response, Color.RED);
+                setStatusText(status_view,"Unexpected server response" + response, Color.RED);
             }
 
             if (result.equals("nok")) {
-                setLoginStatusText("Credentials provided are incorrect", Color.RED);
+                setStatusText(status_view,"Credentials provided are incorrect", Color.RED);
             }
 
             else {
@@ -174,10 +177,12 @@ public class MainActivity extends GroundSdkActivityBase {
                 ed.putString(USER_EMAIL_STORE_KEY, user_email);
                 ed.putString(USER_AUTH_TOKEN_STORE_KEY, user_auth_token);
                 ed.commit();
-                validateAndLaunchIfPossible();
+                validateTokenAndLaunchIfPossible();
             }
         },
-        error -> setLoginStatusText("An error occurred contacting Drohub servers" + request.toString(), Color.RED));
+        error -> setStatusText(status_view,
+                "An error occurred contacting Drohub servers" + request.toString(), Color.RED));
+
         login_request.setShouldCache(false);
         _request_queue.add(login_request);
     }

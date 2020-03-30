@@ -112,19 +112,20 @@ namespace DroHub.Tests.TestInfrastructure
 
             if (create_device)
             {
-                http_helper = await HttpClientHelper.createDevice(_fixture, user,
+                await HttpClientHelper.createDevice(_fixture, user,
                     password, organization_name, user_base_type, allowed_flight_time_minutes, allowed_user_count,
                     _device_serial, _device_serial, create_user);
                 must_delete_device = true;
                 must_delete_user = create_user;
             }
-            else
-            {
-                http_helper = await HttpClientHelper.createLoggedInUser(_fixture, user, password);
-            }
+
+            http_helper = await HttpClientHelper.createLoggedInUser(_fixture, user, password);
 
             _connection = new HubConnectionBuilder()
-                .WithUrl(new Uri(hub_uri), options => { options.Cookies.Add(http_helper.loginCookie); })
+                .WithUrl(new Uri(hub_uri), options => { options
+                    .Cookies
+                    .Add(http_helper.loginCookie);
+                })
                 .Build();
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             TelemetryItems = new Dictionary<Type, TelemetryItem<IDroneTelemetry>>();

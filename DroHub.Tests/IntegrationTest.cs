@@ -117,6 +117,19 @@ namespace DroHub.Tests
             }
         }
 
+        [Fact]
+        public async void TestQueryDeviceInfoIsEmpty() {
+            const string USER = "admin";
+            const string SERIAL_NUMBER = "RandomSerial";
+
+            var token = (await HttpClientHelper.getApplicationToken(_fixture, USER,
+                _fixture.AdminPassword))["result"];
+            var device_info = (await HttpClientHelper.queryDeviceInfo(_fixture, USER, token,
+                SERIAL_NUMBER));
+            Assert.Null(device_info["result"]);
+        }
+
+        [InlineData("admin", null, "MyAnafi", "000000", true, true)]
         [InlineData("admin", null, "MyAnafi", "000000", true)]
         [InlineData("admin", null, "MyAnafi", null, false)]
         [InlineData("admin", null, null, null, false)]
@@ -125,9 +138,13 @@ namespace DroHub.Tests
         [InlineData("user@drohub.xyz", DroHubUser.OWNER_POLICY_CLAIM, "MyAnafi", "000000", true)]
         [InlineData("user@drohub.xyz", DroHubUser.PILOT_POLICY_CLAIM, "MyAnafi", "000000", true)]
         [InlineData("user@drohub.xyz", DroHubUser.GUEST_POLICY_CLAIM, "MyAnafi", "000000", false)]
+        [InlineData("user@drohub.xyz", DroHubUser.SUBSCRIBER_POLICY_CLAIM, "MyAnafi", "000000", true, true)]
+        [InlineData("user@drohub.xyz", DroHubUser.OWNER_POLICY_CLAIM, "MyAnafi", "000000", true, true)]
+        [InlineData("user@drohub.xyz", DroHubUser.PILOT_POLICY_CLAIM, "MyAnafi", "000000", true, true)]
+        [InlineData("user@drohub.xyz", DroHubUser.GUEST_POLICY_CLAIM, "MyAnafi", "000000", false, true)]
         [Theory]
         public async void TestCreateAndDeleteDevice(string user, string user_base_type,
-            string device_name, string device_serial, bool expect_created) {
+            string device_name, string device_serial, bool expect_created, bool use_app_api = false) {
 
             var create_user = true;
 
@@ -143,29 +160,34 @@ namespace DroHub.Tests
 
             try
             {
-                if (expect_created)
-                {
-                    using (var helper = await HttpClientHelper.createDevice(_fixture, user, password,
+                if (expect_created) {
+                    await HttpClientHelper.createDevice(_fixture, user, password,
                         ORGANIZATION, user_base_type, ALLOWED_FLIGHT_TIME_MINUTES, ALLOWED_USER_COUNT, device_name,
-                        device_serial, create_user)) { }
+                        device_serial, create_user, use_app_api);
+
                     var devices_list = await HttpClientHelper.getDeviceList(_fixture, user, password);
                     Assert.NotNull(devices_list);
                     devices_list.Single(d => d.serialNumber == device_serial);
+                    var token = (await HttpClientHelper.getApplicationToken(_fixture, user,
+                        password))["result"];
+                    var device_info = (await HttpClientHelper.queryDeviceInfo(_fixture, user, token,
+                        device_serial));
+                    Assert.Equal(device_name, device_info["result"].Name);
+                    Assert.Equal(device_serial, device_info["result"].SerialNumber);
                 }
                 else
                 {
-                    await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-                    {
-                        using (var helper = await HttpClientHelper.createDevice(_fixture, user, password,
+                    await Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                        await HttpClientHelper.createDevice(_fixture, user, password,
                             ORGANIZATION, user_base_type, ALLOWED_FLIGHT_TIME_MINUTES, ALLOWED_USER_COUNT, device_name,
-                            device_serial, create_user)) { }
+                            device_serial, create_user);
                     });
                     Assert.Null(await HttpClientHelper.getDeviceList(_fixture, user, password));
                 }
             }
             finally {
                 if (expect_created)
-                    (await HttpClientHelper.deleteDevice(_fixture, device_serial, user, password)).Dispose();
+                    await HttpClientHelper.deleteDevice(_fixture, device_serial, user, password);
 
                 var devices_list = await HttpClientHelper.getDeviceList(_fixture,  user, password);
                     Assert.ThrowsAny<ArgumentNullException>(() => devices_list.First(d => d.serialNumber == device_serial));
@@ -194,10 +216,9 @@ namespace DroHub.Tests
             if (password == null)
                 password = _fixture.AdminPassword;
 
-            if (create_delete_device)
-            {
-                using (var helper = await HttpClientHelper.createDevice(_fixture, user, password, organization, user_base_type,
-                    allowed_flight_time_minutes, allowed_user_count, device_name, device_serial)){ }
+            if (create_delete_device) {
+                await HttpClientHelper.createDevice(_fixture, user, password, organization, user_base_type,
+                    allowed_flight_time_minutes, allowed_user_count, device_name, device_serial);
             }
             try
             {

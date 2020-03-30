@@ -70,18 +70,7 @@ import java.util.Set;
 /**
  * Base for an activity that uses GroundSdk. Manages GroundSdk lifecycle properly.
  */
-public abstract class GroundSdkActivityBase extends AppCompatActivity {
-    @NonNull
-    public static String withKey(@NonNull String key) {
-        return "com.drohub.EXTRA_" + key;
-    }
-
-    public static final String EXTRA_DEVICE_UID = withKey("DEVICE_UID");
-    public static final String EXTRA_USER_AUTH_TOKEN = withKey("USER_AUTH_TOKEN");
-    public static final String EXTRA_USER_EMAIL = withKey("USER_EMAIL");
-    /** Logging tag. */
-    private static final ULogTag TAG = new ULogTag("DROHUB");
-
+public abstract class GroundSdkActivityBase extends DroHubActivityBase {
     /** List of runtime permission we need. */
     private static final String[] PERMISSIONS_NEEDED = new String[] {
             Manifest.permission.ACCESS_NETWORK_STATE,

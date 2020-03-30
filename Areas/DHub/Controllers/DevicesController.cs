@@ -268,6 +268,15 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         [NonAction]
+        public static async Task<Device> getDeviceBySerial(UserManager<DroHubUser> user_manager, ClaimsPrincipal user,
+            string serial_number){
+            return await DroHubUserLinqExtensions.getCurrentUserWithSubscription(user_manager, user)
+                .getCurrentUserSubscription()
+                .getSubscriptionDevices()
+                .SingleOrDefaultAsync(d => d.SerialNumber == serial_number);
+        }
+
+        [NonAction]
         private async Task<Device> getDeviceById(int id){
             return await getDeviceById(_user_manager, User, id);
         }
