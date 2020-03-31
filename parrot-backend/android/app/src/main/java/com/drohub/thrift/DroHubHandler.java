@@ -14,6 +14,7 @@ import org.webrtc.EglBase;
 import org.webrtc.PeerConnection;
 
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -90,6 +91,8 @@ public class DroHubHandler implements Drone.Iface {
         _peer_connection_parameters = connection_parameters;
         _video_state = DroneLiveVideoState.INVALID_CONDITION;
         _drone_handle = _activity.getDroneHandle().getDrone(_serial_number);
+        if (_drone_handle == null)
+            throw new RuntimeException("Could not retrieve drone handle");
 
         _drone_handle.getInstrument(FlyingIndicators.class, flying_indicators -> {
             if (flying_indicators == null)
@@ -225,14 +228,14 @@ public class DroHubHandler implements Drone.Iface {
             _video_state = DroneLiveVideoState.LIVE;
         }
         catch (Exception e) {
-            Log.e(TAG, e.getStackTrace().toString());
+            Log.e(TAG, Arrays.toString(e.getStackTrace()));
             _video_state = DroneLiveVideoState.DIED;
             _activity.alertBox(e.getMessage());
         }
     }
 
     @Override
-    public DroneReply pingService() throws TException {
+    public DroneReply pingService() {
         return new DroneReply(true, _serial_number, System.currentTimeMillis());
     }
 
@@ -299,7 +302,7 @@ public class DroHubHandler implements Drone.Iface {
     }
 
     @Override
-    public DroneReply doReturnToHome() throws TException {
+    public DroneReply doReturnToHome() {
         return new DroneReply(false, _serial_number, System.currentTimeMillis());
     }
 
@@ -328,7 +331,7 @@ public class DroHubHandler implements Drone.Iface {
     }
 
     @Override
-    public DroneReply moveToPosition(DroneRequestPosition request) throws TException {
+    public DroneReply moveToPosition(DroneRequestPosition request) {
         return null;
     }
 
