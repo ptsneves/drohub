@@ -36,8 +36,7 @@ public class TWebSocketClient extends TTransport {
 
         @Override
         public void onMessage( String message ) {
-            ;
-//            try {
+            //            try {
 //                input.put(message);
 //            }
 //            catch (InterruptedException e){
@@ -53,7 +52,6 @@ public class TWebSocketClient extends TTransport {
                 input.put(message);
             }
             catch (InterruptedException e){
-                ;
             }
 //            System.out.println( "received2: " + StandardCharsets.UTF_8.decode(message).toString() );
         }

@@ -56,7 +56,7 @@ public final class LocationFormatter {
         coord = (coord % 1) * 60;
         builder.append((int) coord).append('\'');
         coord = (coord % 1) * 60;
-        builder.append((int) coord).append("'\' ");
+        builder.append((int) coord).append("'' ");
         builder.append(direction);
     }
 

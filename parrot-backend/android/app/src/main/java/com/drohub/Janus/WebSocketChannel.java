@@ -48,8 +48,8 @@ public class WebSocketChannel extends WebSocketClient {
                                                          String url,
                                                          PeerConnectionParameters connection_parameters
                                                          ) throws URISyntaxException, InterruptedException, InvalidObjectException {
-        Draft_6455 janus_draft = new Draft_6455(Collections.<IExtension>emptyList(),
-                Collections.<IProtocol>singletonList(new Protocol("janus-protocol")));
+        Draft_6455 janus_draft = new Draft_6455(Collections.emptyList(),
+                Collections.singletonList(new Protocol("janus-protocol")));
         return new WebSocketChannel(room_id, displayName, activity, delegate, url, janus_draft,
                 connection_parameters);
     }
@@ -296,7 +296,7 @@ public class WebSocketChannel extends WebSocketClient {
             janusHandle.feedId = feed;
             janusHandle.display = display;
             janusHandle.onRemoteJsep = (jh, jsep) -> delegate.subscriberHandleRemoteJsep(jh.handleId, jsep);
-            janusHandle.onLeaving = jh -> subscriberOnLeaving(jh);
+            janusHandle.onLeaving = this::subscriberOnLeaving;
             handles.put(janusHandle.handleId, janusHandle);
             feeds.put(janusHandle.feedId, janusHandle);
             subscriberJoinRoom(janusHandle);

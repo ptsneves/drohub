@@ -3,8 +3,6 @@ package com.drohub.thrift;
 import android.content.Intent;
 import android.util.Log;
 
-import com.drohub.GroundSdkActivityBase;
-import com.drohub.R;
 import com.drohub.thift.gen.Drone;
 import com.drohub.thrift.lib.TMessageValidatorProtocol;
 import com.drohub.thrift.lib.TReverseTunnelServer;
@@ -17,11 +15,11 @@ import java.util.HashMap;
 
 public class ThriftConnection {
     private TThreadPoolServer _server_engine;
-    private DroHubHandler drohub_handler;
     private Thread _server_thread;
+    private DroHubHandler _drohub_handler;
 
     public void onStart(String drone_serial, String thrift_ws_url, String janus_websocket_uri,
-                        GroundSdkActivityBase activity, String user, String password) {
+                        DroHubHandler drohub_handler, String user, String password) {
         Log.w("COPTER", "Started thrift connection to " + janus_websocket_uri );
         HashMap<String, String> http_headers = new HashMap<>();
         http_headers.put("User-Agent", "AirborneProjects");
@@ -37,22 +35,23 @@ public class ThriftConnection {
                 TMessageValidatorProtocol.ValidationModeEnum.KEEP_READING,
                 TMessageValidatorProtocol.OperationModeEnum.SEQID_SLAVE);
 
-        drohub_handler = new DroHubHandler(drone_serial, janus_websocket_uri, activity);
+
         TThreadPoolServer.Args args = new TThreadPoolServer.Args(trts);
         args.minWorkerThreads(8);
         args.maxWorkerThreads(8);
-
-        args.processor(new Drone.Processor<>(drohub_handler));
+        _drohub_handler = drohub_handler;
+        args.processor(new Drone.Processor<>(_drohub_handler));
         args.inputProtocolFactory(message_validator_factory);
         args.outputProtocolFactory(message_validator_factory);
+
         _server_engine = new TThreadPoolServer(args);
         _server_thread = new Thread(() -> _server_engine.serve());
         _server_thread.start();
     }
 
     public void handleActivityResult(int requestCode, int resultCode, Intent data) {
-        if (drohub_handler != null)
-            drohub_handler.handleCapturePermissionCallback(requestCode, resultCode, data);
+        if (_drohub_handler != null)
+            _drohub_handler.handleCapturePermissionCallback(requestCode, resultCode, data);
     }
 
     public void onStop() {

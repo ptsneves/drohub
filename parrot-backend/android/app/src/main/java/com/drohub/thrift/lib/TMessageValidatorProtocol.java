@@ -98,7 +98,6 @@ public class TMessageValidatorProtocol extends TProtocolDecorator {
             //Cannot be implemented in java because seqid is final in JAVA
         }
         else if (operation_mode == OperationModeEnum.SEQID_SLAVE) {
-            ;
         }
         else{
             throw new TProtocolException(TProtocolException.NOT_IMPLEMENTED, "Invalid operation mode selected");
