@@ -50,15 +50,7 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 
-import com.drohub.hud.AltimeterView;
-import com.drohub.hud.Animations;
-import com.drohub.hud.AttitudeView;
-import com.drohub.hud.HeadingView;
-import com.drohub.hud.LocationFormatter;
-import com.drohub.hud.PickAnimationDialog;
-import com.drohub.hud.PickFlipDirectionDialog;
-import com.drohub.hud.ZoomLevelView;
-import com.drohub.hud.ZoomVelocityView;
+import com.drohub.hud.*;
 import com.drohub.thrift.ThriftConnection;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.instrument.Alarms;
@@ -82,7 +74,6 @@ import com.parrot.drone.groundsdk.device.pilotingitf.ReturnHomePilotingItf;
 import com.parrot.drone.groundsdk.device.pilotingitf.animation.Animation;
 import com.parrot.drone.groundsdk.device.pilotingitf.animation.Flip;
 import com.parrot.drone.groundsdk.facility.UserLocation;
-import com.parrot.drone.groundsdk.stream.GsdkStreamView;
 import com.parrot.drone.groundsdk.value.OptionalDouble;
 import com.parrot.drone.sdkcore.ulog.ULog;
 
@@ -153,7 +144,7 @@ public class CopterHudActivity extends GroundSdkActivityBase
     private LookAtPilotingItf mLookAtItf;
 
     private AnimationItf mAnimationItf;
-    private GsdkStreamView mStreamView;
+    public DroHubStreamView mStreamView;
 
     private boolean mIsTablet;
 
