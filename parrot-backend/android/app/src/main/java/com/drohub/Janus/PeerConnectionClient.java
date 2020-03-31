@@ -16,8 +16,6 @@ import org.webrtc.Camera2Capturer;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
 import org.webrtc.CapturerObserver;
-import org.webrtc.DefaultVideoDecoderFactory;
-import org.webrtc.DefaultVideoEncoderFactory;
 import org.webrtc.EglBase;
 import org.webrtc.HardwareVideoEncoderFactory;
 import org.webrtc.Logging;
@@ -36,6 +34,7 @@ import org.webrtc.VideoTrack;
 import java.io.InvalidObjectException;
 import java.math.BigInteger;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -156,11 +155,13 @@ public class PeerConnectionClient implements JanusRTCInterface {
           break;
         case SCREEN_SHARE:
           videoCapturer = createScreenCapturer(videoSource.getCapturerObserver(),
-                  ((PeerConnectionScreenShareParameters)peerConnectionParameters).permission_data,
-                  ((PeerConnectionScreenShareParameters)peerConnectionParameters).permission_result_code);
+                  ((PeerConnectionScreenShareParameters)peerConnectionParameters).getPermissionData(),
+                  ((PeerConnectionScreenShareParameters)peerConnectionParameters).getPermissionResultCode());
+          break;
+
       }
       videoCapturerStopped = false;
-    } catch (InvalidObjectException e) {
+    } catch (InvalidObjectException | PeerConnectionScreenShareParameters.InvalidScreenPermissions e) {
       Log.e(TAG, e.getMessage());
       e.printStackTrace();
     }
@@ -175,7 +176,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
     Log.d(TAG, "Create peer connection.");
 
     PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(
-            peerConnectionParameters.iceServers);
+            Arrays.asList(peerConnectionParameters.iceServers));
 
     rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.RELAY;
     rtcConfig.enableDtlsSrtp = true;

@@ -50,7 +50,9 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 
+import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
 import com.drohub.hud.*;
+import com.drohub.thrift.DroHubHandler;
 import com.drohub.thrift.ThriftConnection;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.instrument.Alarms;
@@ -69,13 +71,13 @@ import com.parrot.drone.groundsdk.device.pilotingitf.AnimationItf;
 import com.parrot.drone.groundsdk.device.pilotingitf.LookAtPilotingItf;
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf;
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf.SmartTakeOffLandAction;
-import com.parrot.drone.groundsdk.device.pilotingitf.PointOfInterestPilotingItf;
 import com.parrot.drone.groundsdk.device.pilotingitf.ReturnHomePilotingItf;
 import com.parrot.drone.groundsdk.device.pilotingitf.animation.Animation;
 import com.parrot.drone.groundsdk.device.pilotingitf.animation.Flip;
 import com.parrot.drone.groundsdk.facility.UserLocation;
 import com.parrot.drone.groundsdk.value.OptionalDouble;
-import com.parrot.drone.sdkcore.ulog.ULog;
+
+import java.util.Arrays;
 
 
 /** Activity to pilot a copter. */
@@ -153,6 +155,8 @@ public class CopterHudActivity extends GroundSdkActivityBase
     private Location mDroneLocation;
 
     private Location mUserLocation;
+
+    private DroHubHandler _drohub_handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -492,11 +496,23 @@ public class CopterHudActivity extends GroundSdkActivityBase
             return true;
         });
 
+        String[] res_turn_urls = this.getResources().getStringArray(R.array.turn_servers);
+
+        PeerConnectionScreenShareParameters peerConnectionParameters = new PeerConnectionScreenShareParameters(
+                getResources().getString(R.string.turn_user_name),
+                getResources().getString(R.string.turn_credential),
+                res_turn_urls,
+                getString(R.string.drohub_ws_url), this,
+                20,
+                "h264",
+                1024000, 128000, null, false);
+
+        _drohub_handler = new DroHubHandler(mDrone.getUid(), peerConnectionParameters, this);
         _thrift_connection = new ThriftConnection();
         _thrift_connection.onStart(mDrone.getUid(),
                 getString(R.string.drohub_ws_url),
                 getString(R.string.janus_websocket_uri),
-                this, user_email, auth_token);
+                _drohub_handler, user_email, auth_token);
         Log.w("COPTER", "Started thrift connection to " + getString(R.string.drohub_ws_url) );
 
     }

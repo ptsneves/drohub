@@ -7,19 +7,19 @@ import android.media.projection.MediaProjectionManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
+import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
+import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
 import org.apache.thrift.*;
 import org.webrtc.EglBase;
 import org.webrtc.PeerConnection;
 
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import com.drohub.GroundSdkActivityBase;
 import com.drohub.Janus.PeerConnectionClient;
-import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
 import com.drohub.R;
 import com.drohub.thift.gen.*;
 import com.parrot.drone.groundsdk.device.instrument.BatteryInfo;
@@ -70,15 +70,15 @@ public class DroHubHandler implements Drone.Iface {
     final private TelemetryContainer<DroneRadioSignal> _drone_radio_signal;
 
     private GroundSdkActivityBase _activity;
-    private String _janus_websocket_uri;
-    private PeerConnection.IceServer[] _turn_servers;
     private PeerConnectionClient _peerConnectionClient;
     private DroneLiveVideoState _video_state;
     private MediaStore _drone_media_store;
+    PeerConnectionParameters _peer_connection_parameters;
     private long _room_id;
     private com.parrot.drone.groundsdk.device.Drone _drone_handle;
 
-    DroHubHandler(String serial, String janus_websocket_uri, GroundSdkActivityBase activity) {
+    public DroHubHandler(String serial, PeerConnectionParameters connection_parameters,
+                         GroundSdkActivityBase activity) {
         _serial_number = serial;
         _drone_position = new TelemetryContainer<>();
         _drone_battery_level = new TelemetryContainer<>();
@@ -87,22 +87,9 @@ public class DroHubHandler implements Drone.Iface {
         _room_id = 0;
 
         _activity = activity;
-        _janus_websocket_uri = janus_websocket_uri;
+        _peer_connection_parameters = connection_parameters;
         _video_state = DroneLiveVideoState.INVALID_CONDITION;
         _drone_handle = _activity.getDroneHandle().getDrone(_serial_number);
-
-
-        String[] res_turn_urls = _activity.getResources().getStringArray(R.array.turn_servers);
-        _turn_servers = new PeerConnection.IceServer[res_turn_urls.length];
-        for (int i = 0; i < _turn_servers.length; i++) {
-            _turn_servers[i] =  PeerConnection.IceServer
-                    .builder(res_turn_urls[i])
-                    .setUsername(_activity.getResources().getString(R.string.turn_user_name))
-                    .setPassword(_activity.getResources().getString(R.string.turn_credential))
-                    .createIceServer();
-            System.out.println("Added turn server " + res_turn_urls[i]);
-        }
-
 
         _drone_handle.getInstrument(FlyingIndicators.class, flying_indicators -> {
             if (flying_indicators == null)
@@ -223,27 +210,19 @@ public class DroHubHandler implements Drone.Iface {
 
     void handleCapturePermissionCallback(int requestCode, int resultCode, Intent data) {
         if (requestCode == _CAPTURE_PERMISSION_REQUEST_CODE && _video_state == DroneLiveVideoState.STOPPED) {
-            initVideo(data, resultCode);
-            _video_state = DroneLiveVideoState.LIVE;
+            ((PeerConnectionScreenShareParameters)_peer_connection_parameters).setPermissionData(data);
+            ((PeerConnectionScreenShareParameters)_peer_connection_parameters).setPermissionResultCode(resultCode);
+            initVideo();
         }
     }
 
-    private void initVideo(Intent permission_data, int permission_code) {
+    private void initVideo() {
         try {
             EglBase rootEglBase = EglBase.create();
-            DisplayMetrics metrics = _activity.getResources().getDisplayMetrics();
-            PeerConnectionScreenShareParameters peerConnectionParameters = new PeerConnectionScreenShareParameters(
-                    _janus_websocket_uri, _activity,
-                    Arrays.asList(_turn_servers),
-                    metrics.widthPixels, metrics.heightPixels, 20,
-                    "h264",
-                    1024000, 128000, null, false,
-                    permission_data,
-                    permission_code);
-
             _peerConnectionClient = new PeerConnectionClient(_room_id, _serial_number,
                     _activity, rootEglBase.getEglBaseContext(),
-                    peerConnectionParameters,  null, null);
+                    _peer_connection_parameters,  null, null);
+            _video_state = DroneLiveVideoState.LIVE;
         }
         catch (Exception e) {
             Log.e(TAG, e.getStackTrace().toString());
@@ -264,14 +243,7 @@ public class DroHubHandler implements Drone.Iface {
                 System.currentTimeMillis());
     }
 
-    @Override
-    public DroneLiveVideoStateResult sendLiveVideoTo(DroneSendLiveVideoRequest request) {
-        if (_video_state != DroneLiveVideoState.INVALID_CONDITION) {
-            return new DroneLiveVideoStateResult(_video_state, _serial_number,
-                    System.currentTimeMillis());
-        }
-        _video_state = DroneLiveVideoState.STOPPED;
-        _room_id = request.room_id;
+    private DroneLiveVideoStateResult setupScreenSharing() {
         MediaProjectionManager mediaProjectionManager =
                 (MediaProjectionManager) _activity.getApplication().getSystemService(
                         Context.MEDIA_PROJECTION_SERVICE);
@@ -283,10 +255,25 @@ public class DroHubHandler implements Drone.Iface {
         }
         _activity.startActivityForResult(
                 mediaProjectionManager.createScreenCaptureIntent(), _CAPTURE_PERMISSION_REQUEST_CODE);
+
         //TODO: We need to notify that if he does not accept the permissions he will not be
         //able to broadcast the video...THis requirement may change if we stop using screen capture.
         return new DroneLiveVideoStateResult(_video_state, _serial_number,
                 System.currentTimeMillis());
+    }
+
+    @Override
+    public DroneLiveVideoStateResult sendLiveVideoTo(DroneSendLiveVideoRequest request) throws TApplicationException {
+        if (_video_state != DroneLiveVideoState.INVALID_CONDITION) {
+            return new DroneLiveVideoStateResult(_video_state, _serial_number,
+                    System.currentTimeMillis());
+        }
+        _video_state = DroneLiveVideoState.STOPPED;
+        _room_id = request.room_id;
+        if (_peer_connection_parameters.capturerType == PeerConnectionParameters.VideoCapturerType.SCREEN_SHARE)
+            return setupScreenSharing();
+
+        throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "sendLiveVideoTo failed: No recognized video capturer");
     }
 
     @Override

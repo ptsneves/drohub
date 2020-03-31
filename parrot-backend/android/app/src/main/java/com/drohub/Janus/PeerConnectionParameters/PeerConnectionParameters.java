@@ -2,6 +2,7 @@ package com.drohub.Janus.PeerConnectionParameters;
 
 import android.app.Activity;
 
+import com.drohub.R;
 import org.webrtc.PeerConnection;
 
 import java.security.InvalidParameterException;
@@ -13,6 +14,7 @@ public class PeerConnectionParameters {
     CAMERA_FRONT,
     SCREEN_SHARE
   }
+  public final PeerConnection.IceServer[] iceServers;
   public final int videoWidth;
   public final int videoHeight;
   public final int videoFps;
@@ -24,10 +26,12 @@ public class PeerConnectionParameters {
   public final boolean noAudioProcessing;
   public final Activity activity;
   public final VideoCapturerType capturerType;
-  public final List<PeerConnection.IceServer> iceServers;
 
   PeerConnectionParameters(
-          String janus_web_socket_uri, Activity activity, List<PeerConnection.IceServer> iceServers,
+          String turn_user_name,
+          String turn_credential,
+          String[] ice_servers,
+          String janus_web_socket_uri, Activity activity,
           int videoWidth, int videoHeight, int videoFps, String videoCodec, int videoStartBitrate,
           VideoCapturerType capturerType,
           int audioStartBitrate, String audioCodec,
@@ -41,6 +45,16 @@ public class PeerConnectionParameters {
     if (videoFps == 0)
       throw new InvalidParameterException("Video FPS cannot be 0");
 
+    iceServers = new PeerConnection.IceServer[ice_servers.length];
+    for (int i = 0; i < iceServers.length; i++) {
+      iceServers[i] =  PeerConnection.IceServer
+              .builder(ice_servers[i])
+              .setUsername(turn_user_name)
+              .setPassword(turn_credential)
+              .createIceServer();
+      System.out.println("Added turn server " + ice_servers[i]);
+    }
+
     janusWebSocketURL = janus_web_socket_uri;
     this.activity = activity;
     this.videoWidth = videoWidth;
@@ -52,6 +66,5 @@ public class PeerConnectionParameters {
     this.audioCodec = audioCodec;
     this.noAudioProcessing = noAudioProcessing;
     this.capturerType = capturerType;
-    this.iceServers = iceServers;
   }
 }
