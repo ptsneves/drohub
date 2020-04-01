@@ -29,8 +29,9 @@ namespace DroHub.Tests.TestInfrastructure
                             .FromFile(docker_compose_file)
                             .WaitForHttp("web", SiteUri.ToString())
                             .RemoveOrphans()
-                            .ForceBuild()
-                            .Build().Start();
+                            // .ForceBuild()
+                            .Build()
+                            .Start();
 
             var hosts = new Hosts().Discover();
             _docker = hosts.FirstOrDefault(x => x.IsNative);
@@ -56,7 +57,7 @@ namespace DroHub.Tests.TestInfrastructure
         }
         public void Dispose() {
             try {
-                _containers.Dispose();
+                // _containers.Dispose();
             } catch (Ductus.FluentDocker.Common.FluentDockerException) {
                 //Do nothing. This exception seems a bug in FluentDocker
             }

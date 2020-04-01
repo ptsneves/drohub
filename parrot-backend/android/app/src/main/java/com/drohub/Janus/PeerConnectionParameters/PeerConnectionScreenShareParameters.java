@@ -2,6 +2,7 @@ package com.drohub.Janus.PeerConnectionParameters;
 
 import android.app.Activity;
 import android.content.Intent;
+import org.webrtc.SurfaceViewRenderer;
 
 public class PeerConnectionScreenShareParameters extends PeerConnectionParameters {
     public class InvalidScreenPermissions extends Exception {
@@ -12,7 +13,9 @@ public class PeerConnectionScreenShareParameters extends PeerConnectionParameter
     private int _permission_result_code;
     private boolean _is_permission_result_code_set;
 
-    public PeerConnectionScreenShareParameters(String turn_user_name,
+    public PeerConnectionScreenShareParameters(SurfaceViewRenderer local_view,
+                                               SurfaceViewRenderer remote_view,
+                                               String turn_user_name,
                                                String turn_credential,
                                                String[] ice_servers,
                                                String janus_web_socket_uri,
@@ -23,7 +26,7 @@ public class PeerConnectionScreenShareParameters extends PeerConnectionParameter
                                                int audioStartBitrate, String audioCodec,
                                                boolean noAudioProcessing) {
 
-        super(turn_user_name, turn_credential, ice_servers, janus_web_socket_uri, activity,
+        super(local_view, remote_view, turn_user_name, turn_credential, ice_servers, janus_web_socket_uri, activity,
                 activity.getResources().getDisplayMetrics().widthPixels,
                 activity.getResources().getDisplayMetrics().heightPixels, videoFps, videoCodec,
                 videoStartBitrate, VideoCapturerType.SCREEN_SHARE, audioStartBitrate, audioCodec,

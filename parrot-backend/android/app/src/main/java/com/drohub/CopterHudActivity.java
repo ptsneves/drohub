@@ -50,7 +50,7 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 
-import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
+import com.drohub.Janus.PeerConnectionParameters.PeerConnectionGLSurfaceParameters;
 import com.drohub.hud.*;
 import com.drohub.thrift.DroHubHandler;
 import com.drohub.thrift.ThriftConnection;
@@ -76,8 +76,7 @@ import com.parrot.drone.groundsdk.device.pilotingitf.animation.Animation;
 import com.parrot.drone.groundsdk.device.pilotingitf.animation.Flip;
 import com.parrot.drone.groundsdk.facility.UserLocation;
 import com.parrot.drone.groundsdk.value.OptionalDouble;
-
-import java.util.Arrays;
+import org.webrtc.SurfaceViewRenderer;
 
 
 /** Activity to pilot a copter. */
@@ -146,7 +145,7 @@ public class CopterHudActivity extends GroundSdkActivityBase
     private LookAtPilotingItf mLookAtItf;
 
     private AnimationItf mAnimationItf;
-    public DroHubStreamView mStreamView;
+    public SurfaceViewRenderer mStreamView;
 
     private boolean mIsTablet;
 
@@ -156,7 +155,8 @@ public class CopterHudActivity extends GroundSdkActivityBase
 
     private Location mUserLocation;
 
-    private DroHubHandler _drohub_handler;
+    DroHubHandler _drohub_handler;
+    private boolean _created;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -175,17 +175,17 @@ public class CopterHudActivity extends GroundSdkActivityBase
             finish();
             return;
         }
-
         mIsTablet = (getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >=
                     Configuration.SCREENLAYOUT_SIZE_LARGE;
 
         setContentView(R.layout.activity_copter_hud);
 
+
         mContent = findViewById(R.id.content);
         mDrawer = findViewById(R.id.drawer);
         mResizableContent = findViewById(R.id.resizable_content);
         mDrawerGrip = findViewById(R.id.drawer_grip);
-        mStreamView = findViewById(R.id.video_view);
+        mStreamView = findViewById(R.id.video_view); // do not init it here, let whoever draws on it do that!
         mFlyingIndicators = findViewById(R.id.flying_indicator);
         mPowerAlarm = findViewById(R.id.power_alarm);
         mMotorCutoutAlarm = findViewById(R.id.motor_cut_out_alarm);
@@ -444,19 +444,6 @@ public class CopterHudActivity extends GroundSdkActivityBase
                     });
         }
 
-        mDrone.getPeripheral(StreamServer.class, streamServer -> {
-            if (streamServer != null) {
-                streamServer.enableStreaming(true);
-                streamServer.live(cameraLive -> {
-                            if (cameraLive != null) {
-                                mStreamView.setStream(cameraLive);
-                                cameraLive.play();
-                            }
-                        }
-                );
-            }
-        });
-
         mTakeOffLandBtn.setOnClickListener(v -> mPilotingItf.smartTakeOffLand());
 
         mReturnHomeBtn.setOnClickListener(v -> {
@@ -497,24 +484,32 @@ public class CopterHudActivity extends GroundSdkActivityBase
         });
 
         String[] res_turn_urls = this.getResources().getStringArray(R.array.turn_servers);
+        _created = false;
+        mDrone.getPeripheral(StreamServer.class, streamServer -> {
+            if (_created == false) {
+                _created = true;
+                PeerConnectionGLSurfaceParameters peerConnectionParameters = new PeerConnectionGLSurfaceParameters(
+                    mStreamView,
+                    null,
+                    getResources().getString(R.string.turn_user_name),
+                    getResources().getString(R.string.turn_credential),
+                    res_turn_urls,
+                    getString(R.string.janus_websocket_uri), this,
+                    20,
+                    "h264",
+                    128000,
+                    1024000,
+                    null, streamServer,
+                    false);
 
-        PeerConnectionScreenShareParameters peerConnectionParameters = new PeerConnectionScreenShareParameters(
-                getResources().getString(R.string.turn_user_name),
-                getResources().getString(R.string.turn_credential),
-                res_turn_urls,
-                getString(R.string.drohub_ws_url), this,
-                20,
-                "h264",
-                1024000, 128000, null, false);
-
-        _drohub_handler = new DroHubHandler(mDrone.getUid(), peerConnectionParameters, this);
-        _thrift_connection = new ThriftConnection();
-        _thrift_connection.onStart(mDrone.getUid(),
-                getString(R.string.drohub_ws_url),
-                getString(R.string.janus_websocket_uri),
-                _drohub_handler, user_email, auth_token);
-        Log.w("COPTER", "Started thrift connection to " + getString(R.string.drohub_ws_url) );
-
+                _drohub_handler = new DroHubHandler(mDrone.getUid(), peerConnectionParameters, this);
+                _thrift_connection = new ThriftConnection();
+                _thrift_connection.onStart(mDrone.getUid(),
+                        getString(R.string.drohub_ws_url),
+                        _drohub_handler, user_email, auth_token);
+                Log.w("COPTER", "Started thrift connection to " + getString(R.string.drohub_ws_url));
+            }
+        });
     }
 
     @Override
@@ -527,12 +522,9 @@ public class CopterHudActivity extends GroundSdkActivityBase
         Log.w("COPTER", "Connected Drone UID " + mDrone.getUid());
     }
 
-
     @Override
     protected void onDestroy() {
-        if (mStreamView != null) {
-            mStreamView.setStream(null);
-        }
+        _drohub_handler.onStop();
         if (_thrift_connection != null) {
             _thrift_connection.onStop();
             _thrift_connection = null;

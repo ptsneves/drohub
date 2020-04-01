@@ -18,9 +18,9 @@ public class ThriftConnection {
     private Thread _server_thread;
     private DroHubHandler _drohub_handler;
 
-    public void onStart(String drone_serial, String thrift_ws_url, String janus_websocket_uri,
+    public void onStart(String drone_serial, String thrift_ws_url,
                         DroHubHandler drohub_handler, String user, String password) {
-        Log.w("COPTER", "Started thrift connection to " + janus_websocket_uri );
+        Log.w("COPTER", "Started thrift connection to " + thrift_ws_url );
         HashMap<String, String> http_headers = new HashMap<>();
         http_headers.put("User-Agent", "AirborneProjects");
         http_headers.put("Content-Type", "application/x-thrift");

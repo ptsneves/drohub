@@ -41,6 +41,8 @@
     <string-array name="turn_servers">
         <item>turn:w1.xirsys.com:80</item>
         <item>turn:w1.xirsys.com:443</item>
+        <item>turn:eu-turn5.xirsys.com:80</item>
+        <item>turn:eu-turn5.xirsys.com:443</item>
     </string-array>
     <string name="title_dialog_animation_choice">Choose animation</string>
     <string name="title_dialog_flip_direction_choice">Choose flip direction</string>

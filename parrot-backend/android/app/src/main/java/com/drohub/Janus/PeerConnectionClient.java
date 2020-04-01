@@ -6,30 +6,12 @@ import android.content.Intent;
 import android.media.projection.MediaProjection;
 import android.util.Log;
 
+import com.drohub.Janus.PeerConnectionParameters.PeerConnectionGLSurfaceParameters;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
 
 import org.json.JSONObject;
-import org.webrtc.AudioSource;
-import org.webrtc.AudioTrack;
-import org.webrtc.Camera2Capturer;
-import org.webrtc.Camera2Enumerator;
-import org.webrtc.CameraEnumerator;
-import org.webrtc.CapturerObserver;
-import org.webrtc.EglBase;
-import org.webrtc.HardwareVideoEncoderFactory;
-import org.webrtc.Logging;
-import org.webrtc.MediaConstraints;
-import org.webrtc.MediaStream;
-import org.webrtc.PeerConnection;
-import org.webrtc.PeerConnectionFactory;
-import org.webrtc.ScreenCapturerAndroid;
-import org.webrtc.SessionDescription;
-import org.webrtc.SurfaceTextureHelper;
-import org.webrtc.VideoCapturer;
-import org.webrtc.VideoSink;
-import org.webrtc.VideoSource;
-import org.webrtc.VideoTrack;
+import org.webrtc.*;
 
 import java.io.InvalidObjectException;
 import java.math.BigInteger;
@@ -53,8 +35,8 @@ public class PeerConnectionClient implements JanusRTCInterface {
   final private PeerConnectionFactory factory;
   final private WebSocketChannel _webSocketChannel;
   final private ConcurrentHashMap<BigInteger, JanusConnection> peerConnectionMap;
-  final private VideoSink localRender;
-  final private VideoSink viewRenderer;
+  final private SurfaceViewRenderer local_video_sink;
+  final private SurfaceViewRenderer remote_video_sink;
 
   final private EglBase.Context renderEGLContext;
   private boolean videoCapturerStopped;
@@ -66,10 +48,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
   private VideoCapturer videoCapturer;
 
   public PeerConnectionClient(long room_id, String displayName, final Context context,
-                               final EglBase.Context renderEGLContext,
-                               final PeerConnectionParameters peerConnectionParameters,
-                               final VideoSink localRender,
-                               final VideoSink viewRenderer) throws InterruptedException, InvalidObjectException, URISyntaxException {
+                               final PeerConnectionParameters peerConnectionParameters) throws InterruptedException, InvalidObjectException, URISyntaxException {
     try {
       peerConnectionMap = new ConcurrentHashMap<>();
       this.peerConnectionParameters = peerConnectionParameters;
@@ -77,10 +56,11 @@ public class PeerConnectionClient implements JanusRTCInterface {
       isError = false;
       mediaStream = null;
       videoCapturer = null;
-      this.localRender = localRender;
-      this.viewRenderer = viewRenderer;
+      this.local_video_sink = peerConnectionParameters.localView;
+      this.remote_video_sink = peerConnectionParameters.remoteView;
       this.context = context;
-      this.renderEGLContext = renderEGLContext;
+      EglBase rootEglBase = EglBase.create();
+      this.renderEGLContext =  rootEglBase.getEglBaseContext();
       this.displayName = displayName;
 
       Log.d(TAG, "Capturing format: " + peerConnectionParameters.videoWidth +
@@ -112,7 +92,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
               peerConnectionParameters);
     }
     catch (Exception e) {
-      close();
+      onStop();
       throw e;
     }
   }
@@ -120,7 +100,6 @@ public class PeerConnectionClient implements JanusRTCInterface {
   public boolean isAudioEnabled() {
     return peerConnectionParameters.audioCodec != null;
   }
-
 
   public PeerConnection createRemotePeerConnection(BigInteger handleId) {
     return createPeerConnection(handleId, JanusConnection.ConnectionType.REMOTE);
@@ -158,7 +137,8 @@ public class PeerConnectionClient implements JanusRTCInterface {
                   ((PeerConnectionScreenShareParameters)peerConnectionParameters).getPermissionData(),
                   ((PeerConnectionScreenShareParameters)peerConnectionParameters).getPermissionResultCode());
           break;
-
+        case GROUNDSDK_VIDEO_SHARE:
+          videoCapturer = createGroundSDKVideoCapturer(videoSource.getCapturerObserver());
       }
       videoCapturerStopped = false;
     } catch (InvalidObjectException | PeerConnectionScreenShareParameters.InvalidScreenPermissions e) {
@@ -178,11 +158,11 @@ public class PeerConnectionClient implements JanusRTCInterface {
     PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(
             Arrays.asList(peerConnectionParameters.iceServers));
 
-    rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.RELAY;
+    rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.ALL;
     rtcConfig.enableDtlsSrtp = true;
 
 
-    PeerConnectionObserver pcObserver = new PeerConnectionObserver(viewRenderer, _webSocketChannel, handleId);
+    PeerConnectionObserver pcObserver = new PeerConnectionObserver(remote_video_sink, _webSocketChannel, handleId);
 
     PeerConnection peerConnection = factory.createPeerConnection(rtcConfig, pcObserver);
     if (peerConnection == null)
@@ -200,7 +180,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
     return peerConnection;
   }
 
-  public void close() {
+  public void onStop() {
     Log.d(TAG, "Closing peer connection.");
 
     if (peerConnectionMap != null) {
@@ -278,8 +258,10 @@ public class PeerConnectionClient implements JanusRTCInterface {
   private VideoTrack createVideoTrack(VideoSource videoSource) {
     VideoTrack localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
     localVideoTrack.setEnabled(true);
-    if (localRender != null)
-      localVideoTrack.addSink(localRender);
+    if (local_video_sink != null) {
+      local_video_sink.init(renderEGLContext, null);
+      localVideoTrack.addSink(local_video_sink);
+    }
     return localVideoTrack;
   }
 
@@ -316,6 +298,17 @@ public class PeerConnectionClient implements JanusRTCInterface {
   public void onLeaving(BigInteger handleId) {
 
   }
+
+  private VideoCapturer createGroundSDKVideoCapturer(CapturerObserver capturerObserver) {
+    SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("VideoCapturerThread", renderEGLContext);
+    GLCapturer capturer = new GLCapturer(renderEGLContext,
+            ((PeerConnectionGLSurfaceParameters)peerConnectionParameters).LiveVideoStreamServer);
+    capturer.initialize(surfaceTextureHelper, context, capturerObserver);
+    capturer.startCapture(peerConnectionParameters.videoWidth, peerConnectionParameters.videoHeight,
+            peerConnectionParameters.videoFps);
+    return capturer;
+  }
+
   private VideoCapturer createCamera2Capturer(CapturerObserver capturerObserver) throws InvalidObjectException {
     if (Camera2Enumerator.isSupported(context)) {
       CameraEnumerator enumerator = new Camera2Enumerator(context);

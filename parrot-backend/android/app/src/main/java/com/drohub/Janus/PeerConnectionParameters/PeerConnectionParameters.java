@@ -4,6 +4,7 @@ import android.app.Activity;
 
 import com.drohub.R;
 import org.webrtc.PeerConnection;
+import org.webrtc.SurfaceViewRenderer;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
@@ -12,7 +13,8 @@ import java.util.List;
 public class PeerConnectionParameters {
   public enum VideoCapturerType {
     CAMERA_FRONT,
-    SCREEN_SHARE
+    SCREEN_SHARE,
+    GROUNDSDK_VIDEO_SHARE
   }
   public final PeerConnection.IceServer[] iceServers;
   public final int videoWidth;
@@ -26,8 +28,12 @@ public class PeerConnectionParameters {
   public final boolean noAudioProcessing;
   public final Activity activity;
   public final VideoCapturerType capturerType;
+  public final SurfaceViewRenderer localView;
+  public final SurfaceViewRenderer remoteView;
 
   PeerConnectionParameters(
+          SurfaceViewRenderer local_view,
+          SurfaceViewRenderer remote_view,
           String turn_user_name,
           String turn_credential,
           String[] ice_servers,
@@ -54,7 +60,8 @@ public class PeerConnectionParameters {
               .createIceServer();
       System.out.println("Added turn server " + ice_servers[i]);
     }
-
+    localView = local_view;
+    remoteView = remote_view;
     janusWebSocketURL = janus_web_socket_uri;
     this.activity = activity;
     this.videoWidth = videoWidth;

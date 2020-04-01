@@ -4,14 +4,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.media.projection.MediaProjectionManager;
-import android.util.DisplayMetrics;
 import android.util.Log;
 
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
 import org.apache.thrift.*;
-import org.webrtc.EglBase;
-import org.webrtc.PeerConnection;
 
 
 import java.util.Arrays;
@@ -21,7 +18,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import com.drohub.GroundSdkActivityBase;
 import com.drohub.Janus.PeerConnectionClient;
-import com.drohub.R;
 import com.drohub.thift.gen.*;
 import com.parrot.drone.groundsdk.device.instrument.BatteryInfo;
 import com.parrot.drone.groundsdk.device.instrument.FlyingIndicators;
@@ -221,10 +217,9 @@ public class DroHubHandler implements Drone.Iface {
 
     private void initVideo() {
         try {
-            EglBase rootEglBase = EglBase.create();
             _peerConnectionClient = new PeerConnectionClient(_room_id, _serial_number,
-                    _activity, rootEglBase.getEglBaseContext(),
-                    _peer_connection_parameters,  null, null);
+                    _activity,
+                    _peer_connection_parameters);
             _video_state = DroneLiveVideoState.LIVE;
         }
         catch (Exception e) {
@@ -275,6 +270,14 @@ public class DroHubHandler implements Drone.Iface {
         _room_id = request.room_id;
         if (_peer_connection_parameters.capturerType == PeerConnectionParameters.VideoCapturerType.SCREEN_SHARE)
             return setupScreenSharing();
+        else if (_peer_connection_parameters.capturerType == PeerConnectionParameters.VideoCapturerType.GROUNDSDK_VIDEO_SHARE) {
+            initVideo();
+            return new DroneLiveVideoStateResult(_video_state, _serial_number, System.currentTimeMillis());
+        }
+        else if (_peer_connection_parameters.capturerType == PeerConnectionParameters.VideoCapturerType.CAMERA_FRONT) {
+            initVideo();
+            return new DroneLiveVideoStateResult(_video_state, _serial_number, System.currentTimeMillis());
+        }
 
         throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "sendLiveVideoTo failed: No recognized video capturer");
     }
@@ -422,5 +425,9 @@ public class DroHubHandler implements Drone.Iface {
                 }
         }
         return new DroneReply(action_result, _serial_number, System.currentTimeMillis());
+    }
+
+    public void onStop() {
+        _peerConnectionClient.onStop();
     }
 }

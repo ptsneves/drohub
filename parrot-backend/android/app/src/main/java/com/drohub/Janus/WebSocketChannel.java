@@ -2,6 +2,7 @@ package com.drohub.Janus;
 
 import android.app.Activity;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -34,6 +35,7 @@ public class WebSocketChannel extends WebSocketClient {
     private JanusTransactions janusTransactions = new JanusTransactions();
     private ConcurrentHashMap<BigInteger, JanusHandle> handles = new ConcurrentHashMap<>();
     private ConcurrentHashMap<BigInteger, JanusHandle> feeds = new ConcurrentHashMap<>();
+    HandlerThread keepaliveThread;
     private Handler keepaliveHandler;
     private BigInteger mSessionId;
     private JanusRTCInterface delegate;
@@ -64,7 +66,6 @@ public class WebSocketChannel extends WebSocketClient {
 
         super(new URI(url), janus_draft);
         this.displayName = "drone-" + displayName + "-" + System.currentTimeMillis();
-        keepaliveHandler = new Handler();
         this.delegate = delegate;
         _activity = activity;
         _room_id = room_id;
@@ -75,6 +76,10 @@ public class WebSocketChannel extends WebSocketClient {
 
     @Override
     public void onOpen(ServerHandshake handshakedata) {
+        keepaliveThread = new HandlerThread("KeepaliveThread");
+        keepaliveThread.start();
+        keepaliveHandler = new Handler(keepaliveThread.getLooper());
+
         String transaction = randomString(12);
         JanusTransactions.JanusTransaction jt = janusTransactions.new JanusTransaction();
         jt.tid = transaction;
@@ -382,16 +387,18 @@ public class WebSocketChannel extends WebSocketClient {
     @Override
     public void onClose(int code, String reason, boolean remote) {
         Log.e(TAG, "Connection closed by " + ( remote ? "remote peer" : "us" ) + " Code: " + code + " Reason: " + reason );
+        keepaliveThread.quitSafely();
     }
 
     @Override
     public void onError(Exception ex) {
         Log.e(TAG, "onFailure " + ex.getMessage());
         ex.printStackTrace();
+        keepaliveThread.quitSafely();
     }
 
     private String randomString(Integer length) {
-        final String str = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        final String str = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZz";
         final Random rnd = new Random();
         StringBuilder sb = new StringBuilder(length);
         for (int i = 0; i < length; i++) {
