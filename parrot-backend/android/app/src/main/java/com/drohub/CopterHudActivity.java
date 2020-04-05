@@ -497,7 +497,7 @@ public class CopterHudActivity extends GroundSdkActivityBase
                     getString(R.string.janus_websocket_uri), this,
                     20,
                     "h264",
-                    128000,
+                    2024000,
                     1024000,
                     null, streamServer,
                     false);
