@@ -34,7 +34,7 @@ android {
     }
 
     sourceSets {
-        main.java.srcDirs += '/home/pneves/Projects/drohub/DroHub/RPCInterfaces/gen-java'
+        main.java.srcDirs += '../../..//RPCInterfaces/gen-java'
     }
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
