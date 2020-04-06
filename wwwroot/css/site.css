@@ -28,10 +28,6 @@ for details on configuring this project to bundle and minify static web assets. 
     background-color: #2d3c4a;
 }
 
-.logo-drohub {
-    color: white;
-}
-
 .btn-box-tool-drohub {
     padding: 5px;
     font-size: 12px;
@@ -135,6 +131,12 @@ for details on configuring this project to bundle and minify static web assets. 
   height: 100%;
   display: flex;
 }
+
+.drohub-logo {
+    display: flex;
+    justify-content: center;
+}
+
 .video-overlay-rth {
     border-bottom-right-radius: 100px;
     border-top-right-radius: 100px;
