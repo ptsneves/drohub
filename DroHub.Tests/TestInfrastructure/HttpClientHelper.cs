@@ -82,17 +82,18 @@ namespace DroHub.Tests.TestInfrastructure
             }
         }
 
-        public static async ValueTask<HttpClientHelper> createHttpClient(DroHubFixture test_fixture) {
+        public static async ValueTask<HttpClientHelper> createHttpClient(DroHubFixture test_fixture, Uri uri) {
             var http_helper = new HttpClientHelper(test_fixture);
-            http_helper.Response = await http_helper.Client.GetAsync(test_fixture.SiteUri);
-            http_helper.Response.EnsureSuccessStatusCode();
-            http_helper.verificationToken = DroHubFixture.getVerificationToken(await http_helper.Response.Content.ReadAsStringAsync());
+            http_helper.Response = await http_helper.Client.GetAsync(uri);
             return http_helper;
         }
 
         public static async ValueTask<HttpClientHelper> createLoggedInUser(DroHubFixture test_fixture, string user, string password) {
             var login_uri = new Uri(test_fixture.SiteUri, "Identity/Account/Login");
-            var http_helper = await createHttpClient(test_fixture);
+            var http_helper = new HttpClientHelper(test_fixture);
+            http_helper.Response = await http_helper.Client.GetAsync(login_uri);
+            http_helper.Response.EnsureSuccessStatusCode();
+            http_helper.verificationToken = DroHubFixture.getVerificationToken(await http_helper.Response.Content.ReadAsStringAsync());
             var contentToSend = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("Input.UserName", user),
@@ -219,9 +220,7 @@ namespace DroHub.Tests.TestInfrastructure
                 Password = password,
             };
 
-            var http_helper = await createHttpClient(test_fixture);
-
-            http_helper.Response.Dispose();
+            var http_helper = new HttpClientHelper(test_fixture);
             http_helper.Response = await http_helper.Client.PostAsJsonAsync(auth_token_uri, content_to_send);
             http_helper.Response.EnsureSuccessStatusCode();
             var res = await http_helper.Response.Content.ReadAsStringAsync();
@@ -235,9 +234,8 @@ namespace DroHub.Tests.TestInfrastructure
         private static async ValueTask<string> retrieveFromAndroidApp(DroHubFixture test_fixture, string action_name,
             AndroidApplicationController.AuthenticateTokenModel query) {
             var auth_token_uri = new Uri(test_fixture.SiteUri, $"api/AndroidApplication/{action_name}");
-            var http_helper = await createHttpClient(test_fixture);
+            var http_helper = new HttpClientHelper(test_fixture);
 
-            http_helper.Response.Dispose();
             http_helper.Response = await http_helper.Client.PostAsJsonAsync(auth_token_uri, query);
             http_helper.Response.EnsureSuccessStatusCode();
             return await http_helper.Response.Content.ReadAsStringAsync();

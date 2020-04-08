@@ -89,7 +89,7 @@ namespace DroHub
                 ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
             });
 
-
+            app.UseDefaultFiles();
             app.UseStaticFiles();
             app.UseCookiePolicy();
             app.MapWebSocketManager("/ws");

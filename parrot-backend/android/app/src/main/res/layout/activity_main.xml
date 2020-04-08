@@ -1,86 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
+                                                   xmlns:app="http://schemas.android.com/apk/res-auto"
+                                                   xmlns:tools="http://schemas.android.com/tools"
+                                                   android:layout_width="match_parent"
+                                                   android:layout_height="match_parent"
+                                                   tools:context=".MainActivity"
+                                                   android:paddingStart="30dp"
+                                                   android:paddingEnd="30dp">
 
-
-
-    <LinearLayout
-        android:id="@+id/linearLayout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <TextView
-            android:id="@+id/textView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="DroHub Pilot Login"
-            android:gravity="center"
-            tools:layout_editor_absoluteX="146dp"
-            tools:layout_editor_absoluteY="16dp" />
-
-        <LinearLayout
-            android:id="@+id/login_group"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-
-            <AutoCompleteTextView
-                    android:id="@+id/email_input"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Email"
-                    android:inputType="textEmailAddress">
-                <requestFocus />
-            </AutoCompleteTextView>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/textInputLayout"
-                android:layout_width="409dp"
-                android:layout_height="wrap_content"
-                tools:layout_editor_absoluteX="1dp"
-                tools:layout_editor_absoluteY="150dp">
-            </com.google.android.material.textfield.TextInputLayout>
-
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/password_input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Password"
-                android:inputType="textPassword"
-                tools:layout_editor_absoluteX="2dp"
-                tools:layout_editor_absoluteY="389dp" />
-
-            <Button
-                android:id="@+id/login_button"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:onClick="tryPilotLogin"
-                android:text="Login" />
-
-        </LinearLayout>
-
-        <TextView
+    <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/email_input"
+            android:layout_width="0dp"
+            android:layout_height="51dp"
+            android:hint="Email"
+            android:inputType="textEmailAddress"
+            app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/imageView" app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintBottom_toTopOf="@+id/password_input">
+        <requestFocus/>
+    </com.google.android.material.textfield.TextInputEditText>
+    <TextView
             android:id="@+id/login_status"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
             android:gravity="center"
             android:visibility="invisible"
-            android:text="Should not be visible" />
+            android:text="Should not be visible"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_bias="0.507"
+            app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintTop_toBottomOf="@+id/login_button"/>
+    <Button
+            android:id="@+id/login_button"
+            android:layout_width="0dp"
+            android:layout_height="45dp"
+            android:onClick="tryPilotLogin"
+            android:text="Login"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintTop_toBottomOf="@+id/password_input"
+            app:layout_constraintBottom_toTopOf="@+id/login_status"/>
+    <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="86dp" app:srcCompat="@drawable/drohub_logo"
+            android:id="@+id/imageView"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/email_input" app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintHorizontal_bias="1.0" app:layout_constraintVertical_bias="0.060000002"/>
+    <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/password_input"
+            android:layout_width="0dp"
+            android:layout_height="45dp"
+            android:hint="Password"
+            android:inputType="textPassword"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toBottomOf="@+id/email_input"
+            app:layout_constraintHorizontal_bias="1.0" app:layout_constraintBottom_toTopOf="@+id/login_button"/>
 
 
-    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -16,9 +16,9 @@ namespace DroHub.Tests
         }
 
         [Fact]
-        public async void TestLoginIsHomePage() {
-            using (var http_helper = await HttpClientHelper.createHttpClient(_fixture))
-                Assert.Equal(new Uri(_fixture.SiteUri, "Identity/Account/Login?ReturnUrl=%2FIdentity%2FAccount%2FManage"),
+        public async void TestLoginIsNotHomePageAndAllowsAnonymous() {
+            using (var http_helper = await HttpClientHelper.createHttpClient(_fixture, _fixture.SiteUri))
+                Assert.NotEqual(new Uri(_fixture.SiteUri, "Identity/Account/Login?ReturnUrl=%2FIdentity%2FAccount%2FManage"),
                     http_helper.Response.RequestMessage.RequestUri);
         }
 
@@ -78,7 +78,7 @@ namespace DroHub.Tests
 
                 using(var response = await http_client_helper.Client.GetAsync(logout_url)) {
                     response.EnsureSuccessStatusCode();
-                    Assert.Equal(new Uri(_fixture.SiteUri, "Identity/Account/Login?ReturnUrl=%2FIdentity%2FAccount%2FManage"), response.RequestMessage.RequestUri);
+                    Assert.Equal(new Uri(_fixture.SiteUri, "/"), response.RequestMessage.RequestUri);
                 }
             }
         }
