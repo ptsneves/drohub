@@ -17,6 +17,7 @@ import com.android.volley.toolbox.BasicNetwork;
 import com.android.volley.toolbox.DiskBasedCache;
 import com.android.volley.toolbox.HurlStack;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.google.android.material.textfield.TextInputEditText;
 import com.parrot.drone.groundsdk.device.Drone;
 
 import org.json.JSONException;
@@ -140,7 +141,7 @@ public class MainActivity extends GroundSdkActivityBase {
     }
 
     public void tryPilotLogin(View view) {
-        AutoCompleteTextView email_ctrl = findViewById(R.id.email_input);
+        TextInputEditText email_ctrl = findViewById(R.id.email_input);
         EditText password_ctrl = findViewById(R.id.password_input);
 
 
