@@ -207,19 +207,23 @@ namespace DroHub.Tests
         }
 
 
-        [InlineData("admin", null, "ASerial", "AName", null, null, null, null, false, true)]
-        [InlineData("admin", null, null, "AName", null, null, null, null, true, false)]
+        [InlineData("admin", "ASerial", null, 999, false, true)]
+        [InlineData("admin", null, null, 999, true, false)]
         [Theory]
-        public async void TestWebSocketConnection(string user, string password,
-            string device_serial, string device_name, string organization, string user_base_type,
-            int allowed_flight_time_minutes, int allowed_user_count, bool expect_throw, bool create_delete_device)
-        {
-            if (password == null)
+        public async void TestWebSocketConnection(string user, string device_serial, string user_base_type,
+            int allowed_flight_time_minutes, bool expect_throw, bool create_delete_device) {
+
+            const string ORGANIZATION = "UN";
+            const string DEVICE_NAME = "A Name";
+            const int ALLOWED_USER_COUNT = 999;
+
+            var password = "default";
+            if (user == "admin")
                 password = _fixture.AdminPassword;
 
             if (create_delete_device) {
-                await HttpClientHelper.createDevice(_fixture, user, password, organization, user_base_type,
-                    allowed_flight_time_minutes, allowed_user_count, device_name, device_serial);
+                await HttpClientHelper.createDevice(_fixture, user, password, ORGANIZATION, user_base_type,
+                    allowed_flight_time_minutes, ALLOWED_USER_COUNT, DEVICE_NAME, device_serial);
             }
             try
             {
