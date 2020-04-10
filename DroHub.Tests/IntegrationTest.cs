@@ -208,7 +208,8 @@ namespace DroHub.Tests
 
 
         [InlineData("admin", "ASerial", null, 999, false, true)]
-        [InlineData("admin", null, null, 999, true, false)]
+        // [InlineData("admin", "", null, 999, true, false, true)] // We cannot run this test because stupid SetRequestHeader always sets an empty space on null
+        // [InlineData("guest@drohub.xyz", )]
         [Theory]
         public async void TestWebSocketConnection(string user, string device_serial, string user_base_type,
             int allowed_flight_time_minutes, bool expect_throw, bool create_delete_device) {
@@ -230,13 +231,11 @@ namespace DroHub.Tests
                 using (var ws_transport = new TWebSocketClient(_fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text))
                 {
                     ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
-                    if (device_serial != null)
-                    {
-                        ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
-                        ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", user);
-                        var token = (await HttpClientHelper.getApplicationToken(_fixture, user, password))["result"];
-                        ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-token", token);
-                    }
+                    ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
+                    ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", user);
+                    var token = (await HttpClientHelper.getApplicationToken(_fixture, user, password))["result"];
+                    ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-token", token);
+
                     if (expect_throw)
                         await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());
                     else
