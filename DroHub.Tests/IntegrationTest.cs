@@ -206,6 +206,7 @@ namespace DroHub.Tests
             }
         }
 
+
         [InlineData("admin", null, "ASerial", "AName", null, null, null, null, false, true)]
         [InlineData("admin", null, null, "AName", null, null, null, null, true, false)]
         [Theory]
@@ -228,8 +229,8 @@ namespace DroHub.Tests
                     if (device_serial != null)
                     {
                         ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
-                        ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", "admin");
-                        var token = (await HttpClientHelper.getApplicationToken(_fixture, user, _fixture.AdminPassword))["result"];
+                        ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", user);
+                        var token = (await HttpClientHelper.getApplicationToken(_fixture, user, password))["result"];
                         ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-token", token);
                     }
                     if (expect_throw)
