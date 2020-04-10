@@ -13,7 +13,6 @@ function initJanus(server_url, stun_server_url, room_id) {
 			{
 				server: server,
 				iceServers: [{ urls: ["stun:w1.xirsys.com"] }, { username: "XXXXX", credential: "XXXXXX", urls: ["turn:w1.xirsys.com:80?transport=udp", "turn:eu-turn5.xirsys.com:80?transport=udp", "turn:w1.xirsys.com:80?transport=tcp", "turn:eu-turn5.xirsys.com:80?transport=tcp", "turns:w1.xirsys.com:443?transport=tcp", "turns:w1.xirsys.com:5349?transport=tcp"] }],
-				iceTransportPolicy: "relay",
 				success: function() {
 					// Attach to video room test plugin
 					janus.attach(
