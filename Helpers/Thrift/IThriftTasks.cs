@@ -5,6 +5,6 @@ namespace DroHub.Helpers.Thrift
 {
     public interface IThriftTasks
     {
-        ValueTask<List<Task>> getTasks(ThriftMessageHandler handler, CancellationToken token);
+        ValueTask<List<Task>> getTasks(ThriftMessageHandler handler, CancellationTokenSource token_source);
     }
 }

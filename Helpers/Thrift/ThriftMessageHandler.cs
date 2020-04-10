@@ -193,7 +193,7 @@ namespace DroHub.Helpers.Thrift
                 _socket = await context.WebSockets.AcceptWebSocketAsync();
                 _task_list.Add(Task.Run(async () => await ReceiveFromWebSocket(_socket)));
                 _socket_id = _connection_manager.AddSocket(this);
-                var new_tasks = await tasks.getTasks(this, _cancellation_token_src.Token);
+                var new_tasks = await tasks.getTasks(this, _cancellation_token_src);
                 if (!new_tasks.Any())
                 {
                     _logger.LogInformation("No tasks were given for this socket. Closing.");

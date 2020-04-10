@@ -33,7 +33,7 @@ namespace DroHub.Helpers.Thrift
             _cancellation_token_source = null;
             _services = services;
         }
-        public async ValueTask<List<Task>> getTasks(ThriftMessageHandler handler, CancellationToken token)
+        public async ValueTask<List<Task>> getTasks(ThriftMessageHandler handler, CancellationTokenSource token_source)
         {
             using (var scope = _services.CreateScope())
             {
@@ -46,8 +46,7 @@ namespace DroHub.Helpers.Thrift
                     return new List<Task> { };
                 }
             }
-
-            _cancellation_token_source = CancellationTokenSource.CreateLinkedTokenSource(token);
+            _cancellation_token_source = token_source;
             var result = new List<Task>{
                 Task.Run(async () => await pingConnection(handler)),
                 Task.Run(async () => await GatherPosition(handler)),
