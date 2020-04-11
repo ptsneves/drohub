@@ -33,19 +33,8 @@ namespace DroHub.Helpers.Thrift
             _cancellation_token_source = null;
             _services = services;
         }
-        public async ValueTask<List<Task>> getTasks(ThriftMessageHandler handler, CancellationTokenSource token_source)
+        public ValueTask<List<Task>> getTasks(ThriftMessageHandler handler, CancellationTokenSource token_source)
         {
-            using (var scope = _services.CreateScope())
-            {
-                var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
-                //check if the device exists before we add it to the db
-                var device = await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == handler.SerialNumber);
-                if (device == null)
-                {
-                    _logger.LogInformation("Received data from an unregistered device. Closing the connections");
-                    return new List<Task> { };
-                }
-            }
             _cancellation_token_source = token_source;
             var result = new List<Task>{
                 Task.Run(async () => await pingConnection(handler)),
@@ -55,7 +44,7 @@ namespace DroHub.Helpers.Thrift
                 Task.Run(async () => await GatherBatteryLevel(handler)),
                 Task.Run(async () => await GatherVideoSource(handler))
             };
-            return result;
+            return new ValueTask<List<Task>>(result);
         }
 
         private async Task RecordTelemetry(IDroneTelemetry telemetry_data, DroHubContext context)

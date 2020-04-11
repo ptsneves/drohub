@@ -207,33 +207,46 @@ namespace DroHub.Tests
         }
 
 
-        [InlineData("admin", "ASerial", null, 999, false, true)]
+        [InlineData("admin", "ASerial", DroHubUser.ADMIN_POLICY_CLAIM, 999, false, true, true, true)]
         // [InlineData("admin", "", null, 999, true, false, true)] // We cannot run this test because stupid SetRequestHeader always sets an empty space on null
-        // [InlineData("guest@drohub.xyz", )]
+        [InlineData("sub2@drohub.xyz", "Aserial", DroHubUser.SUBSCRIBER_POLICY_CLAIM, 999, true, true, false, false)]
         [Theory]
         public async void TestWebSocketConnection(string user, string device_serial, string user_base_type,
-            int allowed_flight_time_minutes, bool expect_throw, bool create_delete_device) {
+            int allowed_flight_time_minutes, bool expect_throw, bool create_delete_device,
+            bool create_user_same_as_websocket, bool create_user_organization_same_as_websocket_user) {
 
-            const string ORGANIZATION = "UN";
-            const string DEVICE_NAME = "A Name";
+            const string CREATE_DEVICE_ORGANIZATION = "UN";
+            const string CREATE_DEVICE_DEVICE_NAME = "A Name";
+            const string CREATE_DEVICE_BASE_TYPE = DroHubUser.SUBSCRIBER_POLICY_CLAIM;
             const int ALLOWED_USER_COUNT = 999;
 
             var password = "default";
             if (user == "admin")
                 password = _fixture.AdminPassword;
 
+            var create_device_user = create_user_same_as_websocket ? user : "subscriber@drohub.xyz";
+            var create_device_pass = create_user_same_as_websocket ? password : "subscriber@drohub.xyz";
+
             if (create_delete_device) {
-                await HttpClientHelper.createDevice(_fixture, user, password, ORGANIZATION, user_base_type,
-                    allowed_flight_time_minutes, ALLOWED_USER_COUNT, DEVICE_NAME, device_serial);
+                await HttpClientHelper.createDevice(_fixture, create_device_user, create_device_pass,
+                    CREATE_DEVICE_ORGANIZATION, CREATE_DEVICE_BASE_TYPE, allowed_flight_time_minutes, ALLOWED_USER_COUNT,
+                    CREATE_DEVICE_DEVICE_NAME, device_serial, create_device_user != "admin");
+
+                if (!create_user_same_as_websocket) {
+                    await HttpClientHelper.addUser(_fixture, user, password,
+                        CREATE_DEVICE_ORGANIZATION+create_user_organization_same_as_websocket_user,
+                        user_base_type, allowed_flight_time_minutes, ALLOWED_USER_COUNT);
+                }
             }
-            try
-            {
+
+            var token = (await HttpClientHelper.getApplicationToken(_fixture, user, password))["result"];
+
+            try {
                 using (var ws_transport = new TWebSocketClient(_fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text))
                 {
                     ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
                     ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
                     ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", user);
-                    var token = (await HttpClientHelper.getApplicationToken(_fixture, user, password))["result"];
                     ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-token", token);
 
                     if (expect_throw)
@@ -246,7 +259,12 @@ namespace DroHub.Tests
             {
                 if (create_delete_device)
                 {
-                    (await HttpClientHelper.deleteDevice(_fixture, device_serial, user, password)).Dispose();
+                    (await HttpClientHelper.deleteDevice(_fixture, device_serial, create_device_user, create_device_pass)).Dispose();
+                    if (create_device_user != "admin")
+                        await HttpClientHelper.deleteUser(_fixture, create_device_user, create_device_pass);
+                    if (!create_user_same_as_websocket) {
+                        await HttpClientHelper.deleteUser(_fixture, user, password);
+                    }
                 }
             }
         }

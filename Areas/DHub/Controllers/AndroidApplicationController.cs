@@ -89,19 +89,26 @@ namespace DroHub.Areas.DHub.Controllers
             return new JsonResult(new Dictionary<string, string>() {{"result", "ok"}});
         }
 
+        [NonAction]
+        static public async Task<Device> queryDeviceInfo(SignInManager<DroHubUser> sign_in_manager,
+            string user_name, string token, string device_serial) {
+            if (!await authenticateToken(sign_in_manager, user_name, token)) {
+                return null;
+            }
+
+            var user = await sign_in_manager.UserManager.FindByNameAsync(user_name);
+            var device = await DevicesController.getDeviceBySerial(sign_in_manager.UserManager,
+                await sign_in_manager.CreateUserPrincipalAsync(user),
+                device_serial);
+            return device;
+        }
+
         [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> QueryDeviceInfo([FromBody] QueryDeviceInfoModel authenticate_token) {
-            if (!await authenticateToken(_signin_manager, authenticate_token.UserName, authenticate_token.Token)) {
-                return BadRequest();
-            }
-
-            var user = await _signin_manager.UserManager.FindByNameAsync(authenticate_token.UserName);
-            var r = await DevicesController.getDeviceBySerial(_signin_manager.UserManager,
-                await _signin_manager.CreateUserPrincipalAsync(user),
-                authenticate_token.DeviceSerialNumber);
             var response = new Dictionary<string, Device> {
-                ["result"] = r
+                ["result"] = await queryDeviceInfo(_signin_manager, authenticate_token.UserName, authenticate_token.Token,
+                    authenticate_token.DeviceSerialNumber)
             };
             return new JsonResult(response);
         }

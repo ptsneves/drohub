@@ -173,13 +173,19 @@ namespace DroHub.Helpers.Thrift
                 return false;
             }
 
-            if (await AndroidApplicationController.authenticateToken(_signin_manager, context.Request.Headers["x-drohub-user"],
-                context.Request.Headers["x-drohub-token"]))
-                return true;
+            // Disable because we want to keep the abort short circuit pattern
+            // ReSharper disable once InvertIf
+            if ((await AndroidApplicationController.queryDeviceInfo(_signin_manager,
+                    context.Request.Headers["x-drohub-user"],
+                    context.Request.Headers["x-drohub-token"],
+                    context.Request.Headers["x-device-expected-serial"])) == null) {
 
-            _logger.LogInformation($"Failed authentication for {context.Request.Headers["x-drohub-user"]} {context.Request.Headers["x-drohub-token"]}");
-            context.Response.StatusCode = 401;
-            return false;
+                _logger.LogWarning(
+                    $"Failed authentication for {context.Request.Headers["x-drohub-user"]} {context.Request.Headers["x-drohub-token"]} and serial {context.Request.Headers["x-device-expected-serial"]}");
+                context.Response.StatusCode = 401;
+                return false;
+            }
+            return true;
         }
 
         public async Task runHandler(HttpContext context, IThriftTasks tasks) {
