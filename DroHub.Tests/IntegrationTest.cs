@@ -217,7 +217,6 @@ namespace DroHub.Tests
             }
         }
 
-
         [InlineData("admin", "ASerial", DroHubUser.ADMIN_POLICY_CLAIM, 999, false, true, true, true)]
         // [InlineData("admin", "", null, 999, true, false, true)] // We cannot run this test because stupid SetRequestHeader always sets an empty space on null
         [InlineData("sub2@drohub.xyz", "Aserial", DroHubUser.SUBSCRIBER_POLICY_CLAIM, 999, true, true, false, false)]
@@ -256,18 +255,11 @@ namespace DroHub.Tests
             var token = (await HttpClientHelper.getApplicationToken(_fixture, user, password))["result"];
 
             try {
-                using (var ws_transport = new TWebSocketClient(_fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text))
-                {
-                    ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
-                    ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
-                    ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", user);
-                    ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-token", token);
-
-                    if (expect_throw)
-                        await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());
-                    else
-                        await ws_transport.OpenAsync();
-                }
+                if (expect_throw)
+                    await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () =>
+                        await HttpClientHelper.openWebSocket(_fixture, user, token, device_serial));
+                else
+                    await HttpClientHelper.openWebSocket(_fixture, user, token, device_serial);
             }
             finally
             {

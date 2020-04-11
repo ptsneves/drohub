@@ -188,6 +188,15 @@ namespace DroHub.Tests.TestInfrastructure
             return await HttpClientHelper.deleteDevice(test_fixture, device_id, user, password);
         }
 
+        public static async Task openWebSocket(DroHubFixture fixture, string user, string token, string device_serial) {
+            using var ws_transport = new TWebSocketClient(fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text);
+            ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
+            ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
+            ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", user);
+            ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-token", token);
+            await ws_transport.OpenAsync();
+        }
+
         public static async ValueTask<List<T>> getDeviceTelemetry<T>(DroHubFixture test_fixture, string serial_number, string user, string password,
                 int start_index, int end_index) {
             var devices_list = await HttpClientHelper.getDeviceList(test_fixture, user, password);
