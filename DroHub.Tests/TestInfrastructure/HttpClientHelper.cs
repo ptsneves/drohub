@@ -63,7 +63,7 @@ namespace DroHub.Tests.TestInfrastructure
             }
         }
 
-        public static async ValueTask<HttpClientHelper> deleteUser(DroHubFixture test_fixture, string user_email, string user_password) {
+        public static async Task deleteUser(DroHubFixture test_fixture, string user_email, string user_password) {
             var http_helper = await createLoggedInUser(test_fixture, user_email, user_password);
             var create_device_url = new Uri(test_fixture.SiteUri, "Identity/Account/Manage/DeletePersonalData");
             using (var create_page_response = await http_helper.Client.GetAsync(create_device_url))
@@ -77,7 +77,7 @@ namespace DroHub.Tests.TestInfrastructure
                 http_helper.Response?.Dispose();
                 http_helper.Response = await http_helper.Client.PostAsync(create_device_url, urlenc);
                 http_helper.Response.EnsureSuccessStatusCode();
-                return http_helper;
+                http_helper.Dispose();
             }
         }
 
@@ -162,7 +162,7 @@ namespace DroHub.Tests.TestInfrastructure
             }
         }
 
-        public static async ValueTask<HttpClientHelper> deleteDevice(DroHubFixture test_fixture, int device_id, string user, string password) {
+        public static async Task deleteDevice(DroHubFixture test_fixture, int device_id, string user, string password) {
             var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user, password);
             var content = await http_helper.Response.Content.ReadAsStringAsync();
             var create_device_url = new Uri(test_fixture.SiteUri, $"DHub/Devices/Delete/{device_id}");
@@ -177,15 +177,16 @@ namespace DroHub.Tests.TestInfrastructure
                 http_helper.Response?.Dispose();
                 http_helper.Response = await http_helper.Client.PostAsync(create_device_url, urlenc);
                 http_helper.Response.EnsureSuccessStatusCode();
-                return http_helper;
+                http_helper?.Dispose();
             }
         }
 
-        public static async ValueTask<HttpClientHelper> deleteDevice(DroHubFixture test_fixture, string serial_number, string user, string password)
+        public static async Task deleteDevice(DroHubFixture test_fixture, string serial_number, string user, string
+        password)
         {
             var devices_list = await getDeviceList(test_fixture, user, password);
             int device_id = devices_list.First(d => d.serialNumber == serial_number).id;
-            return await HttpClientHelper.deleteDevice(test_fixture, device_id, user, password);
+            await deleteDevice(test_fixture, device_id, user, password);
         }
 
         public static async Task openWebSocket(DroHubFixture fixture, string user, string token, string device_serial) {

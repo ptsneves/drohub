@@ -151,12 +151,11 @@ namespace DroHub.Tests.TestInfrastructure
             await _connection.StartAsync();
         }
 
-        public async Task stopMock()
-        {
+        public async Task stopMock() {
             if (must_delete_device)
-                (await HttpClientHelper.deleteDevice(_fixture, _device_serial, _user_name, _password)).Dispose();
+                await HttpClientHelper.deleteDevice(_fixture, _device_serial, _user_name, _password);
             if (must_delete_user)
-                (await HttpClientHelper.deleteUser(_fixture, _user_name, _password)).Dispose();
+                await HttpClientHelper.deleteUser(_fixture, _user_name, _password);
         }
 
         public Dictionary<Type, TelemetryItem<IDroneTelemetry>> TelemetryItems { get; private set; }

@@ -60,10 +60,10 @@ namespace DroHub.Tests
                 {
                     if (!expect_delete_fail)
                     {
-                        (await HttpClientHelper.deleteUser(_fixture, user, password)).Dispose();
+                        await HttpClientHelper.deleteUser(_fixture, user, password);
                     }
                     else
-                        await Assert.ThrowsAsync<System.InvalidProgramException>(async () => (await HttpClientHelper.deleteUser(_fixture, user, password)).Dispose());
+                        await Assert.ThrowsAsync<System.InvalidProgramException>(async () => await HttpClientHelper.deleteUser(_fixture, user, password));
 
                     await Assert.ThrowsAsync<System.InvalidProgramException>(async () => (await HttpClientHelper.createLoggedInUser(_fixture, user, password)).Dispose());
                 }
@@ -204,7 +204,7 @@ namespace DroHub.Tests
                     Assert.ThrowsAny<ArgumentNullException>(() => devices_list.First(d => d.serialNumber == device_serial));
 
                 if (create_user)
-                    (await HttpClientHelper.deleteUser(_fixture, user, password)).Dispose();
+                    await HttpClientHelper.deleteUser(_fixture, user, password);
             }
         }
 
@@ -265,7 +265,7 @@ namespace DroHub.Tests
             {
                 if (create_delete_device)
                 {
-                    (await HttpClientHelper.deleteDevice(_fixture, device_serial, create_device_user, create_device_pass)).Dispose();
+                    await HttpClientHelper.deleteDevice(_fixture, device_serial, create_device_user, create_device_pass);
                     if (create_device_user != "admin")
                         await HttpClientHelper.deleteUser(_fixture, create_device_user, create_device_pass);
                     if (!create_user_same_as_websocket) {
