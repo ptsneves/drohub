@@ -41,7 +41,7 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         private async Task<List<Device>> GetDeviceListInternal() {
-            var device_list = await DevicesController.getSubscribedDevices(_user_manager, User);
+            var device_list = await DeviceHelper.getSubscribedDevices(_user_manager, User);
 
             foreach (var device in device_list)
             {

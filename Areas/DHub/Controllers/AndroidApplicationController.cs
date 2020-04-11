@@ -3,9 +3,9 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.Models;
+using DroHub.Areas.Identity;
 using DroHub.Areas.Identity.Data;
 using DroHub.Data;
-using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -56,59 +56,28 @@ namespace DroHub.Areas.DHub.Controllers
             _signin_manager = signin_manager;
         }
 
-        public static async Task<bool> authenticateToken(SignInManager<DroHubUser> sign_in_manager, string user_name,
-            string token) {
-            var user = await sign_in_manager.UserManager.FindByNameAsync(user_name);
-            var claims = await sign_in_manager.UserManager.GetClaimsAsync(user);
-            if (!claims.Any(c =>
-                c.Type == DroHubUser.PILOT_POLICY_CLAIM && c.Value == DroHubUser.CLAIM_VALID_VALUE)) {
-                return false;
-            }
-            var verified = await sign_in_manager.UserManager.VerifyUserTokenAsync(user, TokenProvider, _APP_TOKEN_PURPOSE,
-                token);
-            if (verified)
-                await sign_in_manager.SignInAsync(user, false);
-
-            return verified;
-        }
-
         [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> CreateDevice([FromBody] DeviceCreateModel device_model) {
-            if (!await authenticateToken(_signin_manager, device_model.UserName, device_model.Token)) {
+            if (!await _signin_manager.isTokenValid(device_model.UserName, device_model.Token)) {
                 return BadRequest();
             }
 
             var user = await _signin_manager.UserManager.FindByNameAsync(device_model.UserName);
-            device_model.Device.Subscription = await DroHubUserLinqExtensions
-                .getCurrentUserWithSubscription((_signin_manager.UserManager),
-                    await _signin_manager.CreateUserPrincipalAsync(user))
+            device_model.Device.Subscription = await (_signin_manager.UserManager)
+                .getCurrentUserWithSubscription(await _signin_manager.CreateUserPrincipalAsync(user))
                 .getCurrentUserSubscription()
                 .SingleAsync();
             await DevicesController.Create(_context, device_model.Device);
             return new JsonResult(new Dictionary<string, string>() {{"result", "ok"}});
         }
 
-        [NonAction]
-        static public async Task<Device> queryDeviceInfo(SignInManager<DroHubUser> sign_in_manager,
-            string user_name, string token, string device_serial) {
-            if (!await authenticateToken(sign_in_manager, user_name, token)) {
-                return null;
-            }
-
-            var user = await sign_in_manager.UserManager.FindByNameAsync(user_name);
-            var device = await DevicesController.getDeviceBySerial(sign_in_manager.UserManager,
-                await sign_in_manager.CreateUserPrincipalAsync(user),
-                device_serial);
-            return device;
-        }
-
         [AllowAnonymous]
         [HttpPost]
-        public async Task<IActionResult> QueryDeviceInfo([FromBody] QueryDeviceInfoModel authenticate_token) {
+        public async Task<IActionResult> QueryDeviceInfo([FromBody] QueryDeviceInfoModel device_query) {
             var response = new Dictionary<string, Device> {
-                ["result"] = await queryDeviceInfo(_signin_manager, authenticate_token.UserName, authenticate_token.Token,
-                    authenticate_token.DeviceSerialNumber)
+                ["result"] = await DeviceHelper.queryDeviceInfo(_signin_manager, device_query.UserName, device_query.Token,
+                    device_query.DeviceSerialNumber)
             };
             return new JsonResult(response);
         }
@@ -117,7 +86,7 @@ namespace DroHub.Areas.DHub.Controllers
         [HttpPost]
         public async Task<IActionResult> AuthenticateToken([FromBody] AuthenticateTokenModel authenticate_token) {
             var response = new Dictionary<string, string>();
-            if (await authenticateToken(_signin_manager, authenticate_token.UserName, authenticate_token.Token))
+            if (await _signin_manager.isTokenValid(authenticate_token.UserName, authenticate_token.Token))
                 response["result"] = "ok";
             else
                 response["result"] = "nok";

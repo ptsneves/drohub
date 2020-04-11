@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.DHub.SignalRHubs;
+using DroHub.Areas.Identity;
 using DroHub.Areas.Identity.Data;
 using DroHub.Data;
 using DroHub.Helpers;
@@ -128,22 +128,10 @@ namespace DroHub.Areas.DHub.Controllers
             return selectList;
         }
 
-        [NonAction]
-        public static Task<List<Device>> getSubscribedDevices(UserManager<DroHubUser> user_manager,
-            ClaimsPrincipal user) {
-            DroHubUserLinqExtensions.getCurrentUserWithSubscription(user_manager, user)
-                .getCurrentUserSubscription()
-                .getSubscriptionDevices()
-                .ToListAsync().GetAwaiter().GetResult();
-            return DroHubUserLinqExtensions.getCurrentUserWithSubscription(user_manager, user)
-                .getCurrentUserSubscription()
-                .getSubscriptionDevices()
-                .ToListAsync();
-        }
 
         // GET: DroHub/GetDevicesList
         public async Task<IActionResult> GetDevicesList(){
-            var device_list = await getSubscribedDevices(_user_manager, User);
+            var device_list = await DeviceHelper.getSubscribedDevices(_user_manager, User);
 
             if (device_list.Any() == false)
                 return NoContent();
@@ -157,7 +145,7 @@ namespace DroHub.Areas.DHub.Controllers
 
             if (start_index < 1 || end_index < start_index ) return BadRequest();
 
-            var telemetries = await DroHubUserLinqExtensions.getCurrentUserWithSubscription(_user_manager, User)
+            var telemetries = await DroHubUserHelper.getCurrentUserWithSubscription(_user_manager, User)
                 .getCurrentUserSubscription()
                 .getSubscriptionDevices()
                 .Where(d => d.Id == id)
@@ -231,14 +219,14 @@ namespace DroHub.Areas.DHub.Controllers
         // GET: DroHub/Devices/Data/5
         public async Task<IActionResult> Data([Required]int id)
         {
-            var device = await getDeviceById(id);
+            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
             return (device == null ? (IActionResult) NotFound() : View(device));
         }
 
         // GET: DroHub/Devices/Camera/5
         public async Task<IActionResult> Camera([Required]int id)
         {
-            var device = await getDeviceById(id);
+            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
             if (device == null) return NotFound();
 
             // Get all device settings options available
@@ -258,31 +246,8 @@ namespace DroHub.Areas.DHub.Controllers
             Land = 1001
         }
 
-
-        [NonAction]
-        public static Task<Device> getDeviceById(UserManager<DroHubUser> user_manager, ClaimsPrincipal user, int id) {
-            return DroHubUserLinqExtensions.getCurrentUserWithSubscription(user_manager, user)
-                .getCurrentUserSubscription()
-                .getSubscriptionDevices()
-                .SingleAsync(d => d.Id == id);
-        }
-
-        [NonAction]
-        public static async Task<Device> getDeviceBySerial(UserManager<DroHubUser> user_manager, ClaimsPrincipal user,
-            string serial_number){
-            return await DroHubUserLinqExtensions.getCurrentUserWithSubscription(user_manager, user)
-                .getCurrentUserSubscription()
-                .getSubscriptionDevices()
-                .SingleOrDefaultAsync(d => d.SerialNumber == serial_number);
-        }
-
-        [NonAction]
-        private async Task<Device> getDeviceById(int id){
-            return await getDeviceById(_user_manager, User, id);
-        }
-
         public async Task<IActionResult> TakeOff([Required]int id) {
-            var device = await getDeviceById(id);
+            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
             var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
             if (rpc_session != null)
             {
@@ -297,7 +262,7 @@ namespace DroHub.Areas.DHub.Controllers
             return Ok();
         }
         public async Task<IActionResult> Land([Required]int id) {
-            var device = await getDeviceById(id);
+            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
             var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
             if (rpc_session != null)
             {
@@ -314,7 +279,7 @@ namespace DroHub.Areas.DHub.Controllers
 
         public async Task<IActionResult> ReturnToHome([Required]int id)
         {
-            var device = await getDeviceById(id);
+            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
             var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
             if (rpc_session != null)
             {
@@ -332,7 +297,7 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> MoveToPosition([Required]int id, [Required]float latitude,
             [Required]float longitude, [Required]float altitude, [Required]double heading)
         {
-            var device = await getDeviceById(id);
+            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
             var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
             if (rpc_session != null)
             {
@@ -359,7 +324,7 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> TakePicture([Required]int id,
             [Required][Bind("ActionType")]DroneTakePictureRequest request) {
 
-            var device = await getDeviceById(id);
+            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
             var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
             if (rpc_session != null && request != null)
             {
@@ -375,7 +340,7 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> RecordVideo([Required]int id,
             [Required][Bind("ActionType")]DroneRecordVideoRequest request) {
 
-            var device = await getDeviceById(id);
+            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
             var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
             if (rpc_session != null && request != null)
             {
@@ -389,7 +354,7 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         public async Task<IActionResult> GetFileList([Required]int id) {
-            var device = await getDeviceById(id);
+            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
             var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
             if (rpc_session != null)
             {
@@ -418,7 +383,7 @@ namespace DroHub.Areas.DHub.Controllers
         // GET: DroHub/Devices/Gallery/5
         public async Task<IActionResult> Gallery([Required]int id)
         {
-            var device = await getDeviceById(id);
+            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
             if (device == null)
                 throw new InvalidOperationException("Cannot get device with this ID");
 
@@ -461,8 +426,8 @@ namespace DroHub.Areas.DHub.Controllers
             }
 
             if (!await _context.Devices.AnyAsync(d => d.SerialNumber == device.SerialNumber)) {
-                device.Subscription = await DroHubUserLinqExtensions
-                    .getCurrentUserWithSubscription(_user_manager, User)
+                device.Subscription = await _user_manager
+                    .getCurrentUserWithSubscription(User)
                     .getCurrentUserSubscription()
                     .SingleAsync();
 
@@ -476,7 +441,7 @@ namespace DroHub.Areas.DHub.Controllers
 
         // GET: DroHub/Devices/Edit/5
         public async Task<IActionResult> Edit([Required]int id) {
-            var device = await getDeviceById(id);
+            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
             if (device == null) return NotFound();
 
             // Get all device settings options available
@@ -517,7 +482,7 @@ namespace DroHub.Areas.DHub.Controllers
         // GET: DroHub/Devices/Delete/5
         public async Task<IActionResult> Delete([Required]int id) {
 
-            var device = await getDeviceById(id);
+            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
             if (device == null)
             {
                 return NotFound();
@@ -531,7 +496,7 @@ namespace DroHub.Areas.DHub.Controllers
         [ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed([Required]int id){
-            var d = await getDeviceById(id);
+            var d = await DeviceHelper.getDeviceById(_user_manager, User, id);
 
             _context.Devices.Remove(d);
             await _context.SaveChangesAsync();

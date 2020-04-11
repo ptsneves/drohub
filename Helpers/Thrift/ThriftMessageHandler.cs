@@ -6,6 +6,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using DroHub.Areas.DHub;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.Identity.Data;
 using Microsoft.AspNetCore.Http;
@@ -175,7 +176,7 @@ namespace DroHub.Helpers.Thrift
 
             // Disable because we want to keep the abort short circuit pattern
             // ReSharper disable once InvertIf
-            if ((await AndroidApplicationController.queryDeviceInfo(_signin_manager,
+            if ((await DeviceHelper.queryDeviceInfo(_signin_manager,
                     context.Request.Headers["x-drohub-user"],
                     context.Request.Headers["x-drohub-token"],
                     context.Request.Headers["x-device-expected-serial"])) == null) {
