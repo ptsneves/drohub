@@ -218,10 +218,11 @@ namespace DroHub.Tests
         [InlineData("admin", "ASerial", DroHubUser.ADMIN_POLICY_CLAIM, 999, false, true, true, true)]
         // [InlineData("admin", "", null, 999, true, false, true)] // We cannot run this test because stupid SetRequestHeader always sets an empty space on null
         [InlineData("sub2@drohub.xyz", "Aserial", DroHubUser.SUBSCRIBER_POLICY_CLAIM, 999, true, true, false, false)]
+        [InlineData("sub2@drohub.xyz", "Aserial", DroHubUser.SUBSCRIBER_POLICY_CLAIM, 999, true, false)]
         [Theory]
         public async void TestWebSocketConnection(string user, string device_serial, string user_base_type,
             int allowed_flight_time_minutes, bool expect_throw, bool create_delete_device,
-            bool create_user_same_as_websocket, bool create_user_organization_same_as_websocket_user) {
+            bool create_user_same_as_websocket = false, bool create_user_organization_same_as_websocket_user = false) {
 
             const string CREATE_DEVICE_ORGANIZATION = "UN";
             const string CREATE_DEVICE_DEVICE_NAME = "A Name";
