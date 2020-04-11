@@ -4,7 +4,6 @@ using System.Net;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Threading;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.DHub.Models;
 
@@ -123,12 +122,7 @@ namespace DroHub.Tests.TestInfrastructure
         }
 
         public static async Task createDevice(DroHubFixture test_fixture, string user, string password,
-            string organization, string user_base_type, int allowed_flight_time_minutes, int allowed_user_count,
-            string device_name, string device_serial, bool create_user = false, bool use_app_api = false) {
-            HttpClientHelper http_helper;
-            if (create_user)
-                (await addUser(test_fixture, user, password, organization, user_base_type,
-                    allowed_flight_time_minutes, allowed_user_count)).Dispose();
+            string device_name, string device_serial, bool use_app_api = false) {
             if (use_app_api) {
                 var token_result = await getApplicationToken(test_fixture, user, password);
                 var m = new AndroidApplicationController.DeviceCreateModel() {
@@ -143,7 +137,7 @@ namespace DroHub.Tests.TestInfrastructure
 
             }
             else {
-                http_helper = await createLoggedInUser(test_fixture, user, password);
+                var http_helper = await createLoggedInUser(test_fixture, user, password);
 
                 var create_device_url = new Uri(test_fixture.SiteUri, "DHub/Devices/Create");
                 using (var create_page_response = await http_helper.Client.GetAsync(create_device_url)) {

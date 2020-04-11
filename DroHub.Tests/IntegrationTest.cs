@@ -160,10 +160,14 @@ namespace DroHub.Tests
 
             try
             {
+                if (create_user)
+                    await HttpClientHelper.addUser(_fixture, user, password,
+                        ORGANIZATION, user_base_type, ALLOWED_FLIGHT_TIME_MINUTES, ALLOWED_USER_COUNT);
+
                 if (expect_created) {
-                    await HttpClientHelper.createDevice(_fixture, user, password,
-                        ORGANIZATION, user_base_type, ALLOWED_FLIGHT_TIME_MINUTES, ALLOWED_USER_COUNT, device_name,
-                        device_serial, create_user, use_app_api);
+
+                    await HttpClientHelper.createDevice(_fixture, user, password, device_name, device_serial,
+                        use_app_api);
 
                     var devices_list = await HttpClientHelper.getDeviceList(_fixture, user, password);
                     Assert.NotNull(devices_list);
@@ -177,11 +181,18 @@ namespace DroHub.Tests
                 }
                 else
                 {
-                    await Assert.ThrowsAsync<InvalidOperationException>(async () => {
-                        await HttpClientHelper.createDevice(_fixture, user, password,
-                            ORGANIZATION, user_base_type, ALLOWED_FLIGHT_TIME_MINUTES, ALLOWED_USER_COUNT, device_name,
-                            device_serial, create_user);
-                    });
+                    if (use_app_api) {
+                        await Assert.ThrowsAsync<System.Net.Http.HttpRequestException>(async () => {
+                            await HttpClientHelper.createDevice(_fixture, user, password, device_name, device_serial,
+                                true);
+                        });
+                    }
+                    else {
+                        await Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                            await HttpClientHelper.createDevice(_fixture, user, password, device_name, device_serial);
+                        });
+                    }
+
                     Assert.Null(await HttpClientHelper.getDeviceList(_fixture, user, password));
                 }
             }
@@ -228,9 +239,12 @@ namespace DroHub.Tests
             var create_device_pass = create_user_same_as_websocket ? password : "subscriber@drohub.xyz";
 
             if (create_delete_device) {
+                if (create_device_user != "admin")
+                    await HttpClientHelper.addUser(_fixture, create_device_user, create_device_pass,
+                        CREATE_DEVICE_ORGANIZATION, CREATE_DEVICE_BASE_TYPE, allowed_flight_time_minutes, ALLOWED_USER_COUNT);
+
                 await HttpClientHelper.createDevice(_fixture, create_device_user, create_device_pass,
-                    CREATE_DEVICE_ORGANIZATION, CREATE_DEVICE_BASE_TYPE, allowed_flight_time_minutes, ALLOWED_USER_COUNT,
-                    CREATE_DEVICE_DEVICE_NAME, device_serial, create_device_user != "admin");
+                    CREATE_DEVICE_DEVICE_NAME, device_serial);
 
                 if (!create_user_same_as_websocket) {
                     await HttpClientHelper.addUser(_fixture, user, password,

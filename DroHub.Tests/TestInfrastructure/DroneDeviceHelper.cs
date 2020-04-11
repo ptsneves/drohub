@@ -110,11 +110,12 @@ namespace DroHub.Tests.TestInfrastructure
             _user_name = user;
             _password = password;
 
-            if (create_device)
-            {
+            if (create_device) {
+                if (create_user)
+                    await HttpClientHelper.addUser(_fixture, user,
+                        password, organization_name, user_base_type, allowed_flight_time_minutes, allowed_user_count);
                 await HttpClientHelper.createDevice(_fixture, user,
-                    password, organization_name, user_base_type, allowed_flight_time_minutes, allowed_user_count,
-                    _device_serial, _device_serial, create_user);
+                    password, _device_serial, _device_serial, create_user);
                 must_delete_device = true;
                 must_delete_user = create_user;
             }
