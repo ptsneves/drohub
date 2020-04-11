@@ -45,12 +45,12 @@ namespace DroHub.Tests
         {
             if(create) {
                 if (!expect_create_fail)
-                    using (var http_client_helper = await HttpClientHelper.addUser(_fixture, user, password,
-                        organization, user_base_type, allowed_flight_time_minutes, allowed_user_count)) { }
+                    await HttpClientHelper.addUser(_fixture, user, password, organization, user_base_type, allowed_flight_time_minutes, allowed_user_count);
                 else
                     await Assert.ThrowsAsync<System.InvalidOperationException>(async () =>
-                        (await HttpClientHelper.addUser(_fixture, user, password,
-                            organization, user_base_type, allowed_flight_time_minutes, allowed_user_count)).Dispose());
+                        await HttpClientHelper.addUser(_fixture, user,  password, organization,
+                            user_base_type, allowed_flight_time_minutes, allowed_user_count)
+                    );
             }
             try {
                 await testLogin(user, password, expect_login_fail);

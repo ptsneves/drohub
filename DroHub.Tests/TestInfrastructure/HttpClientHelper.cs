@@ -33,7 +33,7 @@ namespace DroHub.Tests.TestInfrastructure
                 d[key] = value;
         }
 
-        public static async ValueTask<HttpClientHelper> addUser(DroHubFixture test_fixture, string user_email, string user_password,
+        public static async Task addUser(DroHubFixture test_fixture, string user_email, string user_password,
             string organization, string user_base_type, int allowed_flight_time_minutes, int allowed_user_count) {
             var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, "admin", test_fixture.AdminPassword);
             await http_helper.Response.Content.ReadAsStringAsync();
@@ -57,9 +57,9 @@ namespace DroHub.Tests.TestInfrastructure
                 http_helper.Response = await http_helper.Client.PostAsync(create_user_url, urlenc);
                 http_helper.Response.EnsureSuccessStatusCode();
                 var dom = DroHubFixture.getHtmlDOM(await http_helper.Response.Content.ReadAsStringAsync());
+                http_helper?.Dispose();
                 if (dom.QuerySelectorAll("div.validation-summary-errors").Any())
                     throw new InvalidOperationException("User Add has failed");
-                return http_helper;
             }
         }
 
