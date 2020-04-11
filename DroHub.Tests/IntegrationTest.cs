@@ -129,10 +129,20 @@ namespace DroHub.Tests
         public async void TestQueryDeviceInfoIsEmpty() {
             var token = (await HttpClientHelper.getApplicationToken(_fixture, "admin",
                 _fixture.AdminPassword))["result"];
-            var device_info = (await HttpClientHelper.queryDeviceInfo(_fixture, "admin", token,
-                DEFAULT_DEVICE_SERIAL));
+            var device_info = await HttpClientHelper.queryDeviceInfo(_fixture, "admin", token,
+                DEFAULT_DEVICE_SERIAL);
             Assert.Null(device_info["result"]);
         }
+
+        [Fact]
+        public async void TestQueryDeviceInfoOnNonExistingUser() {
+            var device_info = await HttpClientHelper.queryDeviceInfo(_fixture, "asd",
+                "sadsdd",
+                DEFAULT_DEVICE_SERIAL);
+            Assert.Null(device_info["result"]);
+        }
+
+
 
         [InlineData("admin", null, "MyAnafi", "000000", true, true)]
         [InlineData("admin", null, "MyAnafi", "000000", true)]

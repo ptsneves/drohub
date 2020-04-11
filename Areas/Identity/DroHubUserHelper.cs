@@ -44,6 +44,9 @@ namespace DroHub.Areas.Identity {
         public static async Task<bool> isTokenValid(this SignInManager<DroHubUser> sign_in_manager, string user_name,
             string token) {
             var user = await sign_in_manager.UserManager.FindByNameAsync(user_name);
+            if (user == null)
+                return false;
+
             var claims = await sign_in_manager.UserManager.GetClaimsAsync(user);
             if (!claims.Any(c =>
                 c.Type == DroHubUser.PILOT_POLICY_CLAIM && c.Value == DroHubUser.CLAIM_VALID_VALUE)) {
