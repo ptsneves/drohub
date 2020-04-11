@@ -5,12 +5,26 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
 using DroHub.Areas.Identity.Data;
+using DroHub.Helpers.Thrift;
+
+// ReSharper disable StringLiteralTypo
 
 namespace DroHub.Tests
 {
     public class IntegrationTest : IClassFixture<DroHubFixture>
     {
         DroHubFixture _fixture;
+
+        private const int ALLOWED_USER_COUNT = 999;
+        private const string DEFAULT_ORGANIZATION = "UN";
+        private const string DEFAULT_DEVICE_NAME = "A Name";
+        private const string DEFAULT_BASE_TYPE = DroHubUser.SUBSCRIBER_POLICY_CLAIM;
+        private const string DEFAULT_DEVICE_SERIAL = "Aserial";
+        private const string DEFAULT_USER = "auser@drohub.xyz";
+        private const string DEFAULT_PASSWORD = "password1234";
+        private const int DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES = 3;
+        private const int DEFAULT_ALLOWED_USER_COUNT = 3;
+
         public IntegrationTest(DroHubFixture fixture) {
             _fixture = fixture;
         }
@@ -90,22 +104,16 @@ namespace DroHub.Tests
         [InlineData(DroHubUser.GUEST_POLICY_CLAIM, false)]
         [Theory]
         public async void TestAuthenticationToken(string user_base_type, bool expect_get_token_success) {
-            const string USER = "auser@drohub.xyz";
-            const string PASSWORD = "password1234";
-            const string ORGANIZATION = "Org";
-            const int ALLOWED_FLIGHT_TIME_MINUTES = 3;
-            const int ALLOWED_USER_COUNT = 3;
-
             try {
-                await HttpClientHelper.addUser(_fixture, USER, PASSWORD,
-                    ORGANIZATION, user_base_type, ALLOWED_FLIGHT_TIME_MINUTES, ALLOWED_USER_COUNT);
+                await HttpClientHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
+                    DEFAULT_ORGANIZATION, user_base_type, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
 
-                var res = await HttpClientHelper.getApplicationToken(_fixture, USER, PASSWORD);
+                var res = await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
                 Assert.NotEmpty(res["result"]);
                 if (expect_get_token_success) {
                     Assert.NotEqual("nok", res["result"]);
                     var token = res["result"];
-                    res = await HttpClientHelper.authenticateToken(_fixture, USER, token);
+                    res = await HttpClientHelper.authenticateToken(_fixture, DEFAULT_USER, token);
                     Assert.Equal("ok", res["result"]);
                 }
                 else {
@@ -113,19 +121,16 @@ namespace DroHub.Tests
                 }
             }
             finally {
-                await HttpClientHelper.deleteUser(_fixture, USER, PASSWORD);
+                await HttpClientHelper.deleteUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
             }
         }
 
         [Fact]
         public async void TestQueryDeviceInfoIsEmpty() {
-            const string USER = "admin";
-            const string SERIAL_NUMBER = "RandomSerial";
-
-            var token = (await HttpClientHelper.getApplicationToken(_fixture, USER,
+            var token = (await HttpClientHelper.getApplicationToken(_fixture, "admin",
                 _fixture.AdminPassword))["result"];
-            var device_info = (await HttpClientHelper.queryDeviceInfo(_fixture, USER, token,
-                SERIAL_NUMBER));
+            var device_info = (await HttpClientHelper.queryDeviceInfo(_fixture, "admin", token,
+                DEFAULT_DEVICE_SERIAL));
             Assert.Null(device_info["result"]);
         }
 
@@ -148,9 +153,6 @@ namespace DroHub.Tests
 
             var create_user = true;
 
-            const string ORGANIZATION = "UN";
-            const int ALLOWED_FLIGHT_TIME_MINUTES = 10;
-            const int ALLOWED_USER_COUNT = 10;
             var password = "default";
 
             if (user == "admin") {
@@ -160,8 +162,7 @@ namespace DroHub.Tests
             try
             {
                 await HttpClientHelper.addUser(_fixture, user, password,
-                    ORGANIZATION, user_base_type, ALLOWED_FLIGHT_TIME_MINUTES, ALLOWED_USER_COUNT);
-
+                    DEFAULT_ORGANIZATION, user_base_type, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
 
                 if (expect_created) {
 
@@ -224,12 +225,7 @@ namespace DroHub.Tests
             int allowed_flight_time_minutes, bool expect_throw, bool create_delete_device,
             bool create_user_same_as_websocket = false, bool create_user_organization_same_as_websocket_user = false) {
 
-            const string CREATE_DEVICE_ORGANIZATION = "UN";
-            const string CREATE_DEVICE_DEVICE_NAME = "A Name";
-            const string CREATE_DEVICE_BASE_TYPE = DroHubUser.SUBSCRIBER_POLICY_CLAIM;
-            const int ALLOWED_USER_COUNT = 999;
-
-            var password = "default";
+            var password = DEFAULT_PASSWORD;
             if (user == "admin")
                 password = _fixture.AdminPassword;
 
@@ -238,14 +234,14 @@ namespace DroHub.Tests
 
             if (create_delete_device) {
                 await HttpClientHelper.addUser(_fixture, create_device_user, create_device_pass,
-                    CREATE_DEVICE_ORGANIZATION, CREATE_DEVICE_BASE_TYPE, allowed_flight_time_minutes, ALLOWED_USER_COUNT);
+                    DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, allowed_flight_time_minutes, ALLOWED_USER_COUNT);
 
                 await HttpClientHelper.createDevice(_fixture, create_device_user, create_device_pass,
-                    CREATE_DEVICE_DEVICE_NAME, device_serial);
+                    DEFAULT_DEVICE_NAME, device_serial);
 
                 if (!create_user_same_as_websocket) {
                     await HttpClientHelper.addUser(_fixture, user, password,
-                        CREATE_DEVICE_ORGANIZATION+create_user_organization_same_as_websocket_user,
+                        DEFAULT_ORGANIZATION+create_user_organization_same_as_websocket_user,
                         user_base_type, allowed_flight_time_minutes, ALLOWED_USER_COUNT);
                 }
             }
