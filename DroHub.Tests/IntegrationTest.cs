@@ -155,14 +155,13 @@ namespace DroHub.Tests
 
             if (user == "admin") {
                 password = _fixture.AdminPassword;
-                create_user = false;
             }
 
             try
             {
-                if (create_user)
-                    await HttpClientHelper.addUser(_fixture, user, password,
-                        ORGANIZATION, user_base_type, ALLOWED_FLIGHT_TIME_MINUTES, ALLOWED_USER_COUNT);
+                await HttpClientHelper.addUser(_fixture, user, password,
+                    ORGANIZATION, user_base_type, ALLOWED_FLIGHT_TIME_MINUTES, ALLOWED_USER_COUNT);
+
 
                 if (expect_created) {
 
@@ -203,8 +202,7 @@ namespace DroHub.Tests
                 var devices_list = await HttpClientHelper.getDeviceList(_fixture,  user, password);
                     Assert.ThrowsAny<ArgumentNullException>(() => devices_list.First(d => d.serialNumber == device_serial));
 
-                if (create_user)
-                    await HttpClientHelper.deleteUser(_fixture, user, password);
+                await HttpClientHelper.deleteUser(_fixture, user, password);
             }
         }
 
@@ -238,9 +236,8 @@ namespace DroHub.Tests
             var create_device_pass = create_user_same_as_websocket ? password : "subscriber@drohub.xyz";
 
             if (create_delete_device) {
-                if (create_device_user != "admin")
-                    await HttpClientHelper.addUser(_fixture, create_device_user, create_device_pass,
-                        CREATE_DEVICE_ORGANIZATION, CREATE_DEVICE_BASE_TYPE, allowed_flight_time_minutes, ALLOWED_USER_COUNT);
+                await HttpClientHelper.addUser(_fixture, create_device_user, create_device_pass,
+                    CREATE_DEVICE_ORGANIZATION, CREATE_DEVICE_BASE_TYPE, allowed_flight_time_minutes, ALLOWED_USER_COUNT);
 
                 await HttpClientHelper.createDevice(_fixture, create_device_user, create_device_pass,
                     CREATE_DEVICE_DEVICE_NAME, device_serial);
@@ -266,8 +263,7 @@ namespace DroHub.Tests
                 if (create_delete_device)
                 {
                     await HttpClientHelper.deleteDevice(_fixture, device_serial, create_device_user, create_device_pass);
-                    if (create_device_user != "admin")
-                        await HttpClientHelper.deleteUser(_fixture, create_device_user, create_device_pass);
+                    await HttpClientHelper.deleteUser(_fixture, create_device_user, create_device_pass);
                     if (!create_user_same_as_websocket) {
                         await HttpClientHelper.deleteUser(_fixture, user, password);
                     }

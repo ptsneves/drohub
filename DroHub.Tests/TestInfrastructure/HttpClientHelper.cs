@@ -35,6 +35,9 @@ namespace DroHub.Tests.TestInfrastructure
 
         public static async Task addUser(DroHubFixture test_fixture, string user_email, string user_password,
             string organization, string user_base_type, int allowed_flight_time_minutes, int allowed_user_count) {
+            if (user_email == "admin")
+                return;
+
             var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, "admin", test_fixture.AdminPassword);
             await http_helper.Response.Content.ReadAsStringAsync();
             var create_user_url = new Uri(test_fixture.SiteUri, "Identity/Account/Manage/AdminPanel");
@@ -64,6 +67,9 @@ namespace DroHub.Tests.TestInfrastructure
         }
 
         public static async Task deleteUser(DroHubFixture test_fixture, string user_email, string user_password) {
+            if (user_email == "admin")
+                return;
+
             var http_helper = await createLoggedInUser(test_fixture, user_email, user_password);
             var create_device_url = new Uri(test_fixture.SiteUri, "Identity/Account/Manage/DeletePersonalData");
             using (var create_page_response = await http_helper.Client.GetAsync(create_device_url))
