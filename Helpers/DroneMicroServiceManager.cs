@@ -21,11 +21,13 @@ namespace DroHub.Helpers.Thrift
         private readonly JanusService _janus_service;
         private readonly IServiceProvider _services;
         private CancellationTokenSource _cancellation_token_source;
+        private bool _alive_flag;
+        public static TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(30);
         public DroneMicroServiceManager(ILogger<DroneMicroServiceManager> logger,
             IHubContext<TelemetryHub> hub,
             JanusService janus_service,
-            IServiceProvider services)
-        {
+            IServiceProvider services) {
+            _alive_flag = false;
             _logger = logger;
             _logger.LogDebug("Constructed DroneMicroService");
             _hub = hub;
@@ -42,11 +44,21 @@ namespace DroHub.Helpers.Thrift
                 Task.Run(async () => await GatherRadioSignal(handler)),
                 Task.Run(async () => await GatherFlyingState(handler)),
                 Task.Run(async () => await GatherBatteryLevel(handler)),
-                Task.Run(async () => await GatherVideoSource(handler))
+                Task.Run(async () => await GatherVideoSource(handler)),
+                Task.Run(async () => await MonitorConnectionAlive())
             };
             return new ValueTask<List<Task>>(result);
         }
 
+        private async Task MonitorConnectionAlive() {
+            do {
+                _alive_flag = false;
+                await Task.Delay(ConnectionTimeout, _cancellation_token_source.Token);
+            } while (_alive_flag);
+            _logger.LogInformation("No data received for more than {timeout} seconds", ConnectionTimeout.Seconds);
+            _cancellation_token_source.Cancel();
+
+        }
         private async Task RecordTelemetry(IDroneTelemetry telemetry_data, DroHubContext context)
         {
             context.Add(telemetry_data);
@@ -84,19 +96,20 @@ namespace DroHub.Helpers.Thrift
         {
             string t_name = typeof(T).FullName;
             _logger.LogDebug($"Starting Service {t_name}");
-            try
-            {
-                using (var client = handler.getClient<Drone.Client>(_logger))
-                {
+            try {
+                using (var client = handler.getClient<Drone.Client>(_logger)) {
                     T telemetry = await del(client.Client, token);
+                    _alive_flag = true;
                     using (var scope = _services.CreateScope()) {
                         var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
-                        var device = await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == telemetry.Serial, token);
-                        if (device == null || token.IsCancellationRequested)
-                        {
-                            _logger.LogDebug("Not saving received telemetry for unregistered device {serial}", telemetry.Serial);
+                        var device =
+                            await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == telemetry.Serial, token);
+                        if (device == null || token.IsCancellationRequested) {
+                            _logger.LogDebug("Not saving received telemetry for unregistered device {serial}",
+                                telemetry.Serial);
                             return;
                         }
+
                         _logger.LogWarning($"received {t_name} {telemetry}", telemetry);
                         await BroadcastToSignalR(t_name, telemetry, context);
                         await RecordTelemetry(telemetry, context);

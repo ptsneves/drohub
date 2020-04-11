@@ -4,6 +4,8 @@ using DroHub.Tests.TestInfrastructure;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
+using System.Net.WebSockets;
+using System.Threading;
 using DroHub.Areas.Identity.Data;
 using DroHub.Helpers.Thrift;
 
@@ -142,8 +144,6 @@ namespace DroHub.Tests
             Assert.Null(device_info["result"]);
         }
 
-
-
         [InlineData("admin", null, "MyAnafi", "000000", true, true)]
         [InlineData("admin", null, "MyAnafi", "000000", true)]
         [InlineData("admin", null, "MyAnafi", null, false)]
@@ -275,6 +275,36 @@ namespace DroHub.Tests
                         await HttpClientHelper.deleteUser(_fixture, user, password);
                     }
                 }
+            }
+        }
+
+        [Fact]
+        public async void TestThriftConnectionDroppedAtTimeout() {
+            await HttpClientHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
+                DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, ALLOWED_USER_COUNT);
+
+            await HttpClientHelper.createDevice(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
+                DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+
+            try {
+                var token = (await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER, DEFAULT_PASSWORD))["result"];
+                using var t_web_socket_client = HttpClientHelper.getTWebSocketClient(_fixture, DEFAULT_USER, token,
+                    DEFAULT_DEVICE_SERIAL);
+
+                await t_web_socket_client.OpenAsync();
+                Assert.True(t_web_socket_client.IsOpen);
+                await Task.Delay(DroneMicroServiceManager.ConnectionTimeout + TimeSpan.FromSeconds(1));
+
+                //For some reason the first one does not throw broken pipe. Probably some stupid internal in WebSocket.
+                //All the library is crap.
+                await t_web_socket_client.WriteAsync(new byte[1]);
+
+                await Assert.ThrowsAsync<System.IO.IOException>(async () =>
+                    await t_web_socket_client.WriteAsync(new byte[1]));
+            }
+            finally {
+                await HttpClientHelper.deleteDevice(_fixture, DEFAULT_DEVICE_SERIAL, DEFAULT_USER, DEFAULT_PASSWORD);
+                await HttpClientHelper.deleteUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
             }
         }
 

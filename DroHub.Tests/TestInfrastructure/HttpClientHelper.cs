@@ -195,12 +195,18 @@ namespace DroHub.Tests.TestInfrastructure
             await deleteDevice(test_fixture, device_id, user, password);
         }
 
-        public static async Task openWebSocket(DroHubFixture fixture, string user, string token, string device_serial) {
-            using var ws_transport = new TWebSocketClient(fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text);
+        public static TWebSocketClient getTWebSocketClient(DroHubFixture fixture, string user, string token,
+            string device_serial) {
+            var ws_transport = new TWebSocketClient(fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text);
             ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
             ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
             ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", user);
             ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-token", token);
+            return ws_transport;
+        }
+
+        public static async Task openWebSocket(DroHubFixture fixture, string user, string token, string device_serial) {
+            using var ws_transport = getTWebSocketClient(fixture, user, token, device_serial);
             await ws_transport.OpenAsync();
         }
 
