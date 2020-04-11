@@ -216,12 +216,12 @@ namespace DroHub.Tests
             }
         }
 
-        [InlineData("admin", "ASerial", DroHubUser.ADMIN_POLICY_CLAIM, 999, false, true, true, true)]
-        // [InlineData("admin", "", null, 999, true, false, true)] // We cannot run this test because stupid SetRequestHeader always sets an empty space on null
-        [InlineData("sub2@drohub.xyz", "Aserial", DroHubUser.SUBSCRIBER_POLICY_CLAIM, 999, true, true, false, false)]
-        [InlineData("sub2@drohub.xyz", "Aserial", DroHubUser.SUBSCRIBER_POLICY_CLAIM, 999, true, false)]
+        [InlineData("admin", DroHubUser.ADMIN_POLICY_CLAIM, 999, false, true, true, true)]
+        // We cannot run a test to validate empty headers because stupid SetRequestHeader always sets an empty space
+        [InlineData("sub2@drohub.xyz", DroHubUser.SUBSCRIBER_POLICY_CLAIM, 999, true, true, false, false)]
+        [InlineData("sub2@drohub.xyz", DroHubUser.SUBSCRIBER_POLICY_CLAIM, 999, true, false)]
         [Theory]
-        public async void TestWebSocketConnection(string user, string device_serial, string user_base_type,
+        public async void TestWebSocketConnection(string user, string user_base_type,
             int allowed_flight_time_minutes, bool expect_throw, bool create_delete_device,
             bool create_user_same_as_websocket = false, bool create_user_organization_same_as_websocket_user = false) {
 
@@ -237,7 +237,7 @@ namespace DroHub.Tests
                     DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, allowed_flight_time_minutes, ALLOWED_USER_COUNT);
 
                 await HttpClientHelper.createDevice(_fixture, create_device_user, create_device_pass,
-                    DEFAULT_DEVICE_NAME, device_serial);
+                    DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
                 if (!create_user_same_as_websocket) {
                     await HttpClientHelper.addUser(_fixture, user, password,
@@ -251,15 +251,15 @@ namespace DroHub.Tests
             try {
                 if (expect_throw)
                     await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () =>
-                        await HttpClientHelper.openWebSocket(_fixture, user, token, device_serial));
+                        await HttpClientHelper.openWebSocket(_fixture, user, token, DEFAULT_DEVICE_SERIAL));
                 else
-                    await HttpClientHelper.openWebSocket(_fixture, user, token, device_serial);
+                    await HttpClientHelper.openWebSocket(_fixture, user, token, DEFAULT_DEVICE_SERIAL);
             }
             finally
             {
                 if (create_delete_device)
                 {
-                    await HttpClientHelper.deleteDevice(_fixture, device_serial, create_device_user, create_device_pass);
+                    await HttpClientHelper.deleteDevice(_fixture, DEFAULT_DEVICE_SERIAL, create_device_user, create_device_pass);
                     await HttpClientHelper.deleteUser(_fixture, create_device_user, create_device_pass);
                     if (!create_user_same_as_websocket) {
                         await HttpClientHelper.deleteUser(_fixture, user, password);
