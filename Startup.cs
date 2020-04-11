@@ -79,9 +79,8 @@ namespace DroHub
             {
                 app.UseDeveloperExceptionPage();
             }
-            else
-            {
-                app.UseExceptionHandler("/Home/Error");
+            else {
+                app.UseStatusCodePages();
             }
 
             app.UseForwardedHeaders(new ForwardedHeadersOptions
@@ -98,9 +97,8 @@ namespace DroHub
             {
                 routes.MapRoute(
                     name: "areas",
-                    template: "{area:exists}/{controller=Home}/{action=Index}/{id?}"
+                    template: "{area:exists}/{controller}/{action=Index}/{id?}"
                 );
-                routes.MapRoute("default", "{controller=Home}/{action=Index}/{id?}");
             });
 
             app.UseSignalR(route =>
