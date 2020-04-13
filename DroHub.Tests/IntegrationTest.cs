@@ -33,9 +33,9 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestLoginIsNotHomePageAndAllowsAnonymous() {
-            using (var http_helper = await HttpClientHelper.createHttpClient(_fixture, _fixture.SiteUri))
-                Assert.NotEqual(new Uri(_fixture.SiteUri, "Identity/Account/Login?ReturnUrl=%2FIdentity%2FAccount%2FManage"),
-                    http_helper.Response.RequestMessage.RequestUri);
+            using var http_helper = await HttpClientHelper.createHttpClient(_fixture, _fixture.SiteUri);
+            Assert.NotEqual(new Uri(_fixture.SiteUri, "Identity/Account/Login?ReturnUrl=%2FIdentity%2FAccount%2FManage"),
+                http_helper.Response.RequestMessage.RequestUri);
         }
 
         private async Task testLogin(string user, string password, bool expect_login_fail) {
@@ -54,15 +54,12 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestLogout() {
-            using (var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, "admin", _fixture.AdminPassword))
-            {
-                var logout_url = new Uri(_fixture.SiteUri, "Identity/Account/Logout");
+            using var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, "admin", _fixture.AdminPassword);
+            var logout_url = new Uri(_fixture.SiteUri, "Identity/Account/Logout");
 
-                using(var response = await http_client_helper.Client.GetAsync(logout_url)) {
-                    response.EnsureSuccessStatusCode();
-                    Assert.Equal(new Uri(_fixture.SiteUri, "/"), response.RequestMessage.RequestUri);
-                }
-            }
+            using var response = await http_client_helper.Client.GetAsync(logout_url);
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(new Uri(_fixture.SiteUri, "/"), response.RequestMessage.RequestUri);
         }
 
         // [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, true)]
@@ -122,9 +119,6 @@ namespace DroHub.Tests
         [Theory]
         public async void TestCreateAndDeleteDevice(string user, string user_base_type,
             string device_name, string device_serial, bool expect_created, bool use_app_api = false) {
-
-            var create_user = true;
-
             var password = "default";
 
             if (user == "admin") {
@@ -176,12 +170,9 @@ namespace DroHub.Tests
         }
 
         [Fact]
-        public async void TestConnectionClosedOnNoSerial()
-        {
-            using (var ws_transport = new TWebSocketClient(_fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text))
-            {
-                await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());
-            }
+        public async void TestConnectionClosedOnNoSerial() {
+            using var ws_transport = new TWebSocketClient(_fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text);
+            await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());
         }
 
         [Fact]
