@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.DHub.Models;
+using DroHub.Data.Migrations;
 
 namespace DroHub.Tests.TestInfrastructure
 {
@@ -33,18 +34,24 @@ namespace DroHub.Tests.TestInfrastructure
                 d[key] = value;
         }
 
-        public static async Task addUser(DroHubFixture test_fixture, string user_email, string user_password,
-            string organization, string user_base_type, int allowed_flight_time_minutes, int allowed_user_count) {
-            if (user_email == "admin")
-                return;
+        public class AddUserHelper : IAsyncDisposable {
+            public static async ValueTask<AddUserHelper> addUser(DroHubFixture test_fixture,
+                string user_email,
+                string user_password,
+                string organization,
+                string user_base_type,
+                int allowed_flight_time_minutes,
+                int allowed_user_count) {
+                if (user_email == "admin")
+                    return new AddUserHelper(test_fixture, user_email, user_password);
 
-            var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, "admin", test_fixture.AdminPassword);
-            await http_helper.Response.Content.ReadAsStringAsync();
-            var create_user_url = new Uri(test_fixture.SiteUri, "Identity/Account/Manage/AdminPanel");
-            using (var create_page_response = await http_helper.Client.GetAsync(create_user_url))
-            {
+                var http_helper = await createLoggedInUser(test_fixture, "admin", test_fixture.AdminPassword);
+                await http_helper.Response.Content.ReadAsStringAsync();
+                var create_user_url = new Uri(test_fixture.SiteUri, "Identity/Account/Manage/AdminPanel");
+                using var create_page_response = await http_helper.Client.GetAsync(create_user_url);
                 create_page_response.EnsureSuccessStatusCode();
-                var verification_token = DroHubFixture.getVerificationToken(await create_page_response.Content.ReadAsStringAsync());
+                var verification_token =
+                    DroHubFixture.getVerificationToken(await create_page_response.Content.ReadAsStringAsync());
                 var data_dic = new Dictionary<string, string>();
                 setIfNotNull(data_dic, "Email", user_email);
                 setIfNotNull(data_dic, "Password", user_password);
@@ -63,17 +70,16 @@ namespace DroHub.Tests.TestInfrastructure
                 http_helper?.Dispose();
                 if (dom.QuerySelectorAll("div.validation-summary-errors").Any())
                     throw new InvalidOperationException("User Add has failed");
+                return new AddUserHelper(test_fixture, user_email, user_password);
             }
-        }
 
-        public static async Task deleteUser(DroHubFixture test_fixture, string user_email, string user_password) {
-            if (user_email == "admin")
-                return;
+            private static async Task deleteUser(DroHubFixture test_fixture, string user_email, string user_password) {
+                if (user_email == "admin")
+                    return;
 
-            var http_helper = await createLoggedInUser(test_fixture, user_email, user_password);
-            var create_device_url = new Uri(test_fixture.SiteUri, "Identity/Account/Manage/DeletePersonalData");
-            using (var create_page_response = await http_helper.Client.GetAsync(create_device_url))
-            {
+                var http_helper = await createLoggedInUser(test_fixture, user_email, user_password);
+                var create_device_url = new Uri(test_fixture.SiteUri, "Identity/Account/Manage/DeletePersonalData");
+                using var create_page_response = await http_helper.Client.GetAsync(create_device_url);
                 create_page_response.EnsureSuccessStatusCode();
                 var verification_token = DroHubFixture.getVerificationToken(await create_page_response.Content.ReadAsStringAsync());
                 var data_dic = new Dictionary<string, string>();
@@ -84,6 +90,20 @@ namespace DroHub.Tests.TestInfrastructure
                 http_helper.Response = await http_helper.Client.PostAsync(create_device_url, urlenc);
                 http_helper.Response.EnsureSuccessStatusCode();
                 http_helper.Dispose();
+            }
+
+            private readonly DroHubFixture _fixture;
+            private readonly string _user_email;
+            private readonly string _password;
+
+            private AddUserHelper(DroHubFixture test_fixture, string user_email, string user_password) {
+                _fixture = test_fixture;
+                _user_email = user_email;
+                _password = user_password;
+            }
+
+            public async ValueTask DisposeAsync() {
+                await deleteUser(_fixture, _user_email, _password);
             }
         }
 

@@ -72,24 +72,20 @@ namespace DroHub.Tests
         [InlineData(DroHubUser.GUEST_POLICY_CLAIM, false)]
         [Theory]
         public async void TestAuthenticationToken(string user_base_type, bool expect_get_token_success) {
-            try {
-                await HttpClientHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
-                    DEFAULT_ORGANIZATION, user_base_type, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+            await using var add_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, user_base_type,
+                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
 
-                var res = await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
-                Assert.NotEmpty(res["result"]);
-                if (expect_get_token_success) {
-                    Assert.NotEqual("nok", res["result"]);
-                    var token = res["result"];
-                    res = await HttpClientHelper.authenticateToken(_fixture, DEFAULT_USER, token);
-                    Assert.Equal("ok", res["result"]);
-                }
-                else {
-                    Assert.Equal("nok", res["result"]);
-                }
+            var res = await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
+            Assert.NotEmpty(res["result"]);
+            if (expect_get_token_success) {
+                Assert.NotEqual("nok", res["result"]);
+                var token = res["result"];
+                res = await HttpClientHelper.authenticateToken(_fixture, DEFAULT_USER, token);
+                Assert.Equal("ok", res["result"]);
             }
-            finally {
-                await HttpClientHelper.deleteUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
+            else {
+                Assert.Equal("nok", res["result"]);
             }
         }
 
@@ -135,11 +131,9 @@ namespace DroHub.Tests
                 password = _fixture.AdminPassword;
             }
 
-            try
-            {
-                await HttpClientHelper.addUser(_fixture, user, password,
-                    DEFAULT_ORGANIZATION, user_base_type, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
-
+            await using var user_add = await HttpClientHelper.AddUserHelper.addUser(_fixture, user, password,
+                DEFAULT_ORGANIZATION, user_base_type, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+            try {
                 if (expect_created) {
 
                     await HttpClientHelper.createDevice(_fixture, user, password, device_name, device_serial,
@@ -178,8 +172,6 @@ namespace DroHub.Tests
 
                 var devices_list = await HttpClientHelper.getDeviceList(_fixture,  user, password);
                     Assert.ThrowsAny<ArgumentNullException>(() => devices_list.First(d => d.serialNumber == device_serial));
-
-                await HttpClientHelper.deleteUser(_fixture, user, password);
             }
         }
 
@@ -207,19 +199,17 @@ namespace DroHub.Tests
                 DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
 
-            await HttpClientHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
-                DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM, 10,
-                10);
+            await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION,
+                DroHubUser.SUBSCRIBER_POLICY_CLAIM, 10, 10);
 
             var token = (await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER,
                 DEFAULT_PASSWORD))["result"];
-
 
             await Assert.ThrowsAsync<WebSocketException>(async () =>
                 await HttpClientHelper.openWebSocket(_fixture, DEFAULT_USER, token, DEFAULT_DEVICE_SERIAL));
 
             await HttpClientHelper.deleteDevice(_fixture, DEFAULT_DEVICE_SERIAL, "admin", _fixture.AdminPassword);
-            await HttpClientHelper.deleteUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
         }
 
         [Fact]
@@ -228,7 +218,7 @@ namespace DroHub.Tests
                 DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
 
-            await HttpClientHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
+            await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
                 "Administrators", DroHubUser.SUBSCRIBER_POLICY_CLAIM, 10,
                 10);
 
@@ -238,13 +228,13 @@ namespace DroHub.Tests
             await HttpClientHelper.openWebSocket(_fixture, DEFAULT_USER, token, DEFAULT_DEVICE_SERIAL);
 
             await HttpClientHelper.deleteDevice(_fixture, DEFAULT_DEVICE_SERIAL, DEFAULT_USER, DEFAULT_PASSWORD);
-            await HttpClientHelper.deleteUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
         }
 
         [Fact]
         public async void TestThriftConnectionDroppedAtTimeout() {
-            await HttpClientHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
-                DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, ALLOWED_USER_COUNT);
+            await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
+                DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES,
+                ALLOWED_USER_COUNT);
 
             await HttpClientHelper.createDevice(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
                 DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
@@ -267,7 +257,6 @@ namespace DroHub.Tests
             }
             finally {
                 await HttpClientHelper.deleteDevice(_fixture, DEFAULT_DEVICE_SERIAL, DEFAULT_USER, DEFAULT_PASSWORD);
-                await HttpClientHelper.deleteUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
             }
         }
 

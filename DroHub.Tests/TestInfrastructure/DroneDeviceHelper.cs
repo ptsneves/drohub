@@ -112,12 +112,11 @@ namespace DroHub.Tests.TestInfrastructure
 
             if (create_device) {
                 if (create_user)
-                    await HttpClientHelper.addUser(_fixture, user,
+                    await HttpClientHelper.AddUserHelper.addUser(_fixture, user,
                         password, organization_name, user_base_type, allowed_flight_time_minutes, allowed_user_count);
                 await HttpClientHelper.createDevice(_fixture, user,
                     password, _device_serial, _device_serial, create_user);
                 must_delete_device = true;
-                must_delete_user = create_user;
             }
 
             http_helper = await HttpClientHelper.createLoggedInUser(_fixture, user, password);
@@ -154,8 +153,6 @@ namespace DroHub.Tests.TestInfrastructure
         public async Task stopMock() {
             if (must_delete_device)
                 await HttpClientHelper.deleteDevice(_fixture, _device_serial, _user_name, _password);
-            if (must_delete_user)
-                await HttpClientHelper.deleteUser(_fixture, _user_name, _password);
         }
 
         public Dictionary<Type, TelemetryItem<IDroneTelemetry>> TelemetryItems { get; private set; }
@@ -163,7 +160,7 @@ namespace DroHub.Tests.TestInfrastructure
         public string SerialNumber {get { return _device_serial; } }
         HttpClientHelper http_helper;
         private bool must_delete_device = false;
-        private bool must_delete_user = false;
+        private bool must_delete_user;
         private DroHubFixture _fixture;
         private string _user_name;
         private string _password;
