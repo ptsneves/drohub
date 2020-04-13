@@ -52,40 +52,6 @@ namespace DroHub.Tests
             await testLogin("admin", password ?? _fixture.AdminPassword, expect_login_fail);
         }
 
-        [InlineData("guest@drohub.xyz", "1234567", "UN", "ActingGuest", 10, 3, false, true, false, false)]
-        [InlineData("guest", "1" , "UN", "ActingGuest", 10, 3, true, true, true, true)]
-        [Theory]
-        public async void TestUserCreateAndLogin(string user, string password, string organization, string user_base_type,
-            int allowed_flight_time_minutes, int allowed_user_count, bool expect_login_fail, bool create =false,
-                bool expect_create_fail = false, bool expect_delete_fail = false)
-        {
-            if(create) {
-                if (!expect_create_fail)
-                    await HttpClientHelper.addUser(_fixture, user, password, organization, user_base_type, allowed_flight_time_minutes, allowed_user_count);
-                else
-                    await Assert.ThrowsAsync<System.InvalidOperationException>(async () =>
-                        await HttpClientHelper.addUser(_fixture, user,  password, organization,
-                            user_base_type, allowed_flight_time_minutes, allowed_user_count)
-                    );
-            }
-            try {
-                await testLogin(user, password, expect_login_fail);
-            }
-            finally {
-                if (create)
-                {
-                    if (!expect_delete_fail)
-                    {
-                        await HttpClientHelper.deleteUser(_fixture, user, password);
-                    }
-                    else
-                        await Assert.ThrowsAsync<System.InvalidProgramException>(async () => await HttpClientHelper.deleteUser(_fixture, user, password));
-
-                    await Assert.ThrowsAsync<System.InvalidProgramException>(async () => (await HttpClientHelper.createLoggedInUser(_fixture, user, password)).Dispose());
-                }
-            }
-        }
-
         [Fact]
         public async void TestLogout() {
             using (var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, "admin", _fixture.AdminPassword))
