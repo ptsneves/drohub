@@ -103,6 +103,7 @@ namespace DroHub.Helpers.Thrift
                     }
                 }
             }
+            catch (OperationCanceledException) { }
             catch (Exception e)
             {
                 _logger.LogWarning($"{t_name} service failed with {e.ToString()}");
