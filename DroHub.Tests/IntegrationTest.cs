@@ -192,56 +192,53 @@ namespace DroHub.Tests
             }
         }
 
-        [InlineData("admin", DroHubUser.ADMIN_POLICY_CLAIM, 999, false, true, true, true)]
-        // We cannot run a test to validate empty headers because stupid SetRequestHeader always sets an empty space
-        [InlineData("sub2@drohub.xyz", DroHubUser.SUBSCRIBER_POLICY_CLAIM, 999, true, true, false, false)]
-        [InlineData("sub2@drohub.xyz", DroHubUser.SUBSCRIBER_POLICY_CLAIM, 999, true, false)]
-        [Theory]
-        public async void TestWebSocketConnection(string user, string user_base_type,
-            int allowed_flight_time_minutes, bool expect_throw, bool create_delete_device,
-            bool create_user_same_as_websocket = false, bool create_user_organization_same_as_websocket_user = false) {
-
-            var password = DEFAULT_PASSWORD;
-            if (user == "admin")
-                password = _fixture.AdminPassword;
-
-            var create_device_user = create_user_same_as_websocket ? user : "subscriber@drohub.xyz";
-            var create_device_pass = create_user_same_as_websocket ? password : "subscriber@drohub.xyz";
-
-            if (create_delete_device) {
-                await HttpClientHelper.addUser(_fixture, create_device_user, create_device_pass,
-                    DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, allowed_flight_time_minutes, ALLOWED_USER_COUNT);
-
-                await HttpClientHelper.createDevice(_fixture, create_device_user, create_device_pass,
-                    DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
-
-                if (!create_user_same_as_websocket) {
-                    await HttpClientHelper.addUser(_fixture, user, password,
-                        DEFAULT_ORGANIZATION+create_user_organization_same_as_websocket_user,
-                        user_base_type, allowed_flight_time_minutes, ALLOWED_USER_COUNT);
-                }
-            }
-
+        [Fact]
+        public async void TestWebSocketWithNonExistingDevice() {
+            const string user = "admin";
+            var password = _fixture.AdminPassword;
             var token = (await HttpClientHelper.getApplicationToken(_fixture, user, password))["result"];
+            await Assert.ThrowsAsync<WebSocketException>(async () =>
+                await HttpClientHelper.openWebSocket(_fixture, user, token, DEFAULT_DEVICE_SERIAL));
+        }
 
-            try {
-                if (expect_throw)
-                    await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () =>
-                        await HttpClientHelper.openWebSocket(_fixture, user, token, DEFAULT_DEVICE_SERIAL));
-                else
-                    await HttpClientHelper.openWebSocket(_fixture, user, token, DEFAULT_DEVICE_SERIAL);
-            }
-            finally
-            {
-                if (create_delete_device)
-                {
-                    await HttpClientHelper.deleteDevice(_fixture, DEFAULT_DEVICE_SERIAL, create_device_user, create_device_pass);
-                    await HttpClientHelper.deleteUser(_fixture, create_device_user, create_device_pass);
-                    if (!create_user_same_as_websocket) {
-                        await HttpClientHelper.deleteUser(_fixture, user, password);
-                    }
-                }
-            }
+        [Fact]
+        public async void TestWebSocketWithDeviceNotBelongingToSubscriptionFails() {
+            await HttpClientHelper.createDevice(_fixture, "admin", _fixture.AdminPassword,
+                DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+
+
+            await HttpClientHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
+                DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM, 10,
+                10);
+
+            var token = (await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER,
+                DEFAULT_PASSWORD))["result"];
+
+
+            await Assert.ThrowsAsync<WebSocketException>(async () =>
+                await HttpClientHelper.openWebSocket(_fixture, DEFAULT_USER, token, DEFAULT_DEVICE_SERIAL));
+
+            await HttpClientHelper.deleteDevice(_fixture, DEFAULT_DEVICE_SERIAL, "admin", _fixture.AdminPassword);
+            await HttpClientHelper.deleteUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
+        }
+
+        [Fact]
+        public async void TestWebSocketWithDeviceBelongingToSubscriptionSucceeds() {
+            await HttpClientHelper.createDevice(_fixture, "admin", _fixture.AdminPassword,
+                DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+
+
+            await HttpClientHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
+                "Administrators", DroHubUser.SUBSCRIBER_POLICY_CLAIM, 10,
+                10);
+
+            var token = (await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER,
+                DEFAULT_PASSWORD))["result"];
+
+            await HttpClientHelper.openWebSocket(_fixture, DEFAULT_USER, token, DEFAULT_DEVICE_SERIAL);
+
+            await HttpClientHelper.deleteDevice(_fixture, DEFAULT_DEVICE_SERIAL, DEFAULT_USER, DEFAULT_PASSWORD);
+            await HttpClientHelper.deleteUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
         }
 
         [Fact]
