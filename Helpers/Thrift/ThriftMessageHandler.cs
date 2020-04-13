@@ -20,7 +20,7 @@ using Thrift.Transport.Client;
 
 namespace DroHub.Helpers.Thrift
 {
-    public class ThriftMessageHandler
+    public class ThriftMessageHandler : IDisposable
     {
         private readonly ILogger<ThriftMessageHandler> _logger;
         private string _serial_number;
@@ -213,15 +213,17 @@ namespace DroHub.Helpers.Thrift
             }
             finally
             {
-                try
-                {
+                try  {
                     _connection_manager.RemoveSocket(_socket_id);
                     if (!_cancellation_token_src.IsCancellationRequested)
                         _cancellation_token_src.Cancel();
 
                     // don't leave the socket in any potentially connected state
-                    if (_socket.State != WebSocketState.Closed)
-                        _socket.Abort();
+                    if (_socket.State != WebSocketState.Aborted) {
+                        await _socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure,
+                            "Good bye",
+                            CancellationToken.None);
+                    }
 
                 }
                 catch (Exception e)
@@ -238,9 +240,9 @@ namespace DroHub.Helpers.Thrift
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!_is_disposed && disposing)
-            {
-
+            if (!_is_disposed && disposing) {
+                _socket?.Abort();
+                _socket?.Dispose();
             }
             _is_disposed = true;
         }
@@ -263,40 +265,29 @@ namespace DroHub.Helpers.Thrift
 
         private async Task ReceiveFromWebSocket(WebSocket socket)
         {
-            WebSocketReceiveResult result = null;
             var buffer = new byte[1024 * 4];
             try {
-                while (socket.State != WebSocketState.Closed && socket.State != WebSocketState.Aborted
-                                                             && !_cancellation_token_src.Token
-                                                                 .IsCancellationRequested) {
-                    result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), _cancellation_token_src.Token);
-                    if (!_cancellation_token_src.Token.IsCancellationRequested) {
-                        if (socket.State == WebSocketState.CloseReceived &&
-                            result.MessageType == WebSocketMessageType.Close) {
-                            _logger.LogDebug("Acknowledging Close frame received from client");
-                            _cancellation_token_src.Cancel();
-                            await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame",
-                                CancellationToken.None);
-                        }
+                while (socket.State == WebSocketState.Open &&
+                       !_cancellation_token_src.Token.IsCancellationRequested) {
+                    var result = await _socket.ReceiveAsync(new ArraySegment<byte>(buffer),
+                        _cancellation_token_src.Token);
 
-                        if (socket.State == WebSocketState.Open) {
-                            if (result.MessageType == WebSocketMessageType.Binary) {
-                                populateInputStreams(buffer, 0, result.Count);
-                            }
-                        }
+                    if (result.MessageType == WebSocketMessageType.Binary) {
+                        populateInputStreams(buffer, 0, result.Count);
                     }
+                    else
+                        _cancellation_token_src.Cancel();
                 }
-
-                await socket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription,
-                    CancellationToken.None);
             }
             catch (Exception) {
                 ;
             }
-            finally
-            {
-                if (!_cancellation_token_src.IsCancellationRequested)
-                    _cancellation_token_src.Cancel();
+            finally {
+                if (socket.State == WebSocketState.Open)
+                    await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure,
+                        "Good bye",
+                        CancellationToken.None);
+                _cancellation_token_src.Cancel(); //Regardless of whether it was canceled or not.
                 _logger.LogDebug($"Finished processing received loop in state {socket.State}");
             }
         }
