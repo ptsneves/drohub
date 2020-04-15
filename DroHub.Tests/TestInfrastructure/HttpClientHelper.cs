@@ -4,6 +4,8 @@ using System.Net;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.IO;
+using System.Security.Authentication;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Data.Migrations;
@@ -147,26 +149,36 @@ namespace DroHub.Tests.TestInfrastructure
             }
         }
 
-        public static async Task createDevice(DroHubFixture test_fixture, string user, string password,
-            string device_name, string device_serial, bool use_app_api = false) {
-            if (use_app_api) {
-                var token_result = await getApplicationToken(test_fixture, user, password);
-                var m = new AndroidApplicationController.DeviceCreateModel() {
-                    UserName = user,
-                    Token = token_result["result"],
-                    Device = new Device() {
-                        SerialNumber = device_serial,
-                        Name = device_name
-                    }
-                };
-                var result = await retrieveFromAndroidApp(test_fixture, "CreateDevice", m);
+        public class CreateDeviceHelper : IAsyncDisposable {
+            private readonly DroHubFixture _fixture;
+            private readonly string _user_email;
+            private readonly string _password;
+            private readonly string _device_serial;
 
-            }
-            else {
-                var http_helper = await createLoggedInUser(test_fixture, user, password);
+            public static async ValueTask<CreateDeviceHelper> createDevice(DroHubFixture test_fixture, string user, string password,
+                string device_name, string device_serial, bool use_app_api = false) {
+                if (use_app_api) {
+                    var token_result = await getApplicationToken(test_fixture, user, password);
+                    var m = new AndroidApplicationController.DeviceCreateModel() {
+                        UserName = user,
+                        Token = token_result["result"],
+                        Device = new Device() {
+                            SerialNumber = device_serial,
+                            Name = device_name
+                        }
+                    };
+                    if (m.Token == "nok")
+                        throw new InvalidCredentialException("Could not retrieve token");
 
-                var create_device_url = new Uri(test_fixture.SiteUri, "DHub/Devices/Create");
-                using (var create_page_response = await http_helper.Client.GetAsync(create_device_url)) {
+                    var result = await retrieveFromAndroidApp(test_fixture, "CreateDevice", m);
+                    var json_obj = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,string>>(result);
+                    if (json_obj["result"] != "ok")
+                        throw new InvalidDataException(json_obj["result"]);
+                }
+                else {
+                    using var http_helper = await createLoggedInUser(test_fixture, user, password);
+                    var create_device_url = new Uri(test_fixture.SiteUri, "DHub/Devices/Create");
+                    using var create_page_response = await http_helper.Client.GetAsync(create_device_url);
                     create_page_response.EnsureSuccessStatusCode();
                     var verification_token =
                         DroHubFixture.getVerificationToken(await create_page_response.Content.ReadAsStringAsync());
@@ -183,17 +195,17 @@ namespace DroHub.Tests.TestInfrastructure
                     var dom = DroHubFixture.getHtmlDOM(await http_helper.Response.Content.ReadAsStringAsync());
                     if (dom.QuerySelectorAll("input[name='IsValid']").First().GetAttribute("value") != "True")
                         throw new InvalidOperationException("create Device failed");
-                    http_helper.Dispose();
                 }
-            }
-        }
 
-        public static async Task deleteDevice(DroHubFixture test_fixture, int device_id, string user, string password) {
-            var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user, password);
-            var content = await http_helper.Response.Content.ReadAsStringAsync();
-            var create_device_url = new Uri(test_fixture.SiteUri, $"DHub/Devices/Delete/{device_id}");
-            using (var create_page_response = await http_helper.Client.GetAsync(create_device_url))
-            {
+                return new CreateDeviceHelper(test_fixture, user, password, device_serial);
+            }
+
+            private static async Task deleteDevice(DroHubFixture test_fixture, int device_id, string user, string
+            password) {
+                var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user, password);
+                var content = await http_helper.Response.Content.ReadAsStringAsync();
+                var create_device_url = new Uri(test_fixture.SiteUri, $"DHub/Devices/Delete/{device_id}");
+                using var create_page_response = await http_helper.Client.GetAsync(create_device_url);
                 create_page_response.EnsureSuccessStatusCode();
                 var verification_token = DroHubFixture.getVerificationToken(await create_page_response.Content.ReadAsStringAsync());
                 var data_dic = new Dictionary<string, string>();
@@ -205,14 +217,26 @@ namespace DroHub.Tests.TestInfrastructure
                 http_helper.Response.EnsureSuccessStatusCode();
                 http_helper?.Dispose();
             }
-        }
 
-        public static async Task deleteDevice(DroHubFixture test_fixture, string serial_number, string user, string
-        password)
-        {
-            var devices_list = await getDeviceList(test_fixture, user, password);
-            int device_id = devices_list.First(d => d.serialNumber == serial_number).id;
-            await deleteDevice(test_fixture, device_id, user, password);
+            private static async Task deleteDevice(DroHubFixture test_fixture, string serial_number, string user,
+                string password)
+            {
+                var devices_list = await getDeviceList(test_fixture, user, password);
+                int device_id = devices_list.First(d => d.serialNumber == serial_number).id;
+                await deleteDevice(test_fixture, device_id, user, password);
+            }
+
+            private CreateDeviceHelper(DroHubFixture test_fixture, string user_email, string user_password,
+                    string device_serial) {
+                _fixture = test_fixture;
+                _user_email = user_email;
+                _password = user_password;
+                _device_serial = device_serial;
+            }
+
+            public async ValueTask DisposeAsync() {
+                await deleteDevice(_fixture, _device_serial, _user_email, _password);
+            }
         }
 
         public static TWebSocketClient getTWebSocketClient(DroHubFixture fixture, string user, string token,

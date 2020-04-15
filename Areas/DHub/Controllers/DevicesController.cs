@@ -402,16 +402,6 @@ namespace DroHub.Areas.DHub.Controllers
             return PartialView("Create", new Device{});
         }
 
-        [NonAction]
-        [ClaimRequirement(Device.CAN_ADD_CLAIM, Device.CLAIM_VALID_VALUE)]
-        public static async Task Create(DroHubContext context, Device device) {
-            if (device.Subscription == null) {
-                throw new InvalidDataException("Tried to add a device without associated subscription");
-            }
-            await context.Devices.AddAsync(device);
-            await context.SaveChangesAsync();
-        }
-
         // POST: DroHub/Devices/Create
         // To protect from overposting attacks, please enable the specific properties you want to bind to, for
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
@@ -425,17 +415,13 @@ namespace DroHub.Areas.DHub.Controllers
                 return View(device);
             }
 
-            if (!await _context.Devices.AnyAsync(d => d.SerialNumber == device.SerialNumber)) {
-                device.Subscription = await _user_manager
-                    .getCurrentUserWithSubscription(User)
-                    .getCurrentUserSubscription()
-                    .SingleAsync();
-
-                await Create(_context, device);
-                return View(device);
+            try {
+                await DeviceHelper.Create(_user_manager, User, _context, device);
+            }
+            catch (InvalidDataException e) {
+                ModelState.AddModelError("", e.Message);
             }
 
-            ModelState.AddModelError("", "Device already exists. Edit instead of create");
             return View(device);
         }
 

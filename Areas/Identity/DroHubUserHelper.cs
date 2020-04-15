@@ -60,6 +60,13 @@ namespace DroHub.Areas.Identity {
             return verified;
         }
 
+        public static IIncludableQueryable<DroHubUser, Subscription> getCurrentUserWithSubscription(
+            this UserManager<DroHubUser> user_manager, string user_name) {
+            return user_manager.Users
+                .Where(u => u.UserName == user_name)
+                .Include(u => u.Subscription);
+        }
+
         public static IIncludableQueryable<DroHubUser, Subscription> getCurrentUserWithSubscription(this UserManager<DroHubUser> user_manager, ClaimsPrincipal user){
             return user_manager.Users
                 .Where(u => u.Id == user_manager.GetUserId(user))

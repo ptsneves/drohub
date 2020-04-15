@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
 using System.Net.WebSockets;
+using System.Security.Authentication;
 using System.Threading;
 using DroHub.Areas.Identity.Data;
 using DroHub.Helpers.Thrift;
@@ -96,6 +97,21 @@ namespace DroHub.Tests
         }
 
         [Fact]
+        public async void TestCreateExistingDeviceFails() {
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin",
+                _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL, true);
+
+            await using var s = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
+            DEFAULT_ORGANIZATION,
+                DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                await using var f = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
+                    DEFAULT_PASSWORD, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL, false);
+            });
+        }
+
+        [Fact]
         public async void TestQueryDeviceInfoOnNonExistingUser() {
             var device_info = await HttpClientHelper.queryDeviceInfo(_fixture, "asd",
                 "sadsdd",
@@ -103,69 +119,72 @@ namespace DroHub.Tests
             Assert.Null(device_info["result"]);
         }
 
-        [InlineData("admin", null, "MyAnafi", "000000", true, true)]
-        [InlineData("admin", null, "MyAnafi", "000000", true)]
-        [InlineData("admin", null, "MyAnafi", null, false)]
-        [InlineData("admin", null, null, null, false)]
-        [InlineData("admin", null, null, "000000", false)]
-        [InlineData("user@drohub.xyz", DroHubUser.SUBSCRIBER_POLICY_CLAIM, "MyAnafi", "000000", true)]
-        [InlineData("user@drohub.xyz", DroHubUser.OWNER_POLICY_CLAIM, "MyAnafi", "000000", true)]
-        [InlineData("user@drohub.xyz", DroHubUser.PILOT_POLICY_CLAIM, "MyAnafi", "000000", true)]
-        [InlineData("user@drohub.xyz", DroHubUser.GUEST_POLICY_CLAIM, "MyAnafi", "000000", false)]
-        [InlineData("user@drohub.xyz", DroHubUser.SUBSCRIBER_POLICY_CLAIM, "MyAnafi", "000000", true, true)]
-        [InlineData("user@drohub.xyz", DroHubUser.OWNER_POLICY_CLAIM, "MyAnafi", "000000", true, true)]
-        [InlineData("user@drohub.xyz", DroHubUser.PILOT_POLICY_CLAIM, "MyAnafi", "000000", true, true)]
-        [InlineData("user@drohub.xyz", DroHubUser.GUEST_POLICY_CLAIM, "MyAnafi", "000000", false, true)]
+        [InlineData("MyAnafi", null, true)]
+        [InlineData(null, null, true)]
+        [InlineData("MyAnafi", null, false)]
+        [InlineData(null, null, false)]
         [Theory]
-        public async void TestCreateAndDeleteDevice(string user, string user_base_type,
+        public async void TestIncompleteCreateDeviceModelFails(string device_name, string device_serial,
+            bool use_app_api) {
+            if (use_app_api) {
+                await Assert.ThrowsAsync<System.Net.Http.HttpRequestException>(async () => {
+                    await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin",
+                        _fixture.AdminPassword, device_name, device_serial, true);
+                });
+            }
+            else {
+                await Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                    await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin",
+                        _fixture.AdminPassword, device_name, device_serial);
+                });
+            }
+        }
+
+        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, "MyAnafi", "000000", true)]
+        [InlineData(DroHubUser.OWNER_POLICY_CLAIM, "MyAnafi", "000000", true)]
+        [InlineData(DroHubUser.PILOT_POLICY_CLAIM, "MyAnafi", "000000", true)]
+        [InlineData(DroHubUser.GUEST_POLICY_CLAIM, "MyAnafi", "000000", false)]
+        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, "MyAnafi", "000000", true, true)]
+        [InlineData(DroHubUser.OWNER_POLICY_CLAIM, "MyAnafi", "000000", true, true)]
+        [InlineData(DroHubUser.PILOT_POLICY_CLAIM, "MyAnafi", "000000", true, true)]
+        [InlineData(DroHubUser.GUEST_POLICY_CLAIM, "MyAnafi", "000000", false, true)]
+        [Theory]
+        public async void TestCreateAndDeleteDevicePermission(string user_base_type,
             string device_name, string device_serial, bool expect_created, bool use_app_api = false) {
-            var password = "default";
 
-            if (user == "admin") {
-                password = _fixture.AdminPassword;
-            }
-
-            await using var user_add = await HttpClientHelper.AddUserHelper.addUser(_fixture, user, password,
+            await using var user_add = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
                 DEFAULT_ORGANIZATION, user_base_type, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
-            try {
-                if (expect_created) {
 
-                    await HttpClientHelper.createDevice(_fixture, user, password, device_name, device_serial,
-                        use_app_api);
+            if (expect_created) {
+                await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
+                    DEFAULT_PASSWORD, device_name, device_serial, use_app_api);
 
-                    var devices_list = await HttpClientHelper.getDeviceList(_fixture, user, password);
-                    Assert.NotNull(devices_list);
-                    devices_list.Single(d => d.serialNumber == device_serial);
-                    var token = (await HttpClientHelper.getApplicationToken(_fixture, user,
-                        password))["result"];
-                    var device_info = (await HttpClientHelper.queryDeviceInfo(_fixture, user, token,
-                        device_serial));
-                    Assert.Equal(device_name, device_info["result"].Name);
-                    Assert.Equal(device_serial, device_info["result"].SerialNumber);
-                }
-                else
-                {
-                    if (use_app_api) {
-                        await Assert.ThrowsAsync<System.Net.Http.HttpRequestException>(async () => {
-                            await HttpClientHelper.createDevice(_fixture, user, password, device_name, device_serial,
-                                true);
-                        });
-                    }
-                    else {
-                        await Assert.ThrowsAsync<InvalidOperationException>(async () => {
-                            await HttpClientHelper.createDevice(_fixture, user, password, device_name, device_serial);
-                        });
-                    }
-
-                    Assert.Null(await HttpClientHelper.getDeviceList(_fixture, user, password));
-                }
+                var devices_list = await HttpClientHelper.getDeviceList(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
+                Assert.NotNull(devices_list);
+                devices_list.Single(ds => ds.serialNumber == device_serial);
+                var token = (await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER,
+                    DEFAULT_PASSWORD))["result"];
+                var device_info = (await HttpClientHelper.queryDeviceInfo(_fixture, DEFAULT_USER, token,
+                    device_serial));
+                Assert.Equal(device_name, device_info["result"].Name);
+                Assert.Equal(device_serial, device_info["result"].SerialNumber);
             }
-            finally {
-                if (expect_created)
-                    await HttpClientHelper.deleteDevice(_fixture, device_serial, user, password);
+            else
+            {
+                if (use_app_api) {
+                    await Assert.ThrowsAsync<InvalidCredentialException>(async () => {
+                        await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
+                            DEFAULT_PASSWORD, device_name, device_serial, true);
+                    });
+                }
+                else {
+                    await Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                        await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
+                            DEFAULT_PASSWORD, device_name, device_serial);
+                    });
+                }
 
-                var devices_list = await HttpClientHelper.getDeviceList(_fixture,  user, password);
-                    Assert.ThrowsAny<ArgumentNullException>(() => devices_list.First(d => d.serialNumber == device_serial));
+                Assert.Null(await HttpClientHelper.getDeviceList(_fixture, DEFAULT_USER, DEFAULT_PASSWORD));
             }
         }
 
@@ -186,9 +205,8 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestWebSocketWithDeviceNotBelongingToSubscriptionFails() {
-            await HttpClientHelper.createDevice(_fixture, "admin", _fixture.AdminPassword,
-                DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
-
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin",
+                _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
             await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
                 DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION,
@@ -199,15 +217,12 @@ namespace DroHub.Tests
 
             await Assert.ThrowsAsync<WebSocketException>(async () =>
                 await HttpClientHelper.openWebSocket(_fixture, DEFAULT_USER, token, DEFAULT_DEVICE_SERIAL));
-
-            await HttpClientHelper.deleteDevice(_fixture, DEFAULT_DEVICE_SERIAL, "admin", _fixture.AdminPassword);
         }
 
         [Fact]
         public async void TestWebSocketWithDeviceBelongingToSubscriptionSucceeds() {
-            await HttpClientHelper.createDevice(_fixture, "admin", _fixture.AdminPassword,
-                DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
-
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin",
+                _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
             await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
                 "Administrators", DroHubUser.SUBSCRIBER_POLICY_CLAIM, 10,
@@ -217,8 +232,6 @@ namespace DroHub.Tests
                 DEFAULT_PASSWORD))["result"];
 
             await HttpClientHelper.openWebSocket(_fixture, DEFAULT_USER, token, DEFAULT_DEVICE_SERIAL);
-
-            await HttpClientHelper.deleteDevice(_fixture, DEFAULT_DEVICE_SERIAL, DEFAULT_USER, DEFAULT_PASSWORD);
         }
 
         [Fact]
@@ -227,34 +240,30 @@ namespace DroHub.Tests
                 DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES,
                 ALLOWED_USER_COUNT);
 
-            await HttpClientHelper.createDevice(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
+            DEFAULT_PASSWORD,
                 DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
-            try {
-                var token = (await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER, DEFAULT_PASSWORD))["result"];
-                using var t_web_socket_client = HttpClientHelper.getTWebSocketClient(_fixture, DEFAULT_USER, token,
-                    DEFAULT_DEVICE_SERIAL);
+            var token = (await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER, DEFAULT_PASSWORD))["result"];
+            using var t_web_socket_client = HttpClientHelper.getTWebSocketClient(_fixture, DEFAULT_USER, token,
+                DEFAULT_DEVICE_SERIAL);
 
-                await t_web_socket_client.OpenAsync();
-                Assert.True(t_web_socket_client.IsOpen);
-                await Task.Delay(DroneMicroServiceManager.ConnectionTimeout + TimeSpan.FromSeconds(1));
+            await t_web_socket_client.OpenAsync();
+            Assert.True(t_web_socket_client.IsOpen);
+            await Task.Delay(DroneMicroServiceManager.ConnectionTimeout + TimeSpan.FromSeconds(1));
 
-                //For some reason the first one does not throw broken pipe. Probably some stupid internal in WebSocket.
-                //All the library is crap.
-                await t_web_socket_client.WriteAsync(new byte[1]);
+            //For some reason the first one does not throw broken pipe. Probably some stupid internal in WebSocket.
+            //All the library is crap.
+            await t_web_socket_client.WriteAsync(new byte[1]);
 
-                await Assert.ThrowsAsync<System.IO.IOException>(async () =>
-                    await t_web_socket_client.WriteAsync(new byte[1]));
-            }
-            finally {
-                await HttpClientHelper.deleteDevice(_fixture, DEFAULT_DEVICE_SERIAL, DEFAULT_USER, DEFAULT_PASSWORD);
-            }
+            await Assert.ThrowsAsync<System.IO.IOException>(async () =>
+                await t_web_socket_client.WriteAsync(new byte[1]));
         }
 
-        [InlineData("ThriftSerial1", "mysuser@drohub.com", "pass12345", true, 1, false)]
+        [InlineData("ThriftSerial1", "mysuser@drohub.com", "pass12345", 1, false)]
         [Theory]
         public async void TestThriftDrone(string device_serial, string user, string password,
-                bool create_users, int concurrent_devices, bool single_user_multiple_devices)
+            int concurrent_devices, bool single_user_multiple_devices)
         {
             var telemetry_mocks = new List<TelemetryMock>();
             var drone_rpcs = new List<DroneRPC>();
@@ -265,7 +274,7 @@ namespace DroHub.Tests
 
                 await telemetry_mocks[i].startMock(_fixture, users[i], password, "org",
                     "ActingPilot", 3, 3,
-                    "ws://localhost:5000/telemetryhub", create_users, true );
+                    "ws://localhost:5000/telemetryhub");
 
                 drone_rpcs.Add(new DroneRPC(telemetry_mocks[i]));
             }

@@ -103,21 +103,16 @@ namespace DroHub.Tests.TestInfrastructure
 
         private HubConnection _connection;
         public async Task startMock(DroHubFixture fixture, string user, string password, string organization_name,
-            string user_base_type, int allowed_flight_time_minutes, int allowed_user_count, string hub_uri,
-            bool create_user = false, bool create_device = false)
+            string user_base_type, int allowed_flight_time_minutes, int allowed_user_count, string hub_uri)
         {
             _fixture = fixture;
             _user_name = user;
             _password = password;
 
-            if (create_device) {
-                if (create_user)
-                    await HttpClientHelper.AddUserHelper.addUser(_fixture, user,
-                        password, organization_name, user_base_type, allowed_flight_time_minutes, allowed_user_count);
-                await HttpClientHelper.createDevice(_fixture, user,
-                    password, _device_serial, _device_serial, create_user);
-                must_delete_device = true;
-            }
+            _user = await HttpClientHelper.AddUserHelper.addUser(_fixture, user,
+                password, organization_name, user_base_type, allowed_flight_time_minutes, allowed_user_count);
+            _device = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, user,
+                password, _device_serial, _device_serial);
 
             http_helper = await HttpClientHelper.createLoggedInUser(_fixture, user, password);
 
@@ -151,19 +146,21 @@ namespace DroHub.Tests.TestInfrastructure
         }
 
         public async Task stopMock() {
-            if (must_delete_device)
-                await HttpClientHelper.deleteDevice(_fixture, _device_serial, _user_name, _password);
+            if (_device != null)
+                await _device.DisposeAsync();
+            if (_user != null)
+                await _user.DisposeAsync();
         }
 
         public Dictionary<Type, TelemetryItem<IDroneTelemetry>> TelemetryItems { get; private set; }
         private string _device_serial;
         public string SerialNumber {get { return _device_serial; } }
         HttpClientHelper http_helper;
-        private bool must_delete_device = false;
-        private bool must_delete_user;
         private DroHubFixture _fixture;
         private string _user_name;
         private string _password;
+        private HttpClientHelper.AddUserHelper _user;
+        private HttpClientHelper.CreateDeviceHelper _device;
 
         public TelemetryMock(string device_serial)
         {

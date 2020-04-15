@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.Models;
@@ -63,12 +64,12 @@ namespace DroHub.Areas.DHub.Controllers
                 return BadRequest();
             }
 
-            var user = await _signin_manager.UserManager.FindByNameAsync(device_model.UserName);
-            device_model.Device.Subscription = await (_signin_manager.UserManager)
-                .getCurrentUserWithSubscription(await _signin_manager.CreateUserPrincipalAsync(user))
-                .getCurrentUserSubscription()
-                .SingleAsync();
-            await DevicesController.Create(_context, device_model.Device);
+            try {
+                await DeviceHelper.Create(_signin_manager, device_model.UserName, _context, device_model.Device);
+            }
+            catch (InvalidDataException e) {
+                return new JsonResult(new Dictionary<string, string>() {{"result", e.Message}});
+            }
             return new JsonResult(new Dictionary<string, string>() {{"result", "ok"}});
         }
 
