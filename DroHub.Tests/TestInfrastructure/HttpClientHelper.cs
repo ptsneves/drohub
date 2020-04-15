@@ -38,16 +38,19 @@ namespace DroHub.Tests.TestInfrastructure
 
         public class AddUserHelper : IAsyncDisposable {
             public static async ValueTask<AddUserHelper> addUser(DroHubFixture test_fixture,
+                string user_email_of_creator,
+                string password_of_creator,
                 string user_email,
                 string user_password,
                 string organization,
                 string user_base_type,
                 int allowed_flight_time_minutes,
                 int allowed_user_count) {
+
                 if (user_email == "admin")
                     return new AddUserHelper(test_fixture, user_email, user_password);
 
-                var http_helper = await createLoggedInUser(test_fixture, "admin", test_fixture.AdminPassword);
+                var http_helper = await createLoggedInUser(test_fixture, user_email_of_creator, password_of_creator);
                 await http_helper.Response.Content.ReadAsStringAsync();
                 var create_user_url = new Uri(test_fixture.SiteUri, "Identity/Account/Manage/AdminPanel");
                 using var create_page_response = await http_helper.Client.GetAsync(create_user_url);
@@ -73,6 +76,18 @@ namespace DroHub.Tests.TestInfrastructure
                 if (dom.QuerySelectorAll("div.validation-summary-errors").Any())
                     throw new InvalidOperationException("User Add has failed");
                 return new AddUserHelper(test_fixture, user_email, user_password);
+                }
+
+            public static async ValueTask<AddUserHelper> addUser(DroHubFixture test_fixture,
+                string user_email,
+                string user_password,
+                string organization,
+                string user_base_type,
+                int allowed_flight_time_minutes,
+                int allowed_user_count) {
+
+                return await addUser(test_fixture, "admin", test_fixture.AdminPassword, user_email, user_password,
+                    organization, user_base_type, allowed_flight_time_minutes, allowed_user_count);
             }
 
             private static async Task deleteUser(DroHubFixture test_fixture, string user_email, string user_password) {
