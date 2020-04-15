@@ -88,7 +88,6 @@ namespace DroHub.Tests
                 DEFAULT_PASSWORD, DEFAULT_USER+"1", DEFAULT_PASSWORD,
                 DEFAULT_ORGANIZATION, new_user_role, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
 
-
             if (expect_success) {
                 await using var u = await t;
             }
@@ -97,6 +96,23 @@ namespace DroHub.Tests
                     await using var u = await t;
                 });
             }
+        }
+
+        [Fact]
+        public async void TestCreateUserCountLimit() {
+            await using var u1 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
+                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 2);
+
+            await using var u2 = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
+                DEFAULT_PASSWORD, DEFAULT_USER+"1", DEFAULT_PASSWORD,
+                DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 2);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                await using var u3 = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
+                    DEFAULT_PASSWORD, DEFAULT_USER+"2", DEFAULT_PASSWORD,
+                    DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 2);
+            });
         }
 
         [Fact]

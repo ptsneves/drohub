@@ -157,7 +157,7 @@ namespace DroHub.Areas.Identity.Pages.Account
         }
 
         private bool doesSubscriptionAuthorizeNewUser(Subscription subscription) {
-            if (subscription.AllowedUserCount > subscription.Users.Count)
+            if (subscription.AllowedUserCount > subscription.Users.Count + 1)
                 return true;
 
             ModelState.AddModelError("Not authorized",
