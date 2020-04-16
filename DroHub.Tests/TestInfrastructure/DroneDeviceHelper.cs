@@ -47,8 +47,8 @@ namespace DroHub.Tests.TestInfrastructure
 
     public class TelemetryMock
     {
-        public async Task verifyRecordedTelemetry(DroHubFixture fixture)
-        {
+        public async Task<Dictionary<string, dynamic>> getRecordedTelemetry(DroHubFixture fixture) {
+            var r = new Dictionary<string, dynamic>();
             foreach (var telemetry_item in TelemetryItems)
             {
                 Type telemetry_type = telemetry_item.Key;
@@ -59,25 +59,29 @@ namespace DroHub.Tests.TestInfrastructure
 
                 await awaitable;
                 dynamic result_list = awaitable.GetAwaiter().GetResult();
-                ((IEnumerable)result_list).Cast<dynamic>().Single(s => s.Timestamp == telemetry_item.Value.Telemetry.Timestamp);
+                var d =((IEnumerable)result_list).Cast<dynamic>()
+                    .Single(s => s.Serial == telemetry_item.Value.Telemetry.Serial &&
+                                s.Timestamp == telemetry_item.Value.Telemetry.Timestamp);
+                r.Add(telemetry_item.ToString(), d);
             }
+
+            return r;
         }
 
-        public int getSignalRTasksTelemetry()
+        public IEnumerable<string> getSignalRTasksTelemetry()
         {
-            var tasks = TelemetryItems.Select(item => ((TelemetryMock.BaseTelemetryItem)item.Value).TaskSource.Task);
+            var tasks = TelemetryItems.Select(item => (item.Value).TaskSource.Task);
             return tasks
                 .Where(t => t.Status == TaskStatus.RanToCompletion)
-                .Select(t => t.Result)
-                .Count();
+                .Select(t => t.Result);
         }
 
         public class BaseTelemetryItem
         {
-            public TaskCompletionSource<bool> TaskSource { get; }
+            public TaskCompletionSource<string> TaskSource { get; }
             public BaseTelemetryItem()
             {
-                TaskSource = new TaskCompletionSource<bool>();
+                TaskSource = new TaskCompletionSource<string>();
             }
         }
 
@@ -87,7 +91,9 @@ namespace DroHub.Tests.TestInfrastructure
             public TelemetryItem(T telemetry, HubConnection connection, string type_name) : base()
             {
                 Telemetry = telemetry;
-                connection.On<string>(type_name, (message) => { this.TaskSource.TrySetResult(true); });
+                connection.On<string>(type_name, (message) => {
+                    TaskSource.TrySetResult(message);
+                });
             }
         }
 
@@ -154,7 +160,7 @@ namespace DroHub.Tests.TestInfrastructure
 
         public Dictionary<Type, TelemetryItem<IDroneTelemetry>> TelemetryItems { get; private set; }
         private string _device_serial;
-        public string SerialNumber {get { return _device_serial; } }
+        public string SerialNumber => _device_serial;
         HttpClientHelper http_helper;
         private DroHubFixture _fixture;
         private string _user_name;

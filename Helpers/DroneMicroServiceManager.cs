@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DroHub.Areas.DHub;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.DHub.SignalRHubs;
 using DroHub.Data;
@@ -66,9 +67,7 @@ namespace DroHub.Helpers.Thrift
         }
 
         private async Task BroadcastToSignalR(string t_name, IDroneTelemetry telemetry, DroHubContext context) {
-            var user_list = await context.Subscriptions
-                .Include(u => u.Users)
-                .SelectMany(s => s.Users)
+            var user_list = await DeviceHelper.getDeviceUsers(telemetry.Serial, context)
                 .Select(u => u.Id)
                 .ToListAsync();
 

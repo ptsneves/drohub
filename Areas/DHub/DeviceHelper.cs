@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.Models;
@@ -43,6 +44,14 @@ namespace DroHub.Areas.DHub {
                 .getCurrentUserSubscription()
                 .getSubscriptionDevices()
                 .ToListAsync();
+        }
+
+        public static IQueryable<DroHubUser> getDeviceUsers(string serial, DroHubContext db_context) {
+            return db_context.Devices
+                .Where(d => d.SerialNumber == serial)
+                .Include(d => d.Subscription)
+                .ThenInclude(s => s.Users)
+                .SelectMany(d => d.Subscription.Users);
         }
 
         public static Task<Device> getDeviceById(UserManager<DroHubUser> user_manager, ClaimsPrincipal user, int id) {
