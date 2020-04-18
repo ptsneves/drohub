@@ -124,6 +124,19 @@ namespace DroHub.Tests
         }
 
         [Fact]
+        public async void TestDoubleUserCreationFails() {
+            await using var u1 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
+                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                await using var u2 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                    DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
+                    DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+            });
+        }
+
+        [Fact]
         public async void TestLogout() {
             using var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, "admin", _fixture.AdminPassword);
             var logout_url = new Uri(_fixture.SiteUri, "Identity/Account/Logout");
