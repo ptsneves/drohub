@@ -11,6 +11,7 @@ namespace DroHub.Areas.DHub.Models
         public const string CAN_MODIFY_CLAIM = "CanModifySubscription";
         public const string CAN_ADD_CLAIM = "CanAddSubscription";
         public const string CAN_EDIT_USERS_IN_OWN_SUBSCRIPTION = "CanEditUsersInOwnSubscription";
+        public const string CAN_EDIT_USERS_OUTSIDE_OWN_SUBSCRIPTION = "CanEditUsersInOwnSubscription";
         public const string CAN_SEE_NOT_OWN_SUBSCRIPTION = "CanSeeNotOwnSubscription";
         public const string CAN_SEE_OWN_SUBSCRIPTION = "CanSeeOwnSubscription";
 

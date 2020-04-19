@@ -130,39 +130,49 @@ namespace DroHub.Areas.Identity.Pages.Account
             return new SelectList(authorized_roles);
         }
 
-        private bool isValidActingClaim(){
+        private void validateActingClaim(){
             var authorized_users_to_add = getAuthorizedUsersToAdd();
 
             if (DroHubUser.UserClaims.ContainsKey(Input.ActingType) && authorized_users_to_add.Any(i => i.Text == Input.ActingType))
-                return true;
+                return;
 
             ModelState.AddModelError("InvalidPolicy", "You chose an invalid option for user act");
-            return false;
+            throw new UserCreateException();
         }
 
-        private bool isAuthorizedToAddSubscription()
-        {
-            if (User.HasClaim(Subscription.CAN_ADD_CLAIM, Subscription.CLAIM_VALID_VALUE))
-                return true;
-
-            return false;
+        private bool isAuthorizedToCreateSubscription() {
+            return User.HasClaim(Subscription.CAN_ADD_CLAIM, Subscription.CLAIM_VALID_VALUE);
         }
 
-        private bool isAuthorizedToAddUserToSubscription() {
-            if (User.HasClaim(Subscription.CAN_EDIT_USERS_IN_OWN_SUBSCRIPTION, Subscription.CLAIM_VALID_VALUE))
-                return true;
+        private bool canEditOwnSubscription(DroHubUser user_to_authorize) {
+            return User.HasClaim(Subscription.CAN_EDIT_USERS_IN_OWN_SUBSCRIPTION, Subscription.CLAIM_VALID_VALUE) &&
+             Input.OrganizationName == user_to_authorize.Subscription.OrganizationName;
+        }
+
+        private bool canEditUsersOutsideOwnSubscription() {
+            return User.HasClaim(Subscription.CAN_EDIT_USERS_OUTSIDE_OWN_SUBSCRIPTION, Subscription.CLAIM_VALID_VALUE);
+        }
+
+        private void validateAuthorizationToAddUserToSubscription(DroHubUser user_to_authorize) {
+            if (canEditOwnSubscription(user_to_authorize) || canEditUsersOutsideOwnSubscription())
+                return;
 
             ModelState.AddModelError("Not authorized", "Not authorized to edit users in subscription");
-            return false;
+            throw new UserCreateException();
         }
 
-        private bool doesSubscriptionAuthorizeNewUser(Subscription subscription) {
-            if (subscription.AllowedUserCount > subscription.Users.Count + 1)
-                return true;
+        private async Task validateIfSubscriptionAuthorizesNewUser(Subscription subscription) {
+            var sub_count = await _db_context.Subscriptions
+                .Where(s => s.OrganizationName == subscription.OrganizationName)
+                .SelectMany(s => s.Users)
+                .CountAsync();
+
+            if (subscription.AllowedUserCount >= sub_count + 1)
+                return;
 
             ModelState.AddModelError("Not authorized",
                 $"You have reached the maximum number of users in your subscription of {subscription.AllowedUserCount}");
-            return false;
+            throw new UserCreateException();
         }
 
         private class UserCreateException : InvalidOperationException {
@@ -200,23 +210,30 @@ namespace DroHub.Areas.Identity.Pages.Account
                 await prepareProperties();
                 if (!ModelState.IsValid)
                     throw new UserCreateException();
-                if (!isValidActingClaim())
-                    throw new UserCreateException();
 
+                validateActingClaim();
+                var cur_user = await _user_manager.GetUserAsync(User);
                 Subscription subscription;
-                if (isAuthorizedToAddSubscription()) {
-                    subscription = await createSubscriptionOrDefault();
+                if (await _db_context.Subscriptions.AllAsync(s => s.OrganizationName != Input.OrganizationName)) {
+                    if (isAuthorizedToCreateSubscription())
+                        subscription = await createSubscriptionOrDefault();
+                    else {
+                        ModelState.AddModelError(string.Empty,
+                            "Tried to add a new subscription but is not authorized");
+                        throw new UserCreateException();
+                    }
                 }
                 else {
-                    if (!isAuthorizedToAddUserToSubscription())
-                        throw new UserCreateException();
-
-                    var cur_user = await _user_manager.GetUserAsync(User);
-                    subscription = cur_user.Subscription;
-                    if (!doesSubscriptionAuthorizeNewUser(subscription))
-                        throw new UserCreateException();
+                    if (cur_user.Subscription.OrganizationName == Input.OrganizationName)
+                        subscription = cur_user.Subscription;
+                    else {
+                        subscription = await _db_context.Subscriptions
+                            .SingleAsync(s => s.OrganizationName == Input.OrganizationName);
+                    }
                 }
 
+                validateAuthorizationToAddUserToSubscription(cur_user);
+                await validateIfSubscriptionAuthorizesNewUser(subscription);
                 var user = new DroHubUser {
                     UserName = Input.Email,
                     Email = Input.Email,

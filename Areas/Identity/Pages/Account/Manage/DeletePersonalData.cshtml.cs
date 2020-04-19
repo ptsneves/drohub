@@ -1,10 +1,14 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading.Tasks;
+using DroHub.Areas.DHub;
 using DroHub.Areas.Identity.Data;
+using DroHub.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace DroHub.Areas.Identity.Pages.Account.Manage
@@ -14,15 +18,17 @@ namespace DroHub.Areas.Identity.Pages.Account.Manage
         private readonly UserManager<DroHubUser> _userManager;
         private readonly SignInManager<DroHubUser> _signInManager;
         private readonly ILogger<DeletePersonalDataModel> _logger;
-
+        private readonly DroHubContext _db_context;
         public DeletePersonalDataModel(
             UserManager<DroHubUser> userManager,
             SignInManager<DroHubUser> signInManager,
+            DroHubContext db_context,
             ILogger<DeletePersonalDataModel> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
+            _db_context = db_context;
         }
 
         [BindProperty]
@@ -49,9 +55,11 @@ namespace DroHub.Areas.Identity.Pages.Account.Manage
             return Page();
         }
 
-        public async Task<IActionResult> OnPostAsync()
-        {
-            var user = await _userManager.GetUserAsync(User);
+        public async Task<IActionResult> OnPostAsync() {
+            var user = await _userManager.getCurrentUserWithSubscription(User)
+                .ThenInclude(s => s.Users)
+                .SingleOrDefaultAsync();
+
             if (user == null)
             {
                 return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
@@ -72,6 +80,11 @@ namespace DroHub.Areas.Identity.Pages.Account.Manage
             if (!result.Succeeded)
             {
                 throw new InvalidOperationException($"Unexpected error occurred deleteing user with ID '{userId}'.");
+            }
+
+            if (user.Subscription.Users.All(u => u == user)) {
+                _db_context.Subscriptions.Remove(user.Subscription);
+                await _db_context.SaveChangesAsync();
             }
 
             await _signInManager.SignOutAsync();

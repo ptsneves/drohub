@@ -53,37 +53,43 @@ namespace DroHub.Tests
             await testLogin("admin", password ?? _fixture.AdminPassword, expect_login_fail);
         }
 
-        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, false)]
-        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, false)]
-        [InlineData(DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, false)]
-        [InlineData(DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, false)]
-        [InlineData(DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, false)]
-        [InlineData(DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, false)]
-        [InlineData(DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, false)]
-        [InlineData(DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, false)]
-        [InlineData(DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, false)]
-        [InlineData(DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, false)]
-        [InlineData(DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, false)]
-        [InlineData(DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, false)]
-        [InlineData(DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, false)]
+        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, false, true)]
+        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, false, true)]
+        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, false, true)]
+        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, false, true)]
+        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, false, true)]
+        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, true, true)]
+        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, true, true)]
+        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, true, true)]
+        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, true, true)]
+        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, true, true)]
+        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, true, false)]
+        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, true, true)]
+        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, true, true)]
+        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, true, true)]
+        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, true, true)]
+        [InlineData(DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, true, false)]
+        [InlineData(DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, true, false)]
+        [InlineData(DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, true, true)]
+        [InlineData(DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, true, true)]
+        [InlineData(DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, true, true)]
+        [InlineData(DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, true, false)]
+        [InlineData(DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, true, false)]
+        [InlineData(DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, true, false)]
+        [InlineData(DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, true, false)]
+        [InlineData(DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, true, false)]
+        [InlineData(DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, true, false)]
+        [InlineData(DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, true, false)]
+        [InlineData(DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, true, false)]
+        [InlineData(DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, true, false)]
+        [InlineData(DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, true, false)]
         [Theory]
-        public async void TestCreateUserSimple(string user_base_role, string new_user_role, bool expect_success) {
+        public async void TestCreateUserSimple(string user_base_role, string new_user_role, bool same_org, bool expect_success) {
             await using var agent_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
                 DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, user_base_role,
                 DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
 
+            var new_user_org = same_org ? DEFAULT_ORGANIZATION : DEFAULT_ORGANIZATION + "1";
             var t = HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
                 DEFAULT_PASSWORD, DEFAULT_USER+"1", DEFAULT_PASSWORD,
                 DEFAULT_ORGANIZATION, new_user_role, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
@@ -99,11 +105,37 @@ namespace DroHub.Tests
         }
 
         [Fact]
-        public async void TestCreateSubscriptionWithNoUsers() {
+        public async void TestCreateSubscriptionWithNoAllowedUsers() {
             await Assert.ThrowsAsync<InvalidOperationException>(async () => {
                 await using var u = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
                     DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 0);
             });
+        }
+
+        [Fact]
+        public async void TestUpdateSubscriptionOnlyOnUserDelete() {
+            {
+                await using var u1 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                    DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
+                    DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 3);
+                await using var u2 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                    DEFAULT_USER+"1", DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
+                    DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 1);
+                await using var u3 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                    DEFAULT_USER+"2", DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
+                    DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 3);
+            }
+            {
+                await using var u1 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                    DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
+                    DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 1);
+
+                await Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                    await using var u2 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                        DEFAULT_USER+"1", DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
+                        DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 1);
+                });
+            }
         }
 
         [Fact]
@@ -112,14 +144,16 @@ namespace DroHub.Tests
                 DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
                 DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 2);
 
-            await using var u2 = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
-                DEFAULT_PASSWORD, DEFAULT_USER+"1", DEFAULT_PASSWORD,
-                DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 2);
+            await using var u2 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_USER+"1",
+                DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
+                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 2);
 
             await Assert.ThrowsAsync<InvalidOperationException>(async () => {
-                await using var u3 = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
-                    DEFAULT_PASSWORD, DEFAULT_USER+"2", DEFAULT_PASSWORD,
-                    DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 2);
+                await using var u3 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                    DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_USER+"2",
+                    DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
+                    DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 2);
             });
         }
 
@@ -324,8 +358,7 @@ namespace DroHub.Tests
                 ALLOWED_USER_COUNT);
 
             await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
-            DEFAULT_PASSWORD,
-                DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+                DEFAULT_PASSWORD, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
             var token = (await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER, DEFAULT_PASSWORD))["result"];
             using var t_web_socket_client = HttpClientHelper.getTWebSocketClient(_fixture, DEFAULT_USER, token,

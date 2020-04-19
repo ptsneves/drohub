@@ -4,8 +4,6 @@ using System.Linq;
 using System.Security.Claims;
 using DroHub.Areas.DHub.Models;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
 
 namespace DroHub.Areas.Identity.Data
 {
@@ -47,6 +45,7 @@ namespace DroHub.Areas.Identity.Data
             new Claim(Subscription.CAN_MODIFY_CLAIM, Subscription.CLAIM_VALID_VALUE),
             new Claim(Subscription.CAN_ADD_CLAIM, Subscription.CLAIM_VALID_VALUE),
             new Claim(Subscription.CAN_SEE_NOT_OWN_SUBSCRIPTION, Subscription.CLAIM_VALID_VALUE),
+            new Claim(Subscription.CAN_EDIT_USERS_OUTSIDE_OWN_SUBSCRIPTION, Subscription.CLAIM_VALID_VALUE),
         };
 
         public static readonly Dictionary<string, List<Claim>> UserClaims = new Dictionary<string, List<Claim>>
