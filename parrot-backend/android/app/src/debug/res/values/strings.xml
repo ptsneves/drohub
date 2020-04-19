@@ -33,9 +33,9 @@
   -->
 
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="drohub_ws_url">ws://192.168.1.106:5000/ws</string>
-    <string name="janus_websocket_uri">ws://192.168.1.106:8188</string>
-    <string name="drohub_url">http://192.168.1.106:5000</string>
+    <string name="drohub_ws_url">ws://master:5000/ws</string>
+    <string name="janus_websocket_uri">ws://master:8188</string>
+    <string name="drohub_url">http://master:5000</string>
     <string name="turn_user_name">XXXXX</string>
     <string name="turn_credential">XXXXXX</string>
     <string-array name="turn_servers">
