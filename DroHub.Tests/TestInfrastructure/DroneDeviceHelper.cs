@@ -44,7 +44,6 @@ namespace DroHub.Tests.TestInfrastructure
         }
     }
 
-
     public class TelemetryMock
     {
         public async Task<Dictionary<string, dynamic>> getRecordedTelemetry(DroHubFixture fixture) {
@@ -97,9 +96,32 @@ namespace DroHub.Tests.TestInfrastructure
             }
         }
 
-        public void AddTelemetryItem<T>(T value) where T : IDroneTelemetry
+        private void AddTelemetryItem<T>(T value) where T : IDroneTelemetry
         {
             TelemetryItems.Add(typeof(T), new TelemetryItem<IDroneTelemetry>(value, _connection, typeof(T).FullName));
+        }
+
+        public void regenerateTelemetry() {
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            TelemetryItems = new Dictionary<Type, TelemetryItem<IDroneTelemetry>>();
+
+            AddTelemetryItem<DronePosition>(
+                new DronePosition { Longitude = 0.0f, Latitude = 0.1f, Altitude = 10f, Serial = _device_serial, Timestamp = timestamp });
+
+            AddTelemetryItem<DroneReply>(
+                new DroneReply { Result = true, Serial = _device_serial, Timestamp = timestamp });
+
+            AddTelemetryItem<DroneRadioSignal>(
+                new DroneRadioSignal { SignalQuality = 2, Rssi = -23.0f, Serial = _device_serial, Timestamp = timestamp });
+
+            AddTelemetryItem<DroneFlyingState>(
+                new DroneFlyingState { State = FlyingState.LANDED, Serial = _device_serial, Timestamp = timestamp });
+
+            AddTelemetryItem<DroneBatteryLevel>(
+                new DroneBatteryLevel { BatteryLevelPercent = 100, Serial = _device_serial, Timestamp = timestamp });
+
+            AddTelemetryItem<DroneLiveVideoStateResult>(
+                new DroneLiveVideoStateResult { State = DroneLiveVideoState.LIVE, Serial = _device_serial, Timestamp = timestamp });
         }
 
         public async Task WaitForServer() {
@@ -128,26 +150,7 @@ namespace DroHub.Tests.TestInfrastructure
                     .Add(http_helper.loginCookie);
                 })
                 .Build();
-            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            TelemetryItems = new Dictionary<Type, TelemetryItem<IDroneTelemetry>>();
-
-            AddTelemetryItem<DronePosition>(
-                    new DronePosition { Longitude = 0.0f, Latitude = 0.1f, Altitude = 10f, Serial = _device_serial, Timestamp = timestamp });
-
-            AddTelemetryItem<DroneReply>(
-                    new DroneReply { Result = true, Serial = _device_serial, Timestamp = timestamp });
-
-            AddTelemetryItem<DroneRadioSignal>(
-                    new DroneRadioSignal { SignalQuality = 2, Rssi = -23.0f, Serial = _device_serial, Timestamp = timestamp });
-
-            AddTelemetryItem<DroneFlyingState>(
-                    new DroneFlyingState { State = FlyingState.LANDED, Serial = _device_serial, Timestamp = timestamp });
-
-            AddTelemetryItem<DroneBatteryLevel>(
-                    new DroneBatteryLevel { BatteryLevelPercent = 100, Serial = _device_serial, Timestamp = timestamp });
-
-            AddTelemetryItem<DroneLiveVideoStateResult>(
-                    new DroneLiveVideoStateResult { State = DroneLiveVideoState.LIVE, Serial = _device_serial, Timestamp = timestamp });
+            regenerateTelemetry();
             await _connection.StartAsync();
         }
 
@@ -161,6 +164,7 @@ namespace DroHub.Tests.TestInfrastructure
         public Dictionary<Type, TelemetryItem<IDroneTelemetry>> TelemetryItems { get; private set; }
         private string _device_serial;
         public string SerialNumber => _device_serial;
+        public string UserName => _user_name;
         HttpClientHelper http_helper;
         private DroHubFixture _fixture;
         private string _user_name;

@@ -80,6 +80,10 @@ namespace DroHub.Data
 
             builder.Entity<Subscription>()
                 .Property(s => s.AllowedFlightTime)
+                .IsConcurrencyToken();
+
+            builder.Entity<Subscription>()
+                .Property(s => s.AllowedFlightTime)
                 .HasColumnType("bigint")
                 .HasConversion(new TimeSpanToTicksConverter());
 

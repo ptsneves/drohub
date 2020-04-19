@@ -24,6 +24,7 @@ namespace DroHub.Helpers.Thrift
         private CancellationTokenSource _cancellation_token_source;
         private bool _alive_flag;
         public static TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(30);
+        public static TimeSpan SubscriptionUpdateInterval = TimeSpan.FromMinutes(5);
         public DroneMicroServiceManager(ILogger<DroneMicroServiceManager> logger,
             IHubContext<TelemetryHub> hub,
             JanusService janus_service,
@@ -36,6 +37,11 @@ namespace DroHub.Helpers.Thrift
             _cancellation_token_source = null;
             _services = services;
         }
+
+        public async ValueTask<bool> doesItPassPreconditions(string device_serial) {
+            return await getSubscriptionTimeLeft(device_serial) >= TimeSpan.Zero;
+        }
+
         public ValueTask<List<Task>> getTasks(ThriftMessageHandler handler, CancellationTokenSource token_source)
         {
             _cancellation_token_source = token_source;
@@ -46,9 +52,64 @@ namespace DroHub.Helpers.Thrift
                 Task.Run(async () => await GatherFlyingState(handler)),
                 Task.Run(async () => await GatherBatteryLevel(handler)),
                 Task.Run(async () => await GatherVideoSource(handler)),
+                Task.Run(async () => await MonitorSubscriptionTime(handler)),
                 Task.Run(async () => await MonitorConnectionAlive())
             };
             return new ValueTask<List<Task>>(result);
+        }
+
+        private async Task<TimeSpan> DecrementAndGetSubscriptionTimeLeft(string serial_number, TimeSpan consumed_time_span) {
+            using var scope = _services.CreateScope();
+            var db_context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
+            var subscription = await DeviceHelper.getDeviceSubscription(serial_number, db_context);
+            if (subscription == null)
+                throw new InvalidProgramException("Could not find subscription ");
+            bool save_failed;
+            do {
+                save_failed = false;
+                subscription.AllowedFlightTime =- consumed_time_span;
+                subscription.AllowedFlightTime =
+                    subscription.AllowedFlightTime < TimeSpan.Zero ? TimeSpan.Zero : subscription.AllowedFlightTime;
+
+                try {
+                    db_context.SaveChanges();
+                }
+                catch (DbUpdateConcurrencyException e) {
+                    save_failed = true;
+                    e.Entries.Single().Reload();
+                }
+
+                //Only do it in the end so we have a chance to write the value!
+                if (save_failed && _cancellation_token_source.Token.IsCancellationRequested)
+                    throw new OperationCanceledException();
+
+            } while (save_failed);
+            return subscription.AllowedFlightTime;
+        }
+
+        private async Task<TimeSpan> getSubscriptionTimeLeft(string serial_number) {
+            using var scope = _services.CreateScope();
+            var db_context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
+            var subscription = await DeviceHelper.getDeviceSubscription(serial_number, db_context);
+
+            return subscription.AllowedFlightTime;
+        }
+
+        private async Task MonitorSubscriptionTime(ThriftMessageHandler handler) {
+            var time_left = await getSubscriptionTimeLeft(handler.SerialNumber);
+            while(time_left > TimeSpan.Zero) {
+                var delay = time_left >= SubscriptionUpdateInterval ? SubscriptionUpdateInterval : time_left;
+                var delay_start = DateTime.Now;
+                try {
+                    await Task.Delay(delay, _cancellation_token_source.Token);
+                }
+                finally {
+                    var elapsed_time = DateTime.Now - delay_start;
+                    time_left = await DecrementAndGetSubscriptionTimeLeft(handler.SerialNumber, elapsed_time);
+                }
+            }
+            _logger.LogWarning("Subscription expired. Cancelling!");
+            _cancellation_token_source.Cancel();
         }
 
         private async Task MonitorConnectionAlive() {
@@ -58,8 +119,8 @@ namespace DroHub.Helpers.Thrift
             } while (_alive_flag);
             _logger.LogInformation("No data received for more than {timeout} seconds", ConnectionTimeout.Seconds);
             _cancellation_token_source.Cancel();
-
         }
+
         private async Task RecordTelemetry(IDroneTelemetry telemetry_data, DroHubContext context)
         {
             context.Add(telemetry_data);

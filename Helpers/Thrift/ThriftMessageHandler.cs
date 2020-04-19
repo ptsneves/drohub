@@ -193,6 +193,11 @@ namespace DroHub.Helpers.Thrift
             if (!await passesHeaderChecks(context))
                 return;
 
+            if (!await tasks.doesItPassPreconditions(context.Request.Headers["x-device-expected-serial"])) {
+                context.Response.StatusCode = 401;
+                return;
+            }
+
             try
             {
                 _serial_number = context.Request.Headers["x-device-expected-serial"];
@@ -201,10 +206,8 @@ namespace DroHub.Helpers.Thrift
                 _task_list.Add(Task.Run(async () => await ReceiveFromWebSocket(_socket)));
                 _socket_id = _connection_manager.AddSocket(this);
                 var new_tasks = await tasks.getTasks(this, _cancellation_token_src);
-                if (!new_tasks.Any())
-                {
+                if (!new_tasks.Any()) {
                     _logger.LogInformation("No tasks were given for this socket. Closing.");
-
                     return;
                 }
 

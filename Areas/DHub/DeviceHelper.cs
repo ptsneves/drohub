@@ -46,10 +46,16 @@ namespace DroHub.Areas.DHub {
                 .ToListAsync();
         }
 
-        public static IQueryable<DroHubUser> getDeviceUsers(string serial, DroHubContext db_context) {
+
+        private static IIncludableQueryable<Device, Subscription> getDeviceWithSubscription(string device_serial,
+            DroHubContext db_context) {
             return db_context.Devices
-                .Where(d => d.SerialNumber == serial)
-                .Include(d => d.Subscription)
+                .Where(d => d.SerialNumber == device_serial)
+                .Include(d => d.Subscription);
+        }
+
+        public static IQueryable<DroHubUser> getDeviceUsers(string serial, DroHubContext db_context) {
+            return getDeviceWithSubscription(serial, db_context)
                 .ThenInclude(s => s.Users)
                 .SelectMany(d => d.Subscription.Users);
         }
@@ -59,6 +65,12 @@ namespace DroHub.Areas.DHub {
                 .getCurrentUserSubscription()
                 .getSubscriptionDevices()
                 .SingleAsync(d => d.Id == id);
+        }
+
+        public static async Task<Subscription> getDeviceSubscription(string serial, DroHubContext db_context) {
+            return await getDeviceWithSubscription(serial, db_context)
+                .Select(d => d.Subscription)
+                .SingleAsync();
         }
 
         private static async Task<Device> getDeviceBySerial(IIncludableQueryable<DroHubUser,Subscription> user,
