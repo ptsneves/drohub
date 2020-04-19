@@ -73,10 +73,15 @@ namespace DroHub.Tests.TestInfrastructure
                 http_helper.Response.EnsureSuccessStatusCode();
                 var dom = DroHubFixture.getHtmlDOM(await http_helper.Response.Content.ReadAsStringAsync());
                 http_helper?.Dispose();
-                if (dom.QuerySelectorAll("div.validation-summary-errors").Any())
-                    throw new InvalidOperationException("User Add has failed");
-                return new AddUserHelper(test_fixture, user_email, user_password);
-                }
+                var errors = dom.QuerySelectorAll("div.validation-summary-errors");
+                var s = "";
+                if (!errors.Any())
+                    return new AddUserHelper(test_fixture, user_email, user_password);
+
+                s = errors.Aggregate(s, (current, e) => current + (e.InnerHtml + "\n"));
+                throw new InvalidOperationException($"User Add has failed. Errors: {s}");
+
+            }
 
             public static async ValueTask<AddUserHelper> addUser(DroHubFixture test_fixture,
                 string user_email,
