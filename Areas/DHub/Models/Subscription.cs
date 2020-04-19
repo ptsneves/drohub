@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Configuration;
 using DroHub.Areas.Identity.Data;
 
 namespace DroHub.Areas.DHub.Models
@@ -18,10 +19,13 @@ namespace DroHub.Areas.DHub.Models
         [Key]
         [Required]
         public string OrganizationName { get; set; }
+
         [Required]
         public int AllowedUserCount { get; set; }
 
         [Required]
+        [Display(Name = "Allowed Organization Flight Time in Minutes")]
+        [TimeSpanValidator(MinValueString = "00:00:00", MaxValueString = "10675199.02:48:05.4775807")]
         public TimeSpan AllowedFlightTime { get; set; }
 
         public ICollection<DroHubUser> Users { get; set; }

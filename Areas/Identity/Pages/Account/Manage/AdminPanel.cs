@@ -78,8 +78,8 @@ namespace DroHub.Areas.Identity.Pages.Account
             public string OrganizationName { get; set; }
 
             [Display(Name = "Allowed Organization Flight Time in Minutes")]
-            [Range(1, 50338)] // MySQL allows maximum 838:59:59.000000 so in minutes 838*60+58 = 50338 minutes
-            public int? AllowedFlightTime { get; set; }
+            [Range(1, 15372286728)] // MySQL allows maximum 838:59:59.000000 so in minutes 838*60+58 = 50338 minutes
+            public long? AllowedFlightTime { get; set; }
 
             [Display(Name = "Number of allowed users")]
             [Range(1, Int32.MaxValue)]

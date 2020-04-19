@@ -2,6 +2,7 @@ using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace DroHub.Data
 {
@@ -76,6 +77,11 @@ namespace DroHub.Data
 
             builder.Entity<Subscription>()
                 .HasKey(d => d.OrganizationName);
+
+            builder.Entity<Subscription>()
+                .Property(s => s.AllowedFlightTime)
+                .HasColumnType("bigint")
+                .HasConversion(new TimeSpanToTicksConverter());
 
             // ----- REQUIRED ATTRIBUTES ----------------------------
             builder.Entity<Device>()

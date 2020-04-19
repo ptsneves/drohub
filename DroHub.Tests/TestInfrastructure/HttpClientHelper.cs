@@ -44,7 +44,7 @@ namespace DroHub.Tests.TestInfrastructure
                 string user_password,
                 string organization,
                 string user_base_type,
-                int allowed_flight_time_minutes,
+                long allowed_flight_time_minutes,
                 int allowed_user_count) {
 
                 if (user_email == "admin")
@@ -88,7 +88,7 @@ namespace DroHub.Tests.TestInfrastructure
                 string user_password,
                 string organization,
                 string user_base_type,
-                int allowed_flight_time_minutes,
+                long allowed_flight_time_minutes,
                 int allowed_user_count) {
 
                 return await addUser(test_fixture, "admin", test_fixture.AdminPassword, user_email, user_password,

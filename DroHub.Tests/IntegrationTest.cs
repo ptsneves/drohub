@@ -105,6 +105,26 @@ namespace DroHub.Tests
         }
 
         [Fact]
+        public async void TestCreateSubscriptionAllowedMinutesLimits() {
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                await using var u1 = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
+                    DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, (long)TimeSpan.MaxValue.TotalMinutes+1,
+                    DEFAULT_ALLOWED_USER_COUNT);
+            });
+
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                await using var u1 = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
+                    DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, 0,
+                    DEFAULT_ALLOWED_USER_COUNT);
+            });
+
+            await using var u = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
+                DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, (long)TimeSpan.MaxValue.TotalMinutes,
+                DEFAULT_ALLOWED_USER_COUNT);
+
+        }
+
+        [Fact]
         public async void TestCreateSubscriptionWithNoAllowedUsers() {
             await Assert.ThrowsAsync<InvalidOperationException>(async () => {
                 await using var u = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
