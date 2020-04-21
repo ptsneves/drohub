@@ -91,15 +91,28 @@ namespace DroHub.Tests.TestInfrastructure
             }
         }
 
-        public class TelemetryItem<T> : BaseTelemetryItem
+        public class TelemetryItem<T> : BaseTelemetryItem, IDisposable
         {
             public T Telemetry;
-            public TelemetryItem(T telemetry, HubConnection connection, string type_name) : base()
+            private readonly CancellationTokenSource cts;
+            private readonly CancellationTokenRegistration cts_callback;
+            public TelemetryItem(T telemetry, HubConnection connection, string type_name)
             {
+                cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                cts_callback = cts.Token.Register(() => {
+                    // this callback will be executed when token is cancelled
+                    if (!TaskSource.Task.IsCompleted)
+                        TaskSource.TrySetCanceled();
+                });
                 Telemetry = telemetry;
                 connection.On<string>(type_name, (message) => {
-                    TaskSource.TrySetResult(message);
+                    TaskSource.SetResult(message);
                 });
+            }
+
+            public void Dispose() {
+                cts_callback.Dispose();
+                cts.Dispose();
             }
         }
 
@@ -132,8 +145,19 @@ namespace DroHub.Tests.TestInfrastructure
         }
 
         public async Task WaitForServer() {
-            var tasks = TelemetryItems.Select(item => ((TelemetryMock.BaseTelemetryItem)item.Value).TaskSource.Task);
-            await Task.WhenAny(Task.WhenAll(tasks), Task.Delay(10000));
+            var tasks = TelemetryItems.Select(item => item.Value.TaskSource.Task);
+            try {
+                await Task.WhenAll(tasks);
+            }
+            catch (TaskCanceledException e) {
+                var s = "";
+                foreach (var (key, value) in TelemetryItems) {
+                    var t = value.TaskSource.Task;
+                    if (t.IsCanceled)
+                        s += $"Exception:  {key} {SerialNumber}   \n";
+                }
+                throw new InvalidOperationException(s);
+            }
         }
 
         private HubConnection _connection;
@@ -166,6 +190,9 @@ namespace DroHub.Tests.TestInfrastructure
                 await _device.DisposeAsync();
             if (_user != null)
                 await _user.DisposeAsync();
+            foreach (var item in TelemetryItems.Values) {
+                item.Dispose();
+            }
         }
 
         public Dictionary<Type, TelemetryItem<IDroneTelemetry>> TelemetryItems { get; private set; }
