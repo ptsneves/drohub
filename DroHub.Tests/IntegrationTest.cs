@@ -4,6 +4,7 @@ using DroHub.Tests.TestInfrastructure;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Threading;
@@ -396,79 +397,81 @@ namespace DroHub.Tests
                 await t_web_socket_client.WriteAsync(new byte[1]));
         }
 
-        [InlineData(6, false, 9999)]
-        [InlineData(1, true, 1)]
-        [Theory]
-        public async void TestThriftDrone(int concurrent_devices, bool infinite, int minutes)
-        {
-            var telemetry_mocks = new List<TelemetryMock>();
-            var drone_rpcs = new List<DroneRPC>();
-            var users = new List<string>();
-            var timer_start = new List<DateTime>();
+        private delegate Task StageThriftDroneTestDelegate(DroneRPC drone_rpc, TelemetryMock telemetry_mock,
+            string user_name, string token);
 
-            for (var i = 0; i < concurrent_devices; i++) {
-                telemetry_mocks.Add(new TelemetryMock($"{DEFAULT_DEVICE_SERIAL}_{i}"));
-                users.Add($"{DEFAULT_USER}{i}");
+        private async Task stageThriftDrone(bool infinite, int minutes, string user_name, string organization, string
+        serial_number, StageThriftDroneTestDelegate del) {
+            var telemetry_mock = new TelemetryMock(serial_number);
 
-                await telemetry_mocks[i].startMock(_fixture, users[i], DEFAULT_PASSWORD, "org"+i,
-                    "ActingPilot", minutes, DEFAULT_ALLOWED_USER_COUNT,
-                    "ws://localhost:5000/telemetryhub");
+            await telemetry_mock.startMock(_fixture, user_name, DEFAULT_PASSWORD, organization,
+                "ActingPilot", minutes, DEFAULT_ALLOWED_USER_COUNT,
+                "ws://localhost:5000/telemetryhub");
 
-                drone_rpcs.Add(new DroneRPC(telemetry_mocks[i], infinite));
+            var drone_rpc = new DroneRPC(telemetry_mock, infinite);
+
+            try {
+                var token = (await HttpClientHelper.getApplicationToken(_fixture, user_name,
+                    DEFAULT_PASSWORD))["result"];
+                await del(drone_rpc, telemetry_mock, user_name, token);
             }
-            try
-            {
-                for (var i = 0; i < concurrent_devices; i++) {
-                    var token = (await HttpClientHelper.getApplicationToken(_fixture, users[i],
-                        DEFAULT_PASSWORD))["result"];
-                    if (infinite) {
-                        timer_start.Add(DateTime.Now);
-                        await DroneDeviceHelper.mockDrone(_fixture, drone_rpcs[i], telemetry_mocks[i].SerialNumber,
-                            async () => {
-                                var cts = new CancellationTokenSource(TimeSpan.FromMinutes(minutes+0.5f*minutes));
-                                await drone_rpcs[i].MonitorConnection(TimeSpan.FromSeconds(5), cts.Token);
-                            }, users[i], token);
+            finally {
+                drone_rpc.Dispose();
+                await telemetry_mock.stopMock();
+            }
+        }
 
+        [Fact]
+        public async void TestThriftDroneDataCorrectness() {
+            var tasks = new List<Task>();
+            for (var i = 0; i < 10; i++) {
+                var t = stageThriftDrone(false, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_USER+i, DEFAULT_ORGANIZATION+i, DEFAULT_DEVICE_SERIAL+i,
+                    async (drone_rpc, telemetry_mock, user_name, token) => {
+                    await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
+                        telemetry_mock.WaitForServer, user_name, token);
+                    foreach (var t in telemetry_mock.getSignalRTasksTelemetry()) {
+                        var ds = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(t);
+                        Assert.Equal((string) ds.Serial, telemetry_mock.SerialNumber);
                     }
-                    else
-                        await DroneDeviceHelper.mockDrone(_fixture, drone_rpcs[i], telemetry_mocks[i].SerialNumber,
-                            telemetry_mocks[i].WaitForServer, users[i], token);
-                }
 
-                for (var i = 0; i < concurrent_devices; i++) {
-                    if (infinite) {
-                        var elapsed_time = DateTime.Now - timer_start[i];
-                        Assert.True(elapsed_time > TimeSpan.FromMinutes(minutes));
-                        Assert.True(elapsed_time.TotalMinutes < TimeSpan.FromMinutes(minutes).TotalMinutes * 1.25);
-                        var token = (await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER,
-                            DEFAULT_PASSWORD))["result"];
+                    var r = await telemetry_mock.getRecordedTelemetry(_fixture);
+
+                    foreach (var key_value_pair in r) {
+                        Assert.NotNull(key_value_pair.Value);
+                    }
+                    });
+                tasks.Add(t);
+            }
+            await Task.WhenAll(tasks);
+        }
+
+        [Fact]
+        public async void TestSubscriptionEnd() {
+            var minutes = 1;
+            var tasks = new List<Task>();
+            for (var i = 0; i < 1; i++) {
+                var t = stageThriftDrone(true, 1, DEFAULT_USER+i, DEFAULT_ORGANIZATION+i, DEFAULT_DEVICE_SERIAL+i,
+                    async (drone_rpc, telemetry_mock, user_name, token) => {
+                        var timer_start = DateTime.Now;
+                        await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
+                            async () => {
+                                var cts = new CancellationTokenSource(TimeSpan.FromMinutes(minutes + 0.5f * minutes));
+                                await drone_rpc.MonitorConnection(TimeSpan.FromSeconds(5), cts.Token);
+                            }, user_name, token);
+                        var elapsed_time = DateTime.Now - timer_start;
+                        if (!(elapsed_time > TimeSpan.FromMinutes(minutes)))
+                            throw new InvalidDataException($"{elapsed_time} > {TimeSpan.FromMinutes(minutes)} FAILED");
+                        if (!(elapsed_time.TotalMinutes < TimeSpan.FromMinutes(minutes).TotalMinutes * 1.25))
+                            throw new InvalidDataException(
+                                $"{elapsed_time.TotalMinutes} < {TimeSpan.FromMinutes(minutes).TotalMinutes * 1.25} FAILED");
 
                         await Assert.ThrowsAsync<WebSocketException>(async () =>
-                            await HttpClientHelper.openWebSocket(_fixture, telemetry_mocks[i].UserName, token,
-                                telemetry_mocks[i].SerialNumber));
-                    }
-                    else {
-                        foreach (var t in telemetry_mocks[i].getSignalRTasksTelemetry()) {
-                            var ds = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(t);
-                            Assert.Equal((string) ds.Serial, telemetry_mocks[i].SerialNumber);
-                        }
-
-                        var r = await telemetry_mocks[i].getRecordedTelemetry(_fixture);
-
-                        foreach (var key_value_pair in r) {
-                            Assert.NotNull(key_value_pair.Value);
-                        }
-                    }
-                }
+                            await HttpClientHelper.openWebSocket(_fixture, telemetry_mock.UserName, token,
+                                telemetry_mock.SerialNumber));
+                    });
+                tasks.Add(t);
             }
-            finally
-            {
-                for (var i = 0; i < concurrent_devices; i++)
-                {
-                    drone_rpcs[i].Dispose();
-                    await telemetry_mocks[i].stopMock();
-                }
-            }
+            await Task.WhenAll(tasks);
         }
     }
 }

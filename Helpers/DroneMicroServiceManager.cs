@@ -39,7 +39,7 @@ namespace DroHub.Helpers.Thrift
         }
 
         public async ValueTask<bool> doesItPassPreconditions(string device_serial) {
-            return await getSubscriptionTimeLeft(device_serial) >= TimeSpan.Zero;
+            return await getSubscriptionTimeLeft(device_serial) > TimeSpan.Zero;
         }
 
         public ValueTask<List<Task>> getTasks(ThriftMessageHandler handler, CancellationTokenSource token_source)
