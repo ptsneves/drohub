@@ -215,7 +215,7 @@ namespace DroHub.Helpers.Thrift
             }
             finally
             {
-                try  {
+                try {
                     _connection_manager.RemoveSocket(_socket_id);
                     if (!_cancellation_token_src.IsCancellationRequested)
                         _cancellation_token_src.Cancel();
@@ -228,8 +228,7 @@ namespace DroHub.Helpers.Thrift
                     }
 
                 }
-                catch (Exception e)
-                {
+                catch (Exception e) {
                     _logger.LogWarning(e.Message);
                 }
                 finally {

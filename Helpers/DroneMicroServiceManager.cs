@@ -24,7 +24,7 @@ namespace DroHub.Helpers.Thrift
         private CancellationTokenSource _cancellation_token_source;
         private bool _alive_flag;
         public static TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(30);
-        public static TimeSpan SubscriptionUpdateInterval = TimeSpan.FromMinutes(5);
+        private static readonly TimeSpan SubscriptionUpdateInterval = TimeSpan.FromMinutes(5);
         public DroneMicroServiceManager(ILogger<DroneMicroServiceManager> logger,
             IHubContext<TelemetryHub> hub,
             JanusService janus_service,
@@ -121,9 +121,8 @@ namespace DroHub.Helpers.Thrift
             _cancellation_token_source.Cancel();
         }
 
-        private async Task RecordTelemetry(IDroneTelemetry telemetry_data, DroHubContext context)
-        {
-            context.Add(telemetry_data);
+        private static async Task RecordTelemetry(IDroneTelemetry telemetry_data, DroHubContext context) {
+            await context.AddAsync(telemetry_data);
             await context.SaveChangesAsync();
         }
 
@@ -145,7 +144,7 @@ namespace DroHub.Helpers.Thrift
             var token = _cancellation_token_source.Token;
             while (!token.IsCancellationRequested)
             {
-                await doDroneAction<T>(handler, del, token);
+                await doDroneAction(handler, del, token);
                 if (delay_between_action.HasValue)
                     await Task.Delay(delay_between_action.Value, token);
             }
@@ -154,79 +153,74 @@ namespace DroHub.Helpers.Thrift
         protected async Task doDroneAction<T>(ThriftMessageHandler handler,
             DeviceActionDelegate<T> del, CancellationToken token) where T : IDroneTelemetry
         {
-            string t_name = typeof(T).FullName;
-            _logger.LogDebug($"Starting Service {t_name}");
+            var t_name = typeof(T).FullName;
+            _logger.LogDebug($"Starting Service {t_name} {handler.SerialNumber}");
             try {
-                using (var client = handler.getClient<Drone.Client>(_logger)) {
-                    T telemetry = await del(client.Client, token);
-                    _alive_flag = true;
-                    using (var scope = _services.CreateScope()) {
-                        var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
-                        var device =
-                            await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == telemetry.Serial, token);
-                        if (device == null || token.IsCancellationRequested) {
-                            _logger.LogDebug("Not saving received telemetry for unregistered device {serial}",
-                                telemetry.Serial);
-                            return;
-                        }
-
-                        _logger.LogWarning($"received {t_name} {telemetry}", telemetry);
-                        await BroadcastToSignalR(t_name, telemetry, context);
-                        await RecordTelemetry(telemetry, context);
-                    }
+                using var client = handler.getClient<Drone.Client>(_logger);
+                var telemetry = await del(client.Client, token);
+                _alive_flag = true;
+                using var scope = _services.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<DroHubContext>();
+                var device =
+                    await context.Devices.FirstOrDefaultAsync(d => d.SerialNumber == telemetry.Serial, token);
+                if (device == null || token.IsCancellationRequested) {
+                    _logger.LogDebug("Not saving received telemetry for unregistered device {serial}",
+                        telemetry.Serial);
+                    return;
                 }
+
+                _logger.LogWarning($"received {t_name} {telemetry}", telemetry);
+                await BroadcastToSignalR(t_name, telemetry, context);
+                await RecordTelemetry(telemetry, context);
             }
             catch (OperationCanceledException) { }
             catch (Exception e)
             {
-                _logger.LogWarning($"{t_name} service failed with {e.ToString()}");
+                _logger.LogWarning($"{t_name} service failed with {e}");
                 await Task.Delay(5000, token);
             }
         }
-        private async Task pingConnection(ThriftMessageHandler handler)
-        {
-            DeviceActionDelegate<DroneReply> del = (async (client, token) =>
-            {
+
+        private async Task pingConnection(ThriftMessageHandler handler) {
+            static async Task<DroneReply> Del(Drone.Client client, CancellationToken token) {
                 var result = await client.pingServiceAsync(token);
                 result.ActionName = "ping service";
                 return result;
-            });
-            await doDroneActionForEver<DroneReply>(handler, del, TimeSpan.FromSeconds(5));
+            }
+
+            await doDroneActionForEver(handler, Del, TimeSpan.FromSeconds(5));
         }
 
         private async Task GatherPosition(ThriftMessageHandler handler) {
-            DeviceActionDelegate<DronePosition> del = ((client, token) =>
-            {
-                return client.getPositionAsync(token);
-            });
-            await doDroneActionForEver<DronePosition>(handler, del);
-        }
-        protected async Task GatherRadioSignal(ThriftMessageHandler handler)
-        {
-            DeviceActionDelegate<DroneRadioSignal> del = ((client, token) => {
-                return client.getRadioSignalAsync(token);
-            });
-            await doDroneActionForEver<DroneRadioSignal>(handler, del);
+            static Task<DronePosition> Del(Drone.Client client, CancellationToken token)
+                => client.getPositionAsync(token);
+
+            await doDroneActionForEver(handler, Del);
         }
 
-        protected async Task GatherFlyingState(ThriftMessageHandler handler)
-        {
-            DeviceActionDelegate<DroneFlyingState> del = ((client, token) =>
-            {
-                return client.getFlyingStateAsync(token);
-            });
-            await doDroneActionForEver<DroneFlyingState>(handler, del);
+        private async Task GatherRadioSignal(ThriftMessageHandler handler) {
+            static Task<DroneRadioSignal> Del(Drone.Client client, CancellationToken token) =>
+                client.getRadioSignalAsync(token);
+
+            await doDroneActionForEver(handler, Del);
         }
-        protected async Task GatherBatteryLevel(ThriftMessageHandler handler)
-        {
-            DeviceActionDelegate<DroneBatteryLevel> del = ((client, token) =>
-            {
+
+        private async Task GatherFlyingState(ThriftMessageHandler handler) {
+            static Task<DroneFlyingState> Del(Drone.Client client, CancellationToken token) =>
+                client.getFlyingStateAsync(token);
+
+            await doDroneActionForEver(handler, Del);
+        }
+
+        private async Task GatherBatteryLevel(ThriftMessageHandler handler) {
+            static Task<DroneBatteryLevel> Del(Drone.Client client, CancellationToken token) {
                 return client.getBatteryLevelAsync(token);
-            });
-            await doDroneActionForEver<DroneBatteryLevel>(handler, del);
+            }
+
+            await doDroneActionForEver(handler, Del);
         }
 
-        protected async Task GatherVideoSource(ThriftMessageHandler handler)
+        private async Task GatherVideoSource(ThriftMessageHandler handler)
         {
             DroneSendLiveVideoRequest send_video_request;
             Device device;
@@ -250,24 +244,21 @@ namespace DroHub.Helpers.Thrift
                 catch(Exception e) {
                     _logger.LogError(e.ToString());
                     await destroyMountPointForDevice(device);
-                    throw e;
+                    throw;
                 }
             }
 
-            DeviceActionDelegate<DroneLiveVideoStateResult> video_state_poller = (async (client, token) =>
-            {
+            async Task<DroneLiveVideoStateResult> VideoStatePoller(Drone.Client client, CancellationToken token) {
                 var result = await client.getLiveVideoStateAsync(send_video_request, token);
                 if (result.State != DroneLiveVideoState.LIVE && result.State != DroneLiveVideoState.STOPPED)
                     return await client.sendLiveVideoToAsync(send_video_request, token);
                 return result;
-            });
-
-            try
-            {
-                await doDroneActionForEver<DroneLiveVideoStateResult>(handler, video_state_poller, TimeSpan.FromSeconds(5));
             }
-            finally
-            {
+
+            try {
+                await doDroneActionForEver(handler, VideoStatePoller, TimeSpan.FromSeconds(5));
+            }
+            finally {
                 await destroyMountPointForDevice(device);
             }
         }
@@ -278,7 +269,6 @@ namespace DroHub.Helpers.Thrift
             var handle = await _janus_service.createStreamerPluginHandle(session);
             var mountpoint = await _janus_service.createVideoRoom(session, handle, device.Id, device.SerialNumber,
                     "mysecret", 10, JanusService.VideoCodecType.H264); // we need to force this for iOS
-            var date_now = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds().ToString();
             return mountpoint;
         }
 
