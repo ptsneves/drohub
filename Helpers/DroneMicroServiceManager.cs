@@ -72,11 +72,11 @@ namespace DroHub.Helpers.Thrift
                     subscription.AllowedFlightTime < TimeSpan.Zero ? TimeSpan.Zero : subscription.AllowedFlightTime;
 
                 try {
-                    db_context.SaveChanges();
+                    await db_context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException e) {
                     save_failed = true;
-                    e.Entries.Single().Reload();
+                    await e.Entries.Single().ReloadAsync();
                 }
 
                 //Only do it in the end so we have a chance to write the value!
