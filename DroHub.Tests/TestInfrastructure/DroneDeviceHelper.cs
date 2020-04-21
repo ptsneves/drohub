@@ -56,12 +56,19 @@ namespace DroHub.Tests.TestInfrastructure
                 dynamic awaitable = get_device_telemetry
                     .Invoke(null, new object[] { fixture, _device_serial, _user_name, _password, 1, 10 });
 
-                await awaitable;
-                dynamic result_list = awaitable.GetAwaiter().GetResult();
-                var d =((IEnumerable)result_list).Cast<dynamic>()
-                    .Single(s => s.Serial == telemetry_item.Value.Telemetry.Serial &&
-                                s.Timestamp == telemetry_item.Value.Telemetry.Timestamp);
-                r.Add(telemetry_item.ToString(), d);
+
+                IEnumerable result_list = await awaitable;
+                try {
+                    var d = result_list.Cast<dynamic>()
+                        .Single(s => s.Serial == telemetry_item.Value.Telemetry.Serial &&
+                                     s.Timestamp == telemetry_item.Value.Telemetry.Timestamp);
+
+                    r.Add(telemetry_item.ToString(), d);
+                }
+                catch (InvalidOperationException e) {
+                    throw new InvalidOperationException($"Error {telemetry_type} " + Newtonsoft.Json.JsonConvert
+                        .SerializeObject(result_list));
+                }
             }
 
             return r;
