@@ -1,16 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <!-- Generator: Sketch 58 (84663) - https://sketch.com -->
-    <title>Icons / Add User Copy 9</title>
-    <desc>Created with Sketch.</desc>
-    <g id="Icons-/-Add-User-Copy-9" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <path d="M8,8 L20,6 L32,8 L32,14.5835921 C32,22.6712588 27.5054593,30.0761631 20.359499,33.8160725 L20,34 C12.6456072,30.3228036 8,22.8060532 8,14.5835921 L8,8 Z M10,9.69425418 L10,14.5835921 C10,21.7094419 13.8431647,28.2514793 20,31.734931 C26.1568353,28.2514793 30,21.7094419 30,14.5835921 L30,9.69425418 L20,8.02758751 L10,9.69425418 Z" id="Rectangle-Copy" fill="#384156" fill-rule="nonzero"></path>
-        <g id="Group" transform="translate(16.000000, 11.000000)" fill="#384156">
-            <path d="M4,7 C5.93299662,7 7.5,5.43299662 7.5,3.5 C7.5,1.56700338 5.93299662,0 4,0 C2.06700338,0 0.5,1.56700338 0.5,3.5 C0.5,5.43299662 2.06700338,7 4,7 Z M4,5 C3.17157288,5 2.5,4.32842712 2.5,3.5 C2.5,2.67157288 3.17157288,2 4,2 C4.82842712,2 5.5,2.67157288 5.5,3.5 C5.5,4.32842712 4.82842712,5 4,5 Z" id="Oval" fill-rule="nonzero"></path>
-            <path d="M4,5 C4.55228475,5 5,5.44771525 5,6 L5,15 C5,15.5522847 4.55228475,16 4,16 C3.44771525,16 3,15.5522847 3,15 L3,6 C3,5.44771525 3.44771525,5 4,5 Z" id="Rectangle"></path>
-            <polygon id="Rectangle-Copy-3" points="5 13 7 13 7 14 7 15 5 15"></polygon>
-            <polygon id="Rectangle-Copy-4" points="5 10 7 10 7 11 7 12 5 12"></polygon>
-            <polygon id="Rectangle-Copy-5" points="4 10 6 10 6 12 6 14 4 14"></polygon>
-        </g>
-    </g>
-</svg>
+version https://git-lfs.github.com/spec/v1
+oid sha256:309eed3d3a1fe316bc0ac26717db9e136bc12ae266d8c9032473f9732de8665e
+size 1759

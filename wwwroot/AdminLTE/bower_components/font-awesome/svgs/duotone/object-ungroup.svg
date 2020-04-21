@@ -1,1 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><defs><style>.fa-secondary{opacity:.4}</style></defs><path d="M544 224v192h26a6 6 0 0 1 6 6v52a6 6 0 0 1-6 6h-52a6 6 0 0 1-6-6v-26H224v26a6 6 0 0 1-6 6h-52a6 6 0 0 1-6-6v-52a6 6 0 0 1 6-6h26v-96h32v96h288V224H384v-32h128v-26a6 6 0 0 1 6-6h52a6 6 0 0 1 6 6v52a6 6 0 0 1-6 6z" class="fa-secondary"/><path d="M384 96v192h26a6 6 0 0 1 6 6v52a6 6 0 0 1-6 6h-52a6 6 0 0 1-6-6v-26H64v26a6 6 0 0 1-6 6H6a6 6 0 0 1-6-6v-52a6 6 0 0 1 6-6h26V96H6a6 6 0 0 1-6-6V38a6 6 0 0 1 6-6h52a6 6 0 0 1 6 6v26h288V38a6 6 0 0 1 6-6h52a6 6 0 0 1 6 6v52a6 6 0 0 1-6 6z" class="fa-primary"/></svg>
+version https://git-lfs.github.com/spec/v1
+oid sha256:b9725684e14008ebc15f72e630fd13391fe2781a23dfb15bd2748498371d0695
+size 632

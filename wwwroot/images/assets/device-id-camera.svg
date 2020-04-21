@@ -1,13 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <!-- Generator: Sketch 58 (84663) - https://sketch.com -->
-    <title>device-id-camera</title>
-    <desc>Created with Sketch.</desc>
-    <g id="device-id-camera" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g id="Icon-/-Device-/-Kind-/-Cam" fill="#333333">
-            <g id="Window---Device-ID---Cam" transform="translate(3.600000, 4.800000)">
-                <path d="M-1.71661377e-06,6.04490891 L1.53394604,0.320138168 L16.8000029,4.41066513 L13.3577963,9.62411957 L7.41221352,8.03100586 L7.41221352,10.4313641 C8.00253181,10.773159 8.4,11.4116753 8.4,12.1422924 C8.4,13.2326408 7.51477547,14.1178654 6.42442703,14.1178654 C5.69380932,14.1178654 5.05529308,13.7203972 4.71349812,13.1300789 L0.49770813,13.1300789 L0.49770813,11.1545059 L4.71349812,11.1545059 C4.88700485,10.8548401 5.13697472,10.6048714 5.43664055,10.4313641 L5.43664055,7.50165253 L-1.71661377e-06,6.04490891 Z" id="Path"></path>
-            </g>
-        </g>
-    </g>
-</svg>
+version https://git-lfs.github.com/spec/v1
+oid sha256:4e7ad8a9582374cc8ac47a8671d8bbe3ca2f073e5ca22a861181c53151c6d070
+size 1162

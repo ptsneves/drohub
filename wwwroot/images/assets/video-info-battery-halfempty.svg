@@ -1,12 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <!-- Generator: Sketch 58 (84663) - https://sketch.com -->
-    <title>video-info-battery-halfempty</title>
-    <desc>Created with Sketch.</desc>
-    <g id="video-info-battery-halfempty" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g id="Icon-/-Device-/-Video-/-Info-/-Battery-/-Half-Empty">
-            <polygon id="Path" fill="#FFB333" fill-rule="evenodd" points="3.6 8.4 8.4 8.4 12 15.6 3.6 15.6"></polygon>
-            <path d="M20.4,6 C21.0627417,6 21.6,6.5372583 21.6,7.2 L21.6,8.4 C22.262298,8.4 22.8,8.93770197 22.8,9.6 L22.8,14.4 C22.8,15.0209044 22.3274104,15.5323006 21.7226199,15.5937997 L21.6,15.6 L21.6,16.8 C21.6,17.4627417 21.0627417,18 20.4,18 L2.4,18 C1.7372583,18 1.2,17.4627417 1.2,16.8 L1.2,7.2 C1.2,6.5372583 1.7372583,6 2.4,6 L20.4,6 Z M20.4,7.2 L2.4,7.2 L2.4,16.8 L20.4,16.8 L20.4,7.2 Z" id="Combined-Shape" fill="#FFFFFF" fill-rule="nonzero"></path>
-        </g>
-    </g>
-</svg>
+version https://git-lfs.github.com/spec/v1
+oid sha256:1566f5547353a2191ea486f6188f3476285b980abf11a9f9a21e7143ffdc3b70
+size 1118

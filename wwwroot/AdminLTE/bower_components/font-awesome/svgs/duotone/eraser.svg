@@ -1,1 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><style>.fa-secondary{opacity:.4}</style></defs><path d="M512 428v40a12 12 0 0 1-12 12H144a48 48 0 0 1-33.94-14.06l-96-96a48 48 0 0 1 0-67.88l136-136 227.88 227.88L355.88 416H500a12 12 0 0 1 12 12z" class="fa-secondary"/><path d="M377.94 393.94l120-120a48 48 0 0 0 0-67.88l-160-160a48 48 0 0 0-67.88 0l-120 120 45.25 45.25z" class="fa-primary"/></svg>
+version https://git-lfs.github.com/spec/v1
+oid sha256:5a2e800eebd6d45f4325e98f5e9e6902f94ee17d3ee336174b077657c315ea1a
+size 418
