@@ -128,8 +128,7 @@ namespace DroHub.Helpers.Thrift
                     {
                         _cn_src.Cancel();
                         _thrift_handler_instance._input_streams.Remove(_stream.Input);
-
-
+                        _cn_src.Dispose();
                         _logger.LogDebug("Disposed");
                     }
                 }
@@ -232,6 +231,9 @@ namespace DroHub.Helpers.Thrift
                 catch (Exception e)
                 {
                     _logger.LogWarning(e.Message);
+                }
+                finally {
+                    _cancellation_token_src.Dispose();
                 }
             }
         }
