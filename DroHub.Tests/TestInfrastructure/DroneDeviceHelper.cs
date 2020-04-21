@@ -1,61 +1,66 @@
 using System;
-using System.Threading.Tasks;
-using Thrift.Transport;
-using Thrift.Protocol;
-using DroHub.Helpers.Thrift;
-using Microsoft.Extensions.Logging;
 using System.Collections;
-using System.Net;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Net.WebSockets;
 using System.Reflection;
 using System.Threading;
-using Microsoft.AspNetCore.SignalR.Client;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using DroHub.Areas.DHub.Models;
-using System.Linq;
+using DroHub.Helpers.Thrift;
+using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Thrift.Protocol;
+using Thrift.Server;
 
 namespace DroHub.Tests.TestInfrastructure
 {
-   class DroneDeviceHelper
+    internal static class DroneDeviceHelper
     {
         public delegate Task DroneTestDelegate();
         public static async Task mockDrone(DroHubFixture fixture, DroneRPC drone_rpc, string device_serial, DroneTestDelegate test_delegate,
                 string user, string token)
         {
             var loggerFactory = new LoggerFactory();
-            using (var ws_transport = new TWebSocketClient(fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Binary))
-            using (var reverse_tunnel_transport = new TReverseTunnelServer(ws_transport, 1))
-            {
-                ws_transport.WebSocketOptions.SetRequestHeader("User-Agent", "AirborneProjets");
-                ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
-                ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
-                ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", user);
-                ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-token", token);
+            using var ws_transport = new TWebSocketClient(fixture.ThriftUri, WebSocketMessageType.Binary);
+            using var reverse_tunnel_transport = new TReverseTunnelServer(ws_transport, 1);
+            ws_transport.WebSocketOptions.SetRequestHeader("User-Agent", "AirborneProjets");
+            ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
+            ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
+            ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", user);
+            ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-token", token);
 
-                var message_validator_factory = new TAMessageValidatorProtocol.Factory(new TAJsonProtocol.Factory(),
-                        TAMessageValidatorProtocol.ValidationModeEnum.KEEP_READING,
-                        TAMessageValidatorProtocol.OperationModeEnum.SEQID_SLAVE);
+            var message_validator_factory = new TAMessageValidatorProtocol.Factory(new TAJsonProtocol.Factory(),
+                TAMessageValidatorProtocol.ValidationModeEnum.KEEP_READING,
+                TAMessageValidatorProtocol.OperationModeEnum.SEQID_SLAVE);
 
-                var processor = new Drone.AsyncProcessor(drone_rpc);
-                var server_engine = new Thrift.Server.TSimpleAsyncServer(processor, reverse_tunnel_transport,
-                        message_validator_factory, message_validator_factory, loggerFactory);
-                await server_engine.ServeAsync(CancellationToken.None);
-                await test_delegate();
-            }
+            var processor = new Drone.AsyncProcessor(drone_rpc);
+            var server_engine = new TSimpleAsyncServer(processor, reverse_tunnel_transport,
+                message_validator_factory, message_validator_factory, loggerFactory);
+            await server_engine.ServeAsync(CancellationToken.None);
+            await test_delegate();
         }
     }
 
     public class TelemetryMock
     {
+
         public async Task<Dictionary<string, dynamic>> getRecordedTelemetry(DroHubFixture fixture) {
             var r = new Dictionary<string, dynamic>();
             foreach (var telemetry_item in TelemetryItems)
             {
-                Type telemetry_type = telemetry_item.Key;
-                MethodInfo get_device_telemetry = typeof(HttpClientHelper).GetMethod("getDeviceTelemetry")
-                    .MakeGenericMethod(telemetry_type);
+                var get_device_telemetry = typeof(HttpClientHelper).GetMethod(nameof(HttpClientHelper.getDeviceTelemetry))
+                    ?.MakeGenericMethod(telemetry_item.Key);
+                if (get_device_telemetry == null)
+                    throw new InvalidProgramException("Could not get device telemetry object");
+
                 dynamic awaitable = get_device_telemetry
                     .Invoke(null, new object[] { fixture, _device_serial, _user_name, _password, 1, 10 });
 
+                if (awaitable == null)
+                    throw new InvalidProgramException("Could not get awaitable to get the telemetry");
 
                 IEnumerable result_list = await awaitable;
                 try {
@@ -65,8 +70,8 @@ namespace DroHub.Tests.TestInfrastructure
 
                     r.Add(telemetry_item.ToString(), d);
                 }
-                catch (InvalidOperationException e) {
-                    throw new InvalidOperationException($"Error {telemetry_type} " + Newtonsoft.Json.JsonConvert
+                catch (InvalidOperationException) {
+                    throw new InvalidOperationException($"Error in getting a single item. Dump {telemetry_item.Key}:\n" + JsonConvert
                         .SerializeObject(result_list));
                 }
             }
@@ -85,7 +90,8 @@ namespace DroHub.Tests.TestInfrastructure
         public class BaseTelemetryItem
         {
             public TaskCompletionSource<string> TaskSource { get; }
-            public BaseTelemetryItem()
+
+            protected BaseTelemetryItem()
             {
                 TaskSource = new TaskCompletionSource<string>();
             }
@@ -93,7 +99,7 @@ namespace DroHub.Tests.TestInfrastructure
 
         public class TelemetryItem<T> : BaseTelemetryItem, IDisposable
         {
-            public T Telemetry;
+            public readonly T Telemetry;
             private readonly CancellationTokenSource cts;
             private readonly CancellationTokenRegistration cts_callback;
             public TelemetryItem(T telemetry, HubConnection connection, string type_name)
@@ -105,7 +111,7 @@ namespace DroHub.Tests.TestInfrastructure
                         TaskSource.TrySetCanceled();
                 });
                 Telemetry = telemetry;
-                connection.On<string>(type_name, (message) => {
+                connection.On<string>(type_name, message => {
                     TaskSource.SetResult(message);
                 });
             }
@@ -121,26 +127,26 @@ namespace DroHub.Tests.TestInfrastructure
             TelemetryItems.Add(typeof(T), new TelemetryItem<IDroneTelemetry>(value, _connection, typeof(T).FullName));
         }
 
-        public void regenerateTelemetry() {
+        private void generateTelemetry() {
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             TelemetryItems = new Dictionary<Type, TelemetryItem<IDroneTelemetry>>();
 
-            AddTelemetryItem<DronePosition>(
+            AddTelemetryItem(
                 new DronePosition { Longitude = 0.0f, Latitude = 0.1f, Altitude = 10f, Serial = _device_serial, Timestamp = timestamp });
 
-            AddTelemetryItem<DroneReply>(
+            AddTelemetryItem(
                 new DroneReply { Result = true, Serial = _device_serial, Timestamp = timestamp });
 
-            AddTelemetryItem<DroneRadioSignal>(
+            AddTelemetryItem(
                 new DroneRadioSignal { SignalQuality = 2, Rssi = -23.0f, Serial = _device_serial, Timestamp = timestamp });
 
-            AddTelemetryItem<DroneFlyingState>(
+            AddTelemetryItem(
                 new DroneFlyingState { State = FlyingState.LANDED, Serial = _device_serial, Timestamp = timestamp });
 
-            AddTelemetryItem<DroneBatteryLevel>(
+            AddTelemetryItem(
                 new DroneBatteryLevel { BatteryLevelPercent = 100, Serial = _device_serial, Timestamp = timestamp });
 
-            AddTelemetryItem<DroneLiveVideoStateResult>(
+            AddTelemetryItem(
                 new DroneLiveVideoStateResult { State = DroneLiveVideoState.LIVE, Serial = _device_serial, Timestamp = timestamp });
         }
 
@@ -149,7 +155,7 @@ namespace DroHub.Tests.TestInfrastructure
             try {
                 await Task.WhenAll(tasks);
             }
-            catch (TaskCanceledException e) {
+            catch (TaskCanceledException) {
                 var s = "";
                 foreach (var (key, value) in TelemetryItems) {
                     var t = value.TaskSource.Task;
@@ -181,7 +187,7 @@ namespace DroHub.Tests.TestInfrastructure
                     .Add(http_helper.loginCookie);
                 })
                 .Build();
-            regenerateTelemetry();
+            generateTelemetry();
             await _connection.StartAsync();
         }
 
@@ -196,7 +202,7 @@ namespace DroHub.Tests.TestInfrastructure
         }
 
         public Dictionary<Type, TelemetryItem<IDroneTelemetry>> TelemetryItems { get; private set; }
-        private string _device_serial;
+        private readonly string _device_serial;
         public string SerialNumber => _device_serial;
         public string UserName => _user_name;
         HttpClientHelper http_helper;
