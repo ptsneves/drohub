@@ -38,7 +38,6 @@ namespace DroHub.Helpers.Thrift
         }
         private readonly List<EchoStream> _input_streams;
         private bool _is_disposed;
-        private string _socket_id;
         private WebSocket _socket;
         private ConnectionManager _connection_manager;
         private readonly SignInManager<DroHubUser> _signin_manager;
@@ -197,13 +196,18 @@ namespace DroHub.Helpers.Thrift
                 return;
             }
 
-            try
-            {
-                _serial_number = context.Request.Headers["x-device-expected-serial"];
-                _cancellation_token_src = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
+            var last_connection = _connection_manager.GetRPCSessionBySerial(_serial_number);
+            if (last_connection != null && !last_connection._is_disposed) {
+                _cancellation_token_src.Cancel();
+                last_connection._connection_manager.RemoveSocket(_serial_number);
+            }
+
+            _serial_number = context.Request.Headers["x-device-expected-serial"];
+            _cancellation_token_src = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
+            try {
                 _socket = await context.WebSockets.AcceptWebSocketAsync();
                 _task_list.Add(Task.Run(async () => await ReceiveFromWebSocket(_socket)));
-                _socket_id = _connection_manager.AddSocket(this);
+                _connection_manager.AddSocket(this);
                 var new_tasks = await tasks.getTasks(this, _cancellation_token_src);
                 if (!new_tasks.Any()) {
                     _logger.LogInformation("No tasks were given for this socket. Closing.");
@@ -213,42 +217,34 @@ namespace DroHub.Helpers.Thrift
                 await Task.WhenAll(_task_list.ToArray());
                 _logger.LogDebug("Finished all tasks.");
             }
-            finally
-            {
-                try {
-                    _connection_manager.RemoveSocket(_socket_id);
-                    if (!_cancellation_token_src.IsCancellationRequested)
-                        _cancellation_token_src.Cancel();
-
-                    // don't leave the socket in any potentially connected state
-                    if (_socket.State != WebSocketState.Aborted) {
-                        await _socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure,
-                            "Good bye",
-                            CancellationToken.None);
-                    }
-
+            finally {
+                // don't leave the socket in any potentially connected state
+                if (_socket.State != WebSocketState.Aborted) {
+                    await _socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure,
+                        "Good bye",
+                        CancellationToken.None);
                 }
-                catch (Exception e) {
-                    _logger.LogWarning(e.Message);
-                }
-                finally {
-                    _cancellation_token_src.Dispose();
-                }
+                if (!_cancellation_token_src.IsCancellationRequested)
+                    _cancellation_token_src.Cancel();
             }
         }
 
         public void Dispose()
         {
-            Dispose(true);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_is_disposed && disposing) {
-                _socket?.Abort();
-                _socket?.Dispose();
-            }
+            if (_is_disposed)
+                return;
             _is_disposed = true;
+            try {
+                _connection_manager.RemoveSocket(_serial_number);
+            }
+            catch (Exception e) {
+                _logger.LogWarning(e.Message);
+            }
+            _cancellation_token_src?.Cancel();
+            _socket?.Abort();
+            _socket?.Dispose();
+
+            _cancellation_token_src?.Dispose();
         }
 
         private void populateInputStreams(byte[] buffer, int offset, int count)
