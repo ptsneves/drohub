@@ -143,7 +143,7 @@ namespace DroHub.Tests.TestInfrastructure
             http_helper.verificationToken = DroHubFixture.getVerificationToken(await http_helper.Response.Content.ReadAsStringAsync());
             var contentToSend = new FormUrlEncodedContent(new[]
             {
-                new KeyValuePair<string, string>("Input.UserName", user),
+                new KeyValuePair<string, string>("Input.Email", user),
                 new KeyValuePair<string, string>("Input.Password", password),
                 new KeyValuePair<string, string>("__RequestVerificationToken", http_helper.verificationToken),
             });
