@@ -7,13 +7,12 @@
     </div> <!-- /.login-logo -->
     <div class="login-box-body-drohub">
         <form method="post">
+            <div asp-validation-summary="All" class="text-danger content-centered"></div>
             <div class="form-group content-centered has-feedback">
-                <input asp-for="Input.Email" class="form-control-drohub" placeholder="Email" />
-                <span asp-validation-for="Input.Email" style="display:block" class="text-danger"></span>
+                <input asp-for="Input.Email" class="form-control-drohub" placeholder="Email"/>
             </div>
             <div class="form-group content-centered has-feedback">
-                <input asp-for="Input.Password" class="form-control-drohub" placeholder="Password" />
-                <span asp-validation-for="Input.Password" style="display:block" class="text-danger"></span>
+                <input asp-for="Input.Password" class="form-control-drohub" placeholder="Password"/>
             </div>
             <div class="form-group content-centered">
                 <a asp-page="./ForgotPassword">Forgot your password?</a>
