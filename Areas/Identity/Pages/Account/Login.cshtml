@@ -1,68 +1,31 @@
 @page
 @model LoginModel
 
-<div class="login-box">
+<div class="login-box-drohub">
     <div class="drohub-logo">
         <a href="/"><img alt="DROHUB" src="/images/logo/drohub-small.png"/></a>
     </div> <!-- /.login-logo -->
-    <div class="login-box-body">
-        <p class="login-box-msg">Sign in to start your session</p>
+    <div class="login-box-body-drohub">
         <form method="post">
-            <div asp-validation-summary="All" class="text-danger"></div>
-            <div class="form-group has-feedback">
-                <input asp-for="Input.UserName" class="form-control" placeholder="UserName" />
-                <span class="glyphicon glyphicon-envelope form-control-feedback"></span>
-                <span asp-validation-for="Input.UserName" class="text-danger"></span>
+            <div class="form-group content-centered has-feedback">
+                <input asp-for="Input.Email" class="form-control-drohub" placeholder="Email" />
+                <span asp-validation-for="Input.Email" style="display:block" class="text-danger"></span>
             </div>
-            <div class="form-group has-feedback">
-                <input asp-for="Input.Password" class="form-control" placeholder="Password" />
-                <span class="glyphicon glyphicon-lock form-control-feedback"></span>
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            <div class="form-group content-centered has-feedback">
+                <input asp-for="Input.Password" class="form-control-drohub" placeholder="Password" />
+                <span asp-validation-for="Input.Password" style="display:block" class="text-danger"></span>
             </div>
-            <div class="row">
-                <div class="col-xs-8">
-                    <div class="checkbox icheck">
-                        <label asp-for="Input.RememberMe">
-                            <input asp-for="Input.RememberMe" type="checkbox" />
-                            @Html.DisplayNameFor(m => m.Input.RememberMe)
-                        </label>
-                    </div>
-                </div>
-                <div class="col-xs-4">
-                    <button type="submit" class="btn btn-primary btn-block btn-flat">Sign In</button>
-                </div>
+            <div class="form-group content-centered">
+                <a asp-page="./ForgotPassword">Forgot your password?</a>
             </div>
+            <div class="form-group content-centered has-feedback">
+                <button type="submit" class="btn login-submit-btn-drohub">Log In</button>
+            </div>
+
         </form>
-        @*<div class="social-auth-links text-center">
-            <p>- OR -</p>
-            @{
-                if ((Model.ExternalLogins?.Count ?? 0) == 0)
-                {
-                    <div>
-                        <p>
-                            There are no external authentication services configured. See <a href="https://go.microsoft.com/fwlink/?LinkID=532715">this article</a>
-                            for details on setting up this ASP.NET application to support logging in via external services.
-                        </p>
-                    </div>
-                }
-                else
-                {
-                    <form asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
-                        <div>
-                            <p>
-                                @foreach (var provider in Model.ExternalLogins)
-                                {
-                                    <button type="submit" class="btn btn-default" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
-                                }
-                            </p>
-                        </div>
-                    </form>
-                }
-            }
-        </div>*@
-        <a asp-page="./ForgotPassword">Forgot your password?</a>
-        <br/>
+            <a class="content-centered login-create-account-btn" asp-page="./ForgotPassword">Create Account</a>
     </div>
+
 </div>
 
 @section Scripts {

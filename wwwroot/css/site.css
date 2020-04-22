@@ -6,6 +6,78 @@ for details on configuring this project to bundle and minify static web assets. 
     line-height: 1.4;
 }
 
+button.login-submit-btn-drohub {
+    box-sizing: border-box;
+    height: 48px;
+    width: 200px;
+    border: 1px solid #2874CE;
+    border-radius: 4px;
+    background-color: #4A90E2;
+    color: #FFFFFF;
+    font-size: 1.5em;
+    margin-top:25px;
+    margin-bottom: 25px;
+}
+
+button.login-submit-btn-drohub:hover {
+    background: white;
+    color: #1099FF!important;
+    -webkit-transition: all 0.5s ease;
+    -moz-transition: all 0.5s ease;
+    -o-transition: all 0.5s ease;
+    transition: all 0.5s ease;
+}
+
+.login-page-drohub {
+    background: #eff1f4;
+}
+
+.form-control-drohub {
+    width: 388px;
+    max-width: 100%;
+    border-width: 0;
+    border-bottom: solid;
+    border-bottom-width: thin;
+    border-bottom-color: #bcbcbc;
+    padding-left: 2%;
+    padding-bottom: 3%;
+    font-size: 20px;
+}
+
+.form-control-drohub:focus {
+    color: black;
+}
+
+.login-box-drohub {
+    width: 500px;
+    margin: 7% auto;
+    max-width: 100%;
+}
+
+.login-box-body-drohub {
+    background: #ffffff;
+    color: #747171;
+    padding-top: 15%;
+}
+
+.login-create-account-btn {
+    padding-top: 20px;
+    color: #1099FF;
+    padding-bottom: 20px;
+    display: block;
+    border-top: 1px solid rgba(113,129,150,0.45);
+}
+
+.login-create-account-btn:hover {
+    color: white;
+    font-style: normal !important;
+    background: #4a90e2;
+    -webkit-transition: all 0.5s ease;
+    -moz-transition: all 0.5s ease;
+    -o-transition: all 0.5s ease;
+    transition: all 0.5s ease;
+}
+
 /* Make .svg files in the carousel display properly in older browsers */
 .carousel-inner .item img[src$=".svg"] {
     width: 100%;
@@ -207,7 +279,7 @@ div.col-md-6:nth-child(2) > form:nth-child(1) > button:nth-child(3) {
     object-fit: contain;
 }
 
-.video-overlay-centered {
+.content-centered {
     text-align: center;
 }
 
