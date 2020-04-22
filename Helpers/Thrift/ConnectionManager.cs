@@ -24,16 +24,6 @@ namespace DroHub.Helpers.Thrift
             return _handlers.FirstOrDefault(p => p.Key == serial).Value;
         }
 
-        public ConcurrentDictionary<string, ThriftMessageHandler> GetAll()
-        {
-            return _handlers;
-        }
-
-        public string GetId(ThriftMessageHandler handler)
-        {
-            return _handlers.FirstOrDefault(p => p.Value.SerialNumber == handler.SerialNumber).Key;
-        }
-
         public string AddSocket(ThriftMessageHandler handler)
         {
             //TODO: Make tests for multiple fake connections with the same serial
