@@ -59,9 +59,6 @@ namespace DroHub.Tests.TestInfrastructure
                 dynamic awaitable = get_device_telemetry
                     .Invoke(null, new object[] { fixture, _device_serial, _user_name, _password, 1, 10 });
 
-                if (awaitable == null)
-                    throw new InvalidProgramException("Could not get awaitable to get the telemetry");
-
                 IEnumerable result_list = await awaitable;
                 try {
                     var d = result_list.Cast<dynamic>()
