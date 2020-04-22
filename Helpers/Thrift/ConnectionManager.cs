@@ -19,9 +19,9 @@ namespace DroHub.Helpers.Thrift
             _handlers = new ConcurrentDictionary<string, ThriftMessageHandler>();
         }
 
-        public ThriftMessageHandler GetRPCSessionById(string id)
+        public ThriftMessageHandler GetRPCSessionBySerial(string serial)
         {
-            return _handlers.FirstOrDefault(p => p.Key == id).Value;
+            return _handlers.FirstOrDefault(p => p.Key == serial).Value;
         }
 
         public ConcurrentDictionary<string, ThriftMessageHandler> GetAll()
@@ -50,9 +50,9 @@ namespace DroHub.Helpers.Thrift
             return handler.SerialNumber;
         }
 
-        public void RemoveSocket(string id)
+        public void RemoveSocket(string serial)
         {
-            if (_handlers.TryRemove(id, out _))
+            if (_handlers.TryRemove(serial, out _))
             {
                 _logger.LogDebug("Removed Socket from database");
             }

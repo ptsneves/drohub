@@ -248,7 +248,7 @@ namespace DroHub.Areas.DHub.Controllers
 
         public async Task<IActionResult> TakeOff([Required]int id) {
             var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
-            var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
+            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(device.SerialNumber);
             if (rpc_session != null)
             {
                 using (var client = rpc_session.getClient<Drone.Client>(_logger))
@@ -263,7 +263,7 @@ namespace DroHub.Areas.DHub.Controllers
         }
         public async Task<IActionResult> Land([Required]int id) {
             var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
-            var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
+            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(device.SerialNumber);
             if (rpc_session != null)
             {
                 using (var client = rpc_session.getClient<Drone.Client>(_logger))
@@ -280,7 +280,7 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> ReturnToHome([Required]int id)
         {
             var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
-            var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
+            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(device.SerialNumber);
             if (rpc_session != null)
             {
                 using (var client = rpc_session.getClient<Drone.Client>(_logger))
@@ -298,7 +298,7 @@ namespace DroHub.Areas.DHub.Controllers
             [Required]float longitude, [Required]float altitude, [Required]double heading)
         {
             var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
-            var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
+            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(device.SerialNumber);
             if (rpc_session != null)
             {
                 using (var client = rpc_session.getClient<Drone.Client>(_logger))
@@ -325,7 +325,7 @@ namespace DroHub.Areas.DHub.Controllers
             [Required][Bind("ActionType")]DroneTakePictureRequest request) {
 
             var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
-            var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
+            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(device.SerialNumber);
             if (rpc_session != null && request != null)
             {
                 using (var client = rpc_session.getClient<Drone.Client>(_logger))
@@ -341,7 +341,7 @@ namespace DroHub.Areas.DHub.Controllers
             [Required][Bind("ActionType")]DroneRecordVideoRequest request) {
 
             var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
-            var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
+            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(device.SerialNumber);
             if (rpc_session != null && request != null)
             {
                 using (var client = rpc_session.getClient<Drone.Client>(_logger))
@@ -355,7 +355,7 @@ namespace DroHub.Areas.DHub.Controllers
 
         public async Task<IActionResult> GetFileList([Required]int id) {
             var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
-            var rpc_session = _device_connection_manager.GetRPCSessionById(device.SerialNumber);
+            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(device.SerialNumber);
             if (rpc_session != null)
             {
                 using (var client = rpc_session.getClient<Drone.Client>(_logger))
