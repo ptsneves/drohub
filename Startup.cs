@@ -1,14 +1,19 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
+using DroHub.Areas.DHub.API;
+using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.DHub.SignalRHubs;
 using DroHub.Data;
 using DroHub.Helpers;
+using DroHub.Helpers.AuthenticationHandler;
 using DroHub.Helpers.Thrift;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -62,12 +67,31 @@ namespace DroHub
             services.AddHttpClient<JanusService>();
 
             services.AddSignalR();
+
+            services.AddAuthentication(RouteAuthenticationHandler.SchemeName)
+                .RouteAuthentication(IdentityConstants.ApplicationScheme, new List<AuthenticationSchemeRoute> {
+                    new AuthenticationSchemeRoute {
+                        SchemeName = TokenAuthenticationHandler.SchemeName,
+                        StartPaths = new List<PathString>() {"/api/AndroidApplication"}
+                    },
+                    new AuthenticationSchemeRoute {
+                        SchemeName = TelemetryAuthenticationHandler.SchemeName,
+                        StartPaths = new List<PathString>() {"/ws"}
+                    }
+                })
+                .AddTokenAuthentication()
+                .AddTelemetryAuthentication();
+
+            services.AddAuthorization();
+
+            services.AddDeviceResourceAuthorization();
+            services.AddSubscriptionAPI();
+            services.AddDeviceAPI();
+
+
             services.AddWebSocketManager();
-            services.AddMvc().AddRazorRuntimeCompilation().AddRazorPagesOptions(options =>
-            {
+            services.AddMvc().AddRazorRuntimeCompilation().AddRazorPagesOptions(options => {
                 options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/Account/");
-            }).AddMvcOptions(optsions => {
-                optsions.EnableEndpointRouting = false;
             });
         }
 
@@ -90,21 +114,22 @@ namespace DroHub
 
             app.UseDefaultFiles();
             app.UseStaticFiles();
-            app.UseCookiePolicy();
-            app.MapWebSocketManager("/ws");
-            app.UseAuthentication();
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute(
-                    name: "areas",
-                    template: "{area:exists}/{controller}/{action=Index}/{id?}"
-                );
-            });
+            app.UseRouting();
 
-            app.UseSignalR(route =>
-            {
-                route.MapHub<NotificationsHub>("/notificationshub");
-                route.MapHub<TelemetryHub>("/telemetryhub");
+            app.UseCookiePolicy();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.UseEndpoints(endpoints => {
+                endpoints.MapHub<NotificationsHub>("/notificationshub");
+                endpoints.MapHub<TelemetryHub>("/telemetryhub");
+                endpoints
+                    .MapControllerRoute("areas", "{area:exists}/{controller}/{action=Index}/{id?}")
+                    .RequireAuthorization();
+                endpoints.MapControllerRoute("api", "api/{controller}/{action}");
+                endpoints.MapWebSocketManager("/ws");
+                endpoints.MapRazorPages();
             });
         }
     }

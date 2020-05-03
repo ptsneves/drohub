@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.Models;
@@ -27,7 +28,6 @@ namespace DroHub.Areas.Identity.Pages.Account
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _email_sender;
 
-        public UserManager<DroHubUser> UserManager => _user_manager;
         public List<DroHubUser> Users { get; private set; }
         public string CurrentUserOrganizationName { get; private set; }
 
@@ -264,6 +264,9 @@ namespace DroHub.Areas.Identity.Pages.Account
 
                 foreach (var claim in DroHubUser.UserClaims[Input.ActingType])
                     await _user_manager.AddClaimAsync(user, claim);
+
+                await _user_manager.AddClaimAsync(user, new Claim(DroHubUser.SUBSCRIPTION_KEY_CLAIM, subscription
+                    .OrganizationName));
 
                 await _signin_manager.SignInAsync(user, isPersistent: false);
 

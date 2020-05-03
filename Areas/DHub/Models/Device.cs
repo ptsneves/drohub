@@ -4,8 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DroHub.Areas.DHub.Models
 {
-    public class Device
-    {
+    public class Device {
         public int Id { get; set; }
 
         [Required]
@@ -26,6 +25,8 @@ namespace DroHub.Areas.DHub.Models
         public DateTime CreationDate { get; set; }
 
         public string LiveVideoSecret { get; set; }
+
+        public string SubscriptionOrganizationName { get; set; }
         public Subscription Subscription { get; set; }
 
         public ICollection<DronePosition> positions { get; set; }
@@ -34,11 +35,5 @@ namespace DroHub.Areas.DHub.Models
         public ICollection<DroneFlyingState> flying_states { get; set; }
         public ICollection<DroneReply> drone_replies { get; set; }
         public ICollection<DroneLiveVideoStateResult> drone_video_states { get; set; }
-
-        public const string CLAIM_VALID_VALUE = "Yes";
-        public const string CAN_MODIFY_CLAIM = "CanModifyDevice";
-        public const string CAN_ADD_CLAIM = "CanAddDevice";
-        public const string CAN_PERFORM_FLIGHT_ACTIONS = "CanPerformFlightActions";
-        public const string CAN_PERFORM_CAMERA_ACTION = "CanPerformCameraActions";
     }
 }

@@ -33,21 +33,18 @@
 package com.drohub;
 
 import android.Manifest;
-import android.accounts.AccountManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -61,9 +58,7 @@ import com.parrot.drone.groundsdk.device.peripheral.VirtualGamepad;
 import com.parrot.drone.groundsdk.device.peripheral.gamepad.ButtonsMappableAction;
 import com.parrot.drone.groundsdk.facility.AutoConnection;
 import com.parrot.drone.sdkcore.ulog.ULog;
-import com.parrot.drone.sdkcore.ulog.ULogTag;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -87,8 +82,8 @@ public abstract class GroundSdkActivityBase extends DroHubActivityBase {
     /** Ground SDK interface. */
     private GroundSdk mGroundSdk;
     protected ThriftConnection _thrift_connection;
-    protected String user_auth_token;
-    protected String user_email;
+    protected String _user_auth_token;
+    protected String _user_email;
 
     /**
      * Gets GroundSDK interface.
@@ -117,7 +112,7 @@ public abstract class GroundSdkActivityBase extends DroHubActivityBase {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        user_auth_token = getIntent().getStringExtra(EXTRA_USER_AUTH_TOKEN); //Can be null
+        _user_auth_token = getIntent().getStringExtra(EXTRA_USER_AUTH_TOKEN); //Can be null
 
 
         mGroundSdk = ManagedGroundSdk.obtainSession(this);

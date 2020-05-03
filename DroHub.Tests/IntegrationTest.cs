@@ -5,11 +5,12 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
 using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Threading;
 using DroHub.Areas.Identity.Data;
-using DroHub.Helpers.Thrift;
+using DroHub.Helpers;
 
 // ReSharper disable StringLiteralTypo
 
@@ -17,7 +18,7 @@ namespace DroHub.Tests
 {
     public class IntegrationTest : IClassFixture<DroHubFixture>
     {
-        DroHubFixture _fixture;
+        private readonly DroHubFixture _fixture;
 
         private const int ALLOWED_USER_COUNT = 999;
         private const string DEFAULT_ORGANIZATION = "UN";
@@ -26,7 +27,7 @@ namespace DroHub.Tests
         private const string DEFAULT_DEVICE_SERIAL = "Aserial";
         private const string DEFAULT_USER = "auser@drohub.xyz";
         private const string DEFAULT_PASSWORD = "password1234";
-        private const int DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES = 3;
+        private const int DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES = 999;
         private const int DEFAULT_ALLOWED_USER_COUNT = 3;
 
         public IntegrationTest(DroHubFixture fixture) {
@@ -42,9 +43,9 @@ namespace DroHub.Tests
 
         private async Task testLogin(string user, string password, bool expect_login_fail) {
             if (expect_login_fail)
-                await Assert.ThrowsAsync<System.InvalidProgramException>(async () => (await HttpClientHelper.createLoggedInUser(_fixture, user, password)).Dispose());
+                await Assert.ThrowsAsync<InvalidProgramException>(async () => (await HttpClientHelper.createLoggedInUser(_fixture, user, password)).Dispose());
             else
-                using (var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, user, password)) { }
+                using (await HttpClientHelper.createLoggedInUser(_fixture, user, password)) { }
         }
 
         [InlineData(null, false)]
@@ -201,30 +202,6 @@ namespace DroHub.Tests
             Assert.Equal(new Uri(_fixture.SiteUri, "/"), response.RequestMessage.RequestUri);
         }
 
-        // [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.OWNER_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.PILOT_POLICY_CLAIM, true)]
-        [InlineData(DroHubUser.GUEST_POLICY_CLAIM, false)]
-        [Theory]
-        public async void TestAuthenticationToken(string user_base_type, bool expect_get_token_success) {
-            await using var add_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, user_base_type,
-                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
-
-            var res = await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
-            Assert.NotEmpty(res["result"]);
-            if (expect_get_token_success) {
-                Assert.NotEqual("nok", res["result"]);
-                var token = res["result"];
-                res = await HttpClientHelper.authenticateToken(_fixture, DEFAULT_USER, token);
-                Assert.Equal("ok", res["result"]);
-            }
-            else {
-                Assert.Equal("nok", res["result"]);
-            }
-        }
-
         [Fact]
         public async void TestQueryDeviceInfoIsEmpty() {
             var token = (await HttpClientHelper.getApplicationToken(_fixture, "admin",
@@ -245,16 +222,17 @@ namespace DroHub.Tests
 
             await Assert.ThrowsAsync<InvalidOperationException>(async () => {
                 await using var f = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
-                    DEFAULT_PASSWORD, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL, false);
+                    DEFAULT_PASSWORD, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
             });
         }
 
         [Fact]
         public async void TestQueryDeviceInfoOnNonExistingUser() {
-            var device_info = await HttpClientHelper.queryDeviceInfo(_fixture, "asd",
-                "sadsdd",
-                DEFAULT_DEVICE_SERIAL);
-            Assert.Null(device_info["result"]);
+            await Assert.ThrowsAsync<HttpRequestException>(async () => {
+                await HttpClientHelper.queryDeviceInfo(_fixture, "asd",
+                    "sadsdd",
+                    DEFAULT_DEVICE_SERIAL);
+            });
         }
 
         [InlineData("MyAnafi", null, true)]
@@ -265,7 +243,7 @@ namespace DroHub.Tests
         public async void TestIncompleteCreateDeviceModelFails(string device_name, string device_serial,
             bool use_app_api) {
             if (use_app_api) {
-                await Assert.ThrowsAsync<System.Net.Http.HttpRequestException>(async () => {
+                await Assert.ThrowsAsync<HttpRequestException>(async () => {
                     await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin",
                         _fixture.AdminPassword, device_name, device_serial, true);
                 });
@@ -289,47 +267,49 @@ namespace DroHub.Tests
         [Theory]
         public async void TestCreateAndDeleteDevicePermission(string user_base_type,
             string device_name, string device_serial, bool expect_created, bool use_app_api = false) {
-
-            await using var user_add = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
-                DEFAULT_ORGANIZATION, user_base_type, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
-
-            if (expect_created) {
-                await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
-                    DEFAULT_PASSWORD, device_name, device_serial, use_app_api);
-
-                var devices_list = await HttpClientHelper.getDeviceList(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
-                Assert.NotNull(devices_list);
-                devices_list.Single(ds => ds.serialNumber == device_serial);
-                var token = (await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER,
-                    DEFAULT_PASSWORD))["result"];
-                var device_info = (await HttpClientHelper.queryDeviceInfo(_fixture, DEFAULT_USER, token,
-                    device_serial));
-                Assert.Equal(device_name, device_info["result"].Name);
-                Assert.Equal(device_serial, device_info["result"].SerialNumber);
-            }
-            else
+            await using var user_add = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
+                DEFAULT_PASSWORD,
+                DEFAULT_ORGANIZATION, user_base_type, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES,
+                DEFAULT_ALLOWED_USER_COUNT);
             {
-                if (use_app_api) {
-                    await Assert.ThrowsAsync<InvalidCredentialException>(async () => {
-                        await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
-                            DEFAULT_PASSWORD, device_name, device_serial, true);
-                    });
+                if (expect_created) {
+                    await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
+                        DEFAULT_PASSWORD, device_name, device_serial, use_app_api);
+
+                    var devices_list = await HttpClientHelper.getDeviceList(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
+                    Assert.NotNull(devices_list);
+                    devices_list.Single(ds => ds.serialNumber == device_serial);
+                    var token = (await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER,
+                        DEFAULT_PASSWORD))["result"];
+                    var device_info = (await HttpClientHelper.queryDeviceInfo(_fixture, DEFAULT_USER, token,
+                        device_serial));
+                    Assert.Equal(device_name, device_info["result"].Name);
+                    Assert.Equal(device_serial, device_info["result"].SerialNumber);
                 }
                 else {
-                    await Assert.ThrowsAsync<InvalidOperationException>(async () => {
-                        await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
-                            DEFAULT_PASSWORD, device_name, device_serial);
-                    });
+                    if (use_app_api) {
+                        await Assert.ThrowsAsync<InvalidCredentialException>(async () => {
+                            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture,
+                                DEFAULT_USER,
+                                DEFAULT_PASSWORD, device_name, device_serial, true);
+                        });
+                    }
+                    else {
+                        await Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture,
+                                DEFAULT_USER,
+                                DEFAULT_PASSWORD, device_name, device_serial);
+                        });
+                    }
                 }
-
-                Assert.Null(await HttpClientHelper.getDeviceList(_fixture, DEFAULT_USER, DEFAULT_PASSWORD));
             }
+            Assert.Null(await HttpClientHelper.getDeviceList(_fixture, DEFAULT_USER, DEFAULT_PASSWORD));
         }
 
         [Fact]
         public async void TestConnectionClosedOnNoSerial() {
-            using var ws_transport = new TWebSocketClient(_fixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text);
-            await Assert.ThrowsAsync<System.Net.WebSockets.WebSocketException>(async () => await ws_transport.OpenAsync());
+            using var ws_transport = new TWebSocketClient(_fixture.ThriftUri, WebSocketMessageType.Text);
+            await Assert.ThrowsAsync<WebSocketException>(async () => await ws_transport.OpenAsync());
         }
 
         [Fact]
@@ -393,7 +373,7 @@ namespace DroHub.Tests
             //All the library is crap.
             await t_web_socket_client.WriteAsync(new byte[1]);
 
-            await Assert.ThrowsAsync<System.IO.IOException>(async () =>
+            await Assert.ThrowsAsync<IOException>(async () =>
                 await t_web_socket_client.WriteAsync(new byte[1]));
         }
 
@@ -424,13 +404,13 @@ namespace DroHub.Tests
         [Fact]
         public async void TestThriftDroneDataCorrectness() {
             var tasks = new List<Task>();
-            for (var i = 0; i < 10; i++) {
+            for (var i = 0; i < 100; i++) {
                 var t = stageThriftDrone(false, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_USER+i, DEFAULT_ORGANIZATION+i, DEFAULT_DEVICE_SERIAL+i,
                     async (drone_rpc, telemetry_mock, user_name, token) => {
                     await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
                         telemetry_mock.WaitForServer, user_name, token);
-                    foreach (var t in telemetry_mock.getSignalRTasksTelemetry()) {
-                        var ds = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(t);
+                    foreach (var f in telemetry_mock.getSignalRTasksTelemetry()) {
+                        var ds = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(f);
                         Assert.Equal((string) ds.Serial, telemetry_mock.SerialNumber);
                     }
 
@@ -442,15 +422,27 @@ namespace DroHub.Tests
                     });
                 tasks.Add(t);
             }
-            await Task.WhenAll(tasks);
+
+            try {
+                await Task.WhenAll(tasks);
+            }
+            catch (Exception e) {
+                var s = "";
+                foreach (var task in tasks) {
+                    if (task.IsFaulted) {
+                        s += $"Exception:  {task.Exception}   \n";
+                    }
+                }
+                throw new InvalidDataException(s);
+            }
         }
 
         [Fact]
         public async void TestSubscriptionEnd() {
-            var minutes = 1;
+            const int minutes = 1;
             var tasks = new List<Task>();
-            for (var i = 0; i < 1; i++) {
-                var t = stageThriftDrone(true, 1, DEFAULT_USER+i, DEFAULT_ORGANIZATION+i, DEFAULT_DEVICE_SERIAL+i,
+            for (var i = 0; i < 50; i++) {
+                var t = stageThriftDrone(true, minutes, DEFAULT_USER+i, DEFAULT_ORGANIZATION+i, DEFAULT_DEVICE_SERIAL+i,
                     async (drone_rpc, telemetry_mock, user_name, token) => {
                         var timer_start = DateTime.Now;
                         await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
@@ -459,11 +451,12 @@ namespace DroHub.Tests
                                 await drone_rpc.MonitorConnection(TimeSpan.FromSeconds(5), cts.Token);
                             }, user_name, token);
                         var elapsed_time = DateTime.Now - timer_start;
-                        if (!(elapsed_time > TimeSpan.FromMinutes(minutes)))
+                        if (elapsed_time < TimeSpan.FromMinutes(minutes))
                             throw new InvalidDataException($"{elapsed_time} > {TimeSpan.FromMinutes(minutes)} FAILED");
-                        if (!(elapsed_time.TotalMinutes < TimeSpan.FromMinutes(minutes).TotalMinutes * 1.25))
+                        if (!(elapsed_time.TotalMinutes <
+                              TimeSpan.FromMinutes(minutes).TotalMinutes + DroneMicroServiceManager.SubscriptionCheckInterval.TotalMinutes))
                             throw new InvalidDataException(
-                                $"{elapsed_time.TotalMinutes} < {TimeSpan.FromMinutes(minutes).TotalMinutes * 1.25} FAILED");
+                                $"{elapsed_time.TotalMinutes} < {TimeSpan.FromMinutes(minutes).TotalSeconds + DroneMicroServiceManager.SubscriptionCheckInterval.TotalSeconds} FAILED");
 
                         await Assert.ThrowsAsync<WebSocketException>(async () =>
                             await HttpClientHelper.openWebSocket(_fixture, telemetry_mock.UserName, token,

@@ -5,133 +5,43 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DroHub.Areas.DHub.API;
+using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
-using DroHub.Areas.DHub.SignalRHubs;
-using DroHub.Areas.Identity;
-using DroHub.Areas.Identity.Data;
-using DroHub.Data;
 using DroHub.Helpers;
 using DroHub.Helpers.Thrift;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace DroHub.Areas.DHub.Controllers
 {
-    internal static class LinqExtensions
-    {
-        internal static IQueryable<ICollection<TelemetryType>> IncludeTelemetry<TelemetryType>(
-            this System.Linq.IQueryable<Device> source, IncludeTelemetryDelegate<TelemetryType> dele) where TelemetryType : IDroneTelemetry
-        {
-            return dele(source);
-        }
-        internal delegate IQueryable<ICollection<TelemetryType>> IncludeTelemetryDelegate<TelemetryType>(System.Linq.IQueryable<Device> source) where TelemetryType : IDroneTelemetry;
-    }
     [Area("DHub")]
     public class DevicesController : AuthorizedController
     {
-        private readonly DroHubContext _context;
-        private readonly UserManager<DroHubUser> _user_manager;
-        // --- Default device settings values for new devices (used on create POST method)
-        private const string DefaultApperture = "f/4"; // TODO Get value directly from above lists
-        private const string DefaultFocusMode = "Auto"; // TODO Get values directly from above lists
-        private const string DefaultIso = "200"; // TODO Get value directly from above lists
-
-        private readonly IHubContext<NotificationsHub> _notifications_hubContext;
         private readonly ILogger<DevicesController> _logger;
         private readonly ConnectionManager _device_connection_manager;
 
         private readonly JanusServiceOptions _janus_options;
+        private readonly DeviceAPI _device_api;
 
-        public DevicesController(DroHubContext context, UserManager<DroHubUser> user_manager,
-            IHubContext<NotificationsHub> hubContext, ILogger<DevicesController> logger,
+        public DevicesController(ILogger<DevicesController> logger,
              ConnectionManager device_connection_manager,
-             IOptionsMonitor<JanusServiceOptions> janus_options)
+             IOptionsMonitor<JanusServiceOptions> janus_options,
+            DeviceAPI device_api)
         {
-            _context = context;
-            _user_manager = user_manager;
-            _notifications_hubContext = hubContext;
             _logger = logger;
             _device_connection_manager = device_connection_manager;
             _janus_options = janus_options.CurrentValue;
-        }
-
-        // --- SETTINGS SELECT LISTS
-        // Just return a list of states - in a real-world application this would call
-        // into data access layer to retrieve states from a database.
-        private static IEnumerable<string> GetAllIsoOptions()
-        {
-            return new List<string>
-            {
-                "Auto",
-                "100",
-                "200",
-                "400",
-                "800",
-                "1600",
-                "3200",
-                "6400",
-                "7600"
-            };
-        }
-
-        private static IEnumerable<string> GetAllAppertureOptions()
-        {
-            return new List<string>
-            {
-                "f/1.4",
-                "f/2",
-                "f/2.8",
-                "f/4",
-                "f/5.6",
-                "f/8",
-                "f/11",
-                "f/16",
-                "f/22"
-            };
-        }
-
-        private static IEnumerable<string> GetAllFocusModeOptions()
-        {
-            return new List<string>
-            {
-                "Auto",
-                "Continuous",
-                "One-shot",
-                "Manual"
-            };
-        }
-
-        // This function takes a list of strings and returns a list of SelectListItem objects.
-        // These objects are going to be used later in pages to render the DropDownList.
-        [NonAction]
-        private static IEnumerable<SelectListItem> GetSelectListItems(IEnumerable<string> elements)
-        {
-            // Create an empty list to hold result of the operation
-            var selectList = new List<SelectListItem>();
-
-            // For each string in the 'elements' variable, create a new SelectListItem object
-            // that has both its Value and Text properties set to a particular value.
-            // This will result in MVC rendering each item as:
-            //     <option value="State Name">State Name</option>
-            foreach (var element in elements)
-                selectList.Add(new SelectListItem
-                {
-                    Value = element,
-                    Text = element
-                });
-
-            return selectList;
+            _device_api = device_api;
         }
 
 
         // GET: DroHub/GetDevicesList
         public async Task<IActionResult> GetDevicesList(){
-            var device_list = await DeviceHelper.getSubscribedDevices(_user_manager, User);
+            var device_list = await _device_api.getSubscribedDevices();
 
             if (device_list.Any() == false)
                 return NoContent();
@@ -141,37 +51,29 @@ namespace DroHub.Areas.DHub.Controllers
 
         [NonAction]
         private async Task<IActionResult> GetTelemetry<TelemetryType>(int id, int start_index, int end_index,
-            LinqExtensions.IncludeTelemetryDelegate<TelemetryType> include_delegate) where TelemetryType : IDroneTelemetry {
+            DeviceExtensions.IncludeTelemetryDelegate<TelemetryType> include_delegate) where TelemetryType : IDroneTelemetry {
 
             if (start_index < 1 || end_index < start_index ) return BadRequest();
-
-            var telemetries = await DroHubUserHelper.getCurrentUserWithSubscription(_user_manager, User)
-                .getCurrentUserSubscription()
-                .getSubscriptionDevices()
-                .Where(d => d.Id == id)
-                .OrderByDescending(d => d.Id)
-                .IncludeTelemetry(include_delegate)
-                .Skip(start_index-1)
-                .Take(Math.Min(end_index-start_index+1, 10))
-                .ToArrayAsync();
+            var telemetries = await _device_api.getTelemetry<TelemetryType>(
+                id, new Range(start_index, end_index), include_delegate);
             return Json(telemetries);
         }
 
         public async Task<IActionResult> GetDronePositions([Required]int id, [Required]int start_index,
             [Required]int end_index) {
-            LinqExtensions.IncludeTelemetryDelegate<DronePosition> del = (source =>
-            {
-                return source.Select(d => d.positions);
-            });
-            return await GetTelemetry(id, start_index, end_index, del);
+            static IQueryable<DronePosition> Del(IQueryable<Device> source) {
+                return source.SelectMany(d => d.positions);
+            }
+
+            return await GetTelemetry(id, start_index, end_index, (DeviceExtensions.IncludeTelemetryDelegate<DronePosition>) Del);
         }
 
         public async Task<IActionResult> GetDroneBatteryLevels([Required]int id, [Required]int start_index,
             [Required]int end_index)
         {
-            LinqExtensions.IncludeTelemetryDelegate<DroneBatteryLevel> del = (source =>
+            DeviceExtensions.IncludeTelemetryDelegate<DroneBatteryLevel> del = (source =>
             {
-                return source.Select(d => d.battery_levels);
+                return source.SelectMany(d => d.battery_levels);
             });
             return await GetTelemetry(id, start_index, end_index, del);
         }
@@ -179,9 +81,9 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> GetDroneRadioSignals([Required]int id, [Required]int start_index,
             [Required]int end_index)
         {
-            LinqExtensions.IncludeTelemetryDelegate<DroneRadioSignal> del = (source =>
+            DeviceExtensions.IncludeTelemetryDelegate<DroneRadioSignal> del = (source =>
             {
-                return source.Select(d => d.radio_signals);
+                return source.SelectMany(d => d.radio_signals);
             });
             return await GetTelemetry(id, start_index, end_index, del);
         }
@@ -189,9 +91,9 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> GetDroneFlyingStates([Required]int id, [Required]int start_index,
             [Required]int end_index)
         {
-            LinqExtensions.IncludeTelemetryDelegate<DroneFlyingState> del = (source =>
+            DeviceExtensions.IncludeTelemetryDelegate<DroneFlyingState> del = (source =>
             {
-                return source.Select(d => d.flying_states);
+                return source.SelectMany(d => d.flying_states);
             });
             return await GetTelemetry(id, start_index, end_index, del);
         }
@@ -199,9 +101,9 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> GetDroneReplys([Required]int id, [Required]int start_index,
             [Required]int end_index)
         {
-            LinqExtensions.IncludeTelemetryDelegate<DroneReply> del = (source =>
+            DeviceExtensions.IncludeTelemetryDelegate<DroneReply> del = (source =>
             {
-                return source.Select(d => d.drone_replies);
+                return source.SelectMany(d => d.drone_replies);
             });
             return await GetTelemetry(id, start_index, end_index, del);
         }
@@ -209,9 +111,9 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> GetDroneLiveVideoStateResults([Required]int id, [Required]int start_index,
             [Required]int end_index)
         {
-            LinqExtensions.IncludeTelemetryDelegate<DroneLiveVideoStateResult> del = (source =>
+            DeviceExtensions.IncludeTelemetryDelegate<DroneLiveVideoStateResult> del = (source =>
             {
-                return source.Select(d => d.drone_video_states);
+                return source.SelectMany(d => d.drone_video_states);
             });
             return await GetTelemetry(id, start_index, end_index, del);
         }
@@ -219,36 +121,14 @@ namespace DroHub.Areas.DHub.Controllers
         // GET: DroHub/Devices/Data/5
         public async Task<IActionResult> Data([Required]int id)
         {
-            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
+            var device = await _device_api.getDeviceById(id);
             return (device == null ? (IActionResult) NotFound() : View(device));
         }
 
-        // GET: DroHub/Devices/Camera/5
-        public async Task<IActionResult> Camera([Required]int id)
-        {
-            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
-            if (device == null) return NotFound();
-
-            // Get all device settings options available
-            var deviceIsos = GetAllIsoOptions();
-            var deviceAppertures = GetAllAppertureOptions();
-            var deviceFocusModes = GetAllFocusModeOptions();
-
-            ViewData["Isos"] = GetSelectListItems(deviceIsos);
-            ViewData["Appertures"] = GetSelectListItems(deviceAppertures);
-            ViewData["FocusModes"] = GetSelectListItems(deviceFocusModes);
-
-            return View(device);
-        }
-
-        private enum DeviceActions {
-            TakeOff = 1000,
-            Land = 1001
-        }
-
         public async Task<IActionResult> TakeOff([Required]int id) {
-            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
-            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(device.SerialNumber);
+            var device = await _device_api.getDeviceById(id);
+            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(
+                new DeviceAPI.DeviceSerial(device.SerialNumber));
             if (rpc_session != null)
             {
                 using (var client = rpc_session.getClient<Drone.Client>(_logger))
@@ -262,8 +142,9 @@ namespace DroHub.Areas.DHub.Controllers
             return Ok();
         }
         public async Task<IActionResult> Land([Required]int id) {
-            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
-            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(device.SerialNumber);
+            var device = await _device_api.getDeviceById(id);
+            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(
+                new DeviceAPI.DeviceSerial(device.SerialNumber));
             if (rpc_session != null)
             {
                 using (var client = rpc_session.getClient<Drone.Client>(_logger))
@@ -279,8 +160,9 @@ namespace DroHub.Areas.DHub.Controllers
 
         public async Task<IActionResult> ReturnToHome([Required]int id)
         {
-            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
-            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(device.SerialNumber);
+            var device = await _device_api.getDeviceById(id);
+            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(
+                new DeviceAPI.DeviceSerial(device.SerialNumber));
             if (rpc_session != null)
             {
                 using (var client = rpc_session.getClient<Drone.Client>(_logger))
@@ -297,8 +179,9 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> MoveToPosition([Required]int id, [Required]float latitude,
             [Required]float longitude, [Required]float altitude, [Required]double heading)
         {
-            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
-            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(device.SerialNumber);
+            var device = await _device_api.getDeviceById(id);
+            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(
+                new DeviceAPI.DeviceSerial(device.SerialNumber));
             if (rpc_session != null)
             {
                 using (var client = rpc_session.getClient<Drone.Client>(_logger))
@@ -324,8 +207,9 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> TakePicture([Required]int id,
             [Required][Bind("ActionType")]DroneTakePictureRequest request) {
 
-            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
-            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(device.SerialNumber);
+            var device = await _device_api.getDeviceById(id);
+            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(
+                new DeviceAPI.DeviceSerial(device.SerialNumber));
             if (rpc_session != null && request != null)
             {
                 using (var client = rpc_session.getClient<Drone.Client>(_logger))
@@ -340,8 +224,9 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> RecordVideo([Required]int id,
             [Required][Bind("ActionType")]DroneRecordVideoRequest request) {
 
-            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
-            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(device.SerialNumber);
+            var device = await _device_api.getDeviceById(id);
+            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(
+                new DeviceAPI.DeviceSerial(device.SerialNumber));
             if (rpc_session != null && request != null)
             {
                 using (var client = rpc_session.getClient<Drone.Client>(_logger))
@@ -354,8 +239,9 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         public async Task<IActionResult> GetFileList([Required]int id) {
-            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
-            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(device.SerialNumber);
+            var device = await _device_api.getDeviceById(id);
+            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(
+                new DeviceAPI.DeviceSerial(device.SerialNumber));
             if (rpc_session != null)
             {
                 using (var client = rpc_session.getClient<Drone.Client>(_logger))
@@ -383,7 +269,7 @@ namespace DroHub.Areas.DHub.Controllers
         // GET: DroHub/Devices/Gallery/5
         public async Task<IActionResult> Gallery([Required]int id)
         {
-            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
+            var device = await _device_api.getDeviceById(id);
             if (device == null)
                 throw new InvalidOperationException("Cannot get device with this ID");
 
@@ -407,7 +293,6 @@ namespace DroHub.Areas.DHub.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ClaimRequirement(Device.CAN_ADD_CLAIM, Device.CLAIM_VALID_VALUE)]
         public async Task<IActionResult> Create([Required][Bind("Id,Name,SerialNumber")]
             Device device)
         {
@@ -416,7 +301,7 @@ namespace DroHub.Areas.DHub.Controllers
             }
 
             try {
-                await DeviceHelper.Create(_user_manager, User, _context, device);
+                await _device_api.Create(device);
             }
             catch (InvalidDataException e) {
                 ModelState.AddModelError("", e.Message);
@@ -427,18 +312,8 @@ namespace DroHub.Areas.DHub.Controllers
 
         // GET: DroHub/Devices/Edit/5
         public async Task<IActionResult> Edit([Required]int id) {
-            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
+            var device = await _device_api.getDeviceById(id);
             if (device == null) return NotFound();
-
-            // Get all device settings options available
-            var deviceIsos = GetAllIsoOptions();
-            var deviceAppertures = GetAllAppertureOptions();
-            var deviceFocusModes = GetAllFocusModeOptions();
-
-            ViewData["Isos"] = GetSelectListItems(deviceIsos);
-            ViewData["Appertures"] = GetSelectListItems(deviceAppertures);
-            ViewData["FocusModes"] = GetSelectListItems(deviceFocusModes);
-
             return View(device);
         }
 
@@ -447,8 +322,8 @@ namespace DroHub.Areas.DHub.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id,
-            [Bind("Id,Name,SerialNumber,CreationDate,ISO,Apperture,FocusMode")]
+        public async Task<IActionResult> Edit([Required]int id,
+            [Required][Bind("Id,Name,SerialNumber,CreationDate,ISO,Apperture,FocusMode")]
             Device device)
         {
             if (id != device.Id) return NotFound();
@@ -456,19 +331,24 @@ namespace DroHub.Areas.DHub.Controllers
             if (!ModelState.IsValid)  {
                 return View(device);
             }
+
             try {
-                await _context.SaveChangesAsync();
+                await _device_api.updateDevice(device);
+            }
+            catch (DeviceAuthorizationException e) {
+                ModelState.AddModelError("", e.Message);
             }
             catch (DbUpdateException e) {
                 ModelState.AddModelError("", "Failed to add this device to the user");
             }
+
             return View(device);
         }
 
         // GET: DroHub/Devices/Delete/5
         public async Task<IActionResult> Delete([Required]int id) {
 
-            var device = await DeviceHelper.getDeviceById(_user_manager, User, id);
+            var device = await _device_api.getDeviceById(id);
             if (device == null)
             {
                 return NotFound();
@@ -481,11 +361,14 @@ namespace DroHub.Areas.DHub.Controllers
         [HttpPost]
         [ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed([Required]int id){
-            var d = await DeviceHelper.getDeviceById(_user_manager, User, id);
-
-            _context.Devices.Remove(d);
-            await _context.SaveChangesAsync();
+        public async Task<IActionResult> DeleteConfirmed([Required]int id) {
+            try {
+                await _device_api.deleteDevice(id);
+            }
+            catch (DeviceAuthorizationException e) {
+                ModelState.AddModelError("", e.Message);
+                return View();
+            }
 
             return RedirectToAction("Dashboard", "DeviceRepository");
         }

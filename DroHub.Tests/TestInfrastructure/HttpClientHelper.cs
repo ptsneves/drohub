@@ -153,7 +153,7 @@ namespace DroHub.Tests.TestInfrastructure
             if (http_helper.Response.RequestMessage.RequestUri != new Uri(test_fixture.SiteUri, "Identity/Account/Manage"))
             {
                 Console.WriteLine(http_helper.verificationToken);
-                throw new InvalidProgramException($"Login failed. Instead we are in {http_helper.Response.RequestMessage.RequestUri.ToString()}" );
+                throw new InvalidProgramException($"Login failed. Instead we are in {http_helper.Response.RequestMessage.RequestUri}" );
             }
             http_helper.loginCookie = http_helper.cookieContainer.GetCookies(login_uri)[".AspNetCore.Identity.Application"];
             return http_helper;
@@ -180,17 +180,17 @@ namespace DroHub.Tests.TestInfrastructure
                 if (use_app_api) {
                     var token_result = await getApplicationToken(test_fixture, user, password);
                     var m = new AndroidApplicationController.DeviceCreateModel() {
-                        UserName = user,
-                        Token = token_result["result"],
                         Device = new Device() {
                             SerialNumber = device_serial,
                             Name = device_name
                         }
                     };
-                    if (m.Token == "nok")
+                    if (token_result["result"] == "nok")
                         throw new InvalidCredentialException("Could not retrieve token");
 
-                    var result = await retrieveFromAndroidApp(test_fixture, "CreateDevice", m);
+                    var result = await retrieveFromAndroidApp(test_fixture, user, token_result["result"],
+                        "CreateDevice", m);
+
                     var json_obj = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,string>>(result);
                     if (json_obj["result"] != "ok")
                         throw new InvalidDataException(json_obj["result"]);
@@ -288,14 +288,14 @@ namespace DroHub.Tests.TestInfrastructure
                 data_dic["end_index"] = end_index.ToString();
                 var urlenc = new FormUrlEncodedContent(data_dic);
                 http_helper.Response = await http_helper.Client.PostAsync(create_device_url, urlenc);
-                return Newtonsoft.Json.JsonConvert.DeserializeObject<List<List<T>>>(await http_helper.Response.Content.ReadAsStringAsync()).First();
+                return Newtonsoft.Json.JsonConvert.DeserializeObject<List<T>>(await http_helper.Response.Content.ReadAsStringAsync());
             }
         }
 
         public static async ValueTask<Dictionary<string, string>> getApplicationToken(DroHubFixture test_fixture, string user_name,
             string password) {
-            var auth_token_uri = new Uri(test_fixture.SiteUri, "api/AndroidApplication/GetApplicationToken");
-            var content_to_send = new AndroidApplicationController.GetTokenModel() {
+            var auth_token_uri = new Uri(test_fixture.SiteUri, "api/GetToken/GetApplicationToken");
+            var content_to_send = new GetTokenController.GetTokenModel() {
                 UserName = user_name,
                 Password = password,
             };
@@ -311,11 +311,13 @@ namespace DroHub.Tests.TestInfrastructure
             throw new InvalidProgramException($"Unexpected Redirect... ");
         }
 
-        private static async ValueTask<string> retrieveFromAndroidApp(DroHubFixture test_fixture, string action_name,
-            AndroidApplicationController.AuthenticateTokenModel query) {
+        private static async ValueTask<string> retrieveFromAndroidApp(DroHubFixture test_fixture, string user,
+            string token, string action_name, object query) {
+
             var auth_token_uri = new Uri(test_fixture.SiteUri, $"api/AndroidApplication/{action_name}");
             var http_helper = new HttpClientHelper(test_fixture);
-
+            http_helper.Client.DefaultRequestHeaders.Add("x-drohub-user", user);
+            http_helper.Client.DefaultRequestHeaders.Add("x-drohub-token", token);
             http_helper.Response = await http_helper.Client.PostAsJsonAsync(auth_token_uri, query);
             http_helper.Response.EnsureSuccessStatusCode();
             return await http_helper.Response.Content.ReadAsStringAsync();
@@ -323,23 +325,11 @@ namespace DroHub.Tests.TestInfrastructure
 
         public static async ValueTask<Dictionary<string, Device>> queryDeviceInfo(DroHubFixture test_fixture,
             string user_name, string token, string device_serial_number) {
-            var query = new AndroidApplicationController.QueryDeviceInfoModel() {
-                UserName = user_name,
-                Token = token,
+            var query = new AndroidApplicationController.QueryDeviceModel() {
                 DeviceSerialNumber = device_serial_number
             };
-            var res = await retrieveFromAndroidApp(test_fixture, "QueryDeviceInfo", query);
+            var res = await retrieveFromAndroidApp(test_fixture, user_name, token, "QueryDeviceInfo", query);
             return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,Device>>(res);
-        }
-
-        public static async ValueTask<Dictionary<string, string>> authenticateToken(DroHubFixture test_fixture,
-            string user_name, string token) {
-            var query = new AndroidApplicationController.AuthenticateTokenModel() {
-                UserName = user_name,
-                Token = token
-            };
-            var res = await retrieveFromAndroidApp(test_fixture, "AuthenticateToken", query);
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,string>>(res);
         }
 
         protected virtual void Dispose(bool disposing)

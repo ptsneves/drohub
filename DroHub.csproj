@@ -76,7 +76,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Areas\Controllers" />
     <Folder Include="Areas\DHub\Data\" />
     <Folder Include="Areas\Identity\Services\" />
     <Folder Include="wwwroot\images\logo" />

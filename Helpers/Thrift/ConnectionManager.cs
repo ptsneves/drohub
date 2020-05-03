@@ -1,10 +1,7 @@
 using System.Collections.Concurrent;
-using System.Net.WebSockets;
-using System.Web;
-using System.Threading.Tasks;
-using System.Threading;
 using System;
 using System.Linq;
+using DroHub.Areas.DHub.API;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 namespace DroHub.Helpers.Thrift
@@ -15,21 +12,15 @@ namespace DroHub.Helpers.Thrift
             internal ThriftMessageHandler handler;
             internal DateTime connection_start;
         }
-        private readonly ConcurrentDictionary<string, Connection> _connections;
+        private readonly ConcurrentDictionary<DeviceAPI.DeviceSerial, Connection> _connections;
         private readonly ILogger<ConnectionManager> _logger;
         public ConnectionManager(ILogger<ConnectionManager> logger) {
             _logger = logger;
-            _connections = new ConcurrentDictionary<string, Connection>();
+            _connections = new ConcurrentDictionary<DeviceAPI.DeviceSerial, Connection>();
         }
 
-        public ThriftMessageHandler GetRPCSessionBySerial(string serial) {
+        public ThriftMessageHandler GetRPCSessionBySerial(DeviceAPI.DeviceSerial serial) {
             return _connections.FirstOrDefault(p => p.Key == serial).Value.handler;
-        }
-
-        public DateTime GetConnectionStartTime(string serial) {
-            return _connections
-                .FirstOrDefault(p => p.Key == serial)
-                .Value.connection_start;
         }
 
         public void AddSocket(ThriftMessageHandler handler) {
@@ -43,7 +34,7 @@ namespace DroHub.Helpers.Thrift
             }
         }
 
-        public void RemoveSocket(string serial) {
+        public void RemoveSocket(DeviceAPI.DeviceSerial serial) {
             if (!_connections.TryRemove(serial, out _))
                 _logger.LogError("Could not remove a handler, and this should not be possible");
         }

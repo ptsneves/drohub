@@ -66,14 +66,12 @@ public class CreateDeviceActivity extends DroHubActivityBase {
             JSONObject device = new JSONObject();
             device.put("SerialNumber", _device_serial);
             device.put("Name", device_name);
-            request.put("UserName", _user_email);
-            request.put("Token", _user_token);
             request.put("Device", device);
         } catch (JSONException e) {
             setStatusText(status_view, "Could not create a json query", Color.RED);
         }
 
-        JsonObjectRequest device_creation_request = new JsonObjectRequest(Request.Method.POST,
+        JsonObjectRequest device_creation_request = new DroHubObjectRequest(_user_email, _user_token, Request.Method.POST,
                 url, request, response -> {
             try {
                 if (response.getString("result").equals("ok")) {

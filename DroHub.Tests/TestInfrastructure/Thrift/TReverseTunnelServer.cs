@@ -35,7 +35,7 @@ public class TReverseTunnelServer : Thrift.Transport.TServerTransport, IDisposab
             _write_buf.SetLength(0);
             await _parent._transport.FlushAsync(cancellationToken);
             // _parent._accepted_workers.Take();
-            
+
         }
 
         public override Task OpenAsync(CancellationToken cancellationToken)
@@ -86,7 +86,7 @@ public class TReverseTunnelServer : Thrift.Transport.TServerTransport, IDisposab
 
     public override bool IsClientPending()
     {
-        
+
         return _accepted_workers.Count != _accepted_workers.BoundedCapacity;
         // return _is_accepting;
     }

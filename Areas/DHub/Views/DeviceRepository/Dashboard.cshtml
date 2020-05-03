@@ -3,6 +3,7 @@
     var move_to_position_box_id_prefix = "go-to-position-box-id-";
     var drone_marker_id_prefix = "device-";
 }
+@using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers
 @model IEnumerable<DroHub.Areas.DHub.Models.Device>
 <!-- Content Header (Page header) -->
 <!-- Main content -->
@@ -42,7 +43,9 @@
         }
         </style>
         <div class="container-fluid" style="padding-bottom: 15px;">
-        <a class="btn btn-primary btn-lg btn-drohub btn-social" data-toggle="ajax-modal" data-reload="true" asp-require-claim asp-claim-type="@Device.CAN_ADD_CLAIM" asp-claim-value="@Device.CLAIM_VALID_VALUE" data-target="#modal-add-device" data-url='@Url.Action("Create", "Devices", new {Area = "DHub"})'>
+        <a class="btn btn-primary btn-lg btn-drohub btn-social" data-toggle="ajax-modal" data-reload="true"
+        asp-require-claim="@(DeviceAuthorizationHandler.DeviceResourceOperations.CreateClaim)"
+        data-target="#modal-add-device" data-url='@Url.Action("Create", "Devices", new {Area = "DHub"})'>
             <i class="fa fa-plus"></i>Add New Device
         </a>
         </div>

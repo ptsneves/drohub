@@ -221,7 +221,7 @@ namespace DroHub.Helpers {
             }
         }
 
-        public HttpClient Client { get; }
+        private readonly HttpClient _client;
         private readonly ILogger<JanusService> _logger;
         private readonly JanusServiceOptions _options;
         public JanusService(HttpClient client,
@@ -229,25 +229,36 @@ namespace DroHub.Helpers {
             ILogger<JanusService> logger)
         {
             _options = janus_service_options.CurrentValue;
+            _client = client;
             client.BaseAddress = new Uri($"{_options.Address}:{_options.Port}/");
-            client.Timeout = TimeSpan.FromSeconds(4);
-            Client = client;
+            client.Timeout = TimeSpan.FromSeconds(60);
             _logger = logger;
             _logger.LogDebug("Starting Janus Service with Options {_options}", JsonConvert.SerializeObject(_options, Formatting.Indented));
         }
 
         private async Task<JanusAnswer> getJanusAnswer(string relative_path, Object object_to_serialize) {
-            _logger.LogDebug("Request to be created {payload}", JsonConvert.SerializeObject(object_to_serialize,
-                Formatting.Indented));
-            var payload = new StringContent(JsonConvert.SerializeObject(object_to_serialize), Encoding.UTF8, "application/json");
-            var response = await Client.PostAsync(relative_path, payload);
-            response.EnsureSuccessStatusCode();
-            var result = Newtonsoft.Json.JsonConvert.DeserializeObject<JanusAnswer>(await response.Content.ReadAsStringAsync());
-            _logger.LogDebug("Janus answer result {result}", JsonConvert.SerializeObject(
-                    await response.Content.ReadAsStringAsync(), Formatting.Indented));
+            JanusAnswer result;
+            try {
+                _logger.LogDebug("Request to be created {payload}", JsonConvert.SerializeObject(object_to_serialize,
+                    Formatting.Indented));
+                var payload = new StringContent(JsonConvert.SerializeObject(object_to_serialize), Encoding.UTF8,
+                    "application/json");
+                var response = await _client.PostAsync(relative_path, payload);
+                response.EnsureSuccessStatusCode();
+                var res_string = await response.Content.ReadAsStringAsync();
+                result =
+                    Newtonsoft.Json.JsonConvert.DeserializeObject<JanusAnswer>(res_string);
+                _logger.LogDebug("Janus answer result {result}",
+                    JsonConvert.SerializeObject(res_string, Formatting.Indented));
+            }
+            catch (Exception e) {
+                _logger.LogCritical($"Error in Janus Answer {e.GetType()}  \n{e.Message}\n{e.StackTrace}");
+                throw new JanusServiceException(e.Message);
+            }
 
             if (result.JanusAnswerStatus != "success" && result.JanusAnswerStatus != "ack")
-                throw new JanusServiceException("Janus service failed an action");
+                    throw new JanusServiceException("Janus service failed an action");
+
             return result;
         }
         public async Task<CreateSession> createSession() {

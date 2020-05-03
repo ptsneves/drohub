@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
+using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
 using Microsoft.AspNetCore.Identity;
 
@@ -12,6 +12,7 @@ namespace DroHub.Areas.Identity.Data
     {
         public const string CLAIM_VALID_VALUE = "Yes";
 
+        public const string SUBSCRIPTION_KEY_CLAIM = "SubscriptionOrgName";
         public const string ADMIN_POLICY_CLAIM = "ActingAdmin";
         public const string SUBSCRIBER_POLICY_CLAIM = "ActingSubscriber";
         public const string OWNER_POLICY_CLAIM = "ActingOwner";
@@ -20,14 +21,16 @@ namespace DroHub.Areas.Identity.Data
 
         private static readonly List<Claim> GuestPolicyClaims = new List<Claim>() {
             new Claim(GUEST_POLICY_CLAIM, CLAIM_VALID_VALUE),
-            new Claim(Device.CAN_PERFORM_CAMERA_ACTION, Device.CLAIM_VALID_VALUE),
+            DeviceAuthorizationHandler.DeviceResourceOperations.CameraActionsClaim,
+            DeviceAuthorizationHandler.DeviceResourceOperations.ReadClaim,
         };
 
         private static readonly List<Claim> PilotPolicyClaims = new List<Claim>(GuestPolicyClaims) {
             new Claim(PILOT_POLICY_CLAIM, CLAIM_VALID_VALUE),
-            new Claim(Device.CAN_ADD_CLAIM, Device.CLAIM_VALID_VALUE),
-            new Claim(Device.CAN_MODIFY_CLAIM, Device.CLAIM_VALID_VALUE),
-            new Claim(Device.CAN_PERFORM_FLIGHT_ACTIONS, Device.CLAIM_VALID_VALUE),
+            DeviceAuthorizationHandler.DeviceResourceOperations.FlightActionsClaim,
+            DeviceAuthorizationHandler.DeviceResourceOperations.CreateClaim,
+            DeviceAuthorizationHandler.DeviceResourceOperations.UpdateClaim,
+            DeviceAuthorizationHandler.DeviceResourceOperations.DeleteClaim,
         };
 
         private static readonly List<Claim> OwnerPolicyClaims = new List<Claim>(PilotPolicyClaims) {
@@ -61,5 +64,6 @@ namespace DroHub.Areas.Identity.Data
         public DateTime LastLogin { get; }
 
         public Subscription Subscription { get; set; }
+        public string SubscriptionOrganizationName { get; set; }
     }
 }

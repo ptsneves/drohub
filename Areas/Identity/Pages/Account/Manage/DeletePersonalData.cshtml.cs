@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub;
+using DroHub.Areas.DHub.API;
 using DroHub.Areas.Identity.Data;
 using DroHub.Data;
 using Microsoft.AspNetCore.Identity;
@@ -18,17 +19,18 @@ namespace DroHub.Areas.Identity.Pages.Account.Manage
         private readonly UserManager<DroHubUser> _userManager;
         private readonly SignInManager<DroHubUser> _signInManager;
         private readonly ILogger<DeletePersonalDataModel> _logger;
-        private readonly DroHubContext _db_context;
+        private readonly SubscriptionAPI _subscription_api;
         public DeletePersonalDataModel(
             UserManager<DroHubUser> userManager,
             SignInManager<DroHubUser> signInManager,
             DroHubContext db_context,
+            SubscriptionAPI subscription_api,
             ILogger<DeletePersonalDataModel> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
-            _db_context = db_context;
+            _subscription_api = subscription_api;
         }
 
         [BindProperty]
@@ -56,9 +58,7 @@ namespace DroHub.Areas.Identity.Pages.Account.Manage
         }
 
         public async Task<IActionResult> OnPostAsync() {
-            var user = await _userManager.getCurrentUserWithSubscription(User)
-                .ThenInclude(s => s.Users)
-                .SingleOrDefaultAsync();
+            var user = await _userManager.FindByNameAsync(User.Identity.Name);
 
             if (user == null)
             {
@@ -82,10 +82,7 @@ namespace DroHub.Areas.Identity.Pages.Account.Manage
                 throw new InvalidOperationException($"Unexpected error occurred deleteing user with ID '{userId}'.");
             }
 
-            if (user.Subscription.Users.All(u => u == user)) {
-                _db_context.Subscriptions.Remove(user.Subscription);
-                await _db_context.SaveChangesAsync();
-            }
+            await _subscription_api.deleteSubscription(_subscription_api.getSubscriptionName(), true);
 
             await _signInManager.SignOutAsync();
 

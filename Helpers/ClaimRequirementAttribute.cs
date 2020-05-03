@@ -14,7 +14,7 @@ namespace DroHub.Helpers {
 
     public class ClaimRequirementFilter : IAuthorizationFilter
     {
-        readonly Claim _claim;
+        private readonly Claim _claim;
 
         public ClaimRequirementFilter(Claim claim)
         {

@@ -23,6 +23,7 @@ namespace DroHub.Helpers.Thrift
         */
         private const int _MAGIC_NUMBER = 21474347;
         private int _random_seq_id;
+        private string _message_name;
         public enum ValidationModeEnum
         {
             KEEP_READING,
@@ -45,17 +46,19 @@ namespace DroHub.Helpers.Thrift
         }
 
         public class Factory: TProtocolFactory {
-            private ValidationModeEnum _validation_mode;
-            private OperationModeEnum _operation_mode;
-            private TProtocolFactory _protocol_factory;
-            public Factory(TProtocolFactory protocol_factory, ValidationModeEnum validation_mode, OperationModeEnum operation_mode) {
+            private readonly ValidationModeEnum _validation_mode;
+            private readonly OperationModeEnum _operation_mode;
+            private readonly TProtocolFactory _protocol_factory;
+            public Factory(TProtocolFactory protocol_factory, ValidationModeEnum validation_mode, OperationModeEnum
+            operation_mode) {
                 _protocol_factory = protocol_factory;
                 _validation_mode = validation_mode;
                 _operation_mode = operation_mode;
             }
             public override TProtocol GetProtocol(TTransport transport)
             {
-                return new TAMessageValidatorProtocol(_protocol_factory.GetProtocol(transport), _validation_mode, _operation_mode);
+                return new TAMessageValidatorProtocol(_protocol_factory.GetProtocol(transport), _validation_mode,
+                _operation_mode);
             }
         }
         private async Task ReadMagicNumber(CancellationToken cancellationToken)
@@ -64,51 +67,49 @@ namespace DroHub.Helpers.Thrift
             int result = 0;
             do
             {
-                var d = await Trans.ReadAllAsync(HeaderBuffer, 0, 1);
-                result = result << 8 | (int)HeaderBuffer[0];
+                var d = await Trans.ReadAllAsync(HeaderBuffer, 0, 1, cancellationToken);
+                result = result << 8 | HeaderBuffer[0];
                 // Console.WriteLine($"buffer read {d} {string.Format("0x{0:X}",HeaderBuffer[0] )} in {HeaderBuffer[0]}-> {result} or {_MAGIC_NUMBER} == {result == _MAGIC_NUMBER}");
             } while (!cancellationToken.IsCancellationRequested && result != _MAGIC_NUMBER);
         }
         private async Task WriteMagicNumber(CancellationToken cancellationToken) {
-            byte[] bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(_MAGIC_NUMBER));
-            await Trans.WriteAsync(bytes, 0, 4);
+            var bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(_MAGIC_NUMBER));
+            await Trans.WriteAsync(bytes, 0, 4, cancellationToken);
         }
         public override async Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken)
         {
-            if (OperationMode == OperationModeEnum.SEQID_MASTER)
-            {
-                _random_seq_id++;
-                message.SeqID = _random_seq_id;
-            }
-            else if (OperationMode == OperationModeEnum.SEQID_SLAVE) {
-                ;
-            }
-            else{
-                throw new TProtocolException(TProtocolException.NOT_IMPLEMENTED, "Invalid operation mode selected");
+            switch (OperationMode) {
+                case OperationModeEnum.SEQID_MASTER:
+                    _random_seq_id++;
+                    message.SeqID = _random_seq_id;
+                    _message_name = message.Name;
+                    break;
+                case OperationModeEnum.SEQID_SLAVE:
+                    break;
+                default:
+                    throw new TProtocolException(TProtocolException.NOT_IMPLEMENTED, "Invalid operation mode selected");
             }
 
-            // Console.WriteLine("Writing");
             await WriteMagicNumber(cancellationToken);
             await base.WriteMessageBeginAsync(message, cancellationToken);
         }
         public override async ValueTask<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken)
         {
             await ReadMagicNumber(cancellationToken);
-            TMessage new_message = await base.ReadMessageBeginAsync(cancellationToken);
+            var new_message = await base.ReadMessageBeginAsync(cancellationToken);
             // Console.WriteLine($"seq id {_random_seq_id} == {new_message.SeqID}");
-            if (OperationMode == OperationModeEnum.SEQID_MASTER)
-            {
-                while (_random_seq_id != new_message.SeqID)
-                {
-                    if (ValidationMode == ValidationModeEnum.KEEP_READING)
-                    {
-                        // Console.WriteLine("Re reading");
+            if (OperationMode != OperationModeEnum.SEQID_MASTER)
+                return new_message;
+
+            while (_random_seq_id != new_message.SeqID && _message_name != new_message.Name) {
+                switch (ValidationMode) {
+                    case ValidationModeEnum.KEEP_READING:
                         await ReadMagicNumber(cancellationToken);
                         new_message = await base.ReadMessageBeginAsync(cancellationToken);
-                    }
-                    else if (ValidationMode == ValidationModeEnum.THROW_EXCEPTION)
+                        break;
+                    case ValidationModeEnum.THROW_EXCEPTION:
                         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "Received SeqID and sent one do not match.");
-                    else
+                    default:
                         throw new InvalidProgramException("This is an unreachable situation");
                 }
             }

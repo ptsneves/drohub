@@ -1,9 +1,11 @@
+@using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers
 @model DroHub.Areas.DHub.Models.Device
 @{
     ViewData["Title"] = "Create";
 }
 
-<div class="modal fade" id="modal-add-device" tabindex="-1" role="dialog" asp-require-claim asp-claim-type="@Device.CAN_ADD_CLAIM" asp-claim-value="@Device.CLAIM_VALID_VALUE">
+<div class="modal fade" id="modal-add-device" tabindex="-1" role="dialog"
+asp-require-claim="@DeviceAuthorizationHandler.DeviceResourceOperations.CreateClaim">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">

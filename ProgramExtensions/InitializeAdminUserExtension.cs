@@ -1,4 +1,5 @@
 using System;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.Models;
@@ -88,6 +89,8 @@ namespace DroHub.IdentityClaims
             foreach (var claim in DroHubUser.UserClaims[DroHubUser.ADMIN_POLICY_CLAIM]) {
                 await user_manager.AddClaimAsync(user, claim);
             };
+            await user_manager.AddClaimAsync(user, new Claim(DroHubUser.SUBSCRIPTION_KEY_CLAIM, subscription
+            .OrganizationName));
 
             return user.Id;
         }
