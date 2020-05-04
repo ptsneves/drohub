@@ -97,6 +97,8 @@ namespace DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers {
             else if (requirement.Name == DeviceResourceOperations.CanPerformCameraActions.Name &&
                      areCameraActionsAuthorized(ctx, res))
                 ctx.Succeed(requirement);
+            else
+                ctx.Fail();
         }
 
         public const string TELEMETRY_SERIAL_NUMBER_CLAIM = "AuthorizedDeviceSerialNumber";
