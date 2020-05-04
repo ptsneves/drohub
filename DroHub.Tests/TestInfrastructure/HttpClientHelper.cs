@@ -132,6 +132,7 @@ namespace DroHub.Tests.TestInfrastructure
         public static async ValueTask<HttpClientHelper> createHttpClient(DroHubFixture test_fixture, Uri uri) {
             var http_helper = new HttpClientHelper(test_fixture);
             http_helper.Response = await http_helper.Client.GetAsync(uri);
+            http_helper.Response.EnsureSuccessStatusCode();
             return http_helper;
         }
 

@@ -41,6 +41,17 @@ namespace DroHub.Tests
                 http_helper.Response.RequestMessage.RequestUri);
         }
 
+        [InlineData("DHub/DeviceRepository/Dashboard")]
+        [InlineData("Identity/Account/Manage")]
+        [InlineData("Identity/Account/Manage/AdminPanel")]
+        [Theory]
+        public async void TestPageRedirectedToLogin(string uri_path) {
+            using var http_helper = await HttpClientHelper.createHttpClient(_fixture,
+                new Uri(_fixture.SiteUri + uri_path));
+            Assert.NotEqual(new Uri(_fixture.SiteUri, uri_path),
+                http_helper.Response.RequestMessage.RequestUri);
+        }
+
         private async Task testLogin(string user, string password, bool expect_login_fail) {
             if (expect_login_fail)
                 await Assert.ThrowsAsync<InvalidProgramException>(async () => (await HttpClientHelper.createLoggedInUser(_fixture, user, password)).Dispose());

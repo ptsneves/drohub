@@ -37,10 +37,11 @@ namespace DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers {
                 DEFAULT_CLAIM_VALUE);
         }
 
-        private readonly SubscriptionAPI _subscription_api;
+        private readonly IServiceProvider _service_provider;
+        private SubscriptionAPI _subscription_api;
 
-        public DeviceAuthorizationHandler(SubscriptionAPI subscription_api) {
-            _subscription_api = subscription_api;
+        public DeviceAuthorizationHandler(IServiceProvider service_provider) {
+            _service_provider = service_provider;
         }
 
         private bool isSameSubscription(Device res) {
@@ -81,6 +82,7 @@ namespace DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers {
 
         protected override async Task HandleRequirementAsync(AuthorizationHandlerContext ctx,
         OperationAuthorizationRequirement requirement, Device res) {
+            _subscription_api = _service_provider.GetRequiredService<SubscriptionAPI>();
             if (requirement.Name == ResourceOperations.Create.Name && isCreateAuthorized(ctx, res))
                 ctx.Succeed(requirement);
             else if (requirement.Name == ResourceOperations.Read.Name && isReadAuthorized(ctx, res))
