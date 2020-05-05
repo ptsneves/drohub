@@ -129,7 +129,6 @@ namespace DroHub.Helpers.Thrift
             if (last_connection != null && !last_connection._is_disposed) {
                 _logger.LogInformation($"Removing last connection {_device_api.getDeviceSerialNumberFromClaim()}");
                 last_connection._cancellation_token_src.Cancel();
-                last_connection._connection_manager.GetRPCSessionBySerial(SerialNumber).Dispose();
             }
 
 
