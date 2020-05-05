@@ -160,6 +160,9 @@ namespace DroHub.Tests.TestInfrastructure
             return http_helper;
         }
 
+        public static readonly DateTime UnixEpoch =
+            new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
         public static async ValueTask<List<dynamic>> getDeviceList(DroHubFixture test_fixture, string user, string password) {
             using (var http_helper = await createLoggedInUser(test_fixture, user, password)) {
                 var create_device_url = new Uri(test_fixture.SiteUri, "DHub/Devices/GetDevicesList");
@@ -178,6 +181,9 @@ namespace DroHub.Tests.TestInfrastructure
 
             public static async ValueTask<CreateDeviceHelper> createDevice(DroHubFixture test_fixture, string user, string password,
                 string device_name, string device_serial, bool use_app_api = false) {
+                if (user == "admin")
+                    password = test_fixture.AdminPassword;
+
                 if (use_app_api) {
                     var token_result = await getApplicationToken(test_fixture, user, password);
                     var m = new AndroidApplicationController.DeviceCreateModel() {
@@ -270,15 +276,35 @@ namespace DroHub.Tests.TestInfrastructure
             return ws_transport;
         }
 
-        public static async Task openWebSocket(DroHubFixture fixture, string user, string token, string device_serial) {
-            using var ws_transport = getTWebSocketClient(fixture, user, token, device_serial);
+        public static async Task<TWebSocketClient> openWebSocket(DroHubFixture fixture, string user, string token, string
+        device_serial) {
+            var ws_transport = getTWebSocketClient(fixture, user, token, device_serial);
             await ws_transport.OpenAsync();
+            return ws_transport;
+        }
+
+        public static async Task<int> getDeviceId(DroHubFixture test_fixture, string serial_number, string user,
+            string password) {
+            var devices_list = await getDeviceList(test_fixture, user, password);
+            return devices_list.First(d => d.serialNumber == serial_number).id;
+        }
+
+        public static async Task<long?> getDeviceFlightStartTime(DroHubFixture test_fixture, int device_id,
+            string user, string password) {
+            var http_helper = await createLoggedInUser(test_fixture, user, password);
+            var create_device_url = new Uri(test_fixture.SiteUri,
+                $"DHub/Devices/GetDeviceFlightStartTime/{device_id}");
+
+            http_helper.Response?.Dispose();
+            http_helper.Response = await http_helper.Client.GetAsync(create_device_url);
+            http_helper.Response.EnsureSuccessStatusCode();
+            var s = await http_helper.Response.Content.ReadAsStringAsync();
+            return Newtonsoft.Json.JsonConvert.DeserializeObject<long?>(s);
         }
 
         public static async ValueTask<List<T>> getDeviceTelemetry<T>(DroHubFixture test_fixture, string serial_number, string user, string password,
                 int start_index, int end_index) {
-            var devices_list = await HttpClientHelper.getDeviceList(test_fixture, user, password);
-            int device_id = devices_list.First(d => d.serialNumber == serial_number).id;
+            var device_id = await getDeviceId(test_fixture, serial_number, user, password);
 
             using (var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user, password)) {
                 var content = await http_helper.Response.Content.ReadAsStringAsync();

@@ -378,6 +378,32 @@ namespace DroHub.Tests
         }
 
         [Fact]
+        public async void TestDeviceFlightStartTime() {
+            Assert.Null(await HttpClientHelper.getDeviceFlightStartTime(_fixture, 1, "admin",
+                _fixture.AdminPassword));
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin",
+                _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+
+            var token = (await HttpClientHelper.getApplicationToken(_fixture, "admin",
+                _fixture.AdminPassword))["result"];
+
+            var device_id = await HttpClientHelper.getDeviceId(_fixture, DEFAULT_DEVICE_SERIAL,
+                "admin", _fixture.AdminPassword);
+            Assert.Null(await HttpClientHelper.getDeviceFlightStartTime(_fixture, device_id, "admin",
+                _fixture.AdminPassword));
+
+            var time_start = DateTime.Now.ToUniversalTime();
+            using var f = await HttpClientHelper.openWebSocket(_fixture, "admin", token, DEFAULT_DEVICE_SERIAL);
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            var received = await HttpClientHelper.getDeviceFlightStartTime(_fixture, device_id, "admin",
+                _fixture.AdminPassword);
+
+            Assert.True(received.HasValue);
+            var time_diff = time_start - HttpClientHelper.UnixEpoch.AddMilliseconds(received.Value);
+            Assert.True(time_diff < TimeSpan.FromSeconds(1));
+        }
+
+        [Fact]
         public async void TestThriftConnectionDroppedAtTimeout() {
             await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
                 DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES,
@@ -409,7 +435,8 @@ namespace DroHub.Tests
         serial_number, StageThriftDroneTestDelegate del) {
             var telemetry_mock = new TelemetryMock(serial_number);
 
-            await telemetry_mock.startMock(_fixture, user_name, DEFAULT_PASSWORD, organization,
+            var password = (user_name == "admin") ? _fixture.AdminPassword : DEFAULT_PASSWORD;
+            await telemetry_mock.startMock(_fixture, user_name, password, organization,
                 "ActingPilot", minutes, DEFAULT_ALLOWED_USER_COUNT,
                 "ws://localhost:5000/telemetryhub");
 
@@ -417,7 +444,7 @@ namespace DroHub.Tests
 
             try {
                 var token = (await HttpClientHelper.getApplicationToken(_fixture, user_name,
-                    DEFAULT_PASSWORD))["result"];
+                    password))["result"];
                 await del(drone_rpc, telemetry_mock, user_name, token);
             }
             finally {
@@ -486,6 +513,25 @@ namespace DroHub.Tests
                         await Assert.ThrowsAsync<WebSocketException>(async () =>
                             await HttpClientHelper.openWebSocket(_fixture, telemetry_mock.UserName, token,
                                 telemetry_mock.SerialNumber));
+                    });
+                tasks.Add(t);
+            }
+            await Task.WhenAll(tasks);
+        }
+
+        // ReSharper disable once xUnit1004
+        [Fact (Skip = "To be ran manually")]
+        public async void TestInterface() {
+            const int minutes = 999;
+            var tasks = new List<Task>();
+            for (var i = 0; i < 1; i++) {
+                var t = stageThriftDrone(true, minutes, "admin", "administrators", DEFAULT_DEVICE_SERIAL+i,
+                    async (drone_rpc, telemetry_mock, user_name, token) => {
+                        await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
+                            async () => {
+                                var cts = new CancellationTokenSource(TimeSpan.FromMinutes(minutes + 0.5f * minutes));
+                                await drone_rpc.MonitorConnection(TimeSpan.FromSeconds(5), cts.Token);
+                            }, user_name, token);
                     });
                 tasks.Add(t);
             }

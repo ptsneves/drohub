@@ -7,6 +7,8 @@ using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
 using DroHub.Data;
+using DroHub.Helpers.Thrift;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
@@ -64,12 +66,14 @@ namespace DroHub.Areas.DHub.API {
         private readonly SubscriptionAPI _subscription_api;
         private readonly DroHubContext _db_context;
         private readonly IAuthorizationService _authorization_service;
+        private readonly ConnectionManager _connection_manager;
 
         public DeviceAPI(DroHubContext db_context, SubscriptionAPI subscription_api,
-        IAuthorizationService authorization_service) {
+        IAuthorizationService authorization_service, ConnectionManager connection_manager) {
             _db_context = db_context;
             _subscription_api = subscription_api;
             _authorization_service = authorization_service;
+            _connection_manager = connection_manager;
         }
 
         private IQueryable<Device> queryDeviceBySerial(DeviceSerial device_serial) {
@@ -114,6 +118,11 @@ namespace DroHub.Areas.DHub.API {
             return queryDeviceById(id).SingleAsync();
         }
 
+        [ItemCanBeNull]
+        public Task<Device> getDeviceByIdOrDefault(int id) {
+            return queryDeviceById(id).SingleOrDefaultAsync();
+        }
+
         public Task<List<TDroneTelemetry>> getTelemetry<TDroneTelemetry>(int id, Range range,
             DeviceExtensions.IncludeTelemetryDelegate<TDroneTelemetry> include_delegate) where TDroneTelemetry : IDroneTelemetry {
 
@@ -124,6 +133,11 @@ namespace DroHub.Areas.DHub.API {
                 .ToListAsync();
         }
 
+        public DateTime? getConnectionStartTimeOrDefault(Device device) {
+            return device == null ? null :
+                _connection_manager.GetConnectionStartTimeOrDefault(new DeviceSerial(device.SerialNumber));
+        }
+
         public async Task<bool> authorizeDeviceFlightActions(DeviceSerial serial) {
             var device = await queryDeviceBySerial(serial).SingleOrDefaultAsync();
             if (device == null)
@@ -131,7 +145,10 @@ namespace DroHub.Areas.DHub.API {
             return await authorizeDeviceActions(device, DeviceAuthorizationHandler.DeviceResourceOperations.CanPerformFlightActions);
         }
 
-        private async Task<bool> authorizeDeviceActions(Device device, IAuthorizationRequirement op) {
+        public async Task<bool> authorizeDeviceActions(Device device, IAuthorizationRequirement op) {
+            if (device == null)
+                return true;
+
             var r= await _authorization_service.AuthorizeAsync(
                 _subscription_api.getClaimsPrincipal(), device, op);
             return r.Succeeded;

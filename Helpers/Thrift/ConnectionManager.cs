@@ -3,7 +3,8 @@ using System;
 using System.Linq;
 using DroHub.Areas.DHub.API;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Http;
+
+
 namespace DroHub.Helpers.Thrift
 {
     public class ConnectionManager
@@ -21,6 +22,12 @@ namespace DroHub.Helpers.Thrift
 
         public ThriftMessageHandler GetRPCSessionBySerial(DeviceAPI.DeviceSerial serial) {
             return _connections.FirstOrDefault(p => p.Key == serial).Value.handler;
+        }
+
+        public DateTime? GetConnectionStartTimeOrDefault(DeviceAPI.DeviceSerial serial) {
+            if (_connections.ContainsKey(serial))
+                return _connections[serial].connection_start;
+            return null;
         }
 
         public void AddSocket(ThriftMessageHandler handler) {

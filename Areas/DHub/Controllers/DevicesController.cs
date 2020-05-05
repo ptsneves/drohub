@@ -176,6 +176,18 @@ namespace DroHub.Areas.DHub.Controllers
             return Ok();
         }
 
+        public async Task<IActionResult> GetDeviceFlightStartTime([Required] int id) {
+            var device = await _device_api.getDeviceByIdOrDefault(id);
+            if (!await _device_api.authorizeDeviceActions(device, ResourceOperations.Read))
+                return Forbid();
+
+            var start_time_or_default = _device_api.getConnectionStartTimeOrDefault(device);
+
+            return start_time_or_default.HasValue ?
+                Json(((DateTimeOffset)start_time_or_default.Value.ToUniversalTime()).ToUnixTimeMilliseconds()) :
+                Json(null);
+        }
+
         public async Task<IActionResult> MoveToPosition([Required]int id, [Required]float latitude,
             [Required]float longitude, [Required]float altitude, [Required]double heading)
         {

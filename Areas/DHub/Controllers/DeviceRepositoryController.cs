@@ -7,7 +7,6 @@ using DroHub.Areas.Identity.Data;
 using DroHub.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace DroHub.Areas.DHub.Controllers

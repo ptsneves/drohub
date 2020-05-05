@@ -50,8 +50,8 @@
         </a>
         </div>
 <div class="container-fluid">
-    @foreach (var device in @Model)
-    {
+    @foreach (var device in @Model) {
+        var get_device_flight_start_time_url = Url.Action("GetDeviceFlightStartTime", "Devices", new {id = device.Id});
         var takeoff_action_url = Url.Action("TakeOff", "Devices", new {id = device.Id});
         var landing_action_url = Url.Action("Land", "Devices", new {id = device.Id});
         var toggle_record_video_action_url = Url.Action("RecordVideo", "Devices", new {id = device.Id});
@@ -137,7 +137,7 @@
                                                 </div>
                                                 <i>|</i>
                                                 <div class="minimum-size" style="padding-right: 3%; padding-left: 3%;">
-                                                    <span class="  " data-renderer="renderFlightTimeText" data-serial="@device.SerialNumber" data-telemetry='null'>00:00</span>
+                                                    <span class="  " data-renderer="renderFlightTimeText" data-url="@get_device_flight_start_time_url" data-serial="@device.SerialNumber" data-telemetry='null'>00:00</span>
                                                     <i>-</i>
                                                     <span class="flying-state-text" data-renderer="renderFlyingState" data-serial="@device.SerialNumber" data-telemetry='@flying_state_initial'>FlightState</span>
                                                 </div>

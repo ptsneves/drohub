@@ -280,7 +280,18 @@ $(function () {
         }
     }();
 
-    ElementClassRangeClass = function () {
+    function isFunction(o) {
+        return typeof o === "function";
+    }
+
+    function addFunctionToArray(array, new_f) {
+        if (isFunction(new_f))
+            array.push(new_f);
+        else
+            console.error("Tried to add non function when a function was expected");
+    }
+
+    let ElementClassRangeClass = function () {
         let _available_classes = new Set();
         let _classes = [];
 
@@ -295,7 +306,7 @@ $(function () {
         function _addStep (min, max, element_classes) {
             let split_classes = element_classes.split(/\s+/).filter(Boolean);
             _classes.push({ min: min, max: max, class: split_classes });
-            split_classes.forEach(item => _available_classes.add(item));
+            split_classes.forEach(item => { _available_classes.add(item); });
         }
 
         _addStep(null, null, "fa-empty-set");
@@ -325,14 +336,141 @@ $(function () {
         }
     };
 
+    let WatchDogClass = function() {
+        let _timeout_in_milliseconds = -1;
+        let _is_active = false;
+        let _functions_for_timeout = [];
+        let _functions_for_watchdog_start = [];
+        let _interval_id = -1;
+        let _has_been_toggled = false;
+
+        function _onWatchDogFail() {
+            _has_been_toggled = false;
+            _is_active = false;
+            if (_interval_id > 0)
+                window.clearTimeout(_interval_id);
+            _functions_for_timeout.forEach(f => { f(); });
+        }
+
+        function _runWatchDog() {
+            if (_is_active) {
+                if (_has_been_toggled) {
+                    _has_been_toggled = false;
+                    _interval_id = window.setTimeout(_runWatchDog, _timeout_in_milliseconds)
+                }
+                else {
+                    _onWatchDogFail();
+                }
+            }
+        }
+
+        return {
+            addFunctionForWatchDogTimeout: function (new_func) {
+                addFunctionToArray(_functions_for_timeout, new_func);
+            },
+            addFunctionForWatchDogStart: function(new_func) {
+                addFunctionToArray(_functions_for_watchdog_start, new_func);
+            },
+            isActive: function() {
+                return _is_active;
+            },
+            start: function() {
+                if (_is_active)
+                    return;
+                _is_active = true;
+                _has_been_toggled = true;
+                _functions_for_watchdog_start.forEach(f => { f(); });
+                _runWatchDog();
+            },
+            stop: function() {
+                if (_is_active)
+                    _onWatchDogFail();
+            },
+            toggle: function() {
+                _has_been_toggled = true
+            },
+            init: function(timeout_in_milliseconds) {
+                _is_active = false;
+                _has_been_toggled = false;
+                _timeout_in_milliseconds = timeout_in_milliseconds;
+            }
+        }
+    };
+
+    let RenderRefreshClass = function() {
+        let _refresh_period_in_millis = -1;
+        let _on_repeat_functions_to_call = [];
+        let _on_start_functions_to_call = [];
+        let _on_stop_functions_to_call = [];
+        let _interval_id = null;
+        let _is_started = false;
+
+        function _refreshCallback() {
+            if (_is_started)
+                _on_repeat_functions_to_call.forEach(func => { func(); });
+        }
+
+        return {
+            addOnRefreshFunction: function(f) {
+                addFunctionToArray(_on_repeat_functions_to_call, f);
+            },
+            addOnStartFunction: function(f) {
+                addFunctionToArray(_on_start_functions_to_call, f);
+            },
+            addOnStopFunction: function(f) {
+                addFunctionToArray(_on_stop_functions_to_call, f);
+            },
+            stop: function() {
+                _is_started = false;
+                window.clearInterval(_interval_id);
+                _on_stop_functions_to_call.forEach(f => { f(); } );
+            },
+            start: function() {
+                _is_started = true;
+                _on_start_functions_to_call.forEach(f => { f(); } );
+                _interval_id = window.setInterval(_refreshCallback, _refresh_period_in_millis);
+            },
+            init: function(refresh_period_in_millis) {
+                _refresh_period_in_millis = refresh_period_in_millis;
+            }
+        }
+    };
+
+    function Static_millisToMinutesAndSeconds(millis) {
+        let hours =  Math.floor(millis / (60000*60));
+        let minutes = Math.floor(millis / 60000);
+        let seconds = ((millis % 60000) / 1000).toFixed(0);
+        return `${minutes}m ${seconds}s`;
+    }
+
     let TelemetryClass = function () {
         let _FunctionTable = {};
 
-        _signalr_connection = null;
-        _map_class_instance = null;
+        let _signalr_connection = null;
+        let _map_class_instance = null;
+        let _telemetry_watchdog = null;
+        let _render_refresher = null;
 
         function _renderFlightTimeText(index, element) {
+            _render_refresher.addOnStartFunction(function() {
+                $.getJSON(element.attr('data-url'), function (data) {
+                    element.attr('data-telemetry', data);
+                })
+            });
 
+            _render_refresher.addOnStopFunction(function() {
+                element.text("No active flight");
+            });
+
+            _render_refresher.addOnRefreshFunction(function() {
+                let data_telemetry = element.attr('data-telemetry')
+                let flight_start = JSON.parse(data_telemetry);
+                if (flight_start == null)
+                    return;
+
+                let time_diff = Date.now() - element.attr('data-telemetry');
+                element.text(Static_millisToMinutesAndSeconds(time_diff));
+            });
         }
 
         function _renderTelemetry(index, element) {
@@ -504,6 +642,11 @@ $(function () {
                     _renderTelemetry(index, element);
                 }
             );
+            if (!_telemetry_watchdog.isActive()) {
+                _telemetry_watchdog.start();
+            }
+            else
+                _telemetry_watchdog.toggle();
         }
 
         return {
@@ -511,6 +654,15 @@ $(function () {
             init: function (signalr_connection, map_class_instance) {
                 _map_class_instance = map_class_instance;
                 _signalr_connection = signalr_connection;
+
+                _render_refresher = RenderRefreshClass();
+                _render_refresher.init(1000);
+
+                _telemetry_watchdog = WatchDogClass();
+                _telemetry_watchdog.init(5000);
+                _telemetry_watchdog.addFunctionForWatchDogStart(_render_refresher.start);
+                _telemetry_watchdog.addFunctionForWatchDogTimeout(_render_refresher.stop);
+
 
                 _FunctionTable["renderBatteryLevel"] = _renderBatteryLevel;
                 _FunctionTable["renderBatteryLevelIcon"] = _renderBatteryLevelIcon;

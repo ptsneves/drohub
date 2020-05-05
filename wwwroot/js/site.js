@@ -66,9 +66,8 @@ $(async function () {
         _connection = null
         return {
             init: async function () {
-                _connection = new signalR.HubConnectionBuilder().withUrl("/telemetryHub").
-                    configureLogging(signalR.LogLevel.Information).build();
-
+                _connection = new signalR.HubConnectionBuilder().withUrl("/telemetryhub").
+                    configureLogging(signalR.LogLevel.Debug).build();
                 await _connection.start().then(function () {
                     console.log("Notifications started SIGNALR");
 
