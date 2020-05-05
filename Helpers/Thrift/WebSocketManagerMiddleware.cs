@@ -49,7 +49,9 @@ namespace DroHub.Helpers.Thrift
                 .UseWebSockets(websocket_options)
                 .UseMiddleware<WebSocketManagerMiddleware>()
                 .Build();
-            return endpoints.Map(path, pipeline).WithDisplayName("Thrift");
+            return endpoints.Map(path, pipeline)
+                .WithDisplayName("Thrift")
+                .RequireAuthorization();
         }
 
         public static IServiceCollection AddWebSocketManager(this IServiceCollection services)

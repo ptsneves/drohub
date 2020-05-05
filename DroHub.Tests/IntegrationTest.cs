@@ -364,6 +364,20 @@ namespace DroHub.Tests
         }
 
         [Fact]
+        public async void TestWebSocketFailedAuthentication() {
+            var exception_occured = false;
+            try {
+                await HttpClientHelper.openWebSocket(_fixture, DEFAULT_USER, DEFAULT_PASSWORD, _fixture
+                    .AdminPassword);
+            }
+            catch (Exception e) {
+                Assert.Equal("The server returned status code '401' when status code '101' was expected.", e.Message);
+                exception_occured = true;
+            }
+            Assert.True(exception_occured, "No exception occurred and should have");
+        }
+
+        [Fact]
         public async void TestThriftConnectionDroppedAtTimeout() {
             await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
                 DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES,
