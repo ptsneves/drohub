@@ -1,18 +1,18 @@
 @font-face {
 	font-family: 'Noto Sans';
 	font-style: normal;
-	font-weight: wght@400;700&display=swap;
+	font-weight: wght@700&display=swap;
 	src:
 		local('Noto Sans'),
 		local('NotoSans'),
 		/* from https://fonts.gstatic.com/s/notosans/v9/o-0IIpQlx3QUlC5A4PNr5TRA.woff2 */
-		url('/LandingPage/css/font/Noto_Sans_wght@400;700&display=swap.woff2') format('woff2'),
+		url('Noto_Sans_wght@700&display=swap.woff2') format('woff2'),
 		/* from https://fonts.gstatic.com/s/notosans/v9/o-0IIpQlx3QUlC5A4PNr5TRG.woff */
-		url('/LandingPage/css/font/Noto_Sans_wght@400;700&display=swap.woff') format('woff'),
+		url('Noto_Sans_wght@700&display=swap.woff') format('woff'),
 		/* from https://fonts.gstatic.com/s/notosans/v9/o-0IIpQlx3QUlC5A4PNr5TRE.eot */
-		url('/LandingPage/css/font/Noto_Sans_wght@400;700&display=swap.eot?#iefix') format('embedded-opentype'),
+		url('Noto_Sans_wght@700&display=swap.eot?#iefix') format('embedded-opentype'),
 		/* from https://fonts.gstatic.com/l/font?kit=o-0IIpQlx3QUlC5A4PNr5TRH&skey=2b960fe17823056f&v=v9#NotoSans */
-		url('/LandingPage/css/font/Noto_Sans_wght@400;700&display=swap.svg#NotoSans') format('svg'),
+		url('Noto_Sans_wght@700&display=swap.svg#NotoSans') format('svg'),
 		/* from https://fonts.gstatic.com/s/notosans/v9/o-0IIpQlx3QUlC5A4PNr5TRF.ttf */
-		url('/LandingPage/css/font/Noto_Sans_wght@400;700&display=swap.ttf') format('truetype');
+		url('Noto_Sans_wght@700&display=swap.ttf') format('truetype');
 }
