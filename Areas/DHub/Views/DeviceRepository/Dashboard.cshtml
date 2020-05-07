@@ -42,13 +42,6 @@
             display: none !important;
         }
         </style>
-        <div class="container-fluid" style="padding-bottom: 15px;">
-        <a class="btn btn-primary btn-lg btn-drohub btn-social" data-toggle="ajax-modal" data-reload="true"
-        asp-require-claim="@(DeviceAuthorizationHandler.DeviceResourceOperations.CreateClaim)"
-        data-target="#modal-add-device" data-url='@Url.Action("Create", "Devices", new {Area = "DHub"})'>
-            <i class="fa fa-plus"></i>Add New Device
-        </a>
-        </div>
 <div class="container-fluid">
     @foreach (var device in @Model) {
         var get_device_flight_start_time_url = Url.Action("GetDeviceFlightStartTime", "Devices", new {id = device.Id});

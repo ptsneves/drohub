@@ -180,49 +180,26 @@ namespace DroHub.Tests.TestInfrastructure
             private readonly string _device_serial;
 
             public static async ValueTask<CreateDeviceHelper> createDevice(DroHubFixture test_fixture, string user, string password,
-                string device_name, string device_serial, bool use_app_api = false) {
+                string device_name, string device_serial) {
                 if (user == "admin")
                     password = test_fixture.AdminPassword;
 
-                if (use_app_api) {
-                    var token_result = await getApplicationToken(test_fixture, user, password);
-                    var m = new AndroidApplicationController.DeviceCreateModel() {
-                        Device = new Device() {
-                            SerialNumber = device_serial,
-                            Name = device_name
-                        }
-                    };
-                    if (token_result["result"] == "nok")
-                        throw new InvalidCredentialException("Could not retrieve token");
+                var token_result = await getApplicationToken(test_fixture, user, password);
+                var m = new AndroidApplicationController.DeviceCreateModel() {
+                    Device = new Device() {
+                        SerialNumber = device_serial,
+                        Name = device_name
+                    }
+                };
+                if (token_result["result"] == "nok")
+                    throw new InvalidCredentialException("Could not retrieve token");
 
-                    var result = await retrieveFromAndroidApp(test_fixture, user, token_result["result"],
-                        "CreateDevice", m);
+                var result = await retrieveFromAndroidApp(test_fixture, user, token_result["result"],
+                    "CreateDevice", m);
 
-                    var json_obj = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,string>>(result);
-                    if (json_obj["result"] != "ok")
-                        throw new InvalidDataException(json_obj["result"]);
-                }
-                else {
-                    using var http_helper = await createLoggedInUser(test_fixture, user, password);
-                    var create_device_url = new Uri(test_fixture.SiteUri, "DHub/Devices/Create");
-                    using var create_page_response = await http_helper.Client.GetAsync(create_device_url);
-                    create_page_response.EnsureSuccessStatusCode();
-                    var verification_token =
-                        DroHubFixture.getVerificationToken(await create_page_response.Content.ReadAsStringAsync());
-                    var data_dic = new Dictionary<string, string>();
-                    if (device_name != null)
-                        data_dic["Name"] = device_name;
-                    if (device_serial != null)
-                        data_dic["SerialNumber"] = device_serial;
-                    data_dic["__RequestVerificationToken"] = verification_token;
-                    var urlenc = new FormUrlEncodedContent(data_dic);
-                    http_helper.Response?.Dispose();
-                    http_helper.Response = await http_helper.Client.PostAsync(create_device_url, urlenc);
-                    http_helper.Response.EnsureSuccessStatusCode();
-                    var dom = DroHubFixture.getHtmlDOM(await http_helper.Response.Content.ReadAsStringAsync());
-                    if (dom.QuerySelectorAll("input[name='IsValid']").First().GetAttribute("value") != "True")
-                        throw new InvalidOperationException("create Device failed");
-                }
+                var json_obj = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,string>>(result);
+                if (json_obj["result"] != "ok")
+                    throw new InvalidDataException(json_obj["result"]);
 
                 return new CreateDeviceHelper(test_fixture, user, password, device_serial);
             }
