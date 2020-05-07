@@ -5,6 +5,8 @@ using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.DHub.SignalRHubs;
+using DroHub.Areas.Identity.Data;
+using DroHub.Areas.Identity.Pages;
 using DroHub.Data;
 using DroHub.Helpers;
 using DroHub.Helpers.AuthenticationHandler;
@@ -93,6 +95,8 @@ namespace DroHub
             services.AddMvc().AddRazorRuntimeCompilation().AddRazorPagesOptions(options => {
                 options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/Account/");
             });
+
+            services.AddScoped<IUserClaimsPrincipalFactory<DroHubUser>, DroHubClaimsIdentityFactory>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

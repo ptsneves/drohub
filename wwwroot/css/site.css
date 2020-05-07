@@ -96,8 +96,233 @@ button.login-submit-btn-drohub:hover {
     }
 }
 
+.drohub-user-panel {
+    position: relative;
+    width: 100%;
+    padding-bottom: 20px;
+    padding-top: 20px;
+    overflow: hidden;
+}
+.drohub-user-panel:before,
+.drohub-user-panel:after {
+    content: " ";
+    display: table;
+}
+.drohub-user-panel:after {
+    clear: both;
+}
+.drohub-user-panel > .image > img {
+    width: 100%;
+    max-width: 65px;
+    height: auto;
+}
+.drohub-user-panel > .info {
+    line-height: 1;
+    position: absolute;
+    left: 55px;
+}
+.drohub-user-panel > .info > p {
+    font-weight: 600;
+    margin-bottom: 9px;
+}
+
+.drohub-user-panel > .info > .btn > .user-name {
+    font-size: 18px;
+}
+
+.drohub-user-panel > .info > .btn > .user-role {
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.drohub-user-panel > .info > a {
+    padding-top: 0;
+    padding-bottom: 0;
+    text-decoration: none;
+    padding-right: 5px;
+    font-size: 11px;
+}
+.drohub-user-panel > .info > a > .fa,
+.drohub-user-panel > .info > a > .ion,
+.drohub-user-panel > .info > a > .glyphicon {
+    margin-right: 3px;
+}
+
+.sidebar-menu > li > a > span {
+    font-size: 20px;
+    margin-left: 5px;
+}
+
+/*
+    drohub-skin
+ */
+
+.drohub-skin-black-light .main-header {
+    border-bottom: 1px solid #d2d6de;
+}
+.drohub-skin-black-light .main-header .navbar-toggle {
+    color: #333;
+}
+.drohub-skin-black-light .main-header .navbar-brand {
+    color: #333;
+    border-right: 1px solid #d2d6de;
+}
+.drohub-skin-black-light .main-header .navbar {
+    background-color: #ffffff;
+}
+.drohub-skin-black-light .main-header .navbar .nav > li > a {
+    color: #333333;
+}
+.drohub-skin-black-light .main-header .navbar .nav > li > a:hover,
+.drohub-skin-black-light .main-header .navbar .nav > li > a:active,
+.drohub-skin-black-light .main-header .navbar .nav > li > a:focus,
+.drohub-skin-black-light .main-header .navbar .nav .open > a,
+.drohub-skin-black-light .main-header .navbar .nav .open > a:hover,
+.drohub-skin-black-light .main-header .navbar .nav .open > a:focus,
+.drohub-skin-black-light .main-header .navbar .nav > .active > a {
+    background: #ffffff;
+    color: #999999;
+}
+.drohub-skin-black-light .main-header .navbar .sidebar-toggle {
+    color: #333333;
+}
+.drohub-skin-black-light .main-header .navbar .sidebar-toggle:hover {
+    color: #999999;
+    background: #ffffff;
+}
+.drohub-skin-black-light .main-header .navbar > .sidebar-toggle {
+    color: #333;
+    border-right: 1px solid #d2d6de;
+}
+.drohub-skin-black-light .main-header .navbar .navbar-nav > li > a {
+    border-right: 1px solid #d2d6de;
+}
+.drohub-skin-black-light .main-header .navbar .navbar-custom-menu .navbar-nav > li > a,
+.drohub-skin-black-light .main-header .navbar .navbar-right > li > a {
+    border-left: 1px solid #d2d6de;
+    border-right-width: 0;
+}
+.drohub-skin-black-light .main-header > .logo {
+    background-color: #ffffff;
+    color: #333333;
+    border-bottom: 0 solid transparent;
+    border-right: 1px solid #d2d6de;
+}
+.drohub-skin-black-light .main-header > .logo:hover {
+    background-color: #fcfcfc;
+}
+@media (max-width: 767px) {
+    .drohub-skin-black-light .main-header > .logo {
+        background-color: #222222;
+        color: #ffffff;
+        border-bottom: 0 solid transparent;
+        border-right: none;
+    }
+    .drohub-skin-black-light .main-header > .logo:hover {
+        background-color: #1f1f1f;
+    }
+}
+.drohub-skin-black-light .main-header li.user-header {
+    background-color: #222;
+}
+.drohub-skin-black-light .content-header {
+    background: transparent;
+    box-shadow: none;
+}
+.drohub-skin-black-light .wrapper,
+.drohub-skin-black-light .main-sidebar,
+.drohub-skin-black-light .left-side {
+    background-color: #f9fafc;
+}
+.drohub-skin-black-light .main-sidebar {
+    border-right: 1px solid #d2d6de;
+}
+.drohub-skin-black-light .user-panel > .info,
+.drohub-skin-black-light .user-panel > .info > a {
+    color: #444444;
+}
+.drohub-skin-black-light .sidebar-menu > li {
+    -webkit-transition: border-left-color 0.3s ease;
+    -o-transition: border-left-color 0.3s ease;
+    transition: border-left-color 0.3s ease;
+}
+.drohub-skin-black-light .sidebar-menu > li.header {
+    color: #848484;
+    background: #f9fafc;
+}
+.drohub-skin-black-light .sidebar-menu > li > a {
+    border-left: 3px solid transparent;
+}
+.drohub-skin-black-light .sidebar-menu > li:hover > a,
+.drohub-skin-black-light .sidebar-menu > li.active > a {
+    background: #d7dde4;
+}
+.drohub-skin-black-light .sidebar-menu > li.active {
+    border-left-color: #ffffff;
+}
+.drohub-skin-black-light .sidebar-menu > li > .treeview-menu {
+    background: #f4f4f5;
+}
+.drohub-skin-black-light .sidebar a {
+    color: #444444;
+}
+.drohub-skin-black-light .sidebar a:hover {
+    text-decoration: none;
+}
+.drohub-skin-black-light .sidebar-menu .treeview-menu > li > a {
+    color: #777777;
+}
+.drohub-skin-black-light .sidebar-menu .treeview-menu > li.active > a,
+.drohub-skin-black-light .sidebar-menu .treeview-menu > li > a:hover {
+    color: #000000;
+}
+.drohub-skin-black-light .sidebar-menu .treeview-menu > li.active > a {
+    font-weight: 100;
+}
+.drohub-skin-black-light .sidebar-form {
+    border-radius: 3px;
+    border: 1px solid #d2d6de;
+    margin: 10px 10px;
+}
+.drohub-skin-black-light .sidebar-form input[type="text"],
+.drohub-skin-black-light .sidebar-form .btn {
+    box-shadow: none;
+    background-color: #fff;
+    border: 1px solid transparent;
+    height: 35px;
+}
+.drohub-skin-black-light .sidebar-form input[type="text"] {
+    color: #666;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 2px;
+}
+.drohub-skin-black-light .sidebar-form input[type="text"]:focus,
+.drohub-skin-black-light .sidebar-form input[type="text"]:focus + .input-group-btn .btn {
+    background-color: #fff;
+    color: #666;
+}
+.drohub-skin-black-light .sidebar-form input[type="text"]:focus + .input-group-btn .btn {
+    border-left-color: #fff;
+}
+.drohub-skin-black-light .sidebar-form .btn {
+    color: #999;
+    border-top-left-radius: 0;
+    border-top-right-radius: 2px;
+    border-bottom-right-radius: 2px;
+    border-bottom-left-radius: 0;
+}
+@media (min-width: 768px) {
+    .drohub-skin-black-light.sidebar-mini.sidebar-collapse .sidebar-menu > li > .treeview-menu {
+        border-left: 1px solid #d2d6de;
+    }
+}
+
+
 .skin-drohub {
-    background-color: #2d3c4a;
+    background-color: #FFFFFF;
 }
 
 .btn-box-tool-drohub {
@@ -106,8 +331,14 @@ button.login-submit-btn-drohub:hover {
     color: black;
 }
 
+nav.drohub-navbar {
+    background: #e6eaef;
+}
+
 .btn-drohub {
     background-color: #2d3c4a;
+    font-weight: bold;
+    border-radius: 4px;
 }
 
 .small-gutter {

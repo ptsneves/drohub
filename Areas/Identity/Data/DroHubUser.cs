@@ -12,12 +12,17 @@ namespace DroHub.Areas.Identity.Data
     {
         public const string CLAIM_VALID_VALUE = "Yes";
 
+        public const string BASE_ACTING_TYPE_KEY_CLAIM = "ActingType";
         public const string SUBSCRIPTION_KEY_CLAIM = "SubscriptionOrgName";
         public const string ADMIN_POLICY_CLAIM = "ActingAdmin";
         public const string SUBSCRIBER_POLICY_CLAIM = "ActingSubscriber";
         public const string OWNER_POLICY_CLAIM = "ActingOwner";
         public const string PILOT_POLICY_CLAIM = "ActingPilot";
         public const string GUEST_POLICY_CLAIM = "ActingGuest";
+
+        public static string  convertActingTypeToHumanFormat(string acting_type) {
+            return acting_type.Replace("Acting", "");
+        }
 
         private static readonly List<Claim> GuestPolicyClaims = new List<Claim>() {
             new Claim(GUEST_POLICY_CLAIM, CLAIM_VALID_VALUE),
