@@ -8,13 +8,10 @@ using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
-using DroHub.Helpers;
 using DroHub.Helpers.Thrift;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace DroHub.Areas.DHub.Controllers
 {
@@ -24,17 +21,14 @@ namespace DroHub.Areas.DHub.Controllers
         private readonly ILogger<DevicesController> _logger;
         private readonly ConnectionManager _device_connection_manager;
 
-        private readonly JanusServiceOptions _janus_options;
         private readonly DeviceAPI _device_api;
 
         public DevicesController(ILogger<DevicesController> logger,
              ConnectionManager device_connection_manager,
-             IOptionsMonitor<JanusServiceOptions> janus_options,
             DeviceAPI device_api)
         {
             _logger = logger;
             _device_connection_manager = device_connection_manager;
-            _janus_options = janus_options.CurrentValue;
             _device_api = device_api;
         }
 
@@ -264,36 +258,6 @@ namespace DroHub.Areas.DHub.Controllers
             }
             return Ok(); ;
         }
-
-        public IActionResult GetLiveStreamRecordingVideo(string video_id) {
-            var path = Path.Combine(_janus_options.RecordingPath, video_id.Replace("mjr", "webm"));
-            var res = File(System.IO.File.OpenRead(path), "video/webm");
-            res.EnableRangeProcessing = true;
-            return res;
-        }
-
-        public class GalleryPageModel
-        {
-            public Device device { get; set; }
-            public FileInfo[] video_paths { get; set; }
-
-        }
-        // GET: DroHub/Devices/Gallery/5
-        public async Task<IActionResult> Gallery([Required]int id)
-        {
-            var device = await _device_api.getDeviceById(id);
-            if (device == null)
-                throw new InvalidOperationException("Cannot get device with this ID");
-
-            var di = new DirectoryInfo(_janus_options.RecordingPath);
-            var model = new GalleryPageModel
-            {
-                device = device,
-                video_paths = di.GetFiles($"drone-{device.SerialNumber}-*.webm").OrderByDescending(f => f.Name).ToArray()
-        };
-            return View(model);
-        }
-
 
         // GET: DroHub/Devices/Edit/5
         public async Task<IActionResult> Edit([Required]int id) {

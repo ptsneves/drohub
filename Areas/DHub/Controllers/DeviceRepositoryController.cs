@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Models;
-using DroHub.Areas.Identity.Data;
-using DroHub.Data;
-using Microsoft.AspNetCore.Identity;
+using DroHub.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -15,17 +16,18 @@ namespace DroHub.Areas.DHub.Controllers
     public class DeviceRepositoryController : AuthorizedController
     {
         #region Variables
+
+        private readonly JanusServiceOptions _janus_options;
         private readonly RepositoryOptions _repository_settings;
         private readonly DeviceAPI _device_api;
         #endregion
 
         #region Constructor
-        public DeviceRepositoryController(DroHubContext context, UserManager<DroHubUser> userManager,
-            IOptions<RepositoryOptions> repository_settings,
-            DeviceAPI device_api)
-        {
+        public DeviceRepositoryController(IOptions<RepositoryOptions> repository_settings, DeviceAPI device_api,
+            IOptionsMonitor<JanusServiceOptions> janus_options) {
             _repository_settings = repository_settings.Value;
             _device_api = device_api;
+            _janus_options = janus_options.CurrentValue;
         }
         #endregion
 
@@ -61,6 +63,36 @@ namespace DroHub.Areas.DHub.Controllers
             // }
             return device_list;
         }
+
+        public class GalleryPageModel
+        {
+            public Device device { get; set; }
+            public FileInfo[] video_paths { get; set; }
+
+        }
+        // GET: DroHub/Devices/Gallery/5
+        public async Task<IActionResult> Gallery([Required]int id)
+        {
+            var device = await _device_api.getDeviceById(id);
+            if (device == null)
+                throw new InvalidOperationException("Cannot get device with this ID");
+
+            var di = new DirectoryInfo(_janus_options.RecordingPath);
+            var model = new GalleryPageModel
+            {
+                device = device,
+                video_paths = di.GetFiles($"drone-{device.SerialNumber}-*.webm").OrderByDescending(f => f.Name).ToArray()
+            };
+            return View(model);
+        }
+
+        public IActionResult GetLiveStreamRecordingVideo(string video_id) {
+            var path = Path.Combine(_janus_options.RecordingPath, video_id.Replace("mjr", "webm"));
+            var res = File(System.IO.File.OpenRead(path), "video/webm");
+            res.EnableRangeProcessing = true;
+            return res;
+        }
+
         public async Task<IActionResult> Dashboard() {
             var google_api_key = _repository_settings.GoogleMapsAPIKey;
             if (!String.IsNullOrEmpty(google_api_key))

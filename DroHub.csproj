@@ -84,9 +84,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="Areas\DHub\Views\Devices\Gallery.cshtml">
-      <Pack>$(IncludeRazorContentInPack)</Pack>
-    </Content>
     <Content Update="Areas\Identity\Pages\Account\_Layout.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>

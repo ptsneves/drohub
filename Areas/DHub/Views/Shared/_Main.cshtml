@@ -117,7 +117,7 @@
     <script src="~/js/activeSideMenus.js"></script>
     <script>
         var url = '@Url.Action("GetDevicesList", "Devices", new {Area = "DHub"})'
-        var gallery_url = '@Url.Action("Gallery", "Devices", new {Area = "DHub"})'
+        var gallery_url = '@Url.Action("Gallery", "DeviceRepository", new {Area = "DHub"})'
         populateDevices(url, gallery_url)
     </script>
     <script src="~/js/site.js"></script>

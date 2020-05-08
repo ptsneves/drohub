@@ -35,7 +35,7 @@
                  }
                  <ul class="treeview-menu" id="devices-list">
                      @foreach (var device in devices) {
-                         <li><a href='@Url.Action("Gallery", "Devices", new {Id = device.Id, Area = "DHub"})'> <i class="fa fa-plug"></i>@device.Name</a ></li>
+                         <li><a href='@Url.Action("Gallery", "DeviceRepository", new {Id = device.Id, Area = "DHub"})'> <i class="fa fa-plug"></i>@device.Name</a ></li>
                      }
 
                  </ul>
