@@ -94,7 +94,6 @@ public class LiveVideoRenderer implements GlRenderSink.Callback {
     }
 
     private void onFrameReady() {
-        Log.e("Renderer", "Render frame");
         VideoFrame videoFrame = new VideoFrame(createRgbTextureBuffer(),
                 0 /* rotation */,
                 TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime()));

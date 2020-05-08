@@ -320,7 +320,7 @@ namespace DroHub.Helpers
             var session = await _janus_service.createSession();
             var handle = await _janus_service.createStreamerPluginHandle(session);
             return await _janus_service.createVideoRoom(session, handle, device.Id,
-                device.SerialNumber, "mysecret", 10, JanusService.VideoCodecType.H264); // we need to force this for iOS
+                device.SerialNumber, "mysecret", 10, JanusService.VideoCodecType.VP8); // we need to force this for iOS
         }
 
         private async Task destroyMountPointForDevice(Device device)

@@ -14,13 +14,13 @@ public class PeerConnectionGLSurfaceParameters extends PeerConnectionParameters 
                                              String[] ice_servers,
                                              String janus_web_socket_uri,
                                              Activity activity, int videoFps,
-                                             String videoCodec, int videoStartBitrate,
+                                             String videoCodec, int video_width, int video_height, int videoStartBitrate,
                                              int audioStartBitrate, String audioCodec,
                                              StreamServer live_video_stream_server,
                                              boolean noAudioProcessing) {
         super(local_view, remote_view, turn_user_name, turn_credential, ice_servers, janus_web_socket_uri, activity,
-                activity.getResources().getDisplayMetrics().widthPixels,
-                activity.getResources().getDisplayMetrics().heightPixels, videoFps, videoCodec,
+                video_width,
+                video_height, videoFps, videoCodec,
                 videoStartBitrate, VideoCapturerType.GROUNDSDK_VIDEO_SHARE, audioStartBitrate,
                 audioCodec, noAudioProcessing);
         LiveVideoStreamServer = live_video_stream_server;

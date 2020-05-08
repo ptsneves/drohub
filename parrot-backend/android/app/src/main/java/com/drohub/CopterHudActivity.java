@@ -495,10 +495,12 @@ public class CopterHudActivity extends GroundSdkActivityBase
                     getResources().getString(R.string.turn_credential),
                     res_turn_urls,
                     getString(R.string.janus_websocket_uri), this,
-                    20,
-                    "h264",
+                    30,
+                    "VP8",
+                    1280,
+                    720,
                     2024000,
-                    1024000,
+                    128000,
                     null, streamServer,
                     false);
 
