@@ -55,25 +55,23 @@ services:
           - "MYSQL_PASSWORD=XXXXX"
         # volumes:
             # mysql-volume:/var/lib/mysql
-    # letsencrypt:
-    #     build:
-    #         context: ./docker/docker-letsencrypt
-    #     image: ptsneves/airborneprojects:letsencrypt
-    #     volumes:
-    #         - certificates-volume:/etc/letsencrypt
-    # nginx:
-    #     network_mode: host
-    #     build:
-    #         context: ./docker/docker-nginx
-    #     image: ptsneves/airborneprojects:nginx
-    #     volumes:
-    #         - certificates-volume:/etc/letsencrypt
-    #     logging:
-    #         options:
-    #             max-file: "5"
-    #             max-size: "100m"
-
-
+    letsencrypt:
+         build:
+             context: ./docker/docker-letsencrypt
+         image: ptsneves/airborneprojects:letsencrypt
+         volumes:
+             - certificates-volume:/etc/letsencrypt
+    nginx:
+         network_mode: host
+         build:
+             context: ./docker/docker-nginx
+         image: ptsneves/airborneprojects:nginx
+         volumes:
+             - certificates-volume:/etc/letsencrypt
+         logging:
+             options:
+                 max-file: "5"
+                 max-size: "100m"
 volumes:
     certificates-volume:
     live-video-storage:
