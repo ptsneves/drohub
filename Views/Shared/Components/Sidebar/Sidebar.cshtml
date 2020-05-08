@@ -1,4 +1,6 @@
 @using DroHub.Areas.Identity.Data
+@using DroHub.Areas.DHub.API
+@inject DeviceAPI device_api
 <aside class="main-sidebar drohub-skin-black-light">
     <!-- sidebar: style can be found in sidebar.less -->
     <section class="sidebar">
@@ -21,15 +23,22 @@
                 </a>
             </li>
              <li class="treeview">
-                <a href="#">
-                    <i class="fa fa-camera"></i>
-                    <span>Multimedia</span>
-                    <span class="pull-right-container">
-                        <i class="fa fa-angle-left pull-right"></i>
-                    </span>
-                </a>
-                <ul class="treeview-menu" id="devices-list">
-                </ul>
+                 <a href="#">
+                     <i class="fa fa-camera"></i>
+                     <span>Multimedia</span>
+                     <span class="pull-right-container">
+                         <i class="fa fa-angle-left pull-right"></i>
+                     </span>
+                 </a>
+                 @{
+                     var devices = await device_api.getSubscribedDevices();
+                 }
+                 <ul class="treeview-menu" id="devices-list">
+                     @foreach (var device in devices) {
+                         <li><a href='@Url.Action("Gallery", "Devices", new {Id = device.Id, Area = "DHub"})'> <i class="fa fa-plug"></i>@device.Name</a ></li>
+                     }
+
+                 </ul>
             </li>
         </ul>
     </section>
