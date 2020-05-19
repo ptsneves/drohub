@@ -127,7 +127,7 @@ media: {
 	ipv6 = false
 	#max_nack_queue = 500
 	#rfc_4588 = true
-	#rtp_port_range = "20000-40000"
+	rtp_port_range = "20000-40000"
 	#dtls_mtu = 1200
 	#no_media_timer = 1
 	#dtls_timeout = 500
@@ -150,8 +150,8 @@ media: {
 # be used for gathering candidates, and enable or disable the
 # internal libnice debugging, if needed.
 nat: {
-	stun_server = "w1.xirsys.com"
-	stun_port = 80
+	stun_server = "stun.l.google.com"
+	stun_port = 19302
 	#nice_debug = true
 	#full_trickle = true
 	#ice_lite = true
@@ -165,17 +165,12 @@ nat: {
 	# such, use the option with caution and only if you know what you're doing.
 	# Make sure you keep ICE Lite disabled, though, as it's not strictly
 	# speaking a publicly reachable server, and a NAT is still involved.
-	#nat_1_1_mapping = ""
+	nat_1_1_mapping = "18.197.86.34"
 
 	# You can configure a TURN server in two different ways: specifying a
 	# statically configured TURN server, and thus provide the address of the
 	# TURN server, the transport (udp/tcp/tls) to use, and a set of valid
 	# credentials to authenticate...
-	turn_server = "w1.xirsys.com"
-	turn_port = 80
-	turn_type = "udp"
-	turn_user = "XXXXX"
-	turn_pwd = "XXXXXX"
 
 	# ... or you can make use of the TURN REST API to get info on one or more
 	# TURN services dynamically. This makes use of the proposed standard of
