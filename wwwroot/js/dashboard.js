@@ -489,7 +489,7 @@ $(function () {
             let live_video_result = JSON.parse(element.attr('data-telemetry'));
             switch (live_video_result.State) {
                 case 0: //Live
-                    if (element.data("render-state") == "stopped") {
+                    if (element.data("render-state") === "stopped") {
                         element.data("render-state", "starting");
                         initJanus(element.data('janus-url'), element.data('stun-server-url'), element.data('room-id'));
                     }

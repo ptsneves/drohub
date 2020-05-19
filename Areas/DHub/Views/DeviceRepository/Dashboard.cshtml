@@ -56,6 +56,7 @@
         var position_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.positions?.FirstOrDefault()) as String);
         var battery_level_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.battery_levels?.FirstOrDefault()) as String);
         var flying_state_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.flying_states?.FirstOrDefault()) as String);
+        var video_state_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(new DroneLiveVideoStateResult(){State = DroneLiveVideoState.INVALID_CONDITION}) as String);
 
         string[] ColourValues = new string[]
         {
@@ -199,7 +200,10 @@
                                                     </div> *@
                                         </div>
                                     </div>
-                                    <video class="rounded centered embed-responsive-item controls janus-video device-video" data-janus-url='@ViewData["FrontEndJanusUrl"]' data-stun-server-url='@ViewData["FrontEndStunServerUrl"]' data-renderer="renderLiveVideo" data-render-state="stopped" data-room-id="@device.Id" data-serial="@device.SerialNumber" autoplay playsinline></video>
+                                    <video class="rounded centered embed-responsive-item controls janus-video
+                                    device-video" data-janus-url='@ViewData["FrontEndJanusUrl"]'
+                                    data-telemetry='@video_state_initial'
+                                    data-stun-server-url='@ViewData["FrontEndStunServerUrl"]' data-renderer="renderLiveVideo" data-render-state="stopped" data-room-id="@device.Id" data-serial="@device.SerialNumber" autoplay playsinline></video>
                                 </div>
                                 <div class="box collapsed-box drone-control-box" data-serial="@device.SerialNumber">
                                     <div class="box-body">
