@@ -21,62 +21,39 @@
 <!-- /Content Header (Page header) -->
 <!-- Main content -->
 <section class="content">
-        <div class="box box-info">
-            <div class="box-header with-border">
-                <h3 class="box-title text-uppercase">Multimedia</h3>
-                <div class="box-tools pull-right">
-                        <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
-                    </div>
-            </div>
-            <div class="box-body">
-                <ul class="timeline">
-                    @foreach(var video_file in @Model.video_paths) {
-                    <li>
-                        <i class="fa fa-camera bg-maroon"></i>
-                        <div class="timeline-item">
+    @foreach (var point_in_time_files in @Model.FilesPerTimestamp) {
+        <ul class="timeline">
+            <li class="time-label">
+                <span class='time local-date-text' data-unix-time="@point_in_time_files.Key"><i class="fa fa-clock-o"></i></span>
+            </li>
+        @foreach (var device_files in point_in_time_files.Value) {
+            <li>
+                <i class="fa fa-camera bg-maroon"></i>
+                <div class="timeline-item">
 
-                            <h3 class="timeline-header">
-                                <span class='time local-time-text' data-unix-time="@video_file.Name.Split('-')[2].Split('.')[0]"><i class="fa fa-clock-o"></i></span>
-                            </h3>
-                            <div class="timeline-body">
-                                <div class="box box-solid collapsed-box">
-                                    <div class="box-header">
-                                        <div class="box-tools pull-right">
-                                            <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-plus"></i></button>
-                                        </div>
-                                    </div>
-                                    <div class="box-body">
-                                        <div class="embed-responsive embed-responsive-16by9">
-                                            @* <div class=device-video-overlay>
-                                                <div class="video-overlay-top video-overlay-left">
+                    <h3 class="timeline-header">
+                        @device_files.Key
+                    </h3>
+                    <div class="timeline-body">
+                        <div style="display: inline;" class="container  content-centered">
+                            <div class="row">
+                                <div class="col">
+                                @foreach (var file in device_files.Value) {
+                                    <video class="rounded livestream-recording"
+                                           src='@Url.Action("GetLiveStreamRecordingVideo", new {video_id = file.media_info.VideoPath})'
+                                           controls preload="metadata">
 
-                                                </div>
-                                                <div class="video-overlay-top video-overlay-centered">
-                                                    <i class="fa fa-play-circle"></i>
-                                                </div>
-                                            </div> *@
-                                            <video class="rounded centered embed-responsive-item controls device-video livestream-recording-video" src='@Url.Action("GetLiveStreamRecordingVideo", new {video_id = video_file.Name})' controls preload="none" playsinline></video>
-                                        </div>
-                                    </div>
+                                    </video>
+                                }
                                 </div>
                             </div>
                         </div>
-                    </li>
-                    }
-                </ul>
-            </div>
-        </div>
-        <div class="box box-top-border">
-            <div class="box-header with-border">
-                <h3 class="box-title text-uppercase">Logs</h3>
-                <div class="box-tools pull-right">
-                        <button type="button" data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
                     </div>
-            </div>
-            <div class="box-body">
-                Logs
-            </div>
-        </div>
+                </div>
+            </li>
+        }
+        </ul>
+}
 </section>
 @section Scripts {
     <script type="text/javascript" src="~/js/gallery.js"></script>

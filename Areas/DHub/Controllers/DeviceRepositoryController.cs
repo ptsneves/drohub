@@ -64,26 +64,67 @@ namespace DroHub.Areas.DHub.Controllers
             return device_list;
         }
 
-        public class GalleryPageModel
-        {
-            public Device device { get; set; }
-            public FileInfo[] video_paths { get; set; }
+        public class GalleryPageModel {
+            public class MediaInfo {
+                public enum MediaTypeEnum {
+                    LIVE_VIDEO,
+                    VIDEO,
+                    PICTURE
+                }
 
+                public FileInfo VideoPath { get; internal set; }
+                public MediaTypeEnum MediaType { get; internal set; }
+                public long CaptureDateTime { get; internal set; }
+            }
+            public class FileInfoModel {
+                public Device device { get; internal set; }
+                public MediaInfo media_info { get; internal set; }
+            }
+
+            public Dictionary<long, Dictionary<string, List<FileInfoModel>>> FilesPerTimestamp { get; internal set; }
         }
-        // GET: DroHub/Devices/Gallery/5
-        public async Task<IActionResult> Gallery([Required]int id)
-        {
-            var device = await _device_api.getDeviceById(id);
-            if (device == null)
-                throw new InvalidOperationException("Cannot get device with this ID");
 
+        public async Task<IActionResult> Gallery() {
             var di = new DirectoryInfo(_janus_options.RecordingPath);
-            var model = new GalleryPageModel
-            {
-                device = device,
-                video_paths = di.GetFiles($"drone-{device.SerialNumber}-*.webm").OrderByDescending(f => f.Name).ToArray()
-            };
-            return View(model);
+            var devices = await _device_api.getSubscribedDevices();
+            var files_per_timestamp = new Dictionary<long, Dictionary<string, List<GalleryPageModel.FileInfoModel>>>();
+            foreach (var device in devices) {
+                var video_pattern = $"drone-{device.SerialNumber}-*.webm";
+                var video_paths = di.GetFiles(video_pattern)
+                    .OrderByDescending(f => f.Name)
+                    .ToArray();
+
+                foreach (var video_file in video_paths) {
+                    var video_timestamp = Convert.ToInt64(video_file.Name.Split('-')[2]);
+
+                    //This is the milliseconds of the UTC midnight of the day of the media
+                    var video_timestamp_datetime = (long)(DateTimeOffset.FromUnixTimeMilliseconds(video_timestamp).Date.Date.ToUniversalTime() -
+                            new DateTime(1970,1,1,0,0,0,0,System.DateTimeKind.Utc))
+                        .TotalMilliseconds;
+
+                    var file_info_model = new GalleryPageModel.FileInfoModel() {
+                        media_info = new GalleryPageModel.MediaInfo() {
+                            VideoPath = video_file,
+                            MediaType = GalleryPageModel.MediaInfo.MediaTypeEnum.LIVE_VIDEO,
+                            CaptureDateTime = video_timestamp
+                        },
+                        device = device
+                    };
+
+                    if (!files_per_timestamp.ContainsKey(video_timestamp_datetime)) {
+                        files_per_timestamp[video_timestamp_datetime] =
+                            new Dictionary<string, List<GalleryPageModel.FileInfoModel>>();
+                    }
+
+                    if (!files_per_timestamp[video_timestamp_datetime].ContainsKey(device.Name)) {
+                        files_per_timestamp[video_timestamp_datetime][device.Name] = new List<GalleryPageModel.FileInfoModel>();
+                    }
+
+                    files_per_timestamp[video_timestamp_datetime][device.Name].Add(file_info_model);
+
+                }
+            }
+            return View(new GalleryPageModel(){FilesPerTimestamp = files_per_timestamp});
         }
 
         public IActionResult GetLiveStreamRecordingVideo(string video_id) {

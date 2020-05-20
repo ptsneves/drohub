@@ -345,6 +345,11 @@ nav.drohub-navbar {
     padding:7px;
 }
 
+video.livestream-recording {
+    max-height: 162px;
+    padding: 8px;
+}
+
 .device-video {
     background: rgba(120,120,120,0.4);
     width: 100%;

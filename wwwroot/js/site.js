@@ -88,24 +88,35 @@ $(async function () {
     TimePresenterClass = function () {
         function _convertUnixToLocalTime(unix_timestamp) {
             // https://stackoverflow.com/a/847196/227990
-            // Create a new JavaScript Date object based on the timestamp
-            // multiplied by 1000 so that the argument is in milliseconds, not seconds.
-            var date = new Date(unix_timestamp);
+            let date = new Date(unix_timestamp);
             return date.toLocaleString();
         }
 
-        function _initElement(index, element) {
-            element = $(element);
-            let unix_time = element.data('unix-time');
-            if (!unix_time)
-                return;
-            element.text(_convertUnixToLocalTime(unix_time));
+        function _convertUnixToLocalDate(unix_timestamp) {
+            let date = new Date(unix_timestamp);
+            return date.toLocaleDateString();
         }
 
-        $('.local-time-text').each(_initElement);
+        function _setTextToLocalTime(index, element) {
+            element = $(element);
+            let unix_time = element.data('unix-time');
+            if (unix_time)
+                element.text(_convertUnixToLocalTime(unix_time));
+        }
+
+        function _setTextToLocalDate(index, element) {
+            element = $(element);
+            let unix_time = element.data('unix-time');
+            if (unix_time)
+                element.text(_convertUnixToLocalDate(unix_time));
+        }
+
+        $('.local-time-text').each(_setTextToLocalTime);
+        $('.local-date-text').each(_setTextToLocalDate);
 
         return {
             convertUnixToLocalTime: _convertUnixToLocalTime,
+            convertUnixToLocalDate: _convertUnixToLocalDate,
         }
     }();
 

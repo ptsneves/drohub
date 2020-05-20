@@ -22,23 +22,10 @@
                     <i class="fa fa-map"></i> <span>Dashboard</span>
                 </a>
             </li>
-             <li class="treeview">
-                 <a href="#">
-                     <i class="fa fa-camera"></i>
-                     <span>Multimedia</span>
-                     <span class="pull-right-container">
-                         <i class="fa fa-angle-left pull-right"></i>
-                     </span>
-                 </a>
-                 @{
-                     var devices = await device_api.getSubscribedDevices();
-                 }
-                 <ul class="treeview-menu" id="devices-list">
-                     @foreach (var device in devices) {
-                         <li><a href='@Url.Action("Gallery", "DeviceRepository", new {Id = device.Id, Area = "DHub"})'> <i class="fa fa-plug"></i>@device.Name</a ></li>
-                     }
-
-                 </ul>
+            <li>
+                <a asp-action="Gallery" asp-area="DHub" asp-controller="DeviceRepository">
+                    <i class="fa fa-map"></i> <span>Gallery</span>
+                </a>
             </li>
         </ul>
     </section>
