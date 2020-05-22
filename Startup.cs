@@ -61,7 +61,14 @@ namespace DroHub
             {
                 // This lambda determines whether user consent for non-essential cookies is needed for a given request.
                 options.CheckConsentNeeded = context => true;
-                options.MinimumSameSitePolicy = SameSiteMode.None;
+                // options.MinimumSameSitePolicy = SameSiteMode.Unspecified;
+                services.ConfigureExternalCookie(o => {
+                    o.Cookie.SameSite = SameSiteMode.None;
+                });
+                services.ConfigureApplicationCookie(o =>
+                {
+                    o.Cookie.SameSite = SameSiteMode.None;
+                });
             });
 
             services.Configure<JanusServiceOptions>(Configuration.GetSection("JanusServiceOptions"));
@@ -120,7 +127,10 @@ namespace DroHub
             app.UseStaticFiles();
             app.UseRouting();
 
-            app.UseCookiePolicy();
+            app.UseCookiePolicy(new CookiePolicyOptions
+            {
+                MinimumSameSitePolicy = SameSiteMode.None
+            });
 
             app.UseAuthentication();
             app.UseAuthorization();
