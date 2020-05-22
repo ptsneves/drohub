@@ -35,6 +35,8 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> CreateDevice([FromBody] DeviceCreateModel device_model) {
 
             try {
+                if (device_model.Device.SerialNumber == "NODEVICE")
+                    throw new InvalidDataException("NODEVICE is a reserved device and cannot be created");
                 await _device_api.Create(device_model.Device);
             }
             catch (InvalidDataException e) {

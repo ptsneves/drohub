@@ -256,6 +256,15 @@ namespace DroHub.Tests
                 });
         }
 
+        [Fact]
+        public async void TestNODEVICECreateDeviceFails() {
+            await Assert.ThrowsAsync<InvalidDataException>(async () => {
+                await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin",
+                    _fixture.AdminPassword, DEFAULT_DEVICE_NAME, "NODEVICE");
+            });
+        }
+
+
         [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, "MyAnafi", "000000", true)]
         [InlineData(DroHubUser.OWNER_POLICY_CLAIM, "MyAnafi", "000000", true)]
         [InlineData(DroHubUser.PILOT_POLICY_CLAIM, "MyAnafi", "000000", true)]

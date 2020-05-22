@@ -56,12 +56,14 @@ public class MainActivity extends GroundSdkActivityBase {
     }
 
     private void validateDeviceRegisteredAndLaunchIfPossible() {
-        if (_connected_drone == null || _user_email == null || _user_auth_token == null)
+        if ( _user_email == null || _user_auth_token == null)
             return;
+
         String url = getString(R.string.drohub_url) + "/api/AndroidApplication/QueryDeviceInfo";
+        String device_serial =  _connected_drone == null ? "NODEVICE" : _connected_drone.getUid();
         JSONObject request = new JSONObject();
         try {
-            request.put("DeviceSerialNumber", _connected_drone.getUid());
+            request.put("DeviceSerialNumber", device_serial);
         }
          catch (JSONException e) {
             setStatusText(status_view,"Could not create a json query", Color.RED);
@@ -69,6 +71,10 @@ public class MainActivity extends GroundSdkActivityBase {
         setStatusText(status_view,"Retrieving device info", Color.BLACK);
         DroHubObjectRequest token_validation_request = new DroHubObjectRequest(_user_email, _user_auth_token,
                 Request.Method.POST, url, request, response -> {
+            if (_connected_drone == null) {
+                showWaitingScreen();
+                return;
+            }
             if (!response.isNull("result")) { //We just care that there is something on the system
                 Intent intent = new Intent(this, CopterHudActivity.class);
                 addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid());
