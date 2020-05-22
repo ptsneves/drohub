@@ -10,7 +10,7 @@ RUN dotnet restore
 COPY . ./
 RUN dotnet publish -c Release -o out
 
-FROM mcr.microsoft.com/dotnet/core/runtime:3.1
+FROM mcr.microsoft.com/dotnet/core/runtime:3.1-focal
 RUN apt-get update && apt-get install -y janus-tools
 WORKDIR /app
 COPY --from=build-env /app/out .
