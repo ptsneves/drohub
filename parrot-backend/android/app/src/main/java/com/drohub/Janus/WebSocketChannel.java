@@ -132,7 +132,8 @@ public class WebSocketChannel extends WebSocketClient {
                         String leaving = plugin.optString("leaving");
                         if (!TextUtils.isEmpty(leaving)) {
                             JanusHandle jhandle = feeds.get(new BigInteger(leaving));
-                            jhandle.onLeaving.onJoined(jhandle);
+                            if (jhandle != null)
+                                jhandle.onLeaving.onJoined(jhandle);
                         }
 
                         JSONObject jsep = jo.optJSONObject("jsep");
