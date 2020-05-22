@@ -261,6 +261,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
     localVideoTrack.setEnabled(true);
     if (local_video_sink != null) {
       local_video_sink.init(renderEGLContext, null);
+      local_video_sink.setEnableHardwareScaler(true);
       localVideoTrack.addSink(local_video_sink);
     }
     return localVideoTrack;

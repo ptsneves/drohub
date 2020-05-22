@@ -177,6 +177,9 @@ namespace DroHub.Helpers {
 
                 [JsonProperty("notify_joining")]
                 public bool NotifyJoining { get; set; }
+
+                [JsonProperty("fir_freq")]
+                public long FirFrequency { get; set; }
             }
 
 
@@ -289,6 +292,7 @@ namespace DroHub.Helpers {
                 Record = true,
                 RecordingDir = $"{_options.RecordingPath}",
                 VideoCodec = video_codec.ToString("g").ToLower(),
+                FirFrequency = 7,
                 // Secret = secret
             });
 
