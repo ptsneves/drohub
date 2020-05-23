@@ -30,12 +30,17 @@ public class MainActivity extends GroundSdkActivityBase {
     private Network _volley_network;
     private RequestQueue _request_queue;
     private TextView status_view;
+    TextInputEditText email_ctrl;
+    EditText password_ctrl;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         status_view = findViewById(R.id.login_status);
+
+        email_ctrl = findViewById(R.id.email_input);
+        password_ctrl = findViewById(R.id.password_input);
         initializeVolley();
         _saved_accounts = getSharedPreferences(ACCOUNTS, MODE_PRIVATE);
         if (_saved_accounts == null)
@@ -44,6 +49,7 @@ public class MainActivity extends GroundSdkActivityBase {
         _user_auth_token = _saved_accounts.getString(USER_AUTH_TOKEN_STORE_KEY, null);
         _user_email = _saved_accounts.getString(USER_EMAIL_STORE_KEY, null);
         if (_user_auth_token != null && _user_email != null) {
+            email_ctrl.setText(_user_email);
             validateDeviceRegisteredAndLaunchIfPossible();
         }
     }
@@ -114,10 +120,6 @@ public class MainActivity extends GroundSdkActivityBase {
     }
 
     public void tryPilotLogin(View view) {
-        TextInputEditText email_ctrl = findViewById(R.id.email_input);
-        EditText password_ctrl = findViewById(R.id.password_input);
-
-
         _user_email = email_ctrl.getText().toString();
         String password = password_ctrl.getText().toString();
         String url = getString(R.string.drohub_url) + "/api/GetToken/GetApplicationToken";
