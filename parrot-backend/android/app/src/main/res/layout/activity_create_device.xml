@@ -1,78 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".CreateDeviceActivity">
+                                                   xmlns:app="http://schemas.android.com/apk/res-auto"
+                                                   xmlns:tools="http://schemas.android.com/tools"
+                                                   android:layout_width="match_parent"
+                                                   android:layout_height="match_parent"
+                                                   tools:context=".CreateDeviceActivity">
 
 
-
-    <LinearLayout
-        android:id="@+id/linearLayout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <TextView
-            android:id="@+id/textView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+    <TextView
+            android:id="@+id/textView2"
+            android:layout_width="351dp"
+            android:layout_height="45dp"
             android:gravity="center"
-            android:text="Create New Device"
-            android:textAppearance="@style/TextAppearance.AppCompat.Display2"
-            tools:layout_editor_absoluteX="146dp"
-            tools:layout_editor_absoluteY="16dp" />
-
-        <LinearLayout
-            android:id="@+id/login_group"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
+            android:fontFamily="@font/noto_sans"
+            android:text="A new device has been detected"
+            android:textAppearance="@style/TextAppearance.AppCompat.Title"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/device_name_input"
+            app:layout_constraintHorizontal_bias="0.5" app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintVertical_chainStyle="packed" android:layout_marginBottom="50dp"
+            android:textStyle="bold"/>
 
-            <TextView
-                    android:id="@+id/textView2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="A new device has been detected"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Title"
-                    tools:layout_editor_absoluteX="146dp"
-                    tools:layout_editor_absoluteY="16dp" />
+    <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/device_name_input"
+            android:layout_width="351dp"
+            android:layout_height="45dp"
+            android:hint="A name for the device"
+            android:fontFamily="@font/noto_sans"
+            android:inputType="text"
+            app:layout_constraintTop_toBottomOf="@+id/textView2" app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/create_button" app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginBottom="10dp" android:textColorHint="#1099ff"/>
+    <Button
+            android:id="@+id/create_button"
+            android:layout_width="351dp"
+            android:layout_height="45dp"
+            android:onClick="tryCreateDevice"
+            android:text="Create" android:background="#1099FF"
+            android:textColor="@android:color/white"
+            android:textSize="24sp"
+            android:fontFamily="@font/noto_sans"
+            app:layout_constraintTop_toBottomOf="@+id/device_name_input" app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/status_text" app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintHorizontal_bias="0.5" android:layout_marginBottom="10dp"/>
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/device_name_input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="A name for the device"
-                android:inputType="text"
-                tools:layout_editor_absoluteX="2dp"
-                tools:layout_editor_absoluteY="389dp" />
 
-            <Button
-                android:id="@+id/login_button"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:onClick="tryCreateDevice"
-                android:text="Create" />
-
-        </LinearLayout>
-
-        <TextView
+    <TextView
             android:id="@+id/status_text"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:gravity="center"
             android:visibility="invisible"
-            android:text="Should not be visible" />
-
-
-    </LinearLayout>
+            android:text="Should not be visible"
+            app:layout_constraintTop_toBottomOf="@+id/create_button" app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

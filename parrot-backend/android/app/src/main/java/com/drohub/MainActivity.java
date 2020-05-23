@@ -109,7 +109,7 @@ public class MainActivity extends GroundSdkActivityBase {
         hideKeyboard(this);
         setStatusText(status_view,
                 "Successfully authenticated user. Waiting for drone to be connected",
-                Color.GREEN);
+                0xFF168849);
         findViewById(R.id.login_group).setVisibility(View.GONE);
     }
 
