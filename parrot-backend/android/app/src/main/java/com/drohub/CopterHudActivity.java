@@ -33,9 +33,11 @@
 package com.drohub;
 
 import android.animation.ObjectAnimator;
+import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.location.Location;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -77,6 +79,7 @@ import com.parrot.drone.groundsdk.device.pilotingitf.animation.Flip;
 import com.parrot.drone.groundsdk.facility.UserLocation;
 import com.parrot.drone.groundsdk.value.OptionalDouble;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.voiceengine.WebRtcAudioManager;
 
 
 /** Activity to pilot a copter. */
@@ -157,6 +160,7 @@ public class CopterHudActivity extends GroundSdkActivityBase
 
     DroHubHandler _drohub_handler;
     private boolean _created;
+    AudioManager _audio_manager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -501,8 +505,11 @@ public class CopterHudActivity extends GroundSdkActivityBase
                     360,
                     20480000,
                     128000,
-                    null, streamServer,
+                    "opus", streamServer,
                     false);
+
+                _audio_manager = (AudioManager)this.getSystemService(Context.AUDIO_SERVICE);
+                _audio_manager.setSpeakerphoneOn(true);
 
                 _drohub_handler = new DroHubHandler(mDrone.getUid(), peerConnectionParameters, this);
                 _thrift_connection = new ThriftConnection();

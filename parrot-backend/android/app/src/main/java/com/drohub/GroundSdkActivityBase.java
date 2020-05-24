@@ -74,6 +74,7 @@ public abstract class GroundSdkActivityBase extends DroHubActivityBase {
             Manifest.permission.ACCESS_FINE_LOCATION,   /* for GPS location updates. */
             Manifest.permission.CAMERA, /* For HMD see-through. */
             Manifest.permission.INTERNET,
+            Manifest.permission.RECORD_AUDIO,
     };
 
     /** Code for permission request result handling. */

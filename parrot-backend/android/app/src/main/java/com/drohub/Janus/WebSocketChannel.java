@@ -211,9 +211,14 @@ public class WebSocketChannel extends WebSocketClient {
         try {
             publish.putOpt("request", "configure");
             publish.putOpt("bitrate", _peerConnectionParameters.videoStartBitrate);
-            publish.putOpt("audio", false);
+
             publish.putOpt("video", true);
             publish.putOpt("videocodec", _peerConnectionParameters.videoCodec);
+
+            if (_peerConnectionParameters.audioCodec != null) {
+                publish.putOpt("audio", true);
+                publish.putOpt("audiocodec", _peerConnectionParameters.audioCodec);
+            }
 
             publish.putOpt("record", true);
             publish.putOpt("filename", displayName);

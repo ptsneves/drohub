@@ -82,6 +82,8 @@ public class PeerConnectionClient implements JanusRTCInterface {
               .builder()
               .setVideoDecoderFactory(new DefaultVideoDecoderFactory(renderEGLContext))
               .setVideoEncoderFactory(new DefaultVideoEncoderFactory(renderEGLContext, true, true))
+              .setAudioEncoderFactoryFactory(new BuiltinAudioEncoderFactoryFactory())
+              .setAudioDecoderFactoryFactory(new BuiltinAudioDecoderFactoryFactory())
               .createPeerConnectionFactory();
 
       _webSocketChannel = WebSocketChannel.createWebSockeChannel(

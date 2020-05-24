@@ -88,12 +88,32 @@ function initJanus(server_url, stun_server_url, room_id) {
 								  }
 								}
 								console.log("Message" + JSON.stringify(msg));
+								if(jsep !== undefined && jsep !== null) {
+									Janus.debug("Handling SDP as well...");
+									Janus.debug(jsep);
+									sfutest.handleRemoteJsep({jsep: jsep});
+									// Check if any of the media we wanted to publish has
+									// been rejected (e.g., wrong or unsupported codec)
+									var audio = msg["audio_codec"];
+									if(mystream && mystream.getAudioTracks() && mystream.getAudioTracks().length > 0 && !audio) {
+										// Audio has been rejected
+										toastr.warning("Our audio stream has been rejected, viewers won't hear us");
+									}
+								}
 							},
 							onlocalstream: function(stream) {
 								Janus.log(" ::: Got a local stream :::");
+								element = $(`video.device-video[data-room-id=${room_id}]`);
+								// element.data('render-state', "playing");
+								Janus.attachMediaStream(element.get(0), stream);
+								if(sfutest.webrtcStuff.pc.iceConnectionState !== "completed" &&
+									sfutest.webrtcStuff.pc.iceConnectionState !== "connected") {
+									console.warn("Publishing")
+								}
+
 							},
 							onremotestream: function (stream) {
-								Janus.log(" ::: Got a local stream :::");
+								Janus.log(" ::: Got a remote stream :::");
 								// The publisher stream is sendonly, we don't expect anything here
 							},
 							oncleanup: function() {
@@ -117,7 +137,6 @@ function initJanus(server_url, stun_server_url, room_id) {
 
   function publishOwnFeed(useAudio) {
     // Publish our stream
-    $('#publish').attr('disabled', true).unbind('click');
     sfutest.createOffer(
       {
         // Add data:true here if you want to publish datachannels as well
@@ -128,7 +147,7 @@ function initJanus(server_url, stun_server_url, room_id) {
         success: function(jsep) {
           Janus.debug("Got publisher SDP!");
           Janus.debug(jsep);
-          var publish = { "request": "configure", "audio": true, "video": false };
+          var publish = { "request": "configure", "record": true, "bitrate": 128000, "audio": true, "video": false, "audiocodec": "opus" };
           // You can force a specific codec to use when publishing by using the
           // audiocodec and videocodec properties, for instance:
           // 		publish["audiocodec"] = "opus"
@@ -197,7 +216,7 @@ function initJanus(server_url, stun_server_url, room_id) {
 								jsep: jsep,
 								// Add data:true here if you want to subscribe to datachannels as well
 								// (obviously only works if the publisher offered them in the first place)
-								media: { audioRecv: false, videoRecv: true, audioSend: false, videoSend: false },	// We want recvonly audio/video
+								media: { audioRecv: true, videoRecv: true, audioSend: false, videoSend: false },	// We want recvonly audio/video
 								success: function (jsep) {
 									Janus.log("Got SDP!");
 									Janus.log(jsep);

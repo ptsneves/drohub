@@ -149,6 +149,9 @@ namespace DroHub.Helpers {
                 [JsonProperty("secret")]
                 public string Secret { get; set; }
 
+                [JsonProperty("audiocodec")]
+                public string AudioCodec => "opus";
+
                 [JsonProperty("videocodec")]
                 public string VideoCodec { get; set; }
 
