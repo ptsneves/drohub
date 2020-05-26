@@ -160,7 +160,8 @@ namespace DroHub.Helpers.Thrift
         {
             if (_is_disposed)
                 return;
-            _logger.LogInformation($"Disposing {SerialNumber.Value} isCancelled = {_cancellation_token_src.Token.IsCancellationRequested}");
+            if (_cancellation_token_src != null)
+                _logger.LogInformation($"Disposing {SerialNumber.Value} isCancelled = {_cancellation_token_src.Token.IsCancellationRequested}");
             _is_disposed = true;
             try {
                 var last_connection = _connection_manager.GetRPCSessionBySerial(SerialNumber);
