@@ -70,8 +70,6 @@ public abstract class GroundSdkActivityBase extends DroHubActivityBase {
     private static final String[] PERMISSIONS_NEEDED = new String[] {
             Manifest.permission.ACCESS_NETWORK_STATE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE, /* for ULog Recorder. */
-            Manifest.permission.ACCESS_COARSE_LOCATION, /* to access BLE discovery results. */
-            Manifest.permission.ACCESS_FINE_LOCATION,   /* for GPS location updates. */
             Manifest.permission.CAMERA, /* For HMD see-through. */
             Manifest.permission.INTERNET,
             Manifest.permission.RECORD_AUDIO,
