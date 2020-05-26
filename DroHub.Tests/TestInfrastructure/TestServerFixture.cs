@@ -18,6 +18,9 @@ namespace DroHub.Tests.TestInfrastructure
         public static Uri ThriftUri => new Uri("ws://localhost:5000/ws");
         public string TargetLiveStreamStoragePath { get; }
         public string AdminPassword { get; private set; }
+        private static string DroHubTestsPath => Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory + "../../../");
+        private static string DroHubPath => Path.GetFullPath(Path.Join(DroHubTestsPath, "../"));
+        public static string TestAssetsPath => Path.Join(DroHubTestsPath, "TestAssets");
 
         public DroHubFixture() {
             var docker_compose_file = Path.Join(DroHubPath, "docker-compose.yml");
@@ -42,6 +45,11 @@ namespace DroHub.Tests.TestInfrastructure
                     .First(line => line.Contains("GENERATED ROOT PASSWORD"))
                     .Split(null).Last();
             }
+
+            var live_video_mount = web_container
+                .GetConfiguration().Mounts
+                .Single(m => m.Source.Contains("live-video-storage"));
+            TargetLiveStreamStoragePath = live_video_mount.Destination + Path.DirectorySeparatorChar;
             Console.WriteLine("Ready to start");
         }
 

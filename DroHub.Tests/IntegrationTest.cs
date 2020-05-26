@@ -11,6 +11,7 @@ using System.Security.Authentication;
 using System.Threading;
 using DroHub.Areas.Identity.Data;
 using DroHub.Helpers;
+using Ductus.FluentDocker.Services.Extensions;
 
 // ReSharper disable StringLiteralTypo
 
@@ -436,6 +437,38 @@ namespace DroHub.Tests
                 drone_rpc.Dispose();
                 await telemetry_mock.stopMock();
             }
+        }
+
+        [Fact]
+        public async void TestMJRConverter() {
+            var target_video_in_tmp = Path.Join(_fixture.TargetLiveStreamStoragePath, "video.mjr.tmp");
+            var target_video_mjr = Path.Join(_fixture.TargetLiveStreamStoragePath, "video.mjr");
+            var target_video_out = Path.Join(_fixture.TargetLiveStreamStoragePath, "video.webm");
+            var host_video_mjr = Path.Join(DroHubFixture.TestAssetsPath, "video.mjr");
+
+            var target_audio_in_tmp = Path.Join(_fixture.TargetLiveStreamStoragePath, "audio.mjr.tmp");
+            var target_audio_mjr = Path.Join(_fixture.TargetLiveStreamStoragePath, "audio.mjr");
+            var target_audio_out = Path.Join(_fixture.TargetLiveStreamStoragePath, "audio.opus");
+            var host_audio_mjr = Path.Join(DroHubFixture.TestAssetsPath, "audio.mjr");
+
+            var list = new[]{target_audio_in_tmp, target_audio_mjr, target_audio_out,
+                target_video_in_tmp, target_video_mjr, target_video_out}
+            ;
+
+            var mjr_container = _fixture.Containers.Containers.First(c => c.Name == "mjr-converter");
+            Assert.True(mjr_container.Execute($"rm -rf {string.Join(' ',list)}").Success);
+
+            Assert.False(mjr_container.Execute($"ls {string.Join(' ', list)}").Success);
+
+            mjr_container.CopyTo(target_audio_in_tmp, host_audio_mjr);
+            mjr_container.CopyTo(target_video_in_tmp, host_video_mjr);
+
+            Assert.True(mjr_container.Execute($"mv {target_audio_in_tmp} {target_audio_mjr}").Success);
+            Assert.True(mjr_container.Execute($"mv {target_video_in_tmp} {target_video_mjr}").Success);
+
+            await Task.Delay(1000);
+            Assert.True(mjr_container.Execute($"ls {target_audio_out}").Success);
+            Assert.True(mjr_container.Execute($"ls {target_video_out}").Success);
         }
 
         [Fact]
