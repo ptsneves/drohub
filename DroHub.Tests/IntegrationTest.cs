@@ -36,8 +36,8 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestLoginIsNotHomePageAndAllowsAnonymous() {
-            using var http_helper = await HttpClientHelper.createHttpClient(_fixture, _fixture.SiteUri);
-            Assert.NotEqual(new Uri(_fixture.SiteUri, "Identity/Account/Login?ReturnUrl=%2FIdentity%2FAccount%2FManage"),
+            using var http_helper = await HttpClientHelper.createHttpClient(_fixture, DroHubFixture.SiteUri);
+            Assert.NotEqual(new Uri(DroHubFixture.SiteUri, "Identity/Account/Login?ReturnUrl=%2FIdentity%2FAccount%2FManage"),
                 http_helper.Response.RequestMessage.RequestUri);
         }
 
@@ -47,8 +47,8 @@ namespace DroHub.Tests
         [Theory]
         public async void TestPageRedirectedToLogin(string uri_path) {
             using var http_helper = await HttpClientHelper.createHttpClient(_fixture,
-                new Uri(_fixture.SiteUri + uri_path));
-            Assert.NotEqual(new Uri(_fixture.SiteUri, uri_path),
+                new Uri(DroHubFixture.SiteUri + uri_path));
+            Assert.NotEqual(new Uri(DroHubFixture.SiteUri, uri_path),
                 http_helper.Response.RequestMessage.RequestUri);
         }
 
@@ -206,11 +206,11 @@ namespace DroHub.Tests
         [Fact]
         public async void TestLogout() {
             using var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, "admin", _fixture.AdminPassword);
-            var logout_url = new Uri(_fixture.SiteUri, "Identity/Account/Logout");
+            var logout_url = new Uri(DroHubFixture.SiteUri, "Identity/Account/Logout");
 
             using var response = await http_client_helper.Client.GetAsync(logout_url);
             response.EnsureSuccessStatusCode();
-            Assert.Equal(new Uri(_fixture.SiteUri, "/"), response.RequestMessage.RequestUri);
+            Assert.Equal(new Uri(DroHubFixture.SiteUri, "/"), response.RequestMessage.RequestUri);
         }
 
         [Fact]
@@ -304,7 +304,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestConnectionClosedOnNoSerial() {
-            using var ws_transport = new TWebSocketClient(_fixture.ThriftUri, WebSocketMessageType.Text);
+            using var ws_transport = new TWebSocketClient(DroHubFixture.ThriftUri, WebSocketMessageType.Text);
             await Assert.ThrowsAsync<WebSocketException>(async () => await ws_transport.OpenAsync());
         }
 

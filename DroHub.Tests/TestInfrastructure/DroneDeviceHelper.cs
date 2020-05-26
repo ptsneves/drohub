@@ -22,7 +22,7 @@ namespace DroHub.Tests.TestInfrastructure
                 string user, string token)
         {
             var loggerFactory = new LoggerFactory();
-            using var ws_transport = new TWebSocketClient(fixture.ThriftUri, WebSocketMessageType.Binary);
+            using var ws_transport = new TWebSocketClient(DroHubFixture.ThriftUri, WebSocketMessageType.Binary);
             using var reverse_tunnel_transport = new TReverseTunnelServer(ws_transport, 1);
             ws_transport.WebSocketOptions.SetRequestHeader("User-Agent", "AirborneProjets");
             ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
