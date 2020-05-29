@@ -9,29 +9,41 @@
             border-top: 4px solid #3c8dbc
         }
     </style>
-    <h1>
-        Devices
-        <small>Gallery</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a asp-area="DHub" asp-controller="Devices" asp-action="" title="Back to devices list"><i class="fa fa-camera"></i> Devices</a></li>
-        <li class="active">Gallery</li>
-    </ol>
+    <div class="input-group drohub-gallery-content-margin input-group-lg">
+        <span class="input-group-addon">
+            <i class="far fa-search"></i>
+        </span>
+
+        <input style="width: 40%;" type="text" placeholder="Type a device name a tag or select media type!" class="drohub-form-control">
+        <span class="input-group-addon">
+            <button type="button" class=" drohub-search-media-type-btn ">
+                <img alt="drone gallery" class="media-type-image" src="~/images/assets/timeline-thumbnail-recording.svg"/>
+            </button>
+        </span>
+        <span class="input-group-addon">
+            <button type="button" class="btn ">
+                <img alt="drone gallery" class="media-type-image" src="~/images/assets/timeline-thumbnail-photo.svg"/>
+            </button>
+        </span>
+    </div>
+
 </section>
 <!-- /Content Header (Page header) -->
 <!-- Main content -->
 <section class="content">
     @foreach (var point_in_time_files in @Model.FilesPerTimestamp) {
         <ul class="timeline">
-            <li class="time-label">
+            <li class="drohub-time-label">
                 <span class='time local-date-text' data-unix-time="@point_in_time_files.Key"><i class="fa fa-clock-o"></i></span>
             </li>
         @foreach (var device_files in point_in_time_files.Value) {
             <li>
-                <i class="fa fa-camera bg-maroon"></i>
-                <div class="timeline-item">
+                <span class="drohub-glyphicon drohub-blue-bg">
+                    <img alt="drone gallery" class="drohub-device-id-drone-blue" src="~/images/assets/device-id-drone.svg"/>
+                </span>
+                <div class="drohub-gallery-content-margin timeline-item">
 
-                    <h3 class="timeline-header">
+                    <h3 class="drohub-timeline-header">
                         @device_files.Key
                     </h3>
                     <div class="timeline-body">
@@ -41,8 +53,7 @@
                                 @foreach (var file in device_files.Value) {
                                     <video class="rounded livestream-recording"
                                            src='@Url.Action("GetLiveStreamRecordingVideo", new {video_id = file.media_info.VideoPath})'
-                                           controls preload="metadata">
-
+                                           controls preload="none">
                                     </video>
                                 }
                                 </div>

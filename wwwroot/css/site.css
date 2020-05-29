@@ -60,6 +60,120 @@ button.login-submit-btn-drohub:hover {
     padding-top: 15%;
 }
 
+.timeline > li > .drohub-glyphicon{
+    width: 52px;
+    height: 52px;
+    font-size: 25px;
+    line-height: 50px;
+    position: absolute;
+    color: #666;
+    border-radius: 50%;
+    text-align: center;
+    left: 7px;
+    top: 0;
+}
+
+.timeline > li > .timeline-item > .drohub-timeline-header {
+    margin: 0;
+    color: #555;
+    border-bottom: 2px solid #d7d7d7;
+    padding: 10px;
+    font-size: 20px;
+    line-height: 1.1;
+    border-top: 3px solid;;
+    border-top-right-radius: 4px;
+    border-top-left-radius: 4px;
+    border-top-color: #1099ff;
+}
+
+.timeline > .drohub-time-label > span {
+    font-weight: 400;
+    padding-block: 8px;
+    padding-inline: 16px;
+    font-size: 18px;
+    display: inline-block;
+    background-color: #2d3c4a;
+    border-radius: 4px;
+    color: white;
+}
+
+.drohub-form-control {
+    display: block;
+    width: 100%;
+    height: 56px;
+    padding: 6px 12px;
+    font-size: 20px;
+    line-height: 1.42857143;
+    color: #555;
+    background-color: #fff;
+    background-image: none;
+    border: 0 solid #ccc;
+    border-radius: 0;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+    -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+    -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+    transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+}
+
+.drohub-input-group-addon {
+    padding: 6px 12px;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1;
+    color: #555;
+    text-align: center;
+    background-color: #fff;
+    border: 0 solid rgb(204, 204, 204);
+    border-radius: 0;
+    display: table-cell;
+    width: 1%;
+    white-space: nowrap;
+    vertical-align: middle;;
+
+}
+
+.drohub-gallery-content-margin {
+    margin-left: 88px !important;
+}
+
+img.drohub-device-id-drone-blue {
+    width: 70%;
+    height: 70%;
+    filter: invert(86%) sepia(75%) saturate(2%) hue-rotate(139deg) brightness(108%) contrast(101%)
+}
+
+img.media-type-image {
+    filter: invert(64%) sepia(19%) saturate(16%) hue-rotate(324deg) brightness(101%) contrast(86%);
+}
+
+.drohub-search-media-type-btn {
+    display: inline-block;
+    padding: 6px 12px;
+    margin-bottom: 0;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.42857143;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    -ms-touch-action: manipulation;
+    touch-action: manipulation;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    background-image: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+
+}
+
+.drohub-blue-bg {
+    background: #1099FF;
+}
+
 .login-create-account-btn {
     padding-top: 20px;
     color: #1099FF;
