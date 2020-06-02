@@ -480,15 +480,18 @@ namespace DroHub.Tests
                     async (drone_rpc, telemetry_mock, user_name, token) => {
                     await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
                         telemetry_mock.WaitForServer, user_name, token);
-                    foreach (var f in telemetry_mock.getSignalRTasksTelemetry()) {
+
+                    var signal_r_tasks_telemetry = telemetry_mock.getSignalRTasksTelemetry().ToArray();
+                    Assert.Equal(telemetry_mock.TelemetryItems.Count, signal_r_tasks_telemetry.Count());
+                    foreach (var f in signal_r_tasks_telemetry) {
                         var ds = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(f);
                         Assert.Equal((string) ds.Serial, telemetry_mock.SerialNumber);
                     }
 
                     var r = await telemetry_mock.getRecordedTelemetry(_fixture);
-
+                    Assert.Equal(telemetry_mock.TelemetryItems.Count(), r.Count);
                     foreach (var key_value_pair in r) {
-                        Assert.NotNull(key_value_pair.Value);
+                        Assert.Equal(((IDroneTelemetry)(key_value_pair.Value)).Serial, telemetry_mock.SerialNumber);
                     }
                     });
                 tasks.Add(t);
