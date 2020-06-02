@@ -25,6 +25,7 @@ namespace DroHub.Data
         public DbSet<DroneFlyingState> DroneFlyingStates { get; set; }
         public DbSet<DroneReply> DroneReplies { get; set; }
         public DbSet<DroneLiveVideoStateResult> DroneVideoStatesResults { get; set; }
+        public DbSet<DeviceConnection> DeviceConnections { get; set; }
 
         public DbSet<Subscription> Subscriptions { get; set; }
 
@@ -38,6 +39,9 @@ namespace DroHub.Data
             builder.Entity<Device>()
                 .HasIndex(d => d.SerialNumber)
                 .IsUnique();
+
+            builder.Entity<DeviceConnection>()
+                .HasKey(d => d.Id);
 
             builder.Entity<Device>()
                 .HasKey(d => d.Id);
@@ -93,70 +97,56 @@ namespace DroHub.Data
                 .IsRequired();
 
             builder.Entity<DronePosition>()
-                .HasOne(p => p.Device)
-                .WithMany(d => d.positions)
-                .HasForeignKey(p => p.Serial)
-                .HasPrincipalKey(d => d.SerialNumber);
+                .HasOne(p => p.Connection)
+                .WithMany(d => d.positions);
 
             builder.Entity<DroneBatteryLevel>()
-                .HasOne(p => p.Device)
-                .WithMany(d => d.battery_levels)
-                .HasForeignKey(p => p.Serial)
-                .HasPrincipalKey(d => d.SerialNumber);
+                .HasOne(p => p.Connection)
+                .WithMany(d => d.battery_levels);
 
             builder.Entity<DroneRadioSignal>()
-                .HasOne(p => p.Device)
-                .WithMany(d => d.radio_signals)
-                .HasForeignKey(p => p.Serial)
-                .HasPrincipalKey(d => d.SerialNumber);
+                .HasOne(p => p.Connection)
+                .WithMany(d => d.radio_signals);
 
             builder.Entity<DroneFlyingState>()
-                .HasOne(p => p.Device)
-                .WithMany(d => d.flying_states)
-                .HasForeignKey(p => p.Serial)
-                .HasPrincipalKey(d => d.SerialNumber);
+                .HasOne(p => p.Connection)
+                .WithMany(d => d.flying_states);
 
             builder.Entity<DroneReply>()
-                .HasOne(p => p.Device)
-                .WithMany(d => d.drone_replies)
-                .HasForeignKey(p => p.Serial)
-                .HasPrincipalKey(d => d.SerialNumber);
+                .HasOne(p => p.Connection)
+                .WithMany(d => d.drone_replies);
 
             builder.Entity<DroneLiveVideoStateResult>()
-                .HasOne(p => p.Device)
-                .WithMany(d => d.drone_video_states)
-                .HasForeignKey(p => p.Serial)
-                .HasPrincipalKey(d => d.SerialNumber);
+                .HasOne(p => p.Connection)
+                .WithMany(d => d.drone_video_states);
 
-            builder.Entity<Device>()
+            builder.Entity<DeviceConnection>()
                 .HasMany(d => d.positions)
-                .WithOne(p => p.Device)
-                .IsRequired();
+                .WithOne(p => p.Connection);
 
-            builder.Entity<Device>()
+            builder.Entity<DeviceConnection>()
                 .HasMany(d => d.battery_levels)
-                .WithOne(p => p.Device)
-                .IsRequired();
+                .WithOne(p => p.Connection);
 
-            builder.Entity<Device>()
+            builder.Entity<DeviceConnection>()
                 .HasMany(d => d.radio_signals)
-                .WithOne(p => p.Device)
-                .IsRequired();
+                .WithOne(p => p.Connection);
 
-            builder.Entity<Device>()
+            builder.Entity<DeviceConnection>()
                 .HasMany(d => d.flying_states)
-                .WithOne(p => p.Device)
-                .IsRequired();
+                .WithOne(p => p.Connection);
 
-            builder.Entity<Device>()
+            builder.Entity<DeviceConnection>()
                 .HasMany(d => d.drone_replies)
-                .WithOne(p => p.Device)
-                .IsRequired();
+                .WithOne(p => p.Connection);
 
-            builder.Entity<Device>()
+            builder.Entity<DeviceConnection>()
                 .HasMany(d => d.drone_video_states)
-                .WithOne(p => p.Device)
-                .IsRequired();
+                .WithOne(p => p.Connection);
+
+            builder.Entity<DeviceConnection>()
+                .HasOne(cd => cd.Device)
+                .WithMany(d => d.DeviceConnections);
 
             builder.Entity<Subscription>()
                 .HasMany(d => d.Users)
@@ -165,6 +155,10 @@ namespace DroHub.Data
             builder.Entity<Subscription>()
                 .HasMany(d => d.Devices)
                 .WithOne(u => u.Subscription);
+
+            builder.Entity<Subscription>()
+                .HasMany(s => s.DeviceConnections)
+                .WithOne(dc => dc.Subscription);
         }
     }
 }

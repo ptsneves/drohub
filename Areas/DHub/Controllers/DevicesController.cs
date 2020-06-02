@@ -1,14 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
-using DroHub.Helpers.Thrift;
+using DroHub.Areas.Identity.Data;
+using DroHub.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -19,17 +18,18 @@ namespace DroHub.Areas.DHub.Controllers
     public class DevicesController : AuthorizedController
     {
         private readonly ILogger<DevicesController> _logger;
-        private readonly ConnectionManager _device_connection_manager;
 
         private readonly DeviceAPI _device_api;
+        private readonly DeviceConnectionAPI _device_connection_api;
+        private readonly SubscriptionAPI _subscription_api;
 
         public DevicesController(ILogger<DevicesController> logger,
-             ConnectionManager device_connection_manager,
-            DeviceAPI device_api)
+            DeviceAPI device_api, DeviceConnectionAPI device_connection_api, SubscriptionAPI subscription_api)
         {
             _logger = logger;
-            _device_connection_manager = device_connection_manager;
             _device_api = device_api;
+            _device_connection_api = device_connection_api;
+            _subscription_api = subscription_api;
         }
 
 
@@ -43,73 +43,87 @@ namespace DroHub.Areas.DHub.Controllers
             return Json(device_list);
         }
 
-        [NonAction]
-        private async Task<IActionResult> GetTelemetry<TelemetryType>(int id, int start_index, int end_index,
-            DeviceExtensions.IncludeTelemetryDelegate<TelemetryType> include_delegate) where TelemetryType : IDroneTelemetry {
+        public async Task<IActionResult> GetLastConnectionId([Required]int id) {
+            try {
+                var device = await _device_api.getDeviceById(id);
+                var last_connection = await _device_connection_api.getLastConnectionId(device);
 
-            if (start_index < 1 || end_index < start_index ) return BadRequest();
-            var telemetries = await _device_api.getTelemetry<TelemetryType>(
-                id, new Range(start_index, end_index), include_delegate);
-            return Json(telemetries);
-        }
-
-        public async Task<IActionResult> GetDronePositions([Required]int id, [Required]int start_index,
-            [Required]int end_index) {
-            static IQueryable<DronePosition> Del(IQueryable<Device> source) {
-                return source.SelectMany(d => d.positions);
+                var c = await _device_connection_api.getDeviceConnection(last_connection.Id,
+                    source => source.Include(d => d.positions));
+                return Json(c.Id);
             }
-
-            return await GetTelemetry(id, start_index, end_index, (DeviceExtensions.IncludeTelemetryDelegate<DronePosition>) Del);
+            catch (DeviceAuthorizationException) {
+                return new ForbidResult();
+            }
+            catch (DeviceConnectionException e) {
+                return StatusCode(503, new { message = e.Message});
+            }
         }
 
-        public async Task<IActionResult> GetDroneBatteryLevels([Required]int id, [Required]int start_index,
-            [Required]int end_index)
-        {
-            DeviceExtensions.IncludeTelemetryDelegate<DroneBatteryLevel> del = (source =>
-            {
-                return source.SelectMany(d => d.battery_levels);
-            });
-            return await GetTelemetry(id, start_index, end_index, del);
+        public async Task<IActionResult> GetDronePositions([Required]long id) {
+            try {
+                var c = await _device_connection_api.getDeviceConnection(id,
+                    source => source.Include(d => d.positions));
+                return Json(c.positions);
+            }
+            catch (DeviceAuthorizationException) {
+                return new ForbidResult();
+            }
         }
 
-        public async Task<IActionResult> GetDroneRadioSignals([Required]int id, [Required]int start_index,
-            [Required]int end_index)
-        {
-            DeviceExtensions.IncludeTelemetryDelegate<DroneRadioSignal> del = (source =>
-            {
-                return source.SelectMany(d => d.radio_signals);
-            });
-            return await GetTelemetry(id, start_index, end_index, del);
+        public async Task<IActionResult> GetDroneBatteryLevels([Required]long id) {
+            try {
+                var c = await _device_connection_api.getDeviceConnection(id,
+                    source => source.Include(d => d.battery_levels));
+                return Json(c.battery_levels);
+            }
+            catch (DeviceAuthorizationException) {
+                return new ForbidResult();
+            }
         }
 
-        public async Task<IActionResult> GetDroneFlyingStates([Required]int id, [Required]int start_index,
-            [Required]int end_index)
-        {
-            DeviceExtensions.IncludeTelemetryDelegate<DroneFlyingState> del = (source =>
-            {
-                return source.SelectMany(d => d.flying_states);
-            });
-            return await GetTelemetry(id, start_index, end_index, del);
+        public async Task<IActionResult> GetDroneRadioSignals([Required]long id) {
+            try {
+                var c = await _device_connection_api.getDeviceConnection(id,
+                    source => source.Include(d => d.radio_signals));
+                return Json(c.radio_signals);
+            }
+            catch (DeviceAuthorizationException) {
+                return new ForbidResult();
+            }
         }
 
-        public async Task<IActionResult> GetDroneReplys([Required]int id, [Required]int start_index,
-            [Required]int end_index)
-        {
-            DeviceExtensions.IncludeTelemetryDelegate<DroneReply> del = (source =>
-            {
-                return source.SelectMany(d => d.drone_replies);
-            });
-            return await GetTelemetry(id, start_index, end_index, del);
+        public async Task<IActionResult> GetDroneFlyingStates([Required]long id) {
+            try {
+                var c = await _device_connection_api.getDeviceConnection(id,
+                    source => source.Include(d => d.flying_states));
+                return Json(c.flying_states);
+            }
+            catch (DeviceAuthorizationException) {
+                return new ForbidResult();
+            }
         }
 
-        public async Task<IActionResult> GetDroneLiveVideoStateResults([Required]int id, [Required]int start_index,
-            [Required]int end_index)
-        {
-            DeviceExtensions.IncludeTelemetryDelegate<DroneLiveVideoStateResult> del = (source =>
-            {
-                return source.SelectMany(d => d.drone_video_states);
-            });
-            return await GetTelemetry(id, start_index, end_index, del);
+        public async Task<IActionResult> GetDroneReplys([Required]long id) {
+            try {
+                var c = await _device_connection_api.getDeviceConnection(id,
+                    source => source.Include(d => d.drone_replies));
+                return Json(c.drone_replies);
+            }
+            catch (DeviceAuthorizationException) {
+                return new ForbidResult();
+            }
+        }
+
+        public async Task<IActionResult> GetDroneLiveVideoStateResults([Required]long id) {
+            try {
+                var c = await _device_connection_api.getDeviceConnection(id,
+                    source => source.Include(d => d.drone_video_states));
+                return Json(c.drone_video_states);
+            }
+            catch (DeviceAuthorizationException e) {
+                return new ForbidResult(e.Message);
+            }
         }
 
         // GET: DroHub/Devices/Data/5
@@ -120,144 +134,162 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         public async Task<IActionResult> TakeOff([Required]int id) {
-            var device = await _device_api.getDeviceById(id);
-            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(
-                new DeviceAPI.DeviceSerial(device.SerialNumber));
-            if (rpc_session != null)
-            {
-                using (var client = rpc_session.getClient<Drone.Client>(_logger))
-                {
-                    _logger.LogDebug("Retrieved client handle");
-                    await client.Client.doTakeoffAsync(CancellationToken.None);
-                    _logger.LogDebug("Finie");
-                }
+            try {
+                var device = await _device_api.getDeviceById(id);
+                await _device_connection_api.doDeviceAction(device, async client =>
+                    await client.doTakeoffAsync(CancellationToken.None));
                 return Ok();
             }
-            return Ok();
+            catch (DeviceAuthorizationException e) {
+                return new ForbidResult(e.Message);
+            }
+            catch (DeviceConnectionException e) {
+                return StatusCode(503, new { message = e.Message});
+            }
         }
         public async Task<IActionResult> Land([Required]int id) {
-            var device = await _device_api.getDeviceById(id);
-            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(
-                new DeviceAPI.DeviceSerial(device.SerialNumber));
-            if (rpc_session != null)
-            {
-                using (var client = rpc_session.getClient<Drone.Client>(_logger))
-                {
-                    _logger.LogDebug("Retrieved client handle");
-                    await client.Client.doLandingAsync(CancellationToken.None);
-                    _logger.LogDebug("Finie");
-                }
+            try {
+                var device = await _device_api.getDeviceById(id);
+                await _device_connection_api.doDeviceAction(device, async client =>
+                    await client.doLandingAsync(CancellationToken.None));
                 return Ok();
             }
-            return Ok();
+            catch (DeviceAuthorizationException e) {
+                return new ForbidResult(e.Message);
+            }
+            catch (DeviceConnectionException e) {
+                return StatusCode(503, new { message = e.Message});
+            }
         }
 
-        public async Task<IActionResult> ReturnToHome([Required]int id)
-        {
-            var device = await _device_api.getDeviceById(id);
-            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(
-                new DeviceAPI.DeviceSerial(device.SerialNumber));
-            if (rpc_session != null)
-            {
-                using (var client = rpc_session.getClient<Drone.Client>(_logger))
-                {
-                    _logger.LogDebug("Retrieved client handle");
-                    await client.Client.doReturnToHomeAsync(CancellationToken.None);
-                    _logger.LogDebug("Finie");
-                }
+        public async Task<IActionResult> ReturnToHome([Required]int id) {
+            try {
+                var device = await _device_api.getDeviceById(id);
+                await _device_connection_api.doDeviceAction(device, async client =>
+                    await client.doReturnToHomeAsync(CancellationToken.None));
                 return Ok();
             }
-            return Ok();
-        }
-
-        public async Task<IActionResult> GetDeviceFlightStartTime([Required] int id) {
-            var device = await _device_api.getDeviceByIdOrDefault(id);
-            if (!await _device_api.authorizeDeviceActions(device, ResourceOperations.Read))
-                return Forbid();
-
-            var start_time_or_default = _device_api.getConnectionStartTimeOrDefault(device);
-
-            return start_time_or_default.HasValue ?
-                Json(((DateTimeOffset)start_time_or_default.Value.ToUniversalTime()).ToUnixTimeMilliseconds()) :
-                Json(null);
+            catch (DeviceAuthorizationException e) {
+                return new ForbidResult(e.Message);
+            }
+            catch (DeviceConnectionException e) {
+                return StatusCode(503, new { message = e.Message});
+            }
         }
 
         public async Task<IActionResult> MoveToPosition([Required]int id, [Required]float latitude,
-            [Required]float longitude, [Required]float altitude, [Required]double heading)
-        {
-            var device = await _device_api.getDeviceById(id);
-            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(
-                new DeviceAPI.DeviceSerial(device.SerialNumber));
-            if (rpc_session != null)
-            {
-                using (var client = rpc_session.getClient<Drone.Client>(_logger))
+            [Required]float longitude, [Required]float altitude, [Required]double heading) {
+            try {
+                var device = await _device_api.getDeviceById(id);
+                var drone_request = new DroneRequestPosition
                 {
-                    _logger.LogDebug("Retrieved client handle");
-                    var drone_request = new DroneRequestPosition
-                    {
-                        Latitude = latitude,
-                        Longitude = longitude,
-                        Altitude = altitude,
-                        Heading = heading,
-                        Serial = device.SerialNumber
-                    };
-                    await client.Client.moveToPositionAsync(drone_request, CancellationToken.None);
-                    _logger.LogDebug("Finie");
-                }
+                    Latitude = latitude,
+                    Longitude = longitude,
+                    Altitude = altitude,
+                    Heading = heading,
+                    Serial = device.SerialNumber
+                };
+                await _device_connection_api.doDeviceAction(device, async client =>
+                    await client.moveToPositionAsync(drone_request, CancellationToken.None));
                 return Ok();
             }
-            return Ok(); ;
+            catch (DeviceAuthorizationException e) {
+                return new ForbidResult(e.Message);
+            }
+            catch (DeviceConnectionException e) {
+                return StatusCode(503, new { message = e.Message});
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> TakePicture([Required]int id,
             [Required][Bind("ActionType")]DroneTakePictureRequest request) {
-
-            var device = await _device_api.getDeviceById(id);
-            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(
-                new DeviceAPI.DeviceSerial(device.SerialNumber));
-            if (rpc_session != null && request != null)
-            {
-                using (var client = rpc_session.getClient<Drone.Client>(_logger))
-                {
-                    await client.Client.takePictureAsync(request, CancellationToken.None);
-                }
+            try {
+                var device = await _device_api.getDeviceById(id);
+                await _device_connection_api.doDeviceAction(device, async client =>
+                    await client.takePictureAsync(request, CancellationToken.None));
                 return Ok();
             }
-            return Ok();
+            catch (DeviceAuthorizationException e) {
+                return new ForbidResult(e.Message);
+            }
+            catch (DeviceConnectionException e) {
+                return StatusCode(503, new { message = e.Message});
+            }
         }
 
         public async Task<IActionResult> RecordVideo([Required]int id,
             [Required][Bind("ActionType")]DroneRecordVideoRequest request) {
-
-            var device = await _device_api.getDeviceById(id);
-            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(
-                new DeviceAPI.DeviceSerial(device.SerialNumber));
-            if (rpc_session != null && request != null)
-            {
-                using (var client = rpc_session.getClient<Drone.Client>(_logger))
-                {
-                    await client.Client.recordVideoAsync(request, CancellationToken.None);
-                }
+            try {
+                var device = await _device_api.getDeviceById(id);
+                await _device_connection_api.doDeviceAction(device, async client =>
+                    await client.recordVideoAsync(request, CancellationToken.None));
                 return Ok();
+            }
+            catch (DeviceAuthorizationException e) {
+                return new ForbidResult(e.Message);
+            }
+            catch (DeviceConnectionException e) {
+                return StatusCode(503, new { message = e.Message});
+            }
+        }
+
+        public async Task<IActionResult> GetFileList([Required]int id) {
+            try {
+                var device = await _device_api.getDeviceById(id);
+                return Json(await _device_connection_api.doDeviceAction(device, async client =>
+                    await client.getFileListAsync(CancellationToken.None)));
+            }
+            catch (DeviceAuthorizationException e) {
+                return new ForbidResult(e.Message);
+            }
+            catch (DeviceConnectionException e) {
+                return StatusCode(503, new { message = e.Message});
+            }
+        }
+
+        public async Task<IActionResult> GetDeviceFlightStartTime([Required] int id) {
+            try {
+                var device = await _device_api.getDeviceByIdOrDefault(id);
+                if (device == null)
+                    return Json(null);
+
+                var start_time_or_default = DeviceConnectionAPI.getConnectionStartTimeOrDefault(device);
+                return start_time_or_default.HasValue ?
+                    Json(((DateTimeOffset)start_time_or_default.Value.ToUniversalTime()).ToUnixTimeMilliseconds()) :
+                    Json(null);
+            }
+            catch (DeviceAuthorizationException e) {
+                return new ForbidResult(e.Message);
+            }
+        }
+
+        [ClaimRequirement(DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.CLAIM_VALID_VALUE)]
+        public async Task<IActionResult> DeleteAllFlightSessions() {
+            var subscription = _subscription_api.getSubscriptionName();
+            try {
+                await _device_connection_api.deleteFlightSessions(subscription);
+            }
+            catch (DeviceConnectionException e) {
+                return StatusCode(503, new { message = e.Message});
+            }
+
+            return Ok();
+        }
+
+
+        [ClaimRequirement(DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.CLAIM_VALID_VALUE)]
+        public async Task<IActionResult> DeleteDeviceFlightSessions(int device_id) {
+            var device = await _device_api.getDeviceById(device_id);
+            try {
+                await _device_connection_api.deleteDeviceFlightSessions(device);
+            }
+            catch (DeviceConnectionException e) {
+                return StatusCode(503, new { message = e.Message});
             }
             return Ok();
         }
 
-        public async Task<IActionResult> GetFileList([Required]int id) {
-            var device = await _device_api.getDeviceById(id);
-            var rpc_session = _device_connection_manager.GetRPCSessionBySerial(
-                new DeviceAPI.DeviceSerial(device.SerialNumber));
-            if (rpc_session != null)
-            {
-                using (var client = rpc_session.getClient<Drone.Client>(_logger))
-                {
-                    _logger.LogDebug("Retrieved client handle");
-                    return Json(await client.Client.getFileListAsync(CancellationToken.None));
-                }
-            }
-            return Ok(); ;
-        }
 
         // GET: DroHub/Devices/Edit/5
         public async Task<IActionResult> Edit([Required]int id) {
@@ -272,9 +304,7 @@ namespace DroHub.Areas.DHub.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit([Required]int id,
-            [Required][Bind("Id,Name,SerialNumber,CreationDate,ISO,Apperture,FocusMode")]
-            Device device)
-        {
+            [Required][Bind("Id,Name,SerialNumber")] Device device) {
             if (id != device.Id) return NotFound();
 
             if (!ModelState.IsValid)  {
@@ -303,16 +333,25 @@ namespace DroHub.Areas.DHub.Controllers
                 return NotFound();
             }
 
-            return View(device);
+            return View(new DeleteDeviceConfirmedModel{Device = device});
+        }
+
+        public class DeleteDeviceConfirmedModel {
+            public Device Device;
+            public bool DeleteFlightSessions;
         }
 
         // POST: DroHub/Devices/Delete/5
         [HttpPost]
         [ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed([Required]int id) {
+        public async Task<IActionResult> DeleteConfirmed([Required]int id, bool delete_flight_sessions) {
             try {
-                await _device_api.deleteDevice(id);
+                var d = await _device_api.getDeviceById(id);
+                if (delete_flight_sessions)
+                    await _device_connection_api.deleteDeviceFlightSessions(d);
+
+                await _device_api.deleteDevice(d);
             }
             catch (DeviceAuthorizationException e) {
                 ModelState.AddModelError("", e.Message);

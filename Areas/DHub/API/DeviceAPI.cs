@@ -18,15 +18,6 @@ using Microsoft.Extensions.Primitives;
 namespace DroHub.Areas.DHub.API {
     public static class DeviceExtensions
     {
-        public static IQueryable<TDroneTelemetry> IncludeTelemetry<TDroneTelemetry>(
-            this IQueryable<Device> source, IncludeTelemetryDelegate<TDroneTelemetry> dele)
-            where TDroneTelemetry : IDroneTelemetry {
-            return dele(source);
-        }
-
-        public delegate IQueryable<TDroneTelemetry> IncludeTelemetryDelegate<out TDroneTelemetry>(IQueryable<Device> source)
-            where TDroneTelemetry : IDroneTelemetry;
-
         public static void AddDeviceAPI (this IServiceCollection services) {
             services.AddTransient<DeviceAPI>();
         }
@@ -66,14 +57,12 @@ namespace DroHub.Areas.DHub.API {
         private readonly SubscriptionAPI _subscription_api;
         private readonly DroHubContext _db_context;
         private readonly IAuthorizationService _authorization_service;
-        private readonly ConnectionManager _connection_manager;
 
         public DeviceAPI(DroHubContext db_context, SubscriptionAPI subscription_api,
-        IAuthorizationService authorization_service, ConnectionManager connection_manager) {
+        IAuthorizationService authorization_service) {
             _db_context = db_context;
             _subscription_api = subscription_api;
             _authorization_service = authorization_service;
-            _connection_manager = connection_manager;
         }
 
         private IQueryable<Device> queryDeviceBySerial(DeviceSerial device_serial) {
@@ -114,28 +103,23 @@ namespace DroHub.Areas.DHub.API {
                 .ToListAsync();
         }
 
-        public Task<Device> getDeviceById(int id) {
-            return queryDeviceById(id).SingleAsync();
+        public async Task<Device> getDeviceById(int id) {
+            var device = await queryDeviceById(id).SingleAsync();
+            if (!await authorizeDeviceActions(device, ResourceOperations.Read))
+                throw new DeviceAuthorizationException("User is not authorized to see see this connection");
+            return device;
         }
 
         [ItemCanBeNull]
-        public Task<Device> getDeviceByIdOrDefault(int id) {
-            return queryDeviceById(id).SingleOrDefaultAsync();
-        }
+        public async Task<Device> getDeviceByIdOrDefault(int id) {
+            var device = await queryDeviceById(id).SingleOrDefaultAsync();
+            if (device == null)
+                return null;
 
-        public Task<List<TDroneTelemetry>> getTelemetry<TDroneTelemetry>(int id, Range range,
-            DeviceExtensions.IncludeTelemetryDelegate<TDroneTelemetry> include_delegate) where TDroneTelemetry : IDroneTelemetry {
+            if (!await authorizeDeviceActions(device, ResourceOperations.Read))
+                throw new DeviceAuthorizationException("User is not authorized to see see this connection");
 
-            return queryDeviceById(id)
-                .IncludeTelemetry(include_delegate)
-                .Skip(range.Start.Value-1)
-                .Take(Math.Min(range.End.Value+1, 10))
-                .ToListAsync();
-        }
-
-        public DateTime? getConnectionStartTimeOrDefault(Device device) {
-            return device == null ? null :
-                _connection_manager.GetConnectionStartTimeOrDefault(new DeviceSerial(device.SerialNumber));
+            return device;
         }
 
         public async Task<bool> authorizeDeviceFlightActions(DeviceSerial serial) {
@@ -154,18 +138,13 @@ namespace DroHub.Areas.DHub.API {
             return r.Succeeded;
         }
 
-        public async Task recordDeviceTelemetry(IDroneTelemetry telemetry_data) {
-            await _db_context.AddAsync(telemetry_data);
-            await _db_context.SaveChangesAsync();
-        }
-
         public Task<List<Device>> getSubscribedDevices() {
             return _subscription_api
                 .querySubscribedDevices()
                 .ToListAsync();
         }
 
-        public DeviceSerial getDeviceSerialNumberFromClaim() {
+        public DeviceSerial getDeviceSerialNumberFromConnectionClaim() {
             return new DeviceSerial(_subscription_api.getCurrentUserClaims()
                 .Single(c => c.Type == DeviceAuthorizationHandler.TELEMETRY_SERIAL_NUMBER_CLAIM)
                 .Value);
@@ -180,12 +159,11 @@ namespace DroHub.Areas.DHub.API {
             await _db_context.SaveChangesAsync();
         }
 
-        public async Task deleteDevice(int id, bool authorize = true) {
-            var d = await getDeviceById(id);
-            if (authorize && !await authorizeDeviceActions(d, ResourceOperations.Delete))
+        public async Task deleteDevice(Device device, bool authorize = true) {
+            if (authorize && !await authorizeDeviceActions(device, ResourceOperations.Delete))
                 throw new DeviceAuthorizationException("Unauthorized delete device");
 
-            _db_context.Devices.Remove(d);
+            _db_context.Devices.Remove(device);
             await _db_context.SaveChangesAsync();
         }
 

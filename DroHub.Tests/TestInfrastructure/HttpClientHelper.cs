@@ -163,13 +163,14 @@ namespace DroHub.Tests.TestInfrastructure
         public static readonly DateTime UnixEpoch =
             new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        public static async ValueTask<List<dynamic>> getDeviceList(DroHubFixture test_fixture, string user, string password) {
+        public static async ValueTask<List<Device>> getDeviceList(DroHubFixture test_fixture, string user, string
+        password) {
             using (var http_helper = await createLoggedInUser(test_fixture, user, password)) {
                 var create_device_url = new Uri(DroHubFixture.SiteUri, "DHub/Devices/GetDevicesList");
                 http_helper.Response?.Dispose();
                 http_helper.Response = await http_helper.Client.GetAsync(create_device_url);
                 var stringified = await http_helper.Response.Content.ReadAsStringAsync();
-                return Newtonsoft.Json.JsonConvert.DeserializeObject<List<dynamic>>(stringified);
+                return Newtonsoft.Json.JsonConvert.DeserializeObject<List<Device>>(stringified);
             }
         }
 
@@ -178,9 +179,10 @@ namespace DroHub.Tests.TestInfrastructure
             private readonly string _user_email;
             private readonly string _password;
             private readonly string _device_serial;
+            private readonly bool _delete_flight_sessions;
 
             public static async ValueTask<CreateDeviceHelper> createDevice(DroHubFixture test_fixture, string user, string password,
-                string device_name, string device_serial) {
+                string device_name, string device_serial, bool delete_flight_sessions = true) {
                 if (user == "admin")
                     password = test_fixture.AdminPassword;
 
@@ -201,12 +203,12 @@ namespace DroHub.Tests.TestInfrastructure
                 if (json_obj["result"] != "ok")
                     throw new InvalidDataException(json_obj["result"]);
 
-                return new CreateDeviceHelper(test_fixture, user, password, device_serial);
+                return new CreateDeviceHelper(test_fixture, user, password, device_serial, delete_flight_sessions);
             }
 
             private static async Task deleteDevice(DroHubFixture test_fixture, int device_id, string user, string
-            password) {
-                var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user, password);
+            password, bool delete_flight_sessions = true) {
+                var http_helper = await createLoggedInUser(test_fixture, user, password);
                 var content = await http_helper.Response.Content.ReadAsStringAsync();
                 var create_device_url = new Uri(DroHubFixture.SiteUri, $"DHub/Devices/Delete/{device_id}");
                 using var create_page_response = await http_helper.Client.GetAsync(create_device_url);
@@ -214,6 +216,7 @@ namespace DroHub.Tests.TestInfrastructure
                 var verification_token = DroHubFixture.getVerificationToken(await create_page_response.Content.ReadAsStringAsync());
                 var data_dic = new Dictionary<string, string>();
                 data_dic["Id"] = device_id.ToString();
+                data_dic["DeleteFlightSession"] = delete_flight_sessions.ToString();
                 data_dic["__RequestVerificationToken"] = verification_token;
                 var urlenc = new FormUrlEncodedContent(data_dic);
                 http_helper.Response?.Dispose();
@@ -223,23 +226,23 @@ namespace DroHub.Tests.TestInfrastructure
             }
 
             private static async Task deleteDevice(DroHubFixture test_fixture, string serial_number, string user,
-                string password)
-            {
+                string password, bool delete_flight_sessions = true) {
                 var devices_list = await getDeviceList(test_fixture, user, password);
-                int device_id = devices_list.First(d => d.serialNumber == serial_number).id;
-                await deleteDevice(test_fixture, device_id, user, password);
+                int device_id = devices_list.First(d => d.SerialNumber == serial_number).Id;
+                await deleteDevice(test_fixture, device_id, user, password, delete_flight_sessions);
             }
 
             private CreateDeviceHelper(DroHubFixture test_fixture, string user_email, string user_password,
-                    string device_serial) {
+                    string device_serial, bool delete_flight_sessions) {
                 _fixture = test_fixture;
                 _user_email = user_email;
                 _password = user_password;
                 _device_serial = device_serial;
+                _delete_flight_sessions = delete_flight_sessions;
             }
 
             public async ValueTask DisposeAsync() {
-                await deleteDevice(_fixture, _device_serial, _user_email, _password);
+                await deleteDevice(_fixture, _device_serial, _user_email, _password, _delete_flight_sessions);
             }
         }
 
@@ -263,7 +266,7 @@ namespace DroHub.Tests.TestInfrastructure
         public static async Task<int> getDeviceId(DroHubFixture test_fixture, string serial_number, string user,
             string password) {
             var devices_list = await getDeviceList(test_fixture, user, password);
-            return devices_list.First(d => d.serialNumber == serial_number).id;
+            return devices_list.Single(d => d.SerialNumber == serial_number).Id;
         }
 
         public static async Task<long?> getDeviceFlightStartTime(DroHubFixture test_fixture, int device_id,
@@ -279,17 +282,27 @@ namespace DroHub.Tests.TestInfrastructure
             return Newtonsoft.Json.JsonConvert.DeserializeObject<long?>(s);
         }
 
-        public static async ValueTask<List<T>> getDeviceTelemetry<T>(DroHubFixture test_fixture, string serial_number, string user, string password,
-                int start_index, int end_index) {
-            var device_id = await getDeviceId(test_fixture, serial_number, user, password);
+        public static async Task<long?> geLastConnectionId(DroHubFixture test_fixture, int device_id,
+            string user, string password) {
+            var http_helper = await createLoggedInUser(test_fixture, user, password);
+            var create_device_url = new Uri(DroHubFixture.SiteUri,
+                $"DHub/Devices/GetLastConnectionId/{device_id}");
 
-            using (var http_helper = await HttpClientHelper.createLoggedInUser(test_fixture, user, password)) {
+            http_helper.Response?.Dispose();
+            http_helper.Response = await http_helper.Client.GetAsync(create_device_url);
+            http_helper.Response.EnsureSuccessStatusCode();
+            var s = await http_helper.Response.Content.ReadAsStringAsync();
+            return Newtonsoft.Json.JsonConvert.DeserializeObject<long?>(s);
+        }
+
+        public static async ValueTask<List<T>> getDeviceTelemetry<T>(DroHubFixture test_fixture, string serial_number, string user, string password) {
+            var device_id = await getDeviceId(test_fixture, serial_number, user, password);
+            var connection_id = await geLastConnectionId(test_fixture, device_id, user, password);
+            using (var http_helper = await createLoggedInUser(test_fixture, user, password)) {
                 var content = await http_helper.Response.Content.ReadAsStringAsync();
-                var create_device_url = new Uri(DroHubFixture.SiteUri, $"DHub/Devices/Get{typeof(T)}s/{device_id}");
+                var create_device_url = new Uri(DroHubFixture.SiteUri, $"DHub/Devices/Get{typeof(T)}s/{connection_id}");
                 http_helper.Response?.Dispose();
                 var data_dic = new Dictionary<string, string>();
-                data_dic["start_index"] = start_index.ToString();
-                data_dic["end_index"] = end_index.ToString();
                 var urlenc = new FormUrlEncodedContent(data_dic);
                 http_helper.Response = await http_helper.Client.PostAsync(create_device_url, urlenc);
                 return Newtonsoft.Json.JsonConvert.DeserializeObject<List<T>>(await http_helper.Response.Content.ReadAsStringAsync());

@@ -17,13 +17,13 @@ using Thrift.Transport.Client;
 
 namespace DroHub.Helpers.Thrift
 {
-    public class ThriftMessageHandler : IDisposable
+    public class ThriftMessageHandler : IAsyncDisposable
     {
         private readonly ILogger<ThriftMessageHandler> _logger;
         private readonly List<Task> _task_list;
         private readonly List<Channel<byte[]>> _input_consumers;
-        private readonly ConnectionManager _connection_manager;
         private readonly DeviceAPI _device_api;
+        private readonly DeviceConnectionAPI _connection_api;
 
         private CancellationTokenSource _cancellation_token_src;
         private bool _is_disposed;
@@ -105,14 +105,14 @@ namespace DroHub.Helpers.Thrift
             return new ThriftClient<C>(_socket, _input_consumers, logger);
         }
 
-        public ThriftMessageHandler(ConnectionManager connection_manager,
-            DeviceAPI device_api,
-            ILogger<ThriftMessageHandler> logger)
+        public ThriftMessageHandler(DeviceAPI device_api,
+            ILogger<ThriftMessageHandler> logger,
+            DeviceConnectionAPI connection_api)
         {
             _is_disposed = false;
             _logger = logger;
+            _connection_api = connection_api;
             _task_list = new List<Task>();
-            _connection_manager = connection_manager;
             _device_api = device_api;
             _input_consumers = new List<Channel<byte[]>>();
         }
@@ -124,19 +124,20 @@ namespace DroHub.Helpers.Thrift
                 return;
             }
 
-            SerialNumber = _device_api.getDeviceSerialNumberFromClaim();
-            var last_connection = _connection_manager.GetRPCSessionBySerial(SerialNumber);
+            var device = await _connection_api.getDeviceFromCurrentConnectionClaim();
+            SerialNumber = new DeviceAPI.DeviceSerial(device.SerialNumber);
+
+            var last_connection = DeviceConnectionAPI.getRPCSessionOrDefault(device);
             if (last_connection != null && !last_connection._is_disposed) {
-                _logger.LogInformation($"Removing last connection {_device_api.getDeviceSerialNumberFromClaim()}");
+                _logger.LogInformation($"Removing last connection {_device_api.getDeviceSerialNumberFromConnectionClaim()}");
                 last_connection._cancellation_token_src.Cancel();
             }
-
 
             _cancellation_token_src = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
             try {
                 _socket = await context.WebSockets.AcceptWebSocketAsync();
 
-                _connection_manager.AddSocket(this);
+                await _connection_api.addRPCSessionHandler(this);
                 _task_list.Add(ReceiveFromWebSocket(_socket));
                 _task_list.Add(tasks.doTask(_cancellation_token_src));
                 await Task.WhenAll(_task_list);
@@ -150,24 +151,20 @@ namespace DroHub.Helpers.Thrift
                 //         CancellationToken.None);
                 // }
                 if (!_cancellation_token_src.IsCancellationRequested) {
-                    _logger.LogInformation($"Finished all tasks and cancelling {_device_api.getDeviceSerialNumberFromClaim()}");
+                    _logger.LogInformation($"Finished all tasks and cancelling {_device_api.getDeviceSerialNumberFromConnectionClaim()}");
                     _cancellation_token_src.Cancel();
                 }
             }
         }
 
-        public void Dispose()
-        {
+        public async ValueTask DisposeAsync() {
             if (_is_disposed)
                 return;
             if (_cancellation_token_src != null)
                 _logger.LogInformation($"Disposing {SerialNumber.Value} isCancelled = {_cancellation_token_src.Token.IsCancellationRequested}");
             _is_disposed = true;
             try {
-                var last_connection = _connection_manager.GetRPCSessionBySerial(SerialNumber);
-                if (last_connection == this) {
-                    _connection_manager.RemoveSocket(SerialNumber);
-                }
+                await _connection_api.removeRPCSessionHandler(this);
             }
             catch (Exception e) {
                 _logger.LogWarning(e.Message);
@@ -200,7 +197,7 @@ namespace DroHub.Helpers.Thrift
                         populateInputStreams(buffer.Take(result.Count).ToArray());
                     }
                     else {
-                        _logger.LogWarning($"Cancelling receive! {_device_api.getDeviceSerialNumberFromClaim()}");
+                        _logger.LogWarning($"Cancelling receive! {_device_api.getDeviceSerialNumberFromConnectionClaim()}");
                         _cancellation_token_src.Cancel();
                     }
                 }

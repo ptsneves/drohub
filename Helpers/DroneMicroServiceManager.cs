@@ -50,6 +50,7 @@ namespace DroHub.Helpers
                         scope.ServiceProvider.GetService<ILogger<PingConnectionDeviceService>>(),
                         scope.ServiceProvider.GetService<IHubContext<TelemetryHub>>(),
                         scope.ServiceProvider.GetService<DeviceAPI>(),
+                        scope.ServiceProvider.GetService<DeviceConnectionAPI>(),
                         _service_provider.GetRequiredService<ThriftMessageHandler>());
 
                     await runTask(token_source, t);
@@ -60,6 +61,7 @@ namespace DroHub.Helpers
                         scope.ServiceProvider.GetService<ILogger<GatherDevicePositionService>>(),
                         scope.ServiceProvider.GetService<IHubContext<TelemetryHub>>(),
                         scope.ServiceProvider.GetService<DeviceAPI>(),
+                        scope.ServiceProvider.GetService<DeviceConnectionAPI>(),
                         _service_provider.GetRequiredService<ThriftMessageHandler>());
 
                     await runTask(token_source, t);
@@ -70,6 +72,7 @@ namespace DroHub.Helpers
                         scope.ServiceProvider.GetService<ILogger<GatherDeviceRadioSignalService>>(),
                         scope.ServiceProvider.GetService<IHubContext<TelemetryHub>>(),
                         scope.ServiceProvider.GetService<DeviceAPI>(),
+                        scope.ServiceProvider.GetService<DeviceConnectionAPI>(),
                         _service_provider.GetRequiredService<ThriftMessageHandler>());
 
                     await runTask(token_source, t);
@@ -80,6 +83,7 @@ namespace DroHub.Helpers
                         scope.ServiceProvider.GetService<ILogger<GatherDeviceFlyingStateService>>(),
                         scope.ServiceProvider.GetService<IHubContext<TelemetryHub>>(),
                         scope.ServiceProvider.GetService<DeviceAPI>(),
+                        scope.ServiceProvider.GetService<DeviceConnectionAPI>(),
                         _service_provider.GetRequiredService<ThriftMessageHandler>());
 
                     await runTask(token_source, t);
@@ -90,6 +94,7 @@ namespace DroHub.Helpers
                         scope.ServiceProvider.GetService<ILogger<GatherDeviceBatteryLevelService>>(),
                         scope.ServiceProvider.GetService<IHubContext<TelemetryHub>>(),
                         scope.ServiceProvider.GetService<DeviceAPI>(),
+                        scope.ServiceProvider.GetService<DeviceConnectionAPI>(),
                         _service_provider.GetRequiredService<ThriftMessageHandler>());
 
                     await runTask(token_source, t);
@@ -100,6 +105,7 @@ namespace DroHub.Helpers
                         scope.ServiceProvider.GetService<ILogger<GatherDeviceLiveVideoService>>(),
                         scope.ServiceProvider.GetService<IHubContext<TelemetryHub>>(),
                         scope.ServiceProvider.GetService<DeviceAPI>(),
+                        scope.ServiceProvider.GetService<DeviceConnectionAPI>(),
                         _service_provider.GetRequiredService<ThriftMessageHandler>(),
                         scope.ServiceProvider.GetService<JanusService>());
 
@@ -140,21 +146,28 @@ namespace DroHub.Helpers
 
     internal abstract class DeviceService<TDroneAction> : ServiceBase, IDisposable where TDroneAction : IDroneTelemetry{
         private readonly IHubContext<TelemetryHub> _hub;
+        private readonly DeviceConnectionAPI _connection_api;
         protected readonly DeviceAPI _device_api;
         protected readonly DeviceAPI.DeviceSerial _authenticated_serial;
         private readonly Drone.Client _client;
+        private readonly DeviceConnection _device_connection;
 
         protected abstract Task<TDroneAction> doAction(Drone.Client client, CancellationToken token);
 
         protected DeviceService(ILogger logger,
             IHubContext<TelemetryHub> hub,
             DeviceAPI device_api,
+            DeviceConnectionAPI connection_api,
             ThriftMessageHandler thrift_message_handler) :base(logger) {
             _logger.LogDebug("Constructed DroneMicroService");
             _hub = hub;
             _device_api = device_api;
-            _authenticated_serial = _device_api.getDeviceSerialNumberFromClaim();
+            _connection_api = connection_api;
+            _authenticated_serial = _device_api.getDeviceSerialNumberFromConnectionClaim();
             _client = thrift_message_handler.getClient<Drone.Client>(_logger).Client;
+            _device_connection = _connection_api.getCurrentConnectionOrDefault();
+            if (_device_connection == null)
+                throw new InvalidProgramException("Unreachable situation");
         }
 
         private async Task BroadcastToSignalR(string t_name, IDroneTelemetry telemetry) {
@@ -189,8 +202,9 @@ namespace DroHub.Helpers
             toggle.IsAlive = true;
 
             _logger.LogInformation($"received {t_name} {_authenticated_serial.Value} {telemetry}", telemetry);
+            telemetry.ConnectionId = _device_connection.Id;
             await BroadcastToSignalR(t_name, telemetry);
-            await _device_api.recordDeviceTelemetry(telemetry);
+            await _connection_api.recordDeviceTelemetry(telemetry);
         }
 
         public virtual Task getServiceTask(CancellationToken ct, DeadManSwitch toggle) {
@@ -250,8 +264,8 @@ namespace DroHub.Helpers
     internal class PingConnectionDeviceService : DeviceService<DroneReply>, IDeviceServiceTask {
 
         internal PingConnectionDeviceService(ILogger<PingConnectionDeviceService> logger, IHubContext<TelemetryHub> hub,
-            DeviceAPI device_api, ThriftMessageHandler thrift_message_handler) :
-            base(logger, hub, device_api, thrift_message_handler) {
+            DeviceAPI device_api, DeviceConnectionAPI connection_api, ThriftMessageHandler thrift_message_handler) :
+            base(logger, hub, device_api, connection_api, thrift_message_handler) {
         }
 
         protected override async Task<DroneReply> doAction(Drone.Client client, CancellationToken token) {
@@ -263,8 +277,8 @@ namespace DroHub.Helpers
 
     internal class GatherDevicePositionService : DeviceService<DronePosition>, IDeviceServiceTask {
         internal GatherDevicePositionService(ILogger logger, IHubContext<TelemetryHub> hub,
-            DeviceAPI device_api, ThriftMessageHandler thrift_message_handler) :
-            base(logger, hub, device_api, thrift_message_handler) {
+            DeviceAPI device_api, DeviceConnectionAPI connection_api, ThriftMessageHandler thrift_message_handler) :
+            base(logger, hub, device_api, connection_api, thrift_message_handler) {
         }
 
         protected override Task<DronePosition> doAction(Drone.Client client, CancellationToken token) {
@@ -274,8 +288,9 @@ namespace DroHub.Helpers
 
     internal class GatherDeviceRadioSignalService : DeviceService<DroneRadioSignal>, IDeviceServiceTask {
         internal GatherDeviceRadioSignalService(ILogger logger,
-            IHubContext<TelemetryHub> hub, DeviceAPI device_api, ThriftMessageHandler thrift_message_handler) :
-            base(logger, hub, device_api, thrift_message_handler) {
+            IHubContext<TelemetryHub> hub, DeviceAPI device_api, DeviceConnectionAPI connection_api,
+            ThriftMessageHandler thrift_message_handler) :
+            base(logger, hub, device_api, connection_api, thrift_message_handler) {
         }
 
         protected override Task<DroneRadioSignal> doAction(Drone.Client client, CancellationToken token) {
@@ -285,8 +300,9 @@ namespace DroHub.Helpers
 
     internal class GatherDeviceFlyingStateService : DeviceService<DroneFlyingState>, IDeviceServiceTask {
         internal GatherDeviceFlyingStateService(ILogger logger,
-            IHubContext<TelemetryHub> hub, DeviceAPI device_api, ThriftMessageHandler thrift_message_handler) :
-            base(logger, hub, device_api, thrift_message_handler) {
+            IHubContext<TelemetryHub> hub, DeviceAPI device_api,
+            DeviceConnectionAPI connection_api, ThriftMessageHandler thrift_message_handler) :
+            base(logger, hub, device_api, connection_api, thrift_message_handler) {
         }
 
         protected override Task<DroneFlyingState> doAction(Drone.Client client, CancellationToken token) {
@@ -296,8 +312,9 @@ namespace DroHub.Helpers
 
     internal class GatherDeviceBatteryLevelService : DeviceService<DroneBatteryLevel>, IDeviceServiceTask {
         internal GatherDeviceBatteryLevelService(ILogger logger,
-            IHubContext<TelemetryHub> hub, DeviceAPI device_api, ThriftMessageHandler thrift_message_handler) :
-            base(logger, hub, device_api, thrift_message_handler) {
+            IHubContext<TelemetryHub> hub, DeviceAPI device_api,
+            DeviceConnectionAPI connection_api, ThriftMessageHandler thrift_message_handler) :
+            base(logger, hub, device_api, connection_api, thrift_message_handler) {
         }
 
         protected override Task<DroneBatteryLevel> doAction(Drone.Client client, CancellationToken token) {
@@ -310,9 +327,11 @@ namespace DroHub.Helpers
         private DroneSendLiveVideoRequest _send_video_request;
 
         internal GatherDeviceLiveVideoService(ILogger logger,
-            IHubContext<TelemetryHub> hub, DeviceAPI device_api, ThriftMessageHandler thrift_message_handler,
+            IHubContext<TelemetryHub> hub, DeviceAPI device_api,
+            DeviceConnectionAPI connection_api,
+            ThriftMessageHandler thrift_message_handler,
             JanusService janus_service) :
-            base(logger, hub, device_api, thrift_message_handler) {
+            base(logger, hub, device_api, connection_api, thrift_message_handler) {
             _janus_service = janus_service;
         }
 

@@ -96,6 +96,7 @@ namespace DroHub
             services.AddDeviceResourceAuthorization();
             services.AddSubscriptionAPI();
             services.AddDeviceAPI();
+            services.AddDeviceConnectionSessionAPI();
 
 
             services.AddWebSocketManager();

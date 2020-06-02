@@ -32,6 +32,8 @@ namespace DroHub.Areas.DHub.Models
 
         public ICollection<Device> Devices { get; set; }
 
+        public ICollection<DeviceConnection> DeviceConnections { get; set; }
+
     }
 
 }

@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Threading;
+using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
 using DroHub.Helpers;
 using Ductus.FluentDocker.Services.Extensions;
@@ -284,7 +285,7 @@ namespace DroHub.Tests
 
                     var devices_list = await HttpClientHelper.getDeviceList(_fixture, DEFAULT_USER, DEFAULT_PASSWORD);
                     Assert.NotNull(devices_list);
-                    devices_list.Single(ds => ds.serialNumber == device_serial);
+                    devices_list.Single(ds => ds.SerialNumber == device_serial);
                     var token = (await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER,
                         DEFAULT_PASSWORD))["result"];
                     var device_info = (await HttpClientHelper.queryDeviceInfo(_fixture, DEFAULT_USER, token,

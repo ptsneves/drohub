@@ -82,7 +82,12 @@ namespace DroHub.Areas.Identity.Pages.Account.Manage
                 throw new InvalidOperationException($"Unexpected error occurred deleteing user with ID '{userId}'.");
             }
 
-            await _subscription_api.deleteSubscription(_subscription_api.getSubscriptionName(), true);
+            try {
+                await _subscription_api.deleteSubscription(_subscription_api.getSubscriptionName());
+            }
+            catch (SubscriptionAPIException e) {
+                _logger.LogInformation(e.Message);
+            }
 
             await _signInManager.SignOutAsync();
 

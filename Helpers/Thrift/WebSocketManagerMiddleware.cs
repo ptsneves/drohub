@@ -58,7 +58,6 @@ namespace DroHub.Helpers.Thrift
         {
             services.AddHttpContextAccessor();
             services.AddScoped<IThriftTasks, DroneMicroServiceManager>();
-            services.AddSingleton<ConnectionManager>();
             services.AddScoped<ThriftMessageHandler>();
             return services;
         }

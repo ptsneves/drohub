@@ -19,6 +19,12 @@ namespace DroHub.Areas.DHub.API {
         }
     }
 
+    public class SubscriptionAPIException : Exception {
+        public SubscriptionAPIException(string message) : base(message) {
+
+        }
+    }
+
     public class SubscriptionAPI {
         public readonly struct OrganizationName {
             internal string Value { get; }
@@ -144,18 +150,18 @@ namespace DroHub.Areas.DHub.API {
             return subscription.AllowedFlightTime;
         }
 
-        public async Task deleteSubscription(OrganizationName organization_name, bool accept_if_not_possible = false) {
+        public async Task deleteSubscription(OrganizationName organization_name) {
+
             var sub = await querySubscription(organization_name)
                 .Include(s => s.Devices)
+                .Include(s => s.DeviceConnections)
                 .Include(s => s.Users).SingleAsync();
-            if (!sub.Devices.Any() && !sub.Users.Any()) {
-                _db_context.Subscriptions.Remove(sub);
-                await _db_context.SaveChangesAsync();
-            }
-            else {
-                if (!accept_if_not_possible)
-                    throw new InvalidProgramException("Cannot remove a subscription with active devices or users");
-            }
+
+            if (sub.Devices.Any() || sub.Users.Any() || sub.DeviceConnections.Any())
+                throw new SubscriptionAPIException("Cannot remove a subscription with active devices or users");
+
+            _db_context.Subscriptions.Remove(sub);
+            await _db_context.SaveChangesAsync();
         }
     }
 }

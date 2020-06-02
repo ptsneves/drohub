@@ -52,13 +52,13 @@
         var return_to_home_action_url = Url.Action("ReturnToHome", "Devices", new {id = device.Id});
         var move_to_position_action_url = Url.Action("MoveToPosition", "Devices", new {id = device.Id});
         var move_to_position_box_id = move_to_position_box_id_prefix + device.Id;
-        var radio_signals_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.radio_signals?.FirstOrDefault()) as String);
-        var position_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.positions?.FirstOrDefault()) as String);
-        var battery_level_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.battery_levels?.FirstOrDefault()) as String);
-        var flying_state_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(device.flying_states?.FirstOrDefault()) as String);
-        var video_state_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(new DroneLiveVideoStateResult(){State = DroneLiveVideoState.INVALID_CONDITION}) as String);
+        var radio_signals_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(null));
+        var position_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(null));
+        var battery_level_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(null));
+        var flying_state_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(null));
+        var video_state_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(new DroneLiveVideoStateResult(){State = DroneLiveVideoState.INVALID_CONDITION}));
 
-        string[] ColourValues = new string[]
+        var ColourValues = new[]
         {
             "3c8dbc", "00c0ef", "dd4b39", "f39c12", "00a65a"
         };

@@ -1,4 +1,4 @@
-@model DroHub.Areas.DHub.Models.Device
+@model DroHub.Areas.DHub.Controllers.DevicesController.DeleteDeviceConfirmedModel
 @{
     ViewData["Title"] = "Delete";
 }
@@ -29,27 +29,34 @@
                         <div class="box-body">
                             <dl class="dl-horizontal">
                                 <dt>
-                                    @Html.DisplayNameFor(model => model.Name)
+                                    @Html.DisplayNameFor(model => model.Device.Name)
                                 </dt>
                                 <dd>
-                                    @Html.DisplayFor(model => model.Name)
+                                    @Html.DisplayFor(model => model.Device.Name)
                                 </dd>
                                 <dt>
-                                    @Html.DisplayNameFor(model => model.SerialNumber)
+                                    @Html.DisplayNameFor(model => model.Device.SerialNumber)
                                 </dt>
                                 <dd>
-                                    @Html.DisplayFor(model => model.SerialNumber)
+                                    @Html.DisplayFor(model => model.Device.SerialNumber)
                                 </dd>
                                 <dt>
-                                    @Html.DisplayNameFor(model => model.CreationDate)
+                                    @Html.DisplayNameFor(model => model.Device.CreationDate)
                                 </dt>
                                 <dd>
-                                    @Html.DisplayFor(model => model.CreationDate)
+                                    @Html.DisplayFor(model => model.Device.CreationDate)
+                                </dd>
+                                <dt>
+                                    @Html.DisplayNameFor(model => model.DeleteFlightSessions)
+                                </dt>
+                                <dd>
+                                    <input type="checkbox" asp-for="DeleteFlightSessions"/>
                                 </dd>
                             </dl>
                         </div>
                         <div class="box-footer text-right">
-                            <input type="hidden" asp-for="Id" />
+                            <input type="hidden" asp-for="Device.Id" />
+
                             <a asp-area="DHub" asp-controller="Devices" asp-action="" class="btn btn-warning" title="Back to devices list">Back to list</a>
                             <input type="submit" value="Delete" class="btn btn-danger" title="Delete this device" />
                         </div>
