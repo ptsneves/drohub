@@ -95,15 +95,11 @@ function initJanus(server_url, stun_server_url, room_id) {
 									// Check if any of the media we wanted to publish has
 									// been rejected (e.g., wrong or unsupported codec)
 									var audio = msg["audio_codec"];
-									if(mystream && mystream.getAudioTracks() && mystream.getAudioTracks().length > 0 && !audio) {
-										// Audio has been rejected
-										toastr.warning("Our audio stream has been rejected, viewers won't hear us");
-									}
 								}
 							},
 							onlocalstream: function(stream) {
 								Janus.log(" ::: Got a local stream :::");
-								element = $(`video.device-video[data-room-id=${room_id}]`);
+								element = $(`audio.device-audio[data-room-id=${room_id}]`);
 								// element.data('render-state', "playing");
 								Janus.attachMediaStream(element.get(0), stream);
 								if(sfutest.webrtcStuff.pc.iceConnectionState !== "completed" &&
