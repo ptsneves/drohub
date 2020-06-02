@@ -366,7 +366,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestDeviceFlightStartTime() {
-            Assert.Null(await HttpClientHelper.getDeviceFlightStartTime(_fixture, 1, "admin",
+            Assert.Null(await HttpClientHelper.getDeviceFlightStartTime(_fixture, 999999, "admin",
                 _fixture.AdminPassword));
             await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin",
                 _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
