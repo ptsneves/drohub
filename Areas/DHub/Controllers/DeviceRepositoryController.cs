@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Models;
-using DroHub.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -17,17 +15,19 @@ namespace DroHub.Areas.DHub.Controllers
     {
         #region Variables
 
-        private readonly JanusServiceOptions _janus_options;
         private readonly RepositoryOptions _repository_settings;
         private readonly DeviceAPI _device_api;
+        private readonly SubscriptionAPI _subscription_api;
+        private readonly DeviceConnectionAPI _device_connection_api;
         #endregion
 
         #region Constructor
         public DeviceRepositoryController(IOptions<RepositoryOptions> repository_settings, DeviceAPI device_api,
-            IOptionsMonitor<JanusServiceOptions> janus_options) {
+            SubscriptionAPI subscription_api, DeviceConnectionAPI device_connection_api) {
             _repository_settings = repository_settings.Value;
             _device_api = device_api;
-            _janus_options = janus_options.CurrentValue;
+            _subscription_api = subscription_api;
+            _device_connection_api = device_connection_api;
         }
         #endregion
 
@@ -85,30 +85,37 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         public async Task<IActionResult> Gallery() {
-            var di = new DirectoryInfo(_janus_options.RecordingPath);
-            var devices = await _device_api.getSubscribedDevices();
+
+            var sessions = await _subscription_api.getSubscribedDeviceConnections(true);
+
             var files_per_timestamp = new Dictionary<long, Dictionary<string, List<GalleryPageModel.FileInfoModel>>>();
-            foreach (var device in devices) {
-                var video_pattern = $"drone-{device.SerialNumber}-*.webm";
+            foreach (var session in sessions) {
+                var di = new DirectoryInfo(_device_connection_api.getConnectionMediaDir(session.Id));
+                var video_pattern = $"*.webm";
                 var video_paths = di.GetFiles(video_pattern)
                     .OrderByDescending(f => f.Name)
                     .ToArray();
 
-                foreach (var video_file in video_paths) {
-                    var video_timestamp = Convert.ToInt64(video_file.Name.Split('-')[2]);
+                var audio_pattern = $"*.opus";
+                var audio_paths = di.GetFiles(audio_pattern)
+                    .OrderByDescending(f => f.Name)
+                    .ToArray();
+
+                var media_paths = audio_paths.Concat(video_paths);
+
+                foreach (var media_file in media_paths) {
+                    var media_start_time = (DateTimeOffset)media_file.CreationTimeUtc;
 
                     //This is the milliseconds of the UTC midnight of the day of the media
-                    var video_timestamp_datetime = (long)(DateTimeOffset.FromUnixTimeMilliseconds(video_timestamp).Date.Date.ToUniversalTime() -
-                            new DateTime(1970,1,1,0,0,0,0,System.DateTimeKind.Utc))
-                        .TotalMilliseconds;
+                    var video_timestamp_datetime = ((DateTimeOffset) media_start_time.Date).ToUnixTimeMilliseconds();
 
                     var file_info_model = new GalleryPageModel.FileInfoModel() {
                         media_info = new GalleryPageModel.MediaInfo() {
-                            VideoPath = video_file,
+                            VideoPath = media_file,
                             MediaType = GalleryPageModel.MediaInfo.MediaTypeEnum.LIVE_VIDEO,
-                            CaptureDateTime = video_timestamp
+                            CaptureDateTime = media_start_time.ToUnixTimeMilliseconds()
                         },
-                        device = device
+                        device = session.Device
                     };
 
                     if (!files_per_timestamp.ContainsKey(video_timestamp_datetime)) {
@@ -116,19 +123,17 @@ namespace DroHub.Areas.DHub.Controllers
                             new Dictionary<string, List<GalleryPageModel.FileInfoModel>>();
                     }
 
-                    if (!files_per_timestamp[video_timestamp_datetime].ContainsKey(device.Name)) {
-                        files_per_timestamp[video_timestamp_datetime][device.Name] = new List<GalleryPageModel.FileInfoModel>();
+                    if (!files_per_timestamp[video_timestamp_datetime].ContainsKey(session.Device.Name)) {
+                        files_per_timestamp[video_timestamp_datetime][session.Device.Name] = new List<GalleryPageModel.FileInfoModel>();
                     }
-
-                    files_per_timestamp[video_timestamp_datetime][device.Name].Add(file_info_model);
-
+                    files_per_timestamp[video_timestamp_datetime][session.Device.Name].Add(file_info_model);
                 }
             }
             return View(new GalleryPageModel(){FilesPerTimestamp = files_per_timestamp});
         }
 
         public IActionResult GetLiveStreamRecordingVideo(string video_id) {
-            var path = Path.Combine(_janus_options.RecordingPath, video_id.Replace("mjr", "webm"));
+            var path = Path.Combine(DeviceConnectionAPI.MediaDir, video_id.Replace("mjr", "webm"));
             var res = File(System.IO.File.OpenRead(path), "video/webm");
             res.EnableRangeProcessing = true;
             return res;

@@ -112,6 +112,23 @@ namespace DroHub.Areas.DHub.API {
             return await getSubscriptionTimeLeft(organization_name) > TimeSpan.Zero;
         }
 
+        public async Task<IEnumerable<DeviceConnection>> getSubscribedDeviceConnections(bool include_device) {
+            var s1 = querySubscription(getSubscriptionName())
+                .Include(s => s.DeviceConnections);
+
+            if (include_device) {
+                return await s1
+                    .ThenInclude(cd => cd.Device)
+                    .SelectMany(s => s.DeviceConnections)
+                    .ToArrayAsync();
+            }
+            else {
+                return await s1
+                    .SelectMany(s => s.DeviceConnections)
+                    .ToArrayAsync();
+            }
+        }
+
         public Task<TimeSpan> decrementAndGetSubscriptionTimeLeft(TimeSpan consumed_time_span,
             CancellationToken cancellation_token) {
             return decrementAndGetSubscriptionTimeLeft(getSubscriptionName(), consumed_time_span,

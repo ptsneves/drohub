@@ -15,11 +15,9 @@ namespace DroHub.Helpers {
             Address = "http://docker";
             Port = 8088;
             AdminKey = "NOTOKEN";
-            RecordingPath = "/tmp/";
         }
         public string Address { get; set; }
         public int Port { get; set; }
-        public string RecordingPath { get; set; }
         public string AdminKey { get; set; }
     }
     public class JanusService
@@ -288,12 +286,13 @@ namespace DroHub.Helpers {
             await getJanusAnswer($"/janus/{session.Id}/{handle}", request);
         }
         public async Task<JanusService.VideoRoomEndPoint> createVideoRoom(CreateSession session, Int64 handle, Int64 id,
-                string description, string secret, Int64 max_publishers, VideoCodecType video_codec) {
+                string description, string recording_dir, string secret, Int64 max_publishers, VideoCodecType
+                video_codec) {
             var request = new JanusRequest(session, new JanusRequest.CreateVideoRoomRequest(_options.AdminKey, id, max_publishers)
             {
                 Description = description,
                 Record = true,
-                RecordingDir = $"{_options.RecordingPath}",
+                RecordingDir = recording_dir,
                 VideoCodec = video_codec.ToString("g").ToLower(),
                 FirFrequency = 7,
                 // Secret = secret

@@ -44,6 +44,7 @@ namespace DroHub.Areas.DHub.API {
     }
 
     public class DeviceConnectionAPI {
+        public static readonly string MediaDir = "/var/live-video-storage/";
         private static readonly ConcurrentDictionary<ThriftMessageHandler, DeviceConnection> _connections =
             new ConcurrentDictionary<ThriftMessageHandler, DeviceConnection>();
 
@@ -59,6 +60,10 @@ namespace DroHub.Areas.DHub.API {
             _device_api = device_api;
             _logger = logger;
             _subscription_api = subscription_api;
+        }
+
+        public string getConnectionMediaDir(long connection_id) {
+            return $"{MediaDir}/{connection_id}";
         }
 
         private IEnumerable<ThriftMessageHandler> getActiveSubscriptionConnections() {

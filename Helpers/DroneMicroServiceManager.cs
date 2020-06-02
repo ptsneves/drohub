@@ -146,11 +146,11 @@ namespace DroHub.Helpers
 
     internal abstract class DeviceService<TDroneAction> : ServiceBase, IDisposable where TDroneAction : IDroneTelemetry{
         private readonly IHubContext<TelemetryHub> _hub;
-        private readonly DeviceConnectionAPI _connection_api;
+        protected readonly DeviceConnectionAPI _connection_api;
         protected readonly DeviceAPI _device_api;
         protected readonly DeviceAPI.DeviceSerial _authenticated_serial;
         private readonly Drone.Client _client;
-        private readonly DeviceConnection _device_connection;
+        protected readonly DeviceConnection _device_connection;
 
         protected abstract Task<TDroneAction> doAction(Drone.Client client, CancellationToken token);
 
@@ -335,11 +335,13 @@ namespace DroHub.Helpers
             _janus_service = janus_service;
         }
 
-        private async Task<JanusService.VideoRoomEndPoint> createVideoRoomForDevice(Device device) {
+        private async Task<JanusService.VideoRoomEndPoint> createVideoRoomForDevice(Device device, string media_dir) {
             var session = await _janus_service.createSession();
             var handle = await _janus_service.createStreamerPluginHandle(session);
             return await _janus_service.createVideoRoom(session, handle, device.Id,
-                device.SerialNumber, "mysecret", 10, JanusService.VideoCodecType.VP9);
+                device.SerialNumber, media_dir,
+                "mysecret", 10, JanusService
+                .VideoCodecType.VP9);
         }
 
         private async Task destroyMountPointForDevice(Device device)
@@ -352,8 +354,9 @@ namespace DroHub.Helpers
         public override async Task getServiceTask(CancellationToken ct, DeadManSwitch toggle) {
             _logger.LogDebug($"Starting Service {GetType()} {_authenticated_serial.Value}");
             var device = await _device_api.getDeviceBySerial(_authenticated_serial);
+            var media_dir = _connection_api.getConnectionMediaDir(_device_connection.Id);
             try {
-                var video_room = await createVideoRoomForDevice(device);
+                var video_room = await createVideoRoomForDevice(device, media_dir);
                 _send_video_request = new DroneSendLiveVideoRequest {
                     // RoomSecret = video_room.Secret,
                     RoomId = video_room.Id
@@ -364,6 +367,15 @@ namespace DroHub.Helpers
             }
             finally {
                 await destroyMountPointForDevice(device);
+                var files = MJRPostProcessor.getMJRFiles(media_dir);
+                foreach (var file in files) {
+                    try {
+                        await MJRPostProcessor.RunConvert(file, false, _logger);
+                    }
+                    catch (Exception e) {
+                        _logger.LogError(e.Message);
+                    }
+                }
             }
         }
 
