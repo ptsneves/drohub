@@ -10,7 +10,8 @@ COPY . ./
 RUN dotnet publish -c Release -o out -p:InformationalVersion=$(cat .git/$(cat .git/HEAD | cut -d' ' -f2)) ./DroHub.csproj
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-focal
+RUN apt-get update && apt-get install -y janus-tools
 WORKDIR /app
 COPY --from=build-env /app/out .
 COPY --from=build-env /app/wwwroot/AdminLTE/bower_components ./wwwroot/AdminLTE/bower_components/
