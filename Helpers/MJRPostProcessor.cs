@@ -25,6 +25,7 @@ namespace DroHub.Helpers {
         }
 
         private const string _JANUS_PP_REC_BIN = "/usr/bin/janus-pp-rec";
+        private const string _FFMPEG_BIN = "/usr/bin/ffmpeg";
         private const string _MJR_FILE_FILTER = "*.mjr";
 
         private static Task<Process> runProcess(string executable_path, string arguments) {
@@ -99,7 +100,8 @@ namespace DroHub.Helpers {
             if (!File.Exists(tmp_dst)) {
                 throw new InvalidDataException($"Expected {tmp_dst} but it does not exist. mjr file probably empty");
             }
-            File.Move(tmp_dst, final_dst);
+
+            using var __ = await runProcess(_FFMPEG_BIN, $"-err_detect ignore_err -i {tmp_dst} -c:v copy {final_dst}");
             File.SetCreationTime(final_dst, DateTimeOffset.FromUnixTimeMilliseconds(mjr_header.FirstFrameTimeMsUnix).UtcDateTime);
             logger?.LogInformation($"Conversion result available at {final_dst}");
             if (!preserve_after_conversion)

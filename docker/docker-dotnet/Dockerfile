@@ -11,7 +11,7 @@ RUN dotnet publish -c Release -o out -p:InformationalVersion=$(cat .git/$(cat .g
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-focal
-RUN apt-get update && apt-get install -y janus-tools
+RUN apt-get update && apt-get install -y janus-tools ffmpeg
 WORKDIR /app
 COPY --from=build-env /app/out .
 COPY --from=build-env /app/wwwroot/AdminLTE/bower_components ./wwwroot/AdminLTE/bower_components/
