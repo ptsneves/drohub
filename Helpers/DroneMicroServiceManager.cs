@@ -107,7 +107,9 @@ namespace DroHub.Helpers
                         scope.ServiceProvider.GetService<DeviceAPI>(),
                         scope.ServiceProvider.GetService<DeviceConnectionAPI>(),
                         _service_provider.GetRequiredService<ThriftMessageHandler>(),
-                        scope.ServiceProvider.GetService<JanusService>());
+                        scope.ServiceProvider.GetService<JanusService>(),
+                        scope.ServiceProvider.GetService<MediaObjectAndTagAPI>()
+                        );
 
                     await runTask(token_source, t);
                 }),
@@ -325,14 +327,18 @@ namespace DroHub.Helpers
     internal class GatherDeviceLiveVideoService : DeviceService<DroneLiveVideoStateResult>, IDeviceServiceTask {
         private readonly JanusService _janus_service;
         private DroneSendLiveVideoRequest _send_video_request;
+        private readonly MediaObjectAndTagAPI _media_api;
 
         internal GatherDeviceLiveVideoService(ILogger logger,
             IHubContext<TelemetryHub> hub, DeviceAPI device_api,
             DeviceConnectionAPI connection_api,
             ThriftMessageHandler thrift_message_handler,
-            JanusService janus_service) :
+            JanusService janus_service,
+            MediaObjectAndTagAPI media_api) :
             base(logger, hub, device_api, connection_api, thrift_message_handler) {
+
             _janus_service = janus_service;
+            _media_api = media_api;
         }
 
         private async Task<JanusService.VideoRoomEndPoint> createVideoRoomForDevice(Device device, string media_dir) {
@@ -354,7 +360,7 @@ namespace DroHub.Helpers
         public override async Task getServiceTask(CancellationToken ct, DeadManSwitch toggle) {
             _logger.LogDebug($"Starting Service {GetType()} {_authenticated_serial.Value}");
             var device = await _device_api.getDeviceBySerial(_authenticated_serial);
-            var media_dir = _connection_api.getConnectionMediaDir(_device_connection.Id);
+            var media_dir = MediaObjectAndTagAPI.getConnectionDirectory(_device_connection.Id);
             try {
                 var video_room = await createVideoRoomForDevice(device, media_dir);
                 _send_video_request = new DroneSendLiveVideoRequest {
@@ -367,14 +373,17 @@ namespace DroHub.Helpers
             }
             finally {
                 await destroyMountPointForDevice(device);
-                var files = MJRPostProcessor.getMJRFiles(media_dir);
-                foreach (var file in files) {
-                    try {
-                        await MJRPostProcessor.RunConvert(file, false, _logger);
-                    }
-                    catch (Exception e) {
-                        _logger.LogError(e.Message);
-                    }
+                try {
+                    var r = await MJRPostProcessor.RunConvert(media_dir, true, _logger);
+                    const string tag = "live stream";
+
+                    await _media_api.addMediaObject(r.result_path, r.creation_date_utc,
+                        _device_connection.SubscriptionOrganizationName, _device_connection.Id,
+                        new List<string> {tag});
+
+                }
+                catch (Exception e) {
+                    _logger.LogError(e.Message);
                 }
             }
         }

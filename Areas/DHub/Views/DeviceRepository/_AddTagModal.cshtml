@@ -1,0 +1,38 @@
+@model DroHub.Areas.DHub.Controllers.DeviceRepositoryController.AddTagsModel
+
+<div class="modal fade" id="addTagModal" tabindex="-1" role="dialog" aria-labelledby="addTagModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="addTagModalLabel">Add Tags</h4>
+            </div>
+            <form asp-action="AddTags">
+                <div class="modal-body tag-input-container">
+                    <div asp-validation-summary="All" class="text-danger"></div>
+                    <div class="form-group">
+                        <label for="tag_list" class="tag-input-description">Insert ',' (comma) separated Tag List, eg: Tag,TagA,Tag DF</label>
+                        <div class="input-group tag-list-input-group">
+                            <div class="tag-label-template tag-user-container icheckbox_tag-label">
+                                <a style="color:white;" href="#"><i class="fa tag-remove-container-on-click fa-times"></i></a>
+                                <span class="tag-user-text"></span>
+                            </div>
+                            <input id="tag_list" type="text" class="tag-comma-separated-text form-control"/>
+                            <input asp-for="TagListJSON" class="tag-list-input" type="hidden"/>
+                        </div>
+                    </div>
+                    <div class="input-group checkbox">
+                        <input type="checkbox" asp-for="UseTimeStamp" class="icheck" id="modal_tag_timestamp"/>
+                        <input type="hidden" asp-for="TimeStampInSeconds" class="tag-timestamp-value"/>
+                        <input type="hidden" asp-for="MediaId" class="tag-media-path-value"/>
+                        <label for="modal_tag_timestamp" class="control-label">Associate Tag to video position <span class="tag-timestamp-text"></span></label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -34,6 +34,7 @@ namespace DroHub.Areas.DHub.Models
 
         public ICollection<DeviceConnection> DeviceConnections { get; set; }
 
+        public ICollection<MediaObjectTag> MediaObjectTags { get; set; }
     }
 
 }

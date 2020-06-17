@@ -1,0 +1,19 @@
+TestInfrastructure/DroneDeviceHelper.cs(68,50): warning CS0168: The variable 'e' is declared but never used [/home/pneves/Projects/drohub/DroHub/DroHub.Tests/DroHub.Tests.csproj]
+TestInfrastructure/DroneDeviceHelper.cs(153,42): warning CS0168: The variable 'e' is declared but never used [/home/pneves/Projects/drohub/DroHub/DroHub.Tests/DroHub.Tests.csproj]
+Test run for /home/pneves/Projects/drohub/DroHub/DroHub.Tests/bin/Debug/netcoreapp3.1/DroHub.Tests.dll(.NETCoreApp,Version=v3.1)
+Microsoft (R) Test Execution Command Line Tool Version 16.3.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+
+Starting test execution, please wait...
+
+A total of 1 test files matched the specified pattern.
+Ready to start
+accepting
+accepting
+accepting
+accepting
+accepting
+accepting
+accepting
+accepting
+accepting

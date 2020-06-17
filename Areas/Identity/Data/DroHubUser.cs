@@ -28,6 +28,7 @@ namespace DroHub.Areas.Identity.Data
             new Claim(GUEST_POLICY_CLAIM, CLAIM_VALID_VALUE),
             DeviceAuthorizationHandler.DeviceResourceOperations.CameraActionsClaim,
             DeviceAuthorizationHandler.DeviceResourceOperations.ReadClaim,
+            MediaObjectAuthorizationHandler.MediaObjectResourceOperations.ReadClaim,
         };
 
         private static readonly List<Claim> PilotPolicyClaims = new List<Claim>(GuestPolicyClaims) {
@@ -42,6 +43,7 @@ namespace DroHub.Areas.Identity.Data
             new Claim(OWNER_POLICY_CLAIM, CLAIM_VALID_VALUE),
             new Claim(Subscription.CAN_SEE_OWN_SUBSCRIPTION, Subscription.CLAIM_VALID_VALUE),
             new Claim(Subscription.CAN_EDIT_USERS_IN_OWN_SUBSCRIPTION, Subscription.CLAIM_VALID_VALUE),
+            MediaObjectAuthorizationHandler.MediaObjectResourceOperations.DeleteClaim,
         };
 
         private static readonly List<Claim> SubscriberPolicyClaims = new List<Claim>(OwnerPolicyClaims) {

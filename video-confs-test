@@ -1,0 +1,47 @@
+make all deviceAPI public methods authorizable by default
+
+
+5/9/2020, 3:26:08 PM  25,"VP8",640,360,302400,128000,
+
+5/9/2020, 3:38:12 PM 20,"VP8",1280,720,302400,128000,
+
+5/9/2020, 3:48:19 PM       20,"VP8",1280,720,409600,128000,
+
+
+    location /janus {
+        proxy_pass "http://localhost:8088";
+    }
+
+    location /admin {
+	proxy_pass "http://localhost:7088";
+    }
+
+    location /Identity {
+        proxy_pass "http://localhost:5000";
+    }
+
+    location /DHub {
+        proxy_pass "http://localhost:5000";
+    }
+
+    location /api {
+        proxy_pass "http://localhost:5000";
+    }
+
+    location / {
+        proxy_pass "http://localhost:8001";
+        proxy_intercept_errors on;
+        error_page 404 = @fallback;
+    }
+
+    location @fallback {
+        proxy_pass "http://localhost:5000";
+    }
+
+git apt-get install -y libmicrohttpd-dev libjansson-dev libnice-dev \
+    libssl-dev libglib2.0-dev \
+    libopus-dev libogg-dev libcollection-dev \
+    pkg-config gengetopt libtool automake libconfig-dev libsrtp2-dev make libwebsockets-dev libwebsockets-dev libavutil-dev libavcodec-dev libavformat-dev
+
+./configure --enable-post-processing
+make -j6

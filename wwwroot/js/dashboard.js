@@ -1,4 +1,11 @@
 $(function () {
+
+    $('input').iCheck({
+        checkboxClass: 'icheckbox_square-blue',
+        radioClass: 'iradio_square-blue',
+        increaseArea: '20%' /* optional */
+    });
+
     var MapClass = function () {
         let data_function_table = {};
         let maps = {};
@@ -279,17 +286,6 @@ $(function () {
             }
         }
     }();
-
-    function isFunction(o) {
-        return typeof o === "function";
-    }
-
-    function addFunctionToArray(array, new_f) {
-        if (isFunction(new_f))
-            array.push(new_f);
-        else
-            console.error("Tried to add non function when a function was expected");
-    }
 
     let ElementClassRangeClass = function () {
         let _available_classes = new Set();

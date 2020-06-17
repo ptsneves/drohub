@@ -93,10 +93,13 @@ namespace DroHub
 
             services.AddAuthorization();
 
-            services.AddDeviceResourceAuthorization();
             services.AddSubscriptionAPI();
+            services.AddDeviceResourceAuthorization();
+            services.AddMediaObjectResourceAuthorization();
             services.AddDeviceAPI();
             services.AddDeviceConnectionSessionAPI();
+
+            services.AddMediaObjectTagAPI();
 
 
             services.AddWebSocketManager();

@@ -1,3 +1,7 @@
+using System;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -6,6 +10,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace DroHub.Data
 {
+    public static class DroHubContextExtensions {
+        public static async Task AddIfNotExists<T>(this DbSet<T> dbSet, T entity,
+            Expression<Func<T, bool>> predicate = null) where T : class, new() {
+            var exists = predicate != null ? dbSet.Any(predicate) : dbSet.Any();
+            if (!exists)
+                await dbSet.AddAsync(entity);
+        }
+    }
+
     public class DroHubContext : IdentityDbContext<DroHubUser>
     {
         public DroHubContext(DbContextOptions<DroHubContext> options)
@@ -27,6 +40,9 @@ namespace DroHub.Data
         public DbSet<DroneLiveVideoStateResult> DroneVideoStatesResults { get; set; }
         public DbSet<DeviceConnection> DeviceConnections { get; set; }
 
+        public DbSet<MediaObject> MediaObjects { get; set; }
+        public DbSet<MediaObjectTag> MediaObjectTags { get; set; }
+
         public DbSet<Subscription> Subscriptions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -39,6 +55,12 @@ namespace DroHub.Data
             builder.Entity<Device>()
                 .HasIndex(d => d.SerialNumber)
                 .IsUnique();
+
+            builder.Entity<MediaObject>()
+                .HasKey(m => m.MediaPath);
+
+            builder.Entity<MediaObjectTag>()
+                .HasKey(m => new {m.TagName, VideoPath = m.MediaPath});
 
             builder.Entity<DeviceConnection>()
                 .HasKey(d => d.Id);
@@ -148,6 +170,10 @@ namespace DroHub.Data
                 .HasOne(cd => cd.Device)
                 .WithMany(d => d.DeviceConnections);
 
+            builder.Entity<DeviceConnection>()
+                .HasMany(cd => cd.MediaObjects)
+                .WithOne(mo => mo.DeviceConnection);
+
             builder.Entity<Subscription>()
                 .HasMany(d => d.Users)
                 .WithOne(u => u.Subscription);
@@ -159,6 +185,26 @@ namespace DroHub.Data
             builder.Entity<Subscription>()
                 .HasMany(s => s.DeviceConnections)
                 .WithOne(dc => dc.Subscription);
+
+            builder.Entity<Subscription>()
+                .HasMany(s => s.MediaObjectTags)
+                .WithOne(mo => mo.Subscription);
+
+
+            builder.Entity<MediaObjectTag>()
+                .HasOne(s => s.Subscription)
+                .WithMany(dc => dc.MediaObjectTags);
+
+
+            builder.Entity<MediaObject>()
+                .HasOne(mo => mo.DeviceConnection)
+                .WithMany(dc => dc.MediaObjects);
+
+
+            builder.Entity<MediaObjectTag>()
+                .HasOne(bc => bc.MediaObject)
+                .WithMany(b => b.MediaObjectTags)
+                .HasForeignKey(bc => bc.MediaPath);
         }
     }
 }

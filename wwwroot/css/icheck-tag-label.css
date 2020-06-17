@@ -1,0 +1,84 @@
+/* iCheck plugin Line skin, blue
+----------------------------------- */
+.icheckbox_tag-label,
+.iradio_line-blue {
+    position: relative;
+    display: inline-block;
+    margin: 2px 3px 2px 3px;
+    padding: 2px 7px 2px 7px;
+    font-size: 13px;
+    line-height: 17px;
+    color: #fff;
+    background: #758093;
+    border: none;
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
+    border-radius: 20px;
+}
+
+.icheckbox_tag-label a {
+    margin-right: 6px;
+    color: white;
+}
+
+.icheckbox_tag-label a:hover {
+    margin-right: 6px;
+    color: #d9d5d5;
+}
+
+.icheckbox_tag-label .icheck_line-icon,
+.iradio_line-blue .icheck_line-icon {
+    position: absolute;
+    top: 50%;
+    left: 13px;
+    width: 13px;
+    height: 11px;
+    margin: -5px 0 0 0;
+    padding: 0;
+    overflow: hidden;
+    background: url(/AdminLTE/plugins/iCheck/line/line.png) no-repeat;
+    border: none;
+}
+.icheckbox_tag-label.hover,
+.icheckbox_tag-label.checked.hover,
+.iradio_line-blue.hover {
+    background: #b8b5b5;
+}
+.icheckbox_tag-label.checked,
+.iradio_line-blue.checked {
+    background: #b4bdca;
+}
+.icheckbox_tag-label.checked .icheck_line-icon,
+.iradio_line-blue.checked .icheck_line-icon {
+    background-position: -15px 0;
+}
+.icheckbox_tag-label.disabled,
+.iradio_line-blue.disabled {
+    background: #ADD7F0;
+    cursor: default;
+}
+.icheckbox_tag-label.disabled .icheck_line-icon,
+.iradio_line-blue.disabled .icheck_line-icon {
+    background-position: -30px 0;
+}
+.icheckbox_tag-label.checked.disabled,
+.iradio_line-blue.checked.disabled {
+    background: #ADD7F0;
+}
+.icheckbox_tag-label.checked.disabled .icheck_line-icon,
+.iradio_line-blue.checked.disabled .icheck_line-icon {
+    background-position: -45px 0;
+}
+
+/* Retina support */
+@media only screen and (-webkit-min-device-pixel-ratio: 1.5),
+only screen and (-moz-min-device-pixel-ratio: 1.5),
+only screen and (-o-min-device-pixel-ratio: 3/2),
+only screen and (min-device-pixel-ratio: 1.5) {
+    .icheckbox_tag-label .icheck_line-icon,
+    .iradio_line-blue .icheck_line-icon {
+        background-image: url(/AdminLTE/plugins/iCheck/line/line@2x.png);
+        -webkit-background-size: 60px 13px;
+        background-size: 60px 13px;
+    }
+}

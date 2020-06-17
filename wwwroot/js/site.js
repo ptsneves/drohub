@@ -122,3 +122,23 @@ $(async function () {
 
     ModalClass.init();
 });
+
+function isFunction(o) {
+    return typeof o === "function";
+}
+
+function addFunctionToArray(array, new_f) {
+    if (isFunction(new_f))
+        array.push(new_f);
+    else
+        console.error("Tried to add non function when a function was expected");
+}
+
+function callFunc(a, data) {
+    a.forEach(func => {
+        if (data)
+            func(data);
+        else
+            func();
+    });
+}

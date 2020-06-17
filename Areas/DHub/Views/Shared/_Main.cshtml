@@ -13,8 +13,6 @@
     <link rel="stylesheet" href="~/AdminLTE/bower_components/font-awesome/css/all.css"> <!--load all styles -->
     <!-- Theme style -->
     <link rel="stylesheet" href="~/AdminLTE/dist/css/AdminLTE.css">
-    <!-- iCheck -->
-    <link rel="stylesheet" href="~/AdminLTE/plugins/iCheck/square/blue.css">
     <!-- AdminLTE Skins. Choose a skin from the css/skins
          folder instead of downloading all of them to reduce the load. -->
     <link rel="stylesheet" href="~/AdminLTE/dist/css/skins/_all-skins.min.css">
@@ -42,83 +40,75 @@
     <!-- Custom site css We want to be able to override -->
     <link rel="stylesheet" href="~/css/site.css">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/logo/tabbar-icon-32x32.png">
+    @RenderSection("head", required: false)
+     <!-- ./wrapper -->
+        <!-- jQuery 3 -->
+        <script src="~/AdminLTE/bower_components/jquery/dist/jquery.min.js"></script>
+        <!-- jQuery UI 1.11.4 -->
+        <script src="~/AdminLTE/bower_components/jquery-ui/jquery-ui.min.js"></script>
+        <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+        <script>
+            $.widget.bridge('uibutton', $.ui.button);
+        </script>
+        <!-- Bootstrap 3.3.7 -->
+        <script src="~/AdminLTE/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+        <!-- Select2 -->
+        <script src="~/AdminLTE/bower_components/select2/dist/js/select2.full.min.js"></script>
+        <!-- iCheck -->
+        <script src="~/AdminLTE/plugins/iCheck/icheck.min.js"></script>
+        <!-- Sparkline -->
+        <script src="~/AdminLTE/bower_components/jquery-sparkline/dist/jquery.sparkline.min.js"></script>
+        <!-- jvectormap -->
+        <script src="~/AdminLTE/plugins/jvectormap/jquery-jvectormap-1.2.2.min.js"></script>
+        <script src="~/AdminLTE/plugins/jvectormap/jquery-jvectormap-world-mill-en.js"></script>
+        <!-- jQuery Knob Chart -->
+        <script src="~/AdminLTE/bower_components/jquery-knob/dist/jquery.knob.min.js"></script>
+        <!-- daterangepicker -->
+        <script src="~/AdminLTE/bower_components/moment/min/moment.min.js"></script>
+        <script src="~/AdminLTE/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
+        <!-- datepicker -->
+        <script src="~/AdminLTE/bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
+        <!-- Bootstrap WYSIHTML5 -->
+        <script src="~/AdminLTE/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js"></script>
+        <!-- Slimscroll -->
+        <script src="~/AdminLTE/bower_components/jquery-slimscroll/jquery.slimscroll.min.js"></script>
+        <!-- FastClick -->
+        <script src="~/AdminLTE/bower_components/fastclick/lib/fastclick.js"></script>
+        <script src="~/js/activeSideMenus.js"></script>
+
+        <script src="~/js/site.js"></script>
+        <!-- AdminLTE App -->
+        <script src="~/AdminLTE/dist/js/adminlte.min.js"></script>
+        @RenderSection("Scripts", required: false)
 </head>
 <body class="hold-transition skin-drohub sidebar-mini">
-    <div class="wrapper">
-        @await Component.InvokeAsync("Notifications")
-        @await Component.InvokeAsync("Sidebar")
-        <!-- Left side column. contains the logo and sidebar -->
-        <!-- /.sidebar -->
-        <!-- Content Wrapper. Contains page content -->
-        <div class="content-wrapper">
-            <!-- Cookie Consent -->
-            <partial name="_CookieConsentPartial" />
-            <!-- Page body -->
-            @RenderBody()
-            <div id="modal-placeholder"></div>
-            <!-- /Page body -->
-        </div>
-        <!-- /.content-wrapper -->
-        <footer class="main-footer">
-            <div class="pull-right @*hidden-xs*@">
-                <b>Version</b>
-                @{
-                    var build_hash = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
-                }
-                <!-- @build_hash -->
-                <strong>&copy; @DateTime.Now.Year <a href="https://www.drohub.xyz/">DROHUB</a> | </strong>
-                 All rights reserved.
-            </div>
-            <strong>&nbsp;</strong>
-        </footer>
+<div class="wrapper">
+    @await Component.InvokeAsync("Notifications")
+    @await Component.InvokeAsync("Sidebar")
+    <!-- Left side column. contains the logo and sidebar -->
+    <!-- /.sidebar -->
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Cookie Consent -->
+        <partial name="_CookieConsentPartial" />
+        <!-- Page body -->
+        @RenderBody()
+        <div id="modal-placeholder"></div>
+        <!-- /Page body -->
     </div>
-    <!-- ./wrapper -->
-    <!-- jQuery 3 -->
-    <script src="~/AdminLTE/bower_components/jquery/dist/jquery.min.js"></script>
-    <!-- jQuery UI 1.11.4 -->
-    <script src="~/AdminLTE/bower_components/jquery-ui/jquery-ui.min.js"></script>
-    <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
-    <script>
-        $.widget.bridge('uibutton', $.ui.button);
-    </script>
-    <!-- Bootstrap 3.3.7 -->
-    <script src="~/AdminLTE/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <!-- Select2 -->
-    <script src="~/AdminLTE/bower_components/select2/dist/js/select2.full.min.js"></script>
-    <!-- iCheck -->
-    <script src="~/AdminLTE/plugins/iCheck/icheck.min.js"></script>
-    <script>
-        $(function () {
-            $('input').iCheck({
-                checkboxClass: 'icheckbox_square-blue',
-                radioClass: 'iradio_square-blue',
-                increaseArea: '20%' /* optional */
-            });
-        });
-    </script>
-    <!-- Sparkline -->
-    <script src="~/AdminLTE/bower_components/jquery-sparkline/dist/jquery.sparkline.min.js"></script>
-    <!-- jvectormap -->
-    <script src="~/AdminLTE/plugins/jvectormap/jquery-jvectormap-1.2.2.min.js"></script>
-    <script src="~/AdminLTE/plugins/jvectormap/jquery-jvectormap-world-mill-en.js"></script>
-    <!-- jQuery Knob Chart -->
-    <script src="~/AdminLTE/bower_components/jquery-knob/dist/jquery.knob.min.js"></script>
-    <!-- daterangepicker -->
-    <script src="~/AdminLTE/bower_components/moment/min/moment.min.js"></script>
-    <script src="~/AdminLTE/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
-    <!-- datepicker -->
-    <script src="~/AdminLTE/bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
-    <!-- Bootstrap WYSIHTML5 -->
-    <script src="~/AdminLTE/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js"></script>
-    <!-- Slimscroll -->
-    <script src="~/AdminLTE/bower_components/jquery-slimscroll/jquery.slimscroll.min.js"></script>
-    <!-- FastClick -->
-    <script src="~/AdminLTE/bower_components/fastclick/lib/fastclick.js"></script>
-    <script src="~/js/activeSideMenus.js"></script>
-
-    <script src="~/js/site.js"></script>
-    <!-- AdminLTE App -->
-    <script src="~/AdminLTE/dist/js/adminlte.min.js"></script>
-    @RenderSection("Scripts", required: false)
+    <!-- /.content-wrapper -->
+    <footer class="main-footer">
+        <div class="pull-right @*hidden-xs*@">
+            <b>Version</b>
+            @{
+                var build_hash = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
+            }
+            <!-- @build_hash -->
+            <strong>&copy; @DateTime.Now.Year <a href="https://www.drohub.xyz/">DROHUB</a> | </strong>
+            All rights reserved.
+        </div>
+        <strong>&nbsp;</strong>
+    </footer>
+</div>
 </body>
 </html>

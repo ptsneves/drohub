@@ -100,14 +100,14 @@ button.login-submit-btn-drohub:hover {
 .drohub-form-control {
     display: block;
     width: 100%;
-    height: 56px;
+    height: 58px;
     padding: 6px 12px;
     font-size: 20px;
     line-height: 1.42857143;
     color: #555;
     background-color: #fff;
     background-image: none;
-    border: 0 solid #ccc;
+    border: 0;
     border-radius: 0;
     -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
     box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
@@ -117,7 +117,7 @@ button.login-submit-btn-drohub:hover {
 }
 
 .drohub-input-group-addon {
-    padding: 6px 12px;
+    padding: 6px 5px;
     font-size: 20px;
     font-weight: 600;
     line-height: 1;
@@ -129,8 +129,7 @@ button.login-submit-btn-drohub:hover {
     display: table-cell;
     width: 1%;
     white-space: nowrap;
-    vertical-align: middle;;
-
+    vertical-align: middle;
 }
 
 .drohub-gallery-content-margin {
@@ -141,33 +140,6 @@ img.drohub-device-id-drone-blue {
     width: 70%;
     height: 70%;
     filter: invert(86%) sepia(75%) saturate(2%) hue-rotate(139deg) brightness(108%) contrast(101%)
-}
-
-img.media-type-image {
-    filter: invert(64%) sepia(19%) saturate(16%) hue-rotate(324deg) brightness(101%) contrast(86%);
-}
-
-.drohub-search-media-type-btn {
-    display: inline-block;
-    padding: 6px 12px;
-    margin-bottom: 0;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 1.42857143;
-    text-align: center;
-    white-space: nowrap;
-    vertical-align: middle;
-    -ms-touch-action: manipulation;
-    touch-action: manipulation;
-    cursor: pointer;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    background-image: none;
-    border: 1px solid transparent;
-    border-radius: 4px;
-
 }
 
 .drohub-blue-bg {
@@ -459,9 +431,40 @@ nav.drohub-navbar {
     padding:7px;
 }
 
-video.livestream-recording {
-    max-height: 162px;
-    padding: 8px;
+.col-xs-5ths,
+.col-sm-5ths,
+.col-md-5ths,
+.col-lg-5ths {
+    position: relative;
+    min-height: 1px;
+    padding-right: 10px;
+    padding-left: 10px;
+}
+
+.col-xs-5ths {
+    width: 20%;
+    float: left;
+}
+
+@media (min-width: 468px) {
+    .col-sm-5ths {
+        width: 20%;
+        float: left;
+    }
+}
+
+@media (min-width: 692px) {
+    .col-md-5ths {
+        width: 20%;
+        float: left;
+    }
+}
+
+@media (min-width: 1200px) {
+    .col-lg-5ths {
+        width: 20%;
+        float: left;
+    }
 }
 
 .device-video {
@@ -473,18 +476,22 @@ video.livestream-recording {
 .telemetry-single-data {
     padding: 5px;
 }
-.device-video-overlay-animation {
-    opacity: 0;
-    filter:alpha(opacity=0);
-    -webkit-transition: all 400ms ease-in-out;
-    -moz-transition: all 400ms ease-in-out;
-    -ms-transition: all 400ms ease-in-out;
-    -o-transition: all 400ms ease-in-out;
-}
 
-.device-video-overlay-animation:hover, .device-video-overlay-animation:active {
-    opacity: 100%;
-    filter:alpha(opacity=100);
+
+@media (hover: hover) {
+    .device-video-overlay-animation {
+        opacity: 0;
+        filter: alpha(opacity=0);
+        -webkit-transition: all 400ms ease-in-out;
+        -moz-transition: all 400ms ease-in-out;
+        -ms-transition: all 400ms ease-in-out;
+        -o-transition: all 400ms ease-in-out;
+    }
+
+    .device-video-overlay-animation:hover, .device-video-overlay-animation:active {
+        opacity: 100%;
+        filter: alpha(opacity=100);
+    }
 }
 
 .device-video-overlay {

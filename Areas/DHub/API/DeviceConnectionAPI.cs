@@ -39,12 +39,12 @@ namespace DroHub.Areas.DHub.API {
     }
 
     public class DeviceConnectionException : Exception {
-        public DeviceConnectionException(string message) : base(message) {
+        internal DeviceConnectionException(string message) : base(message) {
         }
     }
 
     public class DeviceConnectionAPI {
-        public static readonly string MediaDir = "/var/live-video-storage/";
+
         private static readonly ConcurrentDictionary<ThriftMessageHandler, DeviceConnection> _connections =
             new ConcurrentDictionary<ThriftMessageHandler, DeviceConnection>();
 
@@ -60,10 +60,6 @@ namespace DroHub.Areas.DHub.API {
             _device_api = device_api;
             _logger = logger;
             _subscription_api = subscription_api;
-        }
-
-        public string getConnectionMediaDir(long connection_id) {
-            return $"{MediaDir}/{connection_id}";
         }
 
         private IEnumerable<ThriftMessageHandler> getActiveSubscriptionConnections() {
@@ -114,6 +110,17 @@ namespace DroHub.Areas.DHub.API {
             return await _db_context.Devices
                 .Where(d => d.SerialNumber == serial.Value)
                 .SingleAsync();
+        }
+
+
+        public async Task<IEnumerable<DeviceConnection>> getSubscribedDeviceConnections() {
+            var org_name = _subscription_api.getSubscriptionName();
+            return await _db_context.DeviceConnections
+                .Where(cd => cd.SubscriptionOrganizationName == org_name.Value)
+                .Include(cd => cd.Device)
+                .Include(cd => cd.MediaObjects)
+                .ThenInclude(media => media.MediaObjectTags)
+                .ToArrayAsync();
         }
 
         public static ThriftMessageHandler getRPCSessionOrDefault(Device device) {
