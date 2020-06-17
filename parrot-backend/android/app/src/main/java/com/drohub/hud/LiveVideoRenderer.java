@@ -6,15 +6,17 @@ import android.opengl.*;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.parrot.drone.groundsdk.device.peripheral.StreamServer;
 import com.parrot.drone.groundsdk.internal.stream.GlRenderSink;
 import org.webrtc.*;
+import org.webrtc.VideoFrame.TextureBuffer;
 
 import java.io.InvalidObjectException;
 import java.util.concurrent.TimeUnit;
+
+import static android.os.Process.THREAD_PRIORITY_LOWEST;
 
 public class LiveVideoRenderer implements GlRenderSink.Callback {
     /** Stream renderer. */
@@ -23,12 +25,12 @@ public class LiveVideoRenderer implements GlRenderSink.Callback {
     /** Rendering surface area. Also acts as ready indicator: when non-{@code null}, rendering may start. */
     @Nullable private Rect _gl_surface_rect;
 
+    private static final int FramesPerSecond = 30;
     private final HandlerThread _render_thread;
     private final Handler _render_handler;
     private final StreamServer _stream_server;
     private final CapturerObserver _capturer_observer;
-    private int _width;
-    private int _height;
+    private long elapsed_time_since_last_frame_ms;
 
     EglBase.Context _egl_context;
     EglBase _egl_base;
@@ -41,13 +43,12 @@ public class LiveVideoRenderer implements GlRenderSink.Callback {
 
         _stream_server = stream_server;
         _capturer_observer = capturer_observer;
-        _render_thread = new HandlerThread("RenderingThread");
+        _render_thread = new HandlerThread("RenderingThread", THREAD_PRIORITY_LOWEST);
         _render_thread.start();
         _render_handler = new Handler(_render_thread.getLooper());
         _egl_context = egl_context;
-        _width = width;
-        _height = height;
         _gl_surface_rect = new Rect(0, 0, width, height);
+        elapsed_time_since_last_frame_ms = System.currentTimeMillis();
     }
 
     public final void stopStream() {
@@ -88,22 +89,26 @@ public class LiveVideoRenderer implements GlRenderSink.Callback {
         });
     }
 
+    public static long convertFramesPerSecondsToMillisPeriod(int frame_per_second) {
+        return  (long)(1.0 / frame_per_second * 1000.0f);
+    }
+
     @Override
     public void onRenderingMustStop(@NonNull GlRenderSink.Renderer parrot_renderer) {
         stopStream();
     }
 
-    private void onFrameReady() {
+    @Override
+    public void onFrameReady(@NonNull GlRenderSink.Renderer parrot_renderer) {
+        if(System.currentTimeMillis() - elapsed_time_since_last_frame_ms < convertFramesPerSecondsToMillisPeriod(FramesPerSecond))
+            return;
+
         VideoFrame videoFrame = new VideoFrame(createRgbTextureBuffer(),
                 0 /* rotation */,
                 TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime()));
         _capturer_observer.onFrameCaptured(videoFrame);
+        elapsed_time_since_last_frame_ms = System.currentTimeMillis();
         videoFrame.release();
-    }
-
-    @Override
-    public void onFrameReady(@NonNull GlRenderSink.Renderer parrot_renderer) {
-        onFrameReady();
     }
 
     @Override
@@ -114,21 +119,22 @@ public class LiveVideoRenderer implements GlRenderSink.Callback {
         });
     }
 
-    public VideoFrame.TextureBuffer createRgbTextureBuffer() {
+    public TextureBuffer createRgbTextureBuffer() {
         return ThreadUtils.invokeAtFrontUninterruptibly(_render_handler, () -> {
 
             final GlTextureFrameBuffer textureFrameBuffer = new GlTextureFrameBuffer(GLES20.GL_RGBA);
-            textureFrameBuffer.setSize(_width, _height);
+            textureFrameBuffer.setSize(_gl_surface_rect.width(), _gl_surface_rect.height());
 
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, textureFrameBuffer.getFrameBufferId());
-            GLES20.glClearColor(0,0,0,0.5f);
-            final GlRectDrawer drawer = new GlRectDrawer();
+            GlUtil.checkNoGLES2Error("glBindFramebuffer");
+            GLES20.glClearColor(0,0,0,0);
 
             _parrot_renderer.renderFrame();
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+            GLES20.glFinish();
 
             final YuvConverter yuvConverter = new YuvConverter();
-            return new TextureBufferImpl(_width, _height, VideoFrame.TextureBuffer.Type.RGB,
+            return new TextureBufferImpl(_gl_surface_rect.width(), _gl_surface_rect.height(), VideoFrame.TextureBuffer.Type.RGB,
                     textureFrameBuffer.getTextureId(),
                     new Matrix(), _render_handler, yuvConverter,
                     () -> _render_handler.post(() -> {
