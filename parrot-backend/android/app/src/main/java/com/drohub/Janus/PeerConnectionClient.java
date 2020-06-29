@@ -44,7 +44,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
 
   private MediaConstraints sdpMediaConstraints;
   public PeerConnectionParameters peerConnectionParameters;
-  private MediaStream mediaStream;
+  private MediaStream local_webrtc_stream;
   private VideoCapturer videoCapturer;
 
   public PeerConnectionClient(long room_id, String displayName, final Context context,
@@ -54,7 +54,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
       this.peerConnectionParameters = peerConnectionParameters;
       videoCapturerStopped = false;
       isError = false;
-      mediaStream = null;
+      local_webrtc_stream = null;
       videoCapturer = null;
       this.local_video_sink = peerConnectionParameters.localView;
       this.remote_video_sink = peerConnectionParameters.remoteView;
@@ -100,6 +100,10 @@ public class PeerConnectionClient implements JanusRTCInterface {
     }
   }
 
+  public boolean setMicrophoneMute(boolean do_mute) {
+    return local_webrtc_stream.audioTracks.get(0).setEnabled(!do_mute);
+  }
+
   public boolean isAudioEnabled() {
     return peerConnectionParameters.audioCodec != null;
   }
@@ -127,7 +131,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
 
     PeerConnection peerConnection = createPeerConnection(handleId, JanusConnection.ConnectionType.LOCAL);
 
-    mediaStream = factory.createLocalMediaStream("ARDAMS");
+    local_webrtc_stream = factory.createLocalMediaStream("ARDAMS");
     VideoSource videoSource = factory.createVideoSource(false);
 
     try {
@@ -148,11 +152,11 @@ public class PeerConnectionClient implements JanusRTCInterface {
       Log.e(TAG, e.getMessage());
       e.printStackTrace();
     }
-    mediaStream.addTrack(createVideoTrack(videoSource));
+    local_webrtc_stream.addTrack(createVideoTrack(videoSource));
     if (isAudioEnabled()) {
-      mediaStream.addTrack(createAudioTrack(peerConnectionParameters.noAudioProcessing));
+      local_webrtc_stream.addTrack(createAudioTrack());
     }
-    peerConnection.addStream(mediaStream);
+    peerConnection.addStream(local_webrtc_stream);
   }
 
   private PeerConnection createPeerConnection(BigInteger handleId, JanusConnection.ConnectionType type) {
@@ -237,21 +241,17 @@ public class PeerConnectionClient implements JanusRTCInterface {
       peerConnection.createAnswer(connection.sdpObserver, sdpMediaConstraints);
   }
 
-  private AudioTrack createAudioTrack(boolean disable_audio_processing) {
+  private AudioTrack createAudioTrack() {
     // Create audio constraints.
     MediaConstraints audioConstraints = new MediaConstraints();
-    // added for audio performance measurements
-    if (disable_audio_processing) {
-      Log.d(TAG, "Disabling audio processing");
-      audioConstraints.mandatory.add(
-              new MediaConstraints.KeyValuePair(AUDIO_ECHO_CANCELLATION_CONSTRAINT, "false"));
-      audioConstraints.mandatory.add(
-              new MediaConstraints.KeyValuePair(AUDIO_AUTO_GAIN_CONTROL_CONSTRAINT, "false"));
-      audioConstraints.mandatory.add(
-              new MediaConstraints.KeyValuePair(AUDIO_HIGH_PASS_FILTER_CONSTRAINT, "false"));
-      audioConstraints.mandatory.add(
-              new MediaConstraints.KeyValuePair(AUDIO_NOISE_SUPPRESSION_CONSTRAINT, "false"));
-    }
+    audioConstraints.mandatory.add(
+            new MediaConstraints.KeyValuePair(AUDIO_ECHO_CANCELLATION_CONSTRAINT, "true"));
+    audioConstraints.mandatory.add(
+            new MediaConstraints.KeyValuePair(AUDIO_AUTO_GAIN_CONTROL_CONSTRAINT, "true"));
+    audioConstraints.mandatory.add(
+            new MediaConstraints.KeyValuePair(AUDIO_HIGH_PASS_FILTER_CONSTRAINT, "true"));
+    audioConstraints.mandatory.add(
+            new MediaConstraints.KeyValuePair(AUDIO_NOISE_SUPPRESSION_CONSTRAINT, "true"));
     AudioSource audioSource = factory.createAudioSource(audioConstraints);
     AudioTrack localAudioTrack = factory.createAudioTrack(AUDIO_TRACK_ID, audioSource);
     localAudioTrack.setEnabled(true);

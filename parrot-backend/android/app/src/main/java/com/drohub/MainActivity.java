@@ -6,16 +6,19 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
-
-import com.android.volley.*;
+import com.android.volley.Cache;
+import com.android.volley.Network;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.BasicNetwork;
 import com.android.volley.toolbox.DiskBasedCache;
 import com.android.volley.toolbox.HurlStack;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.android.material.textfield.TextInputEditText;
 import com.parrot.drone.groundsdk.device.Drone;
-
+import com.parrot.drone.groundsdk.device.RemoteControl;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -26,6 +29,8 @@ public class MainActivity extends GroundSdkActivityBase {
     private static final String ACCOUNTS = "com.drohub.accounts";
     private SharedPreferences _saved_accounts;
     private Drone _connected_drone;
+    private RemoteControl _connected_rc;
+
     private Cache _volley_cache;
     private Network _volley_network;
     private RequestQueue _request_queue;
@@ -68,12 +73,14 @@ public class MainActivity extends GroundSdkActivityBase {
         String url = getString(R.string.drohub_url) + "/api/AndroidApplication/QueryDeviceInfo";
         String device_serial =  _connected_drone == null ? "NODEVICE" : _connected_drone.getUid();
         JSONObject request = new JSONObject();
+
         try {
             request.put("DeviceSerialNumber", device_serial);
         }
          catch (JSONException e) {
             setStatusText(status_view,"Could not create a json query", Color.RED);
         }
+
         setStatusText(status_view,"Retrieving device info", Color.BLACK);
         DroHubObjectRequest token_validation_request = new DroHubObjectRequest(_user_email, _user_auth_token,
                 Request.Method.POST, url, request, response -> {
@@ -83,12 +90,12 @@ public class MainActivity extends GroundSdkActivityBase {
             }
             if (!response.isNull("result")) { //We just care that there is something on the system
                 Intent intent = new Intent(this, CopterHudActivity.class);
-                addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid());
+                addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid(), _connected_rc.getUid());
                 this.startActivity(intent);
             }
             else {
                 Intent intent = new Intent(this, CreateDeviceActivity.class);
-                addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid());
+                addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid(), _connected_rc.getUid());
                 this.startActivity(intent);
             }
         }, error -> {
@@ -100,14 +107,16 @@ public class MainActivity extends GroundSdkActivityBase {
     }
 
     @Override
-    protected void onDroneConnected(Drone drone) {
+    protected void onDroneConnected(Drone drone, RemoteControl rc) {
         _connected_drone = drone;
+        _connected_rc = rc;
         validateDeviceRegisteredAndLaunchIfPossible();
     }
 
     @Override
     protected void onDroneDisconnected() {
         _connected_drone = null;
+        _connected_rc = null;
     }
 
 
@@ -120,6 +129,9 @@ public class MainActivity extends GroundSdkActivityBase {
     }
 
     public void tryPilotLogin(View view) {
+        if (_user_email == null)
+            return;
+
         _user_email = email_ctrl.getText().toString();
         String password = password_ctrl.getText().toString();
         String url = getString(R.string.drohub_url) + "/api/GetToken/GetApplicationToken";

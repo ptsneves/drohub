@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.util.Log;
 import android.widget.TextView;
-import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.view.View;
@@ -36,7 +35,7 @@ public class CreateDeviceActivity extends DroHubActivityBase {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_device);
         status_view = findViewById(R.id.status_text);
-        _device_serial = getIntent().getStringExtra(EXTRA_DEVICE_UID);
+        _device_serial = getIntent().getStringExtra(DRONE_UID);
         _user_email = getIntent().getStringExtra(EXTRA_USER_EMAIL);
         _user_token = getIntent().getStringExtra(EXTRA_USER_AUTH_TOKEN);
         if (_device_serial == null || _user_email == null || _user_token == null) {

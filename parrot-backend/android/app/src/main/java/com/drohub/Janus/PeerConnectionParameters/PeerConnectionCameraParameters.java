@@ -13,11 +13,10 @@ public class PeerConnectionCameraParameters extends PeerConnectionParameters {
                                           Activity activity,
                                           int videoWidth, int videoHeight, int videoFps,
                                           String videoCodec, int videoStartBitrate,
-                                          int audioStartBitrate, String audioCodec,
-                                          boolean noAudioProcessing) {
+                                          int audioStartBitrate, String audioCodec) {
         super(local_view, remote_view, turn_user_name, turn_credential, ice_servers, janus_web_socket_uri, activity,
                 videoWidth, videoHeight, videoFps, videoCodec,
                 videoStartBitrate, VideoCapturerType.CAMERA_FRONT, audioStartBitrate,
-                audioCodec, noAudioProcessing);
+                audioCodec);
     }
 }

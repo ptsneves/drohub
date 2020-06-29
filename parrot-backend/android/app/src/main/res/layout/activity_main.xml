@@ -88,6 +88,5 @@
                                                 app:constraint_referenced_ids="email_input,login_button,password_input,subscribe_hint"
                                                 tools:layout_editor_absoluteX="30dp"/>
 
-
     </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.core.widget.NestedScrollView>

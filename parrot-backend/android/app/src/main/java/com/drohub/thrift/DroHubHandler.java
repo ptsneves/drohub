@@ -8,6 +8,7 @@ import android.util.Log;
 
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
+import com.drohub.ParrotHelpers.ParrotMainCamera;
 import org.apache.thrift.*;
 
 
@@ -23,7 +24,6 @@ import com.parrot.drone.groundsdk.device.instrument.BatteryInfo;
 import com.parrot.drone.groundsdk.device.instrument.FlyingIndicators;
 import com.parrot.drone.groundsdk.device.instrument.Gps;
 import com.parrot.drone.groundsdk.device.instrument.Radio;
-import com.parrot.drone.groundsdk.device.peripheral.MainCamera;
 import com.parrot.drone.groundsdk.device.peripheral.MediaStore;
 import com.parrot.drone.groundsdk.device.peripheral.media.MediaItem;
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf;
@@ -65,30 +65,36 @@ public class DroHubHandler implements Drone.Iface {
     final private TelemetryContainer<DroneBatteryLevel> _drone_battery_level;
     final private TelemetryContainer<DroneFlyingState> _drone_flying_state;
     final private TelemetryContainer<DroneRadioSignal> _drone_radio_signal;
+    final private ParrotMainCamera _main_camera;
 
     private GroundSdkActivityBase _activity;
     private PeerConnectionClient _peerConnectionClient;
     private DroneLiveVideoState _video_state;
+
     private MediaStore _drone_media_store;
     PeerConnectionParameters _peer_connection_parameters;
     private long _room_id;
     private com.parrot.drone.groundsdk.device.Drone _drone_handle;
 
     public DroHubHandler(String serial, PeerConnectionParameters connection_parameters,
-                         GroundSdkActivityBase activity) {
+                         GroundSdkActivityBase activity)  {
+        _drone_handle = activity.getParrotSDKHandle().getDrone(serial);
+        if (_drone_handle == null)
+            throw new RuntimeException("Could not retrieve drone handle");
+
+
         _serial_number = serial;
         _drone_position = new TelemetryContainer<>();
         _drone_battery_level = new TelemetryContainer<>();
         _drone_flying_state = new TelemetryContainer<>();
         _drone_radio_signal = new TelemetryContainer<>();
+        _main_camera = new ParrotMainCamera(_drone_handle);
+
         _room_id = 0;
 
         _activity = activity;
         _peer_connection_parameters = connection_parameters;
         _video_state = DroneLiveVideoState.INVALID_CONDITION;
-        _drone_handle = _activity.getDroneHandle().getDrone(_serial_number);
-        if (_drone_handle == null)
-            throw new RuntimeException("Could not retrieve drone handle");
 
         _drone_handle.getInstrument(FlyingIndicators.class, flying_indicators -> {
             if (flying_indicators == null)
@@ -372,59 +378,19 @@ public class DroHubHandler implements Drone.Iface {
     }
 
     @Override
-    public DroneReply recordVideo(DroneRecordVideoRequest request) throws TException {
-        MainCamera camera_handle = _drone_handle.getPeripheral(MainCamera.class, camera -> {}).get();
-        if (camera_handle == null)
-            throw new TException("An error occurred retrieving the file list");
-
-        boolean action_result = false;
-        switch (request.action_type) {
-            case START:
-                camera_handle.startRecording();
-                switch (camera_handle.recordingState().get()) {
-                    case STARTED:
-                    case STARTING:
-                        action_result = true;
-                        break;
-                }
-                break;
-            case STOP:
-                camera_handle.stopRecording();
-                switch (camera_handle.recordingState().get()) {
-                    case STOPPED:
-                    case STOPPING:
-                        action_result = true;
-                }
-        }
-        return new DroneReply(action_result, _serial_number, System.currentTimeMillis());
+    public DroneReply recordVideo(DroneRecordVideoRequest request) {
+        Boolean r = _main_camera.recordVideo(request.action_type == ActionType.START);
+        return new DroneReply(r, _serial_number, System.currentTimeMillis());
     }
 
     @Override
-    public DroneReply takePicture(DroneTakePictureRequest request) throws TException {
-        MainCamera camera_handle = _drone_handle.getPeripheral(MainCamera.class, camera -> {}).get();
-        if (camera_handle == null)
-            throw new TException("An error occurred retrieving the file list");
-
-        boolean action_result = false;
-        switch (request.action_type) {
-            case START:
-                camera_handle.startPhotoCapture();
-                switch (camera_handle.recordingState().get()) {
-                    case STARTED:
-                    case STARTING:
-                        action_result = true;
-                        break;
-                }
-                break;
-            case STOP:
-                camera_handle.stopPhotoCapture();
-                switch (camera_handle.photoState().get()) {
-                    case STOPPED:
-                    case STOPPING:
-                        action_result = true;
-                }
-        }
-        return new DroneReply(action_result, _serial_number, System.currentTimeMillis());
+    public DroneReply takePicture(DroneTakePictureRequest request) {
+        Boolean r = _main_camera.triggerPhotoPicture(request.action_type == ActionType.START);
+        return new DroneReply(r, _serial_number, System.currentTimeMillis());
+    }
+    
+    public boolean setMicrophoneMute(boolean enabled) {
+        return _peerConnectionClient.setMicrophoneMute(enabled);
     }
 
     public void onStop() {

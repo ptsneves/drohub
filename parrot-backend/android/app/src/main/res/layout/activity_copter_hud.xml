@@ -32,7 +32,7 @@
   ~
   -->
 
-<com.drohub.hud.CustomDrawer
+<androidx.drawerlayout.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -48,287 +48,320 @@
         android:layout_height="match_parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/resizable_content"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:fitsSystemWindows="true">
+                android:id="@+id/resizable_content"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fitsSystemWindows="true">
 
             <org.webrtc.SurfaceViewRenderer
-                android:id="@+id/video_view"
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                app:layout_constraintBottom_toTopOf="@+id/take_off_land_btn"
-                app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/flying_indicator"
-                app:layout_constraintVertical_bias="0.0"/>
+                    android:id="@+id/video_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/flight_status"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"/>
 
-            <ImageView
-                android:id="@+id/flying_indicator"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_indicator_waiting"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toLeftOf="@+id/power_alarm"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:ignore="ContentDescription"/>
+            <com.drohub.Views.DroHubMapView
+                    android:id="@+id/drohub_map"
+                    android:layout_width="190dp"
+                    android:layout_height="190dp"
+                    android:apiKey="AIzaSyCxT5qlKhJ9UZL_oiHW6XI5zuDEvST5ujk"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+            </com.drohub.Views.DroHubMapView>
 
-            <ImageView
-                android:id="@+id/power_alarm"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_alarm_critical_power"
-                app:layout_constraintLeft_toRightOf="@+id/flying_indicator"
-                app:layout_constraintRight_toLeftOf="@+id/motor_cut_out_alarm"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:ignore="ContentDescription"/>
 
-            <ImageView
-                android:id="@+id/motor_cut_out_alarm"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_alarm_motor_cutout"
-                android:visibility="visible"
-                app:layout_constraintLeft_toRightOf="@+id/power_alarm"
-                app:layout_constraintRight_toLeftOf="@+id/motor_error_alarm"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:ignore="ContentDescription"/>
+            <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/flight_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fitsSystemWindows="true"
+                    android:paddingBottom="10dp"
+                    android:paddingTop="10dp"
+                    android:paddingHorizontal="16dp"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:background="@color/overlay_background">
 
-            <ImageView
-                android:id="@+id/motor_error_alarm"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_alarm_motor_error"
-                app:layout_constraintLeft_toRightOf="@+id/motor_cut_out_alarm"
-                app:layout_constraintRight_toLeftOf="@+id/user_emergency_alarm"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:ignore="ContentDescription"/>
+                <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
 
-            <ImageView
-                android:id="@+id/user_emergency_alarm"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_user_emergency"
-                app:layout_constraintLeft_toRightOf="@+id/motor_error_alarm"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:ignore="ContentDescription"/>
+                        app:srcCompat="@drawable/ic_video_info_signal_bad"
+                        android:id="@+id/image_video_info_signal_bad"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"/>
 
-            <ImageView
-                android:id="@+id/gps"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginStart="8dp"
-                android:src="@drawable/ic_gps"
-                app:layout_constraintBottom_toBottomOf="@id/location_text"
-                app:layout_constraintLeft_toRightOf="@+id/user_emergency_alarm"
-                app:layout_constraintTop_toTopOf="@id/location_text"
-                tools:ignore="ContentDescription"/>
+                <ImageView
+                        android:id="@+id/drone_battery_icon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="16dp"
+                        app:srcCompat="@drawable/ic_info_battery_empty"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintStart_toEndOf="@+id/image_video_info_signal_bad"/>
+
+                <TextView
+                        android:id="@+id/drone_battery_level_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical|end"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        android:layout_marginLeft="4dp"
+                        tools:text="100%"
+                        android:fontFamily="@font/noto_sans"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF"
+                        app:layout_constraintStart_toEndOf="@+id/drone_battery_icon"/>
+
+                <View
+                        android:id="@+id/status_divider_1"
+                        android:background="@android:color/white"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        android:layout_marginHorizontal="16dp"
+                        app:layout_constraintStart_toEndOf="@+id/drone_battery_level_text"
+                        app:layout_constraintRight_toLeftOf="@id/info_satellite"
+                        android:layout_width="2dp"
+                        android:layout_height="24dp"/>
+
+                <ImageView
+                        android:id="@+id/info_satellite"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:tint="#FF0000"
+                        app:srcCompat="@drawable/ic_video_info_satellite"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintStart_toEndOf="@+id/status_divider_1"
+                        app:layout_constraintRight_toLeftOf="@id/satellite_count_text"/>
+
+                <TextView
+                        android:id="@+id/satellite_count_text"
+                        android:text="N/A"
+                        android:textColor="#FFFFFF"
+                        android:fontFamily="@font/noto_sans"
+                        android:textStyle="bold"
+                        android:layout_marginStart="6dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintStart_toEndOf="@+id/info_satellite"
+                        app:layout_constraintRight_toLeftOf="@id/remote_signal_icon"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"/>
+
+                <ImageView
+                        android:id="@+id/remote_signal_icon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="16dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:srcCompat="@drawable/ic_control_signal_bad"
+                        app:layout_constraintStart_toEndOf="@+id/satellite_count_text"
+                        app:layout_constraintRight_toLeftOf="@id/remote_battery_icon"/>
+
+                <ImageView
+                        android:id="@+id/remote_battery_icon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        android:layout_marginHorizontal="16dp"
+                        app:srcCompat="@drawable/ic_video_info_control_battery_empty"
+                        app:layout_constraintStart_toEndOf="@+id/remote_signal_icon"
+                        app:layout_constraintRight_toLeftOf="@id/height_view"/>
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/height_view"
+                        xmlns:android="http://schemas.android.com/apk/res/android"
+                        xmlns:app="http://schemas.android.com/apk/res-auto"
+                        android:layout_width="wrap_content"
+                        android:animateLayoutChanges="true"
+                        app:layout_constraintLeft_toRightOf="@id/remote_battery_icon"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        android:layout_height="wrap_content">
+
+                    <ImageView
+                            android:id="@+id/height_ruler"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:srcCompat="@drawable/ic_video_info_height_ruler"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintEnd_toStartOf="@id/height_text"/>
+
+                    <TextView
+                            android:id="@+id/height_text"
+                            android:text="#?"
+                            android:textColor="#FFFFFF"
+                            android:fontFamily="@font/noto_sans"
+                            android:textStyle="bold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintStart_toEndOf="@+id/height_ruler"
+                            app:layout_constraintEnd_toEndOf="parent"/>
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <View
+                        android:id="@+id/status_divider_2"
+                        android:background="@android:color/white"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        android:layout_marginHorizontal="8dp"
+                        app:layout_constraintStart_toEndOf="@+id/height_view"
+                        app:layout_constraintRight_toLeftOf="@id/info_satellite"
+                        android:layout_width="2dp"
+                        android:layout_height="24dp"/>
+
+                <com.drohub.Views.TimerView
+                        android:id="@+id/info_flight_time"
+                        android:text="FlightTime"
+                        android:fontFamily="@font/noto_sans"
+                        android:textColor="#FFFFFF"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintStart_toEndOf="@+id/status_divider_2"
+                        app:layout_constraintRight_toLeftOf="@id/status_divider_3"/>
+
+                <TextView
+                        android:id="@+id/status_divider_3"
+                        android:text="-"
+                        android:fontFamily="@font/noto_sans"
+                        android:textColor="#FFFFFF"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintStart_toEndOf="@+id/info_flight_time"
+                        app:layout_constraintRight_toLeftOf="parent"/>
+
+                <TextView
+                        android:id="@+id/info_flight_mode_text"
+                        android:text="N/A"
+                        android:fontFamily="@font/noto_sans"
+                        android:textColor="#FFFFFF"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintStart_toEndOf="@+id/status_divider_3"
+                        app:layout_constraintEnd_toStartOf="@id/info_warnings_errors"/>
+
+                <com.drohub.Views.ErrorTextView
+                        android:id="@+id/info_warnings_errors"
+                        android:text="N/sdA"
+                        android:textStyle="bold"
+                        android:background="@color/danger"
+                        android:fontFamily="@font/noto_sans"
+                        android:layout_marginHorizontal="16dp"
+                        android:visibility="invisible"
+                        android:textColor="#FFFFFF"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/info_flight_mode_text"
+                        app:layout_constraintRight_toLeftOf="parent"/>
+
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
 
             <TextView
-                android:id="@+id/location_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:gravity="center_vertical|end"
-                app:layout_constraintLeft_toRightOf="@id/gps"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:text="40.446° N, 79.982° W"/>
+                    android:id="@+id/camera_area"
+                    android:textColor="#FFFFFF"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="30dp"
+                    android:layout_marginEnd="16dp"
+                    android:gravity="center_vertical|end"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/return_home_btn"
+                    tools:text="Camera area"/>
 
-            <com.drohub.hud.AttitudeView
-                android:id="@+id/attitude"
-                android:layout_width="128dp"
-                android:layout_height="128dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginLeft="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginRight="8dp"
-                android:padding="2dp"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toTopOf="parent"/>
+            <com.drohub.Views.ToggleButtonExView
+                    android:id="@+id/mute_btn"
+                    android:textColor="#FFFFFF"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@color/overlay_background"
+                    android:scaleType="fitCenter"
+                    android:tint="@color/takeoff_land_bt_tint"
+                    app:srcCompat="@drawable/ic_flight_takeoff"
+                    tools:ignore="ContentDescription"
+                    android:text="Mute"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintBottom_toTopOf="@+id/take_off_land_btn"/>
 
-            <TextView
-                android:id="@+id/battery_level"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="0dp"
-                android:layout_marginEnd="8dp"
-                android:gravity="center_vertical|end"
-                app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:text="100%"/>
+            <Button
+                    android:id="@+id/take_off_land_btn"
+                    android:textColor="#FFFFFF"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@color/overlay_background"
+                    android:scaleType="fitCenter"
+                    android:tint="@color/takeoff_land_bt_tint"
+                    app:srcCompat="@drawable/ic_flight_takeoff"
+                    tools:ignore="ContentDescription"
+                    android:text="take off"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintBottom_toTopOf="@+id/return_home_btn"/>
 
-            <ImageView
-                android:id="@+id/battery_level_icon"
-                android:layout_width="16dp"
-                android:layout_height="0dp"
-                android:layout_marginTop="0dp"
-                android:layout_marginEnd="6dp"
-                android:src="@drawable/ic_battery_copter"
-                app:layout_constraintBottom_toBottomOf="@id/battery_level"
-                app:layout_constraintRight_toLeftOf="@id/battery_level"
-                app:layout_constraintTop_toTopOf="@id/battery_level"
-                tools:ignore="ContentDescription"/>
+            <Button
+                    android:text="RTH"
+                    android:id="@+id/return_home_btn"
+                    android:textColor="#FFFFFF"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@color/overlay_background"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_return_home"
+                    android:tint="@color/return_home_bt_tint"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    tools:ignore="ContentDescription"
+                    app:layout_constraintTop_toTopOf="parent" app:layout_constraintVertical_bias="0.498"
+                    app:layout_constraintStart_toStartOf="parent"/>
 
-            <TextView
-                android:id="@+id/distance"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="0dp"
-                android:layout_marginEnd="16dp"
-                android:gravity="center_vertical|end"
-                app:layout_constraintRight_toLeftOf="@id/battery_level_icon"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:text="150 m"/>
+            <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@color/overlay_background"
+                    app:layout_constraintTop_toBottomOf="@id/camera_area"
+                    app:layout_constraintStart_toStartOf="parent">
+                <Button
+                        android:id="@+id/pic_trigger_btn"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        android:layout_marginHorizontal="6dp"
+                        android:layout_width="48dp"
+                        android:background="@drawable/ic_video_btn_camera"
+                        android:layout_height="48dp"/>
 
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="0dp"
-                android:layout_marginTop="0dp"
-                android:layout_marginEnd="6dp"
-                android:src="@drawable/ic_distance"
-                app:layout_constraintBottom_toBottomOf="@id/distance"
-                app:layout_constraintRight_toLeftOf="@id/distance"
-                app:layout_constraintTop_toTopOf="@id/distance"
-                tools:ignore="ContentDescription"/>
+                <com.drohub.Views.ToggleButtonExView
+                        android:id="@+id/video_record_btn"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/pic_trigger_btn"
+                        android:layout_marginHorizontal="6dp"
+                        android:layout_width="48dp"
+                        android:background="@drawable/ic_video_btn_record"
+                        android:layout_height="48dp"/>
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <com.drohub.hud.HeadingView
-                android:id="@+id/heading"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginLeft="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginRight="8dp"
-                android:padding="2dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"/>
 
-            <com.drohub.hud.AltimeterView
-                android:id="@+id/altimeter"
-                android:layout_width="48dp"
-                android:layout_height="195dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginLeft="8dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginRight="8dp"
-                android:layout_marginBottom="10dp"
-                android:padding="2dp"
-                app:layout_constraintBottom_toTopOf="@+id/heading"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/attitude"/>
-
-            <ImageButton
-                android:id="@+id/take_off_land_btn"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:scaleType="fitCenter"
-                android:tint="@color/takeoff_land_bt_tint"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintLeft_toRightOf="@+id/heading"
-                app:srcCompat="@drawable/ic_flight_takeoff"
-                tools:ignore="ContentDescription"/>
-
-            <com.drohub.hud.ZoomVelocityView
-                android:id="@+id/zoom_velocity"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="160dp"
-                android:layout_height="48dp"
-                android:visibility="invisible"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintLeft_toRightOf="@id/take_off_land_btn"/>
-
-            <ImageButton
-                android:id="@+id/return_home_btn"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginBottom="0dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_return_home"
-                android:tint="@color/return_home_bt_tint"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
-                tools:ignore="ContentDescription"/>
-
-            <ImageButton
-                android:id="@+id/animation_btn"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginBottom="0dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:scaleType="fitCenter"
-                android:scaleX="-1"
-                android:tint="@color/animations_bt_tint"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintRight_toLeftOf="@id/return_home_btn"
-                app:srcCompat="@drawable/ic_reply_all_black_24dp"
-                tools:ignore="ContentDescription"/>
-
-            <ToggleButton
-                android:id="@+id/overlay_visibility_btn"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/ic_overlay_visibility_selector"
-                android:checked="true"
-                android:scaleType="fitCenter"
-                android:textOff=""
-                android:textOn=""
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/video_view"
-                tools:ignore="ContentDescription"/>
-
-            <ImageButton
-                android:id="@+id/look_at_btn"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:scaleType="fitCenter"
-                android:tint="@color/return_home_bt_tint"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintLeft_toRightOf="@id/overlay_visibility_btn"
-                app:srcCompat="@drawable/ic_look_at"
-                tools:ignore="ContentDescription"/>
-
-            <com.drohub.hud.ZoomLevelView
-                android:id="@+id/zoom_level"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="160dp"
-                android:layout_height="48dp"
-                android:visibility="invisible"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintLeft_toRightOf="@id/look_at_btn"/>
-
-            <ImageView
-                android:id="@+id/drawer_grip"
-                android:layout_width="14dp"
-                android:layout_height="180dp"
-                android:visibility="gone"
-                app:layout_constraintBottom_toTopOf="parent"
-                app:layout_constraintRight_toRightOf="@+id/video_view"
-                app:layout_constraintTop_toBottomOf="parent"
-                app:srcCompat="@drawable/ic_drawer_grip"
-                tools:ignore="ContentDescription"
-                tools:visibility="visible"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
-    <!-- The navigation drawer -->
-    <FrameLayout
-        android:id="@+id/drawer"
-        android:layout_width="@dimen/debug_settings_drawer_width"
-        android:layout_height="match_parent"
-        android:layout_gravity="end"
-        android:background="#a8a8a8">
-    </FrameLayout>
-</com.drohub.hud.CustomDrawer>
+</androidx.drawerlayout.widget.DrawerLayout>

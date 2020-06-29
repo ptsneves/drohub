@@ -33,6 +33,7 @@
   -->
 
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="launcher_app_name">DROHUB</string>
     <string name="drohub_ws_url">wss://drohub.xyz/ws</string>
     <string name="janus_websocket_uri">wss://drohub.xyz/ws_janus</string>
     <string name="drohub_url">https://drohub.xyz</string>

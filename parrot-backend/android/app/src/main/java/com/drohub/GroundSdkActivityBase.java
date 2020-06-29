@@ -54,6 +54,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.parrot.drone.groundsdk.GroundSdk;
 import com.parrot.drone.groundsdk.ManagedGroundSdk;
 import com.parrot.drone.groundsdk.device.Drone;
+import com.parrot.drone.groundsdk.device.RemoteControl;
 import com.parrot.drone.groundsdk.device.peripheral.VirtualGamepad;
 import com.parrot.drone.groundsdk.device.peripheral.gamepad.ButtonsMappableAction;
 import com.parrot.drone.groundsdk.facility.AutoConnection;
@@ -72,6 +73,7 @@ public abstract class GroundSdkActivityBase extends DroHubActivityBase {
             Manifest.permission.WRITE_EXTERNAL_STORAGE, /* for ULog Recorder. */
             Manifest.permission.CAMERA, /* For HMD see-through. */
             Manifest.permission.INTERNET,
+            Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.RECORD_AUDIO,
     };
 
@@ -90,7 +92,7 @@ public abstract class GroundSdkActivityBase extends DroHubActivityBase {
      * @return GroundSDK interface
      */
     @NonNull
-    public final GroundSdk getDroneHandle() {
+    public final GroundSdk getParrotSDKHandle() {
         return mGroundSdk;
     }
     private Drone _drone;
@@ -113,11 +115,9 @@ public abstract class GroundSdkActivityBase extends DroHubActivityBase {
 
         _user_auth_token = getIntent().getStringExtra(EXTRA_USER_AUTH_TOKEN); //Can be null
 
-
         mGroundSdk = ManagedGroundSdk.obtainSession(this);
         if (mGroundSdk == null) {
-            ULog.w(TAG, "Could not obtain ground sdk session");
-            return;
+            throw new NullPointerException("Could not obtain ground sdk session");
         }
 
         Set<String> permissionsToRequest = new HashSet<>();
@@ -149,7 +149,6 @@ public abstract class GroundSdkActivityBase extends DroHubActivityBase {
                 return;
             }
 
-
             if (auto_connection.getStatus() != AutoConnection.Status.STARTED) {
                 auto_connection.start();
                 ULog.w(TAG, "Started auto connection");
@@ -163,13 +162,13 @@ public abstract class GroundSdkActivityBase extends DroHubActivityBase {
             if (auto_connection.getStatus() == AutoConnection.Status.STARTED &&
                     (_drone == null || temp_drone.getUid() != _drone.getUid())) {
                 _drone = temp_drone;
-                onDroneConnected(_drone);
+                onDroneConnected(_drone, auto_connection.getRemoteControl());
             }
         });
     }
 
 
-        protected abstract void onDroneConnected(Drone drone);
+        protected abstract void onDroneConnected(Drone drone, RemoteControl rc);
         protected abstract void onDroneDisconnected();
 
     private static final IntentFilter FILTER_GAMEPAD_EVENT = new IntentFilter(
@@ -202,7 +201,7 @@ public abstract class GroundSdkActivityBase extends DroHubActivityBase {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        System.out.println("Activity triggerdd");
+        System.out.println("Activity trigger");
         _thrift_connection.handleActivityResult(requestCode, resultCode, data);
     }
 

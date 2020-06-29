@@ -15,14 +15,16 @@ public class DroHubActivityBase  extends AppCompatActivity {
         return "com.drohub.EXTRA_" + key;
     }
 
-    public static final String EXTRA_DEVICE_UID = withKey("DEVICE_UID");
+    public static final String DRONE_UID = withKey("DEVICE_UID");
+    public static final String RC_UID = withKey("RC_UID");
     public static final String EXTRA_USER_AUTH_TOKEN = withKey("USER_AUTH_TOKEN");
     public static final String EXTRA_USER_EMAIL = withKey("USER_EMAIL");
     /** Logging tag. */
     protected static final ULogTag TAG = new ULogTag("DROHUB");
 
-    public static void addThriftDataToIntent(Intent intent, String user_name, String token, String serial) {
-        intent.putExtra(EXTRA_DEVICE_UID, serial);
+    public static void addThriftDataToIntent(Intent intent, String user_name, String token, String serial, String rc_serial) {
+        intent.putExtra(DRONE_UID, serial);
+        intent.putExtra(RC_UID, rc_serial);
         intent.putExtra(EXTRA_USER_EMAIL, user_name);
         intent.putExtra(EXTRA_USER_AUTH_TOKEN, token);
     }

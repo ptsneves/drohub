@@ -32,194 +32,113 @@
 
 package com.drohub;
 
-import android.animation.ObjectAnimator;
 import android.content.Context;
-import android.content.res.Configuration;
-import android.graphics.Color;
-import android.location.Location;
+import android.content.res.ColorStateList;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewTreeObserver;
-import android.widget.ImageButton;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.ToggleButton;
-
 import androidx.annotation.NonNull;
-import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.recyclerview.widget.DefaultItemAnimator;
-
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionGLSurfaceParameters;
-import com.drohub.hud.*;
+import com.drohub.ParrotHelpers.ParrotMainCamera;
+import com.drohub.ParrotHelpers.ParrotMediaStore;
+import com.drohub.ParrotHelpers.ParrotPeripheralManager;
+import com.drohub.ParrotHelpers.ParrotStreamServer;
+import com.drohub.Views.DroHubMapView;
+import com.drohub.Views.ErrorTextView;
+import com.drohub.Views.TimerView;
+import com.drohub.Views.ToggleButtonExView;
 import com.drohub.thrift.DroHubHandler;
 import com.drohub.thrift.ThriftConnection;
+import com.google.android.gms.maps.GoogleMap;
 import com.parrot.drone.groundsdk.device.Drone;
-import com.parrot.drone.groundsdk.device.instrument.Alarms;
-import com.parrot.drone.groundsdk.device.instrument.Altimeter;
-import com.parrot.drone.groundsdk.device.instrument.AttitudeIndicator;
-import com.parrot.drone.groundsdk.device.instrument.BatteryInfo;
-import com.parrot.drone.groundsdk.device.instrument.Compass;
-import com.parrot.drone.groundsdk.device.instrument.FlyingIndicators;
-import com.parrot.drone.groundsdk.device.instrument.Gps;
-import com.parrot.drone.groundsdk.device.peripheral.DevToolbox;
+import com.parrot.drone.groundsdk.device.RemoteControl;
+import com.parrot.drone.groundsdk.device.instrument.*;
+import com.parrot.drone.groundsdk.device.peripheral.Gimbal;
 import com.parrot.drone.groundsdk.device.peripheral.MainCamera;
+import com.parrot.drone.groundsdk.device.peripheral.MediaStore;
 import com.parrot.drone.groundsdk.device.peripheral.StreamServer;
-import com.parrot.drone.groundsdk.device.peripheral.camera.CameraZoom;
 import com.parrot.drone.groundsdk.device.pilotingitf.Activable;
-import com.parrot.drone.groundsdk.device.pilotingitf.AnimationItf;
-import com.parrot.drone.groundsdk.device.pilotingitf.LookAtPilotingItf;
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf;
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf.SmartTakeOffLandAction;
 import com.parrot.drone.groundsdk.device.pilotingitf.ReturnHomePilotingItf;
-import com.parrot.drone.groundsdk.device.pilotingitf.animation.Animation;
-import com.parrot.drone.groundsdk.device.pilotingitf.animation.Flip;
+import com.parrot.drone.groundsdk.facility.AutoConnection;
 import com.parrot.drone.groundsdk.facility.UserLocation;
-import com.parrot.drone.groundsdk.value.OptionalDouble;
 import org.webrtc.SurfaceViewRenderer;
-import org.webrtc.voiceengine.WebRtcAudioManager;
 
 
 /** Activity to pilot a copter. */
-public class CopterHudActivity extends GroundSdkActivityBase
-        implements PickAnimationDialog.Listener, PickFlipDirectionDialog.Listener {
+public class CopterHudActivity extends GroundSdkActivityBase{
 
     private static final String TAG = "CopterHudActivity";
+    private static final String MAP_VIEW_BUNDLE_KEY = "MapViewBundleKey";
 
-    private View mDrawer;
+    private Button _takeoff_land_btn;
 
-    private View mContent;
+    private RemoteControl _remote_control;
 
-    private View mResizableContent;
+    private Button _return_to_home_btn;
 
-    private View mDrawerGrip;
+    DroHubMapView map_view;
 
-    private DrawerLayout mDrawerLayout;
-
-    private ImageView mFlyingIndicators;
-
-    private ImageView mPowerAlarm;
-
-    private ImageView mMotorCutoutAlarm;
-
-    private ImageView mMotorErrorAlarm;
-
-    private ImageView mUserEmergencyAlarm;
-
-    private AttitudeView mAttitudeView;
-
-    private ImageView mBatteryLevelIcon;
-
-    private TextView mBatteryLevelText;
-
-    private TextView mDistanceText;
-
-    private TextView mLocationText;
-
-    private ImageView mGpsIcon;
-
-    private HeadingView mHeadingView;
-
-    private AltimeterView mAltimeterView;
-
-    private ImageButton mTakeOffLandBtn;
-
-    private ImageButton mReturnHomeBtn;
-
-    private ImageButton mAnimationBtn;
-
-    private ImageButton mLookAtBtn;
-
-    private ZoomLevelView mZoomLevelView;
-
-    private ZoomVelocityView mZoomVelocityView;
-
-    @SuppressWarnings("FieldCanBeLocal")
-    private ToggleButton mOverlayVisibilityBtn;
-
-    private Drone mDrone;
+    private Drone _drone;
 
     private ManualCopterPilotingItf mPilotingItf;
 
     private ReturnHomePilotingItf mReturnHomeItf;
 
-    private LookAtPilotingItf mLookAtItf;
-
-    private AnimationItf mAnimationItf;
     public SurfaceViewRenderer mStreamView;
 
-    private boolean mIsTablet;
+    private  DroHubHandler _drohub_handler;
+    private AudioManager _audio_manager;
 
-    private Animation.Config mAnimationConfig;
-
-    private Location mDroneLocation;
-
-    private Location mUserLocation;
-
-    DroHubHandler _drohub_handler;
-    private boolean _created;
-    AudioManager _audio_manager;
+    private ParrotMainCamera _main_camera;
+    private ParrotMediaStore _media_store;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        String device_uid = getIntent().getStringExtra(EXTRA_DEVICE_UID);
+        setContentView(R.layout.activity_copter_hud);
+
+        map_view = findViewById(R.id.drohub_map);
+        map_view.onCreate(null);
+        map_view.getMapAsync(null);
+        
+        String drone_uid = getIntent().getStringExtra(DRONE_UID);
+        String rc_uid = getIntent().getStringExtra(RC_UID);
         String user_email = getIntent().getStringExtra(EXTRA_USER_EMAIL);
         String auth_token = getIntent().getStringExtra(EXTRA_USER_AUTH_TOKEN);
-        if (device_uid == null || user_email == null || auth_token == null) {
+        if (drone_uid == null || user_email == null || auth_token == null) {
             Log.e(TAG, "Device uid, user or auth_token were not passed in intent");
             finish();
             return;
         }
 
-        mDrone = getDroneHandle().getDrone(device_uid);
-        if (mDrone == null) {
+        _drone = getParrotSDKHandle().getDrone(drone_uid);
+        if (_drone == null) {
             finish();
             return;
         }
-        mIsTablet = (getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >=
-                    Configuration.SCREENLAYOUT_SIZE_LARGE;
 
-        setContentView(R.layout.activity_copter_hud);
+        _remote_control = getParrotSDKHandle().getRemoteControl(rc_uid);
+        if (_remote_control == null) {
+            finish();
+            return;
+        }
 
 
-        mContent = findViewById(R.id.content);
-        mDrawer = findViewById(R.id.drawer);
-        mResizableContent = findViewById(R.id.resizable_content);
-        mDrawerGrip = findViewById(R.id.drawer_grip);
         mStreamView = findViewById(R.id.video_view); // do not init it here, let whoever draws on it do that!
-        mFlyingIndicators = findViewById(R.id.flying_indicator);
-        mPowerAlarm = findViewById(R.id.power_alarm);
-        mMotorCutoutAlarm = findViewById(R.id.motor_cut_out_alarm);
-        mMotorErrorAlarm = findViewById(R.id.motor_error_alarm);
-        mUserEmergencyAlarm = findViewById(R.id.user_emergency_alarm);
-        mAttitudeView = findViewById(R.id.attitude);
-        mBatteryLevelIcon = findViewById(R.id.battery_level_icon);
-        mBatteryLevelText = findViewById(R.id.battery_level);
-        mDistanceText = findViewById(R.id.distance);
-        mLocationText = findViewById(R.id.location_text);
-        mGpsIcon = findViewById(R.id.gps);
-        mAltimeterView = findViewById(R.id.altimeter);
-        mHeadingView = findViewById(R.id.heading);
-        mTakeOffLandBtn = findViewById(R.id.take_off_land_btn);
-        mReturnHomeBtn = findViewById(R.id.return_home_btn);
-        mAnimationBtn = findViewById(R.id.animation_btn);
-        mLookAtBtn = findViewById(R.id.look_at_btn);
-        mZoomLevelView = findViewById(R.id.zoom_level);
-        mZoomVelocityView = findViewById(R.id.zoom_velocity);
-        mOverlayVisibilityBtn = findViewById(R.id.overlay_visibility_btn);
-        DefaultItemAnimator animator = new DefaultItemAnimator();
-        // item change animations are a bit too flashy, disable them
-        animator.setSupportsChangeAnimations(false);
+        _takeoff_land_btn = findViewById(R.id.take_off_land_btn);
+        _return_to_home_btn = findViewById(R.id.return_home_btn);
 
-        mDrawerLayout = findViewById(R.id.drawer_layout);
-        mDrawerLayout.setScrimColor(Color.TRANSPARENT);
-        mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
-        mDrawerLayout.addDrawerListener(mDrawerListener);
-
-        mDrone.getPilotingItf(ManualCopterPilotingItf.class, pilotingItf -> {
+        _drone.getPilotingItf(ManualCopterPilotingItf.class, pilotingItf -> {
             if (pilotingItf == null) {
                 finish();
                 return;
@@ -241,216 +160,175 @@ public class CopterHudActivity extends GroundSdkActivityBase
                     resId = R.drawable.ic_flight_land;
                     break;
             }
-            mTakeOffLandBtn.setImageResource(resId);
-            mTakeOffLandBtn.setEnabled(btnAction != SmartTakeOffLandAction.NONE);
+//            mTakeOffLandBtn.setImageResource(resId);
+            _takeoff_land_btn.setEnabled(btnAction != SmartTakeOffLandAction.NONE);
         });
 
-        mDrone.getPilotingItf(ReturnHomePilotingItf.class, pilotingItf -> {
+        _drone.getPilotingItf(ReturnHomePilotingItf.class, pilotingItf -> {
             mReturnHomeItf = pilotingItf;
             Activable.State state =
                     mReturnHomeItf == null ? Activable.State.UNAVAILABLE : mReturnHomeItf.getState();
-            mReturnHomeBtn.setEnabled(state != Activable.State.UNAVAILABLE);
-            mReturnHomeBtn.setActivated(state == Activable.State.ACTIVE);
-        });
-
-        mDrone.getPilotingItf(LookAtPilotingItf.class, pilotingItf -> {
-            mLookAtItf = pilotingItf;
-            Activable.State state =
-                    mLookAtItf == null ? Activable.State.UNAVAILABLE : mLookAtItf.getState();
-            mLookAtBtn.setEnabled(state != Activable.State.UNAVAILABLE);
-            mLookAtBtn.setActivated(state == Activable.State.ACTIVE);
-        });
-
-        mDrone.getPilotingItf(AnimationItf.class, animationItf -> {
-            mAnimationItf = animationItf;
-            mAnimationBtn.setEnabled(mAnimationItf != null && !mAnimationItf.getAvailableAnimations().isEmpty());
+            _return_to_home_btn.setEnabled(state != Activable.State.UNAVAILABLE);
+            _return_to_home_btn.setActivated(state == Activable.State.ACTIVE);
         });
 
 
-        mDrone.getInstrument(FlyingIndicators.class, flyingIndicators -> {
-            int resource = 0;
-            if (flyingIndicators != null) {
-                switch (flyingIndicators.getState()) {
+        _drone.getInstrument(FlyingIndicators.class, flying_mode -> {
+            final TextView text_view = findViewById(R.id.info_flight_mode_text);
+            if (flying_mode != null) {
+                switch (flying_mode.getState()) {
                     case EMERGENCY:
                     case EMERGENCY_LANDING:
-                        resource = R.drawable.ic_indicator_emergency;
+                        text_view.setText("Emergency Landing");
                         break;
                     case LANDED:
-                        switch (flyingIndicators.getLandedState()) {
+                        switch (flying_mode.getLandedState()) {
                             case INITIALIZING:
                             case MOTOR_RAMPING:
-                                resource = R.drawable.ic_indicator_standby;
+                                text_view.setText("Motor Ramping Up");
                                 break;
                             case IDLE:
-                                resource = R.drawable.ic_indicator_ready;
+                                text_view.setText("Idle");
                                 break;
                             case WAITING_USER_ACTION:
-                                resource = R.drawable.ic_flight_thrown_takeoff;
+                                text_view.setText("Waiting User Action");
                                 break;
                             case NONE:
                             default:
-                                resource = 0;
+                                text_view.setText("Unknown Flight Mode");
                                 break;
                         }
                         break;
                     case FLYING:
-                        switch (flyingIndicators.getFlyingState()) {
+                        switch (flying_mode.getFlyingState()) {
                             case TAKING_OFF:
-                                resource = R.drawable.ic_indicator_takeoff;
+                                text_view.setText("Flight Mode");
                                 break;
                             case LANDING:
-                                resource = R.drawable.ic_indicator_landing;
+                                text_view.setText("Landing");
                                 break;
                             case WAITING:
-                                resource = R.drawable.ic_indicator_waiting;
+                                text_view.setText("Waiting");
                                 break;
                             case FLYING:
-                                resource = R.drawable.ic_indicator_flying;
+                                text_view.setText("Flying");
                                 break;
                             case NONE:
                             default:
-                                resource = 0;
+                                text_view.setText("Unknown Flight Mode");
                                 break;
                         }
                         break;
                     default:
-                        resource = 0;
+                        text_view.setText("Unknown Flight Mode");
                         break;
                 }
             }
-            mFlyingIndicators.setImageResource(resource);
         });
 
-        mDrone.getInstrument(Alarms.class, alarms -> {
-            if (alarms != null) {
-                switch (alarms.getAlarm(Alarms.Alarm.Kind.POWER).getLevel()) {
-                    case CRITICAL:
-                        mPowerAlarm.setImageResource(R.drawable.ic_alarm_critical_power);
-                        break;
-                    case WARNING:
-                        mPowerAlarm.setImageResource(R.drawable.ic_alarm_low_power);
-                        break;
-                    case OFF:
-                    case NOT_SUPPORTED:
-                        mPowerAlarm.setImageResource(0);
-                        break;
-                }
 
-                mMotorCutoutAlarm.setVisibility(
-                        alarms.getAlarm(Alarms.Alarm.Kind.MOTOR_CUT_OUT).getLevel() == Alarms.Alarm.Level.CRITICAL
-                                ? View.VISIBLE : View.GONE);
-                mMotorErrorAlarm.setVisibility(
-                        alarms.getAlarm(Alarms.Alarm.Kind.MOTOR_ERROR).getLevel() == Alarms.Alarm.Level.CRITICAL
-                                ? View.VISIBLE : View.GONE);
-                mUserEmergencyAlarm.setVisibility(
-                        alarms.getAlarm(Alarms.Alarm.Kind.USER_EMERGENCY).getLevel() == Alarms.Alarm.Level.CRITICAL
-                                ? View.VISIBLE : View.GONE);
+        _drone.getInstrument(Gps.class, gps -> {
+            if (gps == null)
+                return;
+
+            final TextView satellite_count_text_view = findViewById(R.id.satellite_count_text);
+            final ImageView satellite_icon = findViewById(R.id.info_satellite);
+
+            satellite_count_text_view.setText(String.format("%d", gps.getSatelliteCount()));
+            if (gps.getSatelliteCount() != 0)
+                satellite_icon.setImageTintList(ColorStateList.valueOf(getColor(R.color.white)));
+            map_view.setDroneLocation(gps.lastKnownLocation());
+            final TextView height_text = findViewById(R.id.height_text);
+
+            if (gps.lastKnownLocation() != null)
+                height_text.setText(String.format("%.1f", gps.lastKnownLocation().getAltitude()));
+        });
+
+
+        getParrotSDKHandle().getFacility(AutoConnection.class, remote_control -> {
+            if (remote_control == null || remote_control.getRemoteControl() == null)
+                return;
+           remote_control.getRemoteControl().getState();
+        });
+
+        getParrotSDKHandle().getFacility(UserLocation.class, user_location -> {
+            if (user_location == null)
+                return;
+            if (user_location.lastKnownLocation() != null)
+                map_view.setUserLocation(user_location.lastKnownLocation());
+        });
+
+
+        _remote_control.getInstrument(Compass.class, compass -> {
+            if (compass == null)
+                return;
+
+            map_view.setUserHeading((float)compass.getHeading());
+        });
+
+        _drone.getInstrument(Radio.class, radio -> {
+            if (radio == null)
+                return;
+            final ImageView remote_signal_icon = findViewById(R.id.remote_signal_icon);
+            switch(radio.getLinkSignalQuality()){
+                case -1:
+                case 0:
+                case 1:
+                case 2:
+                    remote_signal_icon.setImageDrawable(getDrawable(R.drawable.ic_control_signal_bad));
+                    break;
+                case 3:
+                    remote_signal_icon.setImageDrawable(getDrawable(R.drawable.ic_control_signal_medium));
+                    break;
+                case 4:
+                    remote_signal_icon.setImageDrawable(getDrawable(R.drawable.ic_control_signal_good));
+                    break;
+                default:
+                    return;
             }
+            if (radio.isLinkPerturbed())
+                remote_signal_icon.setImageTintList(ColorStateList.valueOf(getColor(R.color.danger)));
+
         });
 
-        mDrone.getInstrument(AttitudeIndicator.class, attitudeIndicator -> {
-            float pitch = 0.0f, roll = 0.0f;
-            if (attitudeIndicator != null) {
-                pitch = (float) attitudeIndicator.getPitch();
-                roll = (float) attitudeIndicator.getRoll();
-            }
-            mAttitudeView.setPitch(pitch);
-            mAttitudeView.setRoll(roll);
+        _remote_control.getInstrument(BatteryInfo.class, battery_info -> {
+           if (battery_info == null)
+               return;
+
+           final ImageView rc_battery_level_icon = findViewById(R.id.remote_battery_icon);
+           int bat_level = battery_info.getBatteryLevel();
+
+           if (bat_level > 66)
+               rc_battery_level_icon.setImageDrawable(getDrawable(R.drawable.ic_video_info_control_battery_full));
+           else if (bat_level > 33)
+               rc_battery_level_icon.setImageDrawable(getDrawable(R.drawable.ic_video_info_control_battery_halffull));
+           else
+               rc_battery_level_icon.setImageDrawable(getDrawable(R.drawable.ic_video_info_control_battery_empty));
         });
 
-        mDrone.getInstrument(Gps.class, gps -> {
-            mGpsIcon.setAlpha(gps != null && gps.isFixed() ? 1.0f : 0.1f);
-            mDroneLocation = gps == null ? null : gps.lastKnownLocation();
-            mLocationText.setText(
-                    mDroneLocation == null ? getString(R.string.no_value) : LocationFormatter.format(mDroneLocation));
-            updateDistance();
+        _drone.getInstrument(BatteryInfo.class, battery_info -> {
+            if (battery_info == null)
+                return;
+
+            final ImageView battery_level_icon =findViewById(R.id.drone_battery_icon);
+            final TextView battery_level_text = findViewById(R.id.drone_battery_level_text);
+
+            int bat_level = battery_info.getBatteryLevel();
+            battery_level_text.setText(getString(R.string.battery_level_format, bat_level));
+
+            if (bat_level > 75)
+                battery_level_icon.setImageDrawable(getDrawable(R.drawable.ic_battery_full));
+            else if (bat_level > 50)
+                battery_level_icon.setImageDrawable(getDrawable(R.drawable.ic_battery_half_full));
+            else if (bat_level > 25)
+                battery_level_icon.setImageDrawable(getDrawable(R.drawable.ic_battery_half_empty));
+            else if (battery_info.getBatteryLevel() > 0)
+                battery_level_icon.setImageDrawable(getDrawable(R.drawable.ic_info_battery_empty));
         });
 
-        getDroneHandle().getFacility(UserLocation.class, userLocation -> {
-            mUserLocation = userLocation == null ? null : userLocation.lastKnownLocation();
-            updateDistance();
-        });
+        _takeoff_land_btn.setOnClickListener(v -> mPilotingItf.smartTakeOffLand());
 
-        mDrone.getInstrument(Altimeter.class, altimeter -> {
-            if (altimeter != null) {
-                float takeOffAltitude = (float) altimeter.getTakeOffRelativeAltitude();
-                mAltimeterView.setTakeOffAltitude(takeOffAltitude);
-                OptionalDouble groundAltitude = altimeter.getGroundRelativeAltitude();
-                if (groundAltitude.isAvailable()) {
-                    mAltimeterView.setGroundAltitude((float) groundAltitude.getValue());
-                } else {
-                    mAltimeterView.setGroundAltitude(takeOffAltitude);
-                }
-            } else {
-                mAltimeterView.setTakeOffAltitude(0);
-                mAltimeterView.setGroundAltitude(0);
-            }
-        });
-
-        mDrone.getInstrument(Compass.class, compass -> {
-            if (compass != null) {
-                mHeadingView.setHeading((float) compass.getHeading());
-            }
-        });
-
-        mDrone.getInstrument(BatteryInfo.class, batteryInfo -> {
-            if (batteryInfo != null) {
-                mBatteryLevelText.setText(getString(R.string.battery_level_format, batteryInfo.getBatteryLevel()));
-                mBatteryLevelText.setVisibility(View.VISIBLE);
-                mBatteryLevelIcon.setVisibility(View.VISIBLE);
-            } else {
-                mBatteryLevelText.setVisibility(View.GONE);
-                mBatteryLevelIcon.setVisibility(View.GONE);
-            }
-        });
-
-        mDrone.getPeripheral(DevToolbox.class, devToolbox -> {
-            if (devToolbox != null) {
-                mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
-                mDrawerGrip.setVisibility(View.VISIBLE);
-            } else {
-                mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
-                mDrawerGrip.setVisibility(View.GONE);
-            }
-        });
-
-        mDrone.getPeripheral(MainCamera.class, camera -> {
-            if (camera != null) {
-                CameraZoom zoom = camera.zoom();
-                if (zoom != null) {
-                    mZoomLevelView.setVisibility(View.VISIBLE);
-                    mZoomLevelView.setZoomLevel(zoom.getCurrentLevel(), zoom.getMaxLossLessLevel(),
-                            zoom.getMaxLossyLevel())
-                                  .setListener(level -> zoom.control(CameraZoom.ControlMode.LEVEL, level))
-                                  .setEnabled(zoom.isAvailable());
-                    mZoomVelocityView.setVisibility(View.VISIBLE);
-                    mZoomVelocityView.setMaxZoomSpeed(zoom.maxSpeed().getValue())
-                                     .setListener(velocity -> zoom.control(CameraZoom.ControlMode.VELOCITY, velocity))
-                                     .setEnabled(zoom.isAvailable());
-                }
-            }
-        });
-
-        if (mIsTablet && mDrone.getPeripheral(DevToolbox.class) != null) {
-            mDrawerLayout.openDrawer(GravityCompat.END);
-            mDrawerLayout.getViewTreeObserver().addOnGlobalLayoutListener(
-                    new ViewTreeObserver.OnGlobalLayoutListener() {
-
-                        @Override
-                        public void onGlobalLayout() {
-                            mDrawerLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                            mResizableContent.setPivotX(0);
-                            mResizableContent.getLayoutParams().width = Math.round(
-                                    mContent.getWidth() - mDrawer.getWidth());
-                            mResizableContent.requestLayout();
-
-                        }
-                    });
-        }
-
-        mTakeOffLandBtn.setOnClickListener(v -> mPilotingItf.smartTakeOffLand());
-
-        mReturnHomeBtn.setOnClickListener(v -> {
+        _return_to_home_btn.setOnClickListener(v -> {
             if (mReturnHomeItf != null) {
                 Activable.State state = mReturnHomeItf.getState();
                 if (state == Activable.State.ACTIVE) {
@@ -461,79 +339,69 @@ public class CopterHudActivity extends GroundSdkActivityBase
             }
         });
 
-        mLookAtBtn.setOnClickListener(v -> {
-            if (mLookAtItf != null) {
-                Activable.State state = mLookAtItf.getState();
-                if (state == Activable.State.ACTIVE) {
-                    mLookAtItf.deactivate();
-                } else if (state == Activable.State.IDLE) {
-                    mLookAtItf.activate();
-                }
-            }
-        });
+        setupMainCameraComponents();
+        setupMediaStoreComponents();
+        setupLiveVideo(user_email, auth_token);
+    }
 
-        mOverlayVisibilityBtn.setOnCheckedChangeListener((buttonView, isChecked) -> setOverlayVisibility(isChecked));
 
-        mAnimationBtn.setOnClickListener(v -> {
-            if (mAnimationConfig != null) {
-                mAnimationItf.startAnimation(mAnimationConfig);
-            } else {
-                showAnimationChoiceDialog();
-            }
-        });
-
-        mAnimationBtn.setOnLongClickListener(v -> {
-            showAnimationChoiceDialog();
-            return true;
-        });
-
-        String[] res_turn_urls = this.getResources().getStringArray(R.array.turn_servers);
-        _created = false;
-        mDrone.getPeripheral(StreamServer.class, streamServer -> {
-            if (_created == false) {
-                _created = true;
-                PeerConnectionGLSurfaceParameters peerConnectionParameters = new PeerConnectionGLSurfaceParameters(
-                    mStreamView,
-                    null,
-                    getResources().getString(R.string.turn_user_name),
-                    getResources().getString(R.string.turn_credential),
-                    res_turn_urls,
-                    getString(R.string.janus_websocket_uri), this,
-                    20,
-                    "VP9",
-                    640,
-                    360,
-                    20480000,
-                    128000,
-                    "opus", streamServer,
-                    false);
-
-                _audio_manager = (AudioManager)this.getSystemService(Context.AUDIO_SERVICE);
-                _audio_manager.setSpeakerphoneOn(true);
-
-                _drohub_handler = new DroHubHandler(mDrone.getUid(), peerConnectionParameters, this);
-                _thrift_connection = new ThriftConnection();
-                _thrift_connection.onStart(mDrone.getUid(),
-                        getString(R.string.drohub_ws_url),
-                        _drohub_handler, user_email, auth_token);
-                Log.w("COPTER", "Started thrift connection to " + getString(R.string.drohub_ws_url));
-            }
-        });
+    @Override
+    protected void onStart() {
+        super.onStart();
+        map_view.onStart();
     }
 
     @Override
-    protected void onDroneConnected(Drone drone) {
-        Log.w("COPTER", "Connected Drone UID " + mDrone.getUid());
+    protected void onResume() {
+        super.onResume();
+        map_view.onResume();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        map_view.onStop();
+    }
+    @Override
+    protected void onPause() {
+        map_view.onPause();
+        super.onPause();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        map_view.onLowMemory();
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        Bundle mapViewBundle = outState.getBundle(MAP_VIEW_BUNDLE_KEY);
+        if (mapViewBundle == null) {
+            mapViewBundle = new Bundle();
+            outState.putBundle(MAP_VIEW_BUNDLE_KEY, mapViewBundle);
+        }
+
+        map_view.onSaveInstanceState(mapViewBundle);
+    }
+
+    @Override
+    protected void onDroneConnected(Drone drone, RemoteControl rc) {
+        Log.w("COPTER", "Connected Drone UID " + _drone.getUid());
     }
 
     @Override
     protected void onDroneDisconnected() {
-        Log.w("COPTER", "Connected Drone UID " + mDrone.getUid());
+        Log.w("COPTER", "Connected Drone UID " + _drone.getUid());
     }
 
     @Override
     protected void onDestroy() {
-        _drohub_handler.onStop();
+        map_view.onStop();
+        if (_drohub_handler != null)
+            _drohub_handler.onStop();
         if (_thrift_connection != null) {
             _thrift_connection.onStop();
             _thrift_connection = null;
@@ -542,67 +410,203 @@ public class CopterHudActivity extends GroundSdkActivityBase
         super.onDestroy();
     }
 
-    private void updateDistance() {
-        boolean distanceAvailable = mDroneLocation != null && mUserLocation != null;
-        mDistanceText.setText(
-                distanceAvailable ? getString(R.string.distance_format, mDroneLocation.distanceTo(mUserLocation)) :
-                        getString(R.string.no_value));
-    }
+    public void setupMainCameraComponents() {
+        final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
+        final String StartupErrorMessage = "Main camera not yet initialized";
+        e_v.addError(StartupErrorMessage);
 
-    private void setOverlayVisibility(boolean visible) {
-        int visibility = visible ? View.VISIBLE : View.GONE;
-        mAltimeterView.setVisibility(visibility);
-        mAttitudeView.setVisibility(visibility);
-    }
+        _main_camera = new ParrotMainCamera(_drone);
 
-    private void showAnimationChoiceDialog() {
-        PickAnimationDialog.newInstance(mDrone.getUid()).show(getSupportFragmentManager(), null);
-    }
-
-    @Override
-    public void onAnimationTypeAcquired(@NonNull Animation.Type animationType) {
-        Animation.Config config = Animations.defaultConfigFor(animationType);
-        if (config != null) {
-            mAnimationConfig = config;
-        } else if (animationType == Animation.Type.FLIP) {
-            new PickFlipDirectionDialog().show(getSupportFragmentManager(), null);
-        }
-    }
-
-    @Override
-    public void onFlipDirectionAcquired(@NonNull Flip.Direction direction) {
-        mAnimationConfig = new Flip.Config(direction);
-    }
-
-    private final DrawerLayout.DrawerListener mDrawerListener = new DrawerLayout.DrawerListener() {
-
-        @Override
-        public void onDrawerSlide(@NonNull View drawerView, float slideOffset) {
-            if (mIsTablet) {
-                // on tablets, change the content size
-                mResizableContent.setPivotX(0);
-                mResizableContent.getLayoutParams().width = Math.round(
-                        mContent.getWidth() - (mDrawer.getWidth() * slideOffset));
-                mResizableContent.requestLayout();
-            } else {
-                // on phones, the drawer opens over the content, only change the drawer grip horizontal position
-                ObjectAnimator animation2 = ObjectAnimator.ofFloat(mDrawerGrip,
-                        "x", mContent.getWidth() - (mDrawer.getWidth() * slideOffset) - mDrawerGrip.getWidth());
-                animation2.setDuration(0);
-                animation2.start();
+        _main_camera.setPeripheralListener(new ParrotPeripheralManager.PeripheralListener<MainCamera>() {
+            @Override
+            public void onChange(@NonNull MainCamera o) {}
+            @Override
+            public boolean onFirstTimeAvailable(@NonNull MainCamera o) {
+                e_v.removeError(StartupErrorMessage);
+                setupRecordingButton();
+                setupTriggerPictureButton();
+                setupMultiTouchGestures();
+                return true;
             }
+        });
+    }
+
+    private void setupTriggerPictureButton() {
+        Button _pic_trigger_btn = findViewById(R.id.pic_trigger_btn);
+        _pic_trigger_btn.setOnClickListener(v -> {
+            if (_main_camera.triggerPhotoPicture(true)) {
+                Animation blink_animation = new AlphaAnimation(1, 0.0f); // Change alpha from fully visible to invisible
+                blink_animation.setDuration(200); // duration
+                blink_animation.setInterpolator(new LinearInterpolator()); // do not alter animation rate
+                v.startAnimation(blink_animation);
+            }
+        });
+
+    }
+
+    private void setupRecordingButton() {
+        ToggleButtonExView _video_record_btn = findViewById(R.id.video_record_btn);
+        Animation blink_animation = new AlphaAnimation(1, 0.0f); // Change alpha from fully visible to invisible
+        _video_record_btn.setActiveListener(v -> {
+            if (_main_camera.recordVideo(true)) {
+                blink_animation.setDuration(1000); // duration
+                blink_animation.setInterpolator(new LinearInterpolator()); // do not alter animation rate
+                blink_animation.setRepeatCount(-1); // Repeat animation infinitely
+                blink_animation.setRepeatMode(Animation.REVERSE);
+                v.startAnimation(blink_animation);
+                return true;
+            }
+            return false;
+        });
+        _video_record_btn.setInactiveListener(v -> {
+            if (_main_camera.recordVideo(false)) {
+                blink_animation.cancel();
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void setupZoomGesture(MultiTouchGestures mtg) {
+        final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
+
+        final String ErrorMessage = "Zoom is not available";
+        final float min_zoom = 1.0f; //As per docs
+        final Handler retry_handler = new Handler(getMainLooper());
+
+        e_v.removeError(ErrorMessage);
+
+        final double max_zoom = _main_camera.getZoom().getMaxLossyLevel();
+        final double cur_zoom = _main_camera.getZoom().getCurrentLevel();
+
+        mtg.setOnScaleListener(min_zoom, (float)max_zoom, (float)cur_zoom, scale_factor -> {
+            if (!_main_camera.setZoom(scale_factor)) {
+                e_v.addError(ErrorMessage);
+                retry_handler.postDelayed(() -> setupZoomGesture(mtg), 1000);
+                return false;
+            }
+            return true;
+        });
+    }
+
+    private void setupGimbalPitchGesture(MultiTouchGestures mtg, View scrollable_view) {
+        final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
+        final String ErrorMessage = "Gimbal pitch control is not available";
+        final Handler retry_handler = new Handler(getMainLooper());
+
+        final Gimbal gimbal = _drone.getPeripheral(Gimbal.class, g -> {}).get();
+        if (gimbal == null || !gimbal.getSupportedAxes().contains(Gimbal.Axis.PITCH) ) {
+            e_v.addError(ErrorMessage);
+            retry_handler.postDelayed(() -> setupGimbalPitchGesture(mtg, scrollable_view), 1000);
+            return;
         }
 
-        @Override
-        public void onDrawerOpened(@NonNull View drawerView) {
-        }
+        e_v.removeError(ErrorMessage);
+        mtg.setOnScrollListener(scrollable_view.getWidth(), 0, scrollable_view.getHeight(), 0,
+                (dx, dy) -> FlightActions.setVerticalGimbalPosition(_drone, dx, dy*10.0f));
+    }
 
-        @Override
-        public void onDrawerClosed(@NonNull View drawerView) {
-        }
+    private void setupMultiTouchGestures() {
+        SurfaceViewRenderer v = findViewById(R.id.video_view);
 
-        @Override
-        public void onDrawerStateChanged(int newState) {
-        }
-    };
+        MultiTouchGestures mtg = new MultiTouchGestures(this);
+        v.setOnTouchListener(mtg);
+        v.post(() -> setupZoomGesture(mtg));
+        v.post(() -> setupGimbalPitchGesture(mtg, v));
+    }
+
+
+    private void setupMediaStoreComponents() {
+        _media_store = new ParrotMediaStore(_drone);
+        final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
+        final String startup_warning = "Media store not available";
+        e_v.addError(startup_warning);
+
+        _media_store.setPeripheralListener(new ParrotPeripheralManager.PeripheralListener<MediaStore>() {
+            @Override
+            public void onChange(@NonNull MediaStore o) {
+            }
+
+            @Override
+            public boolean onFirstTimeAvailable(@NonNull MediaStore media_store) {
+                e_v.removeError(startup_warning);
+                _media_store.setStoredPhotoCountListener(new_photo_count ->
+                        e_v.addErrorTemporarily(String.format("Photos: %d", new_photo_count), 5000));
+
+                _media_store.setStoredVideoCountListener(new_video_count ->
+                        e_v.addErrorTemporarily(String.format("Videos: %d", new_video_count), 5000));
+                return true;
+            }
+        });
+    }
+
+    private void setupLiveVideo(String user_email, String auth_token) {
+        CopterHudActivity activity = this;
+        ParrotStreamServer stream_server = new ParrotStreamServer(_drone);
+        stream_server.setPeripheralListener(new ParrotPeripheralManager.PeripheralListener<StreamServer>() {
+            @Override
+            public void onChange(@NonNull StreamServer parrot_server) {
+            }
+
+            @Override
+            public boolean onFirstTimeAvailable(@NonNull StreamServer parrot_server) {
+                String[] res_turn_urls = activity.getResources().getStringArray(R.array.turn_servers);
+                PeerConnectionGLSurfaceParameters peerConnectionParameters = new PeerConnectionGLSurfaceParameters(
+                        mStreamView,
+                        null,
+                        getResources().getString(R.string.turn_user_name),
+                        getResources().getString(R.string.turn_credential),
+                        res_turn_urls,
+                        getString(R.string.janus_websocket_uri), activity,
+                        20,
+                        "VP9",
+                        640,
+                        360,
+                        20480000,
+                        128000,
+                        "opus",
+                        parrot_server);
+
+                _audio_manager = (AudioManager)activity.getSystemService(Context.AUDIO_SERVICE);
+                _audio_manager.setMode(AudioManager.MODE_IN_CALL);
+                _audio_manager.setSpeakerphoneOn(true);
+
+
+                _drohub_handler = new DroHubHandler(_drone.getUid(), peerConnectionParameters, activity);
+
+                setupTimer();
+                setupMuteMicrophoneButton(_drohub_handler);
+
+                _thrift_connection = new ThriftConnection();
+                _thrift_connection.onStart(_drone.getUid(),
+                        getString(R.string.drohub_ws_url),
+                        _drohub_handler, user_email, auth_token);
+                Log.w("COPTER", "Started thrift connection to " + getString(R.string.drohub_ws_url));
+                return true;
+            }
+        });
+    }
+
+    private void setupTimer() {
+        TimerView timer_view = findViewById(R.id.info_flight_time);
+        timer_view.startTimer();
+    }
+
+    private void setupMuteMicrophoneButton(DroHubHandler drohub_handler) {
+        ToggleButtonExView mute_button = findViewById(R.id.mute_btn);
+        mute_button.setActiveListener(v -> {
+            boolean r = drohub_handler.setMicrophoneMute(true);
+            if (r)
+                mute_button.setText("Unmute");
+            return r;
+        });
+
+        mute_button.setInactiveListener(v ->{
+            boolean r = drohub_handler.setMicrophoneMute(false);
+            if(r)
+                mute_button.setText("Mute");
+            return r;
+        });
+    }
+
 }
