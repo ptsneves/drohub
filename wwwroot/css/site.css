@@ -88,8 +88,7 @@ button.login-submit-btn-drohub:hover {
 
 .timeline > .drohub-time-label > span {
     font-weight: 400;
-    padding-block: 8px;
-    padding-inline: 16px;
+    padding: 2px 4px 2px 4px;
     font-size: 18px;
     display: inline-block;
     background-color: #2d3c4a;
@@ -140,10 +139,6 @@ img.drohub-device-id-drone-blue {
     width: 70%;
     height: 70%;
     filter: invert(86%) sepia(75%) saturate(2%) hue-rotate(139deg) brightness(108%) contrast(101%)
-}
-
-.drohub-blue-bg {
-    background: #1099FF;
 }
 
 .login-create-account-btn {

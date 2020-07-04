@@ -11,3 +11,4 @@ obj
 out
 parrot-service
 DroHub.Tests
+drohub-vue/node_modules/

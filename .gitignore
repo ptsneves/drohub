@@ -4,3 +4,4 @@ obj/
 mono_crash*
 **.idea**
 Folder.DotSettings.user
+wwwroot/vue

@@ -2,14 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using JsonException = System.Text.Json.JsonException;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace DroHub.Areas.DHub.Controllers
 {
@@ -74,7 +77,7 @@ namespace DroHub.Areas.DHub.Controllers
                 public IEnumerable<string> Tags { get; internal set; }
             }
             public class FileInfoModel {
-                public Device device { get; internal set; }
+                public String device_name { get; internal set; }
                 public MediaInfo media_object { get; internal set; }
             }
 
@@ -101,7 +104,7 @@ namespace DroHub.Areas.DHub.Controllers
                             CaptureDateTime = media_start_time.ToUnixTimeMilliseconds(),
                             Tags = media_file.MediaObjectTags.Select(s => s.TagName)
                         },
-                        device = session.Device
+                        device_name = session.Device.Name
                     };
 
                     if (!files_per_timestamp.ContainsKey(video_timestamp_datetime)) {
@@ -118,19 +121,17 @@ namespace DroHub.Areas.DHub.Controllers
             return View(new GalleryPageModel(){FilesPerTimestamp = files_per_timestamp});
         }
 
-        [HttpGet]
-        public IActionResult DeleteMediaObject() {
-            return RedirectToAction("Gallery");
-        }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteMediaObject([Required]string media_path) {
+        public async Task<IActionResult> DeleteMediaObjects([Required]IEnumerable<string> MediaIdList) {
             try {
                 if (!ModelState.IsValid)
                     return BadRequest();
-                media_path = MediaObjectAndTagAPI.convertToBackEndFilePath(media_path);
-                await _media_objectAnd_tag_api.deleteMediaObject(media_path);
+                foreach (var raw_media_path in MediaIdList) {
+                    var media_path = MediaObjectAndTagAPI.convertToBackEndFilePath(raw_media_path);
+                    await _media_objectAnd_tag_api.deleteMediaObject(media_path);
+                }
+
                 return RedirectToAction("Gallery");
             }
             catch (MediaObjectAuthorizationException e) {
@@ -144,6 +145,51 @@ namespace DroHub.Areas.DHub.Controllers
         enum DownloadType {
             STREAM,
             DOWNLOAD,
+        }
+
+        [NonAction]
+        private static byte[] generateZipArchive(IEnumerable<string> files)
+        {
+            using var archiveStream = new MemoryStream();
+            using (var archive = new ZipArchive(archiveStream, ZipArchiveMode.Create, false)) {
+                foreach (var file in files) {
+                    var entry = archive.CreateEntryFromFile(file, Path.GetFileName(file), CompressionLevel.NoCompression);
+                    entry.ExternalAttributes |= (Convert.ToInt32("664", 8) << 16);
+                }
+            }
+
+            return archiveStream.ToArray();
+        }
+
+        [NonAction]
+        private async Task<IActionResult> getFiles(string[] media_ids) {
+            try {
+                if (!ModelState.IsValid || !media_ids.Any())
+                    return BadRequest();
+
+                var file_list = new List<string>();
+                foreach (var media_id in media_ids) {
+                    var converted_media_id = MediaObjectAndTagAPI.convertToBackEndFilePath(media_id);
+                    if (!await _media_objectAnd_tag_api.authorizeMediaObjectOperation(converted_media_id,
+                            ResourceOperations.Read))
+                        return new ForbidResult("One or more files are not allowed to be downloaded");
+
+                    file_list.Add(converted_media_id);
+                }
+
+                var res = File(generateZipArchive(file_list),
+                    "application/zip", "drohub-videos.zip");
+
+
+                res.EnableRangeProcessing = true;
+                return res;
+            }
+            catch (MediaObjectAuthorizationException e) {
+                return new ForbidResult(e.Message);
+            }
+            catch (MediaObjectAndTagException e) {
+                return NotFound(e.Message);
+            }
         }
 
         [NonAction]
@@ -181,17 +227,21 @@ namespace DroHub.Areas.DHub.Controllers
             return await getFile(video_id, DownloadType.DOWNLOAD);
         }
 
+        public async Task<IActionResult> DownloadMedias([Required][FromQuery(Name="MediaIdList")]string[] MediaIdList) {
+            return await getFiles(MediaIdList.ToArray());
+        }
+
         public class AddTagsModel {
             [Required]
-            public string TagListJSON { get; set; }
+            public string[] TagList { get; set; }
 
             [Required]
-            public string MediaId { get; set; }
+            public string[] MediaIdList { get; set; }
 
             [Required]
             public bool UseTimeStamp { get; set; }
 
-            [Range(typeof(TimeSpan), "00:00", "23:59")]
+            // [Range(typeof(TimeSpan), "00:00", "23:59")]
             public TimeSpan TimeStampInSeconds { get; set; }
 
         }
@@ -200,35 +250,39 @@ namespace DroHub.Areas.DHub.Controllers
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            if (tags.UseTimeStamp) {
-
-            }
-            var tag_list = JsonSerializer.Deserialize<IEnumerable<string>>(tags.TagListJSON);
             try {
-                var media_id = MediaObjectAndTagAPI.convertToBackEndFilePath(tags.MediaId);
 
-                await _media_objectAnd_tag_api.addTags(media_id, tag_list, null);
+                if (tags.UseTimeStamp && tags.TagList.Length != 1) {
+                    return BadRequest();
+                }
+
+                foreach (var media_id in tags.MediaIdList) {
+                    var converted_media_id = MediaObjectAndTagAPI.convertToBackEndFilePath(media_id);
+                    await _media_objectAnd_tag_api.addTags(converted_media_id, tags.TagList, null,
+                        media_id == tags.MediaIdList.Last());
+                }
+
                 return RedirectToAction("Gallery");
             }
             catch (MediaObjectAuthorizationException e) {
                 return Forbid(e.Message);
             }
-            catch (JsonException) {
-                return BadRequest();
-            }
         }
 
         [HttpPost]
-        public async Task<IActionResult> DeleteTag([Required] string tag_name, string media_id) {
+        public async Task<IActionResult> DeleteTag([Required] string tag_name,[Required] string media_id) {
             if (!ModelState.IsValid)
                 return BadRequest();
             try {
-                media_id = MediaObjectAndTagAPI.convertToBackEndFilePath(media_id);
-                await _media_objectAnd_tag_api.removeTag(tag_name, media_id, true);
+                var converted_media_id = MediaObjectAndTagAPI.convertToBackEndFilePath(media_id);
+                await _media_objectAnd_tag_api.removeTag(tag_name, converted_media_id);
                 return Ok();
             }
             catch (MediaObjectAuthorizationException e) {
                 return Forbid(e.Message);
+            }
+            catch (System.InvalidOperationException) {
+                return BadRequest($"{media_id} could not be retrieved");
             }
         }
 

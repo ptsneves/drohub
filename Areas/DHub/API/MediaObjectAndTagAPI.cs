@@ -161,9 +161,6 @@ namespace DroHub.Areas.DHub.API {
             if (!await authorizeMediaObjectOperation(media_path, ResourceOperations.Read))
                 throw new MediaObjectAuthorizationException("User is not allowed to access this media");
 
-            if (!File.Exists(media_path))
-                throw new MediaObjectAndTagException("Media does not exist");
-
             return File.OpenRead(media_path);
         }
 
@@ -172,10 +169,11 @@ namespace DroHub.Areas.DHub.API {
                 throw new MediaObjectAuthorizationException("User is not authorized to delete this media");
 
             var media_object_tag = await _db_context.MediaObjectTags
-                .Where(mot => mot.MediaPath == media.MediaPath).SingleOrDefaultAsync();
+                .Where(mot => mot.MediaPath == media.MediaPath)
+                .ToListAsync();
 
             if (media_object_tag != null)
-                _db_context.MediaObjectTags.Remove(media_object_tag);
+                _db_context.MediaObjectTags.RemoveRange(media_object_tag);
 
             _db_context.MediaObjects.Remove(media);
             File.Delete(media.MediaPath);
@@ -185,11 +183,16 @@ namespace DroHub.Areas.DHub.API {
         public async Task<bool> authorizeMediaObjectOperation(string media_path, IAuthorizationRequirement op) {
             if (op == ResourceOperations.Create)
                 return true;
+
+            if (!File.Exists(media_path))
+                return false;
+
             var media_object = await getMediaObject(media_path);
+
             return await authorizeMediaObjectOperation(media_object, op);
         }
 
-        public async Task<bool> authorizeMediaObjectOperation(MediaObject media, IAuthorizationRequirement op) {
+        private async Task<bool> authorizeMediaObjectOperation(MediaObject media, IAuthorizationRequirement op) {
             if (media == null)
                 return true;
 

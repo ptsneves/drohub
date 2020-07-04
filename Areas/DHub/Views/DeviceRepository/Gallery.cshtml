@@ -1,234 +1,86 @@
-@using System.IO
-@using DroHub.Areas.DHub.API
 @using Microsoft.AspNetCore.Hosting
+@using Newtonsoft.Json
 @model DroHub.Areas.DHub.Controllers.DeviceRepositoryController.GalleryPageModel
 @inject IWebHostEnvironment _host_env
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+@functions{
+
+    private string GetAntiXsrfRequestToken()
+    {
+        return Xsrf.GetAndStoreTokens(Context).RequestToken;
+    }
+}
+
 @{
     ViewData["Title"] = "Gallery";
 }
-<!-- Content Header (Page header) -->
-<section class="content-header">
-    <style>
-        .box-top-border {
-            border-top: 4px solid #3c8dbc
-        }
-    </style>
 
-    <div style="max-width: 624px; margin-right: 27px;" class="drohub-gallery-content-margin
-    input-group-lg tag-input-container tag-selector">
-        @* <span class="drohub-input-group-addon"> *@
-        @*     <i class="far fa-search"></i> *@
-        @* </span> *@
-        <div class="form-group">
-            <div class="tag-list-input-group">
-                <div class="tag-label-template tag-user-container icheckbox_tag-label">
-                    <a style="color:white;" href="#"><i class="fa tag-remove-container-on-click fa-times"></i></a>
-                    <span class="tag-user-text"></span>
-                </div>
-                <input type="text" class="tag-comma-separated-text drohub-form-control" placeholder="Type a device name a tag or select media type!"/>
-            </div>
-        </div>
-        @* <span class="drohub-input-group-addon"> *@
-        @*     <input style="display: none" id="recording-tag-check" type="checkbox" class="tag-checkbox"/> *@
-        @*     <label for="recording-tag-check"> *@
-        @*         <img alt="filter by recording"  class="media-type-image" src="~/images/assets/timeline-thumbnail-recording.svg"/> *@
-        @*     </label> *@
-        @* </span> *@
-        @* *@
-        @* <span class="drohub-input-group-addon"> *@
-        @*     <input style="display: none" id="photo-tag-check" type="checkbox" class="tag-checkbox"/> *@
-        @*     <label for="photo-tag-check"> *@
-        @*         <img alt="drone gallery" class="media-type-image" src="~/images/assets/timeline-thumbnail-photo.svg"/> *@
-        @*     </label> *@
-        @* </span> *@
-        @* *@
-        @* <span class="drohub-input-group-addon"> *@
-        @*     <input style="display: none" id="video-tag-check" type="checkbox" class="tag-checkbox"/> *@
-        @*     <label for="video-tag-check"> *@
-        @*         <img alt="drone gallery" class="media-type-image" src="~/images/assets/timeline-thumbnail-video.svg"/> *@
-        @*     </label> *@
-        @* </span> *@
-    </div>
+<div id="app">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
 
-</section>
-<!-- /Content Header (Page header) -->
-<!-- Main content -->
-<section class="content">
-    <div class="modal fade" id="deleteMediaModal" tabindex="-1" role="dialog" aria-labelledby="deleteMediaModalLabel">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title append-file-path-text" data-text-template="Delete"></h4>
-                </div>
-                <div class="modal-body">
-                    <p class="append-file-path-text" data-text-template="Are you sure you want to delete"></p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
-                    <form method="post" asp-action="DeleteMediaObject" >
-                        <input type="hidden"  name="media_path" value="TO be set by javascript"/>
-                        <button type="submit" class="btn btn-warning">Delete file</button>
-                    </form>
+        <div style="max-width: 624px; margin-right: 27px;" class="drohub-gallery-content-margin input-group-lg tag-input-container tag-selector">
+
+            @* <span class="drohub-input-group-addon"> *@
+            @*     <i class="far fa-search"></i> *@
+            @* </span> *@
+            <div class="form-group">
+                <div class="tag-list-input-group">
+                    @* <div class="tag-label-template tag-user-container icheckbox_tag-label"> *@
+                    @*     <a style="color:white;" href="#"><i class="fa tag-remove-container-on-click fa-times"></i></a> *@
+                    @*     <span class="tag-user-text"></span> *@
+                    @* </div> *@
+                    <gallery-input class=""
+                                   placeholder="Type a device name a tag or select media type!">
+
+                    </gallery-input>
+                    @* <gallery-input class="drohub-form-control" *@
+                    @* <input type="text" class="tag-comma-separated-text drohub-form-control" placeholder="Type a device name a tag or select media type!"/> *@
                 </div>
             </div>
+            @* <span class="drohub-input-group-addon"> *@
+            @*     <input style="display: none" id="recording-tag-check" type="checkbox" class="tag-checkbox"/> *@
+            @*     <label for="recording-tag-check"> *@
+            @*         <img alt="filter by recording"  class="media-type-image" src="~/images/assets/timeline-thumbnail-recording.svg"/> *@
+            @*     </label> *@
+            @* </span> *@
+            @* *@
+            @* <span class="drohub-input-group-addon"> *@
+            @*     <input style="display: none" id="photo-tag-check" type="checkbox" class="tag-checkbox"/> *@
+            @*     <label for="photo-tag-check"> *@
+            @*         <img alt="drone gallery" class="media-type-image" src="~/images/assets/timeline-thumbnail-photo.svg"/> *@
+            @*     </label> *@
+            @* </span> *@
+            @* *@
+            @* <span class="drohub-input-group-addon"> *@
+            @*     <input style="display: none" id="video-tag-check" type="checkbox" class="tag-checkbox"/> *@
+            @*     <label for="video-tag-check"> *@
+            @*         <img alt="drone gallery" class="media-type-image" src="~/images/assets/timeline-thumbnail-video.svg"/> *@
+            @*     </label> *@
+            @* </span> *@
         </div>
-    </div>
-    <partial name="_AddTagModal" model="new DroHub.Areas.DHub.Controllers.DeviceRepositoryController.AddTagsModel()" />
-    @if (Model.FilesPerTimestamp.Count == 0) {
-        <h2>Nothing in this gallery yet. Try using your drone making a live stream.</h2>
-    }
-    else {
-        @foreach (var point_in_time_files in @Model.FilesPerTimestamp) {
-            <ul class="timeline">
-                <li class="drohub-time-label">
-                    <span class='time local-date-text' data-unix-time="@point_in_time_files.Key"><i class="fa fa-clock-o"></i></span>
-                </li>
-                @foreach (var device_files in point_in_time_files.Value) {
-                    <li>
-                        <span class="drohub-glyphicon drohub-blue-bg">
-                            <img alt="drone gallery" class="drohub-device-id-drone-blue" src="~/images/assets/device-id-drone.svg"/>
-                        </span>
-                        <div class="drohub-gallery-content-margin timeline-item">
 
-                            <h3 class="drohub-timeline-header">
-                                @device_files.Key
-                                <span class="pull-right">
-                                    <span class="toggle" data-toggle-id="tag" data-toggle-state="true">
-                                        <img alt="Show tags" data-toggle-id="tag" class="show-on-toggle-true" src="~/images/assets/timeline-tag-off.svg"/>
-                                        <img alt="Hide tags" data-toggle-id="tag" class="show-on-toggle-false" src="~/images/assets/timeline-tag-on.svg"/>
-                                    </span>
-                                    <img alt="Download all video from this session" src="~/images/assets/timeline-download.svg"/>
-                                    <img alt="Gallery settings (Not implemented" src="~/images/assets/device-window-settings.svg"/>
-                                </span>
-                            </h3>
-                            <div class="timeline-body">
-                                <div class="container-fluid  content-centered">
-                                    <div class="row">
-                                        @foreach (var file in device_files.Value) {
-                                            var tags = @Html.Raw(
-                                                Newtonsoft.Json.JsonConvert.SerializeObject(file.media_object.Tags));
-
-                                            var overlay_image_type = _host_env.WebRootPath + "/images/assets/timeline-thumbnail-recording.svg";
-
-                                            var overlay_detach_svg_file = _host_env.WebRootPath + "/images/assets/video-info-detach-video.svg";
-                                            var overlay_3dots_svg_file = _host_env.WebRootPath + "/images/assets/3-vertical-dots.svg";
-                                            var overlay_play_svg_file = _host_env.WebRootPath + "/images/assets/video-play.svg";
-                                            var overlay_pause_svg_file = _host_env.WebRootPath + "/images/assets/video-pause.svg";
-                                            var tag_on_svg_file = _host_env.WebRootPath + "/images/assets/timeline-tag-on.svg";
-                                            var system_thrash_svg_file = _host_env.WebRootPath + "/images/assets/system-thrash.svg";
-                                            var fie_download_svg_file = _host_env.WebRootPath + "/images/assets/timeline-download.svg";
-
-                                            var media_path_description = MediaObjectAndTagAPI
-                                                .FileNameTranslator
-                                                .getDataFromMediaPath(file
-                                                .media_object.VideoPath);
-
-
-                                            <div class="col-lg-5ths col-md-3 col-sm-12" data-target-name='@tags'>
-                                                <div class="video-player-container">
-                                                    <div class="video-player-inner">
-                                                        <div class="video-player-overlay">
-                                                            <div class="video-player-top">
-                                                                <div class="video-player-left">
-                                                                    <div style="height: 45px;width: 45px;">
-                                                                        @Html.Raw(await File.ReadAllTextAsync(overlay_image_type))
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="video-player-controls video-player-bottom">
-                                                                <div class="video-player-left">
-                                                                    <button class="video-player-button video-player-play-pause">
-                                                                        <div class="video-player-play-icon">
-                                                                            @Html.Raw(await File.ReadAllTextAsync(overlay_play_svg_file))
-                                                                        </div>
-
-                                                                        <div class="video-player-pause-icon">
-                                                                            @Html.Raw(await File.ReadAllTextAsync(overlay_pause_svg_file))
-                                                                        </div>
-
-                                                                    </button>
-                                                                    <span class="video-player-text video-player-curtime">00:00</span>
-                                                                </div>
-                                                                <div class="video-player-right">
-                                                                    <button class="video-player-button video-player-detatch">
-                                                                        @Html.Raw(await File.ReadAllTextAsync(overlay_detach_svg_file))
-                                                                    </button>
-
-                                                                    <button type="button" class="video-player-button dropdown-toggle" data-toggle="dropdown" aria-expanded="true">
-                                                                        @Html.Raw(await File.ReadAllTextAsync(overlay_3dots_svg_file))
-                                                                    </button>
-                                                                    <ul style="  top: -170%; left: 30%;" class="dropdown-menu">
-                                                                        <li>
-                                                                            <a href="#" data-toggle="modal"
-                                                                            data-media-description="@file.device.Name's file and associated tags created in @media_path_description.date_time_string"
-                                                                            data-media-path="@file.media_object.VideoPath" data-target="#deleteMediaModal">
-                                                                                <span>
-                                                                                    @Html.Raw(await File.ReadAllTextAsync(system_thrash_svg_file))
-                                                                                </span>
-                                                                                Delete
-                                                                            </a>
-                                                                        </li>
-                                                                        <li>
-                                                                            <a href="@Url.Action("DownloadVideo", new {video_id = file.media_object.VideoPath})">
-                                                                                <span>
-                                                                                    @Html.Raw(await File.ReadAllTextAsync(fie_download_svg_file))
-                                                                                </span>
-                                                                                Download
-                                                                            </a>
-                                                                        </li>
-                                                                        <li>
-                                                                            <a href="#" data-toggle="modal" data-media-path="@file.media_object.VideoPath"
-                                                                               data-target="#addTagModal">
-                                                                                <span>
-                                                                                    @Html.Raw(await File.ReadAllTextAsync(tag_on_svg_file))
-                                                                                </span>
-                                                                                <span style="display: none" class="video-player-text video-player-curtime"></span>
-                                                                                Add Tags
-                                                                            </a>
-                                                                        </li>
-                                                                    </ul>
-                                                                </div>
-                                                                <input type="range" class="video-player-progressbar"/>
-                                                            </div>
-                                                        </div>
-                                                        <video class="video-player embed-responsive-item"
-                                                               src='@Url.Action("GetLiveStreamRecordingVideo", new {video_id = file.media_object.VideoPath})' preload="metadata">
-                                                        </video>
-                                                    </div>
-                                                </div>
-                                                <div class="row show-on-toggle-true" data-toggle-id="tag">
-                                                    @foreach (var tag in file.media_object.Tags) {
-                                                        <label class="icheckbox_tag-label">
-                                                            <a class="delete-tag-btn" asp-action="DeleteTag" data-media-id="@file.media_object.VideoPath" data-tag-name="@tag"><i class="fa fa-times"></i></a>
-                                                            <input style="display: none" type="checkbox" data-tag-name="@tag" class="tag-checkbox"/>
-                                                            @tag
-                                                        </label>
-                                                    }
-                                                </div>
-                                            </div>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </li>
-                }
-            </ul>
+    </section>
+    <!-- /Content Header (Page header) -->
+    <!-- Main content -->
+    <section class="content">
+        @if (Model.FilesPerTimestamp.Count == 0) {
+            <h2>Nothing in this gallery yet. Try using your drone making a live stream.</h2>
         }
-    }
-</section>
+        else {
+            <gallery-timeline>
+            </gallery-timeline>
+         }
+    </section>
+</div>
 @section Scripts {
-    <script type="text/javascript" src="~/js/video-player.js"></script>
-    <script type="text/javascript" src="~/js/add-tag.js"></script>
-    <script type="text/javascript" src="~/js/gallery.js"></script>
-    <partial name="_ValidationScriptsPartial" />
+<script type="text/javascript" src="~/vue/js/app.js"></script>
+<script type="application/javascript">
+    window.init_data = JSON.parse('@Html.Raw(JsonConvert.SerializeObject(@Model.FilesPerTimestamp, new JsonSerializerSettings() {ReferenceLoopHandling = ReferenceLoopHandling.Ignore}))');
+    window.anti_forgery_token = "@GetAntiXsrfRequestToken()"
+</script>
+<partial name="_ValidationScriptsPartial" />
 }
 
 @section head {
-    <link rel="stylesheet" href="~/css/video-player.css">
-    <link rel="stylesheet" href="~/css/gallery.css">
-    <link rel="stylesheet" href="~/css/icheck-tag-label.css">
-    <link rel="stylesheet" href="~/AdminLTE/plugins/iCheck/square/blue.css">
 }

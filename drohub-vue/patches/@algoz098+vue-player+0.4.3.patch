@@ -1,0 +1,991 @@
+diff --git a/node_modules/@algoz098/vue-player/.eslintignore b/node_modules/@algoz098/vue-player/.eslintignore
+deleted file mode 100644
+index d5217ec..0000000
+--- a/node_modules/@algoz098/vue-player/.eslintignore
++++ /dev/null
+@@ -1 +0,0 @@
+-/tests
+\ No newline at end of file
+diff --git a/node_modules/@algoz098/vue-player/.gitignore b/node_modules/@algoz098/vue-player/.gitignore
+deleted file mode 100644
+index 47c022e..0000000
+--- a/node_modules/@algoz098/vue-player/.gitignore
++++ /dev/null
+@@ -1,23 +0,0 @@
+-.DS_Store
+-node_modules
+-# /dist
+-
+-# local env files
+-.env.local
+-.env.*.local
+-
+-# Log files
+-npm-debug.log*
+-yarn-debug.log*
+-yarn-error.log*
+-
+-# Editor directories and files
+-.idea
+-.vscode
+-*.suo
+-*.ntvs*
+-*.njsproj
+-*.sln
+-*.sw?
+-
+-vue.config.js
+\ No newline at end of file
+diff --git a/node_modules/@algoz098/vue-player/PLAYER.md b/node_modules/@algoz098/vue-player/PLAYER.md
+deleted file mode 100644
+index 6b9caf2..0000000
+--- a/node_modules/@algoz098/vue-player/PLAYER.md
++++ /dev/null
+@@ -1,153 +0,0 @@
+-# vue-player 
+-
+-A must have html5 video player made in VueJS 
+-
+-- **author** - Artur  Sena 
+-
+-## slots 
+-
+-- `controls` Use this slot to replace the controls 
+-
+-## props 
+-
+-- `v-model` ***String*** (*optional*) `default: null` 
+-
+-  Set title.
+-  It appears on the overlay 
+-
+-- `v-model` ***Boolean*** (*optional*) `default: undefined` 
+-
+-  Set play/pause.
+-  It automatically set the video the right state 
+-
+-- `src` ***String|Array*** (*required*) 
+-
+-  Define the source for the video tag.
+-  if array uses the src-index to pick one 
+-
+-- `src-index` ***ArrayExpression*** (*optional*) 
+-
+-  Use ONLY if src is a array
+-  set the index of the src 
+-
+-- `autoplay` ***Boolean*** (*optional*) `default: false` 
+-
+-  set the video to autoplay as it's loaded 
+-
+-- `preview-on-mouse` ***Boolean*** (*optional*) `default: false` 
+-
+-  show video preview if mouse hover 
+-
+-- `playsinline` ***Boolean*** (*optional*) `default: false` 
+-
+-  set the video to playsinline as it's loaded 
+-
+-- `poster` ***String*** (*optional*) 
+-
+-  set a image placeholder util the video start to play once 
+-
+-- `video-placeholder-src` ***String*** (*optional*) 
+-
+-  if you want a video teaser you can use this, will be played with-out sound 
+-
+-- `volume` ***Number*** (*optional*) `default: undefined` 
+-
+-  define the volume of the player
+-  values from 0 util 1 
+-
+-- `controls` ***Boolean*** (*optional*) `default: undefined` 
+-
+-  show/hide the controls 
+-
+-- `overlay-class` ***[object Object]*** (*optional*) `default: 'vue-video-center'` 
+-
+-  class for the overlay 
+-
+-- `controls-class` ***[object Object]*** (*optional*) `default: 'vue-video-player-controls'` 
+-
+-  class for the controls bar 
+-
+-- `play-button-class` ***[object Object]*** (*optional*) `default: null` 
+-
+-  class for the play button 
+-
+-- `play-button-style` ***[object Object]*** (*optional*) `default: null` 
+-
+-  style for the play button 
+-
+-- `volume-button-class` ***[object Object]*** (*optional*) `default: null` 
+-
+-  class for the volume button 
+-
+-- `volume-button-style` ***[object Object]*** (*optional*) `default: null` 
+-
+-  style for the volume button 
+-
+-- `timer-class` ***[object Object]*** (*optional*) `default: 'timer'` 
+-
+-  class for the timer 
+-
+-- `timer-style` ***[object Object]*** (*optional*) `default: null` 
+-
+-  style for the timer 
+-
+-- `fullscreen-button-class` ***[object Object]*** (*optional*) `default: 'fullscreen-button-class'` 
+-
+-  class for the fullscreen button 
+-
+-- `fullscreen-button-style` ***[object Object]*** (*optional*) `default: null` 
+-
+-  style for the fullscreen button 
+-
+-- `controls-style` ***[object Object]*** (*optional*) `default: undefined` 
+-
+-  style for the controls bar 
+-
+-## data 
+-
+-- `showSound` 
+-
+-**initial value:** `false` 
+-
+-- `mouseover` 
+-
+-**initial value:** `false` 
+-
+-- `playing` 
+-
+-**initial value:** `false` 
+-
+-- `showControlsInternal` 
+-
+-**initial value:** `false` 
+-
+-- `started` 
+-
+-**initial value:** `false` 
+-
+-- `time` 
+-
+-**initial value:** `0` 
+-
+-- `duration` 
+-
+-**initial value:** `0` 
+-
+-- `volumeInternal` 
+-
+-**initial value:** `1` 
+-
+-- `fullscreenInternal` 
+-
+-**initial value:** `false` 
+-
+-## events 
+-
+-- `update:srcIndex` 
+-
+-  if src is a array, at the end of the video emits the new src-index 
+-
+-- `fullscreen` 
+-
+-  emited when players go fullscreen 
+-
+diff --git a/node_modules/@algoz098/vue-player/README.md b/node_modules/@algoz098/vue-player/README.md
+deleted file mode 100644
+index a0f8001..0000000
+--- a/node_modules/@algoz098/vue-player/README.md
++++ /dev/null
+@@ -1,61 +0,0 @@
+-
+-# vue-player
+-
+-![](ss.png)
+-
+- -  **author** - Artur Sena
+-
+--  **license** - MIT
+-
+-  
+-
+-## Intro
+-
+-This is a html5 video component made in VueJS with to quickly add videos with placeholders and intros.
+-
+-### Features
+-- Has `poster` to show a image placeholder before video
+-- Has `video-placeholder-src` to autoplay a video without sound
+-- Has `preview-on-mouse` add option to alter between poster and video-preview (youtube like)
+-- Events telling what's happening
+-- full control of the player
+-- 100% vue
+-- no third parties js libs
+-  
+-### Examples
+-https://algoz098.github.io/vue-player/
+-
+-## Usage & Guide
+-
+-Install it
+-```
+-npm i --save @algoz098/vue-player
+-```
+-
+-Then you import it where you need to use it.
+-```
+-import vuePlayer  from  '@algoz098/vue-player'
+-```
+-Now, just tell vue to use it:
+-```
+-Vue.component(vuePlayer)
+-```
+-Or inside a ´.vue´ file:
+-```
+-<script>
+-	export  default {
+-		components: {
+-			vuePlayer
+-		}
+-	}
+-</script>
+-```
+-Now, just use it:
+-```
+-<vue-player src="http://techslides.com/demos/sample-videos/small.mp4" poster="https://via.placeholder.com/150" title="this is a title" v-model="playing"></vue-player>
+-```
+-  You can see more information [here](https://github.com/algoz098/vue-player/blob/master/PLAYER.md)
+-  
+-
+-## Contribution
+-All contribution are wellcome, and every pull request will be seen. Thank you for your time!
+\ No newline at end of file
+diff --git a/node_modules/@algoz098/vue-player/index.js b/node_modules/@algoz098/vue-player/index.js
+index e9e77fe..12fa2ac 100644
+--- a/node_modules/@algoz098/vue-player/index.js
++++ b/node_modules/@algoz098/vue-player/index.js
+@@ -1,3 +1,5 @@
+ import player from './src/components/player.vue'
++import pButton from './src/components/button.vue'
+ 
+-export default player
+\ No newline at end of file
++export default player;
++export { pButton };
+\ No newline at end of file
+diff --git a/node_modules/@algoz098/vue-player/src/App.vue b/node_modules/@algoz098/vue-player/src/App.vue
+index 6040372..042fecc 100644
+--- a/node_modules/@algoz098/vue-player/src/App.vue
++++ b/node_modules/@algoz098/vue-player/src/App.vue
+@@ -4,7 +4,7 @@
+ 			<div class="column is-half">
+ 				<intro />
+ 				
+-				<div class="container">
++				<div class="vue-video-player-container">
+ 					<h2 class="title ">Instalation</h2>
+ 
+ 					<p class="subtitle">
+@@ -20,7 +20,7 @@
+ 				
+ 				<poster-player />
+ 				
+-				<div class="container">
++				<div class="vue-video-player-container">
+ 					<h2 class="title ">More</h2>
+ 
+ 					<p class="subtitle">
+diff --git a/node_modules/@algoz098/vue-player/src/components/button.vue b/node_modules/@algoz098/vue-player/src/components/button.vue
+index 4791251..11bfc1e 100644
+--- a/node_modules/@algoz098/vue-player/src/components/button.vue
++++ b/node_modules/@algoz098/vue-player/src/components/button.vue
+@@ -19,17 +19,18 @@ export default {
+ 		theClass() {
+ 			if (this.$attrs.class) return this.$attrs.class
+ 			
+-			return 'button'
++			return 'vue-player-button'
+ 		}
+ 	}
+ }
+ </script>
+ 
+ <style scoped>
+- .button {
++ .vue-player-button {
+ 	width: 35px;
+ 	border: 0px solid white;
+ 	color: white;
+ 	background-color: transparent;
++	outline: 0px;
+ }
+ </style>
+diff --git a/node_modules/@algoz098/vue-player/src/components/player.vue b/node_modules/@algoz098/vue-player/src/components/player.vue
+index b8bb71c..97f0485 100644
+--- a/node_modules/@algoz098/vue-player/src/components/player.vue
++++ b/node_modules/@algoz098/vue-player/src/components/player.vue
+@@ -13,9 +13,6 @@
+ 		:controls="false"
+ 		:autoplay="autoplay"
+ 		:playsinline="playsinline"
+-		:class="{
+-			'transparent': !started
+-		}"
+ 		@play="play"
+ 		@pause="pause"
+ 		@click="atPlayPause"
+@@ -34,25 +31,27 @@
+ 		v-if="!started"
+ 	/>
+ 
+-	<div 
+-		:class="overlayClass"
+-		v-if="!started"
+-	>
+-		<div
+-			class="title"
+-			v-if="title"
+-		>
+-			{{title}}
+-		</div>
+-
+-		<p-button
+-			class="start-button"
+-			@click="atPlayPause"
+-		>
+-			<i class="material-icons size-124">play_arrow</i>
+-		</p-button>
+-
+-	</div>
++<!--	<div-->
++<!--		:class="overlayClass"-->
++<!--		v-if="!started"-->
++<!--	>-->
++<!--		<div-->
++<!--			class="title"-->
++<!--			v-if="title"-->
++<!--		>-->
++<!--			{{title}}-->
++<!--		</div>-->
++
++<!--		<p-button-->
++<!--			class="start-button"-->
++<!--			@click="atPlayPause"-->
++<!--		>-->
++<!--			<slot name="play-button-overlay-content">-->
++<!--				<i class="material-icons size-124">play_arrow</i>-->
++<!--			</slot>-->
++<!--		</p-button>-->
++
++<!--	</div>-->
+ 
+ 
+ 	<i
+@@ -60,76 +59,90 @@
+ 		v-if="started && loading"
+ 	>refresh</i>
+ 
+-	<!-- Use this slot to replace the controls  -->
+-	<slot name="controls">
+-		<controls 
+-			:class="controlsClass"
+-			:show="showControlsIf"
+-			:style="controlsStyleComputed"
+-		>
+-			<p-button
+-				:class="playButtonClass"
+-				:style="playButtonStyle"
+-				@click="atPlayPause"
+-			>
+-				<i 
+-					v-if="!playingComputed"
+-					class="material-icons"
+-				>
+-					play_arrow
+-				</i>
++	<div :class="videoPlayingOverlay">
+ 
+-				<i 
+-					v-else
+-					class="material-icons"
+-				>
+-					pause
+-				</i>
+-			</p-button>
+-			
+-			<p-button
+-				@click="atVolume"
+-				:class="volumeButtonClass"
+-				:style="volumeButtonStyle"
++		<!-- Use this slot to replace the controls  -->
++		<slot name="controls">
++			<controls
++				:class="controlsClass"
++				:show="showControlsIf"
++				:style="controlsStyleComputed"
+ 			>
+-				<i 
+-					class="material-icons"
++				<div
++				:class="mainControlsClass"
+ 				>
+-					volume_up
+-				</i>
+-			</p-button>
+-
+-			<range
+-				v-model="volumeComputed"
+-				:max="1"
+-				width="60px"
+-				:show="showSound"
+-			/>
+-
+-			<p-button
+-				@click="atVolume"
+-				:class="timerClass"
+-				:style="timerStyle"
+-			>
+-				{{minutesTime}} / {{minutesDuration}}
+-			</p-button>
+-
+-			<p-button
+-				:class="fullscreenButtonClass"
+-				:style="fullscreenButtonStyle"
+-				@click="atFullscreen"
+-			>
+-				<i class="material-icons">fullscreen</i>
+-			</p-button>
+-
+-			<range
+-				v-model="timeComputed"
+-				class="vue-player-time-control"
+-				:max="duration"
+-				show
+-			/>
+-		</controls>
+-	</slot>
++					<p-button
++						:class="playButtonClass"
++						:style="playButtonStyle"
++						@click="atPlayPause"
++					>
++						<slot name="play-button-content"
++							v-if="!playingComputed"
++						>
++							play_arrow
++						</slot>
++
++						<slot name="pause-button-content"
++							v-else
++						>
++							pause
++						</slot>
++					</p-button>
++
++					<div
++							v-if="showVolume"
++					>
++						<p-button
++							@click="atVolume"
++							:class="volumeButtonClass"
++							:style="volumeButtonStyle"
++						>
++							<i
++								class="material-icons"
++							>
++								volume_up
++							</i>
++						</p-button>
++
++						<range
++							v-model="volumeComputed"
++							:max="1"
++							width="60px"
++							:show="showSound"
++						/>
++					</div>
++					<span
++						:class="timerClass"
++						:style="timerStyle"
++					>
++						{{minutesTime}} / {{minutesDuration}}
++					</span>
++
++					<p-button
++						:class="fullscreenButtonClass"
++						:style="fullscreenButtonStyle"
++						@click="atFullscreen"
++					>
++						<slot name="fullscreen-button-content">
++							<i class="material-icons">fullscreen</i>
++						</slot>
++					</p-button>
++					<slot name="optional-settings-controls"></slot>
++				</div>
++				<div
++						:class="rangeControlsClass"
++				>
++					<range
++							v-model="timeComputed"
++							class="vue-player-time-control"
++							:max="duration"
++							show
++					/>
++				</div>
++
++			</controls>
++		</slot>
++	</div>
+ </div>
+ </template>
+ 
+@@ -165,6 +178,15 @@ export default {
+ 			default: null
+ 		},
+ 
++		/**
++		 * Show or not the volume controls
++		 *
++	 	*/
++		showVolume: {
++			type: Boolean,
++			defautl: true,
++		},
++
+ 		/**
+        * Set play/pause.
+        * It automatically set the video the right state
+@@ -248,6 +270,13 @@ export default {
+ 			default: "vue-video-center"
+ 		},
+ 
++		/**
++		 * class for the overlay
++		 */
++		videoPlayingOverlay: {
++		},
++
++
+ 		/**
+        * class for the controls bar
+        */
+@@ -311,12 +340,20 @@ export default {
+ 			default: null
+ 		},
+ 
++		mainControlsClass: {
++			default: null,
++		},
++
+ 		/**
+        * style for the controls bar
+        */
+ 		controlsStyle: {
+ 			default: undefined
+-		}
++		},
++
++		rangeControlsClass: {
++			default: null,
++		},
+ 	},
+ 
+ 	data () {
+@@ -454,8 +491,16 @@ export default {
+        * @private
+        */
+ 		atPlayPause () {
+-			if (!this.playingComputed) this.$refs.video.play()
+-			else this.$refs.video.pause()
++			if (!this.playingComputed) this.doPlay()
++			else this.doPause()
++		},
++
++		doPlay() {
++			this.$refs.video.play()
++		},
++
++		doPause() {
++			this.$refs.video.pause()
+ 		},
+ 
+ 		/**
+@@ -595,7 +640,7 @@ export default {
+        * @private
+        */
+ 		showControlsIf () {
+-			return (this.showControlsComputed || !this.playingComputed) && this.started 
++			return (this.showControlsComputed || !this.playingComputed)
+ 		},
+ 
+ 		/**
+@@ -657,12 +702,13 @@ export default {
+ }
+ 
+ .start-button {
+-	width: auto;
+-	height: auto;
++	width: 100%;
++	height: 100%;
+ 	border: 8px solid white;
+ 	border-radius: 1rem;
+ 	background-color: rgba(0, 0, 0, 0.3);
+ 	cursor: pointer;
++	display: inline-block;
+ }
+ 
+ .start-button:hover {
+@@ -692,13 +738,15 @@ export default {
+ .vue-video-player video {
+ 	width: 100%;
+ 	height: 100%;
++	border-radius: 4px;
+ }
+ 
+ .vue-video-player {
+ 	position: relative;
+ 	font-size:0;
+-	color: white;
++	background: black;
+ 	display: block;
++	border-radius: 4px;
+ }
+ 
+ .timer {
+@@ -739,7 +787,6 @@ export default {
+ }
+ 
+ input[type=range].vue-player-time-control {
+-	position: absolute;	
+ 	top: -5px;
+ 	left: 0;
+ 	padding-top: 0;
+diff --git a/node_modules/@algoz098/vue-player/src/components/videoPlaceholder.vue b/node_modules/@algoz098/vue-player/src/components/videoPlaceholder.vue
+index d25b8bf..bb0e683 100644
+--- a/node_modules/@algoz098/vue-player/src/components/videoPlaceholder.vue
++++ b/node_modules/@algoz098/vue-player/src/components/videoPlaceholder.vue
+@@ -1,5 +1,5 @@
+ <template>
+-<div class="container">
++<div class="vue-video-player-container">
+ 	<div
+ 		class="loading-bar"
+ 		:style="{width: `${loadPercent}%`}"
+@@ -140,12 +140,12 @@ export default {
+ 	z-index: 10;
+ }
+ 
+-div.container {
++div.vue-video-player-container {
+ 	width: 100%;
+ 	height: 100%;
+ }
+ 
+-div.container,
++div.vue-video-player-container,
+ img,
+ video{
+ 	position: absolute;
+diff --git a/node_modules/@algoz098/vue-player/src/showcase/basicPlayer.vue b/node_modules/@algoz098/vue-player/src/showcase/basicPlayer.vue
+index a071d65..e324b01 100644
+--- a/node_modules/@algoz098/vue-player/src/showcase/basicPlayer.vue
++++ b/node_modules/@algoz098/vue-player/src/showcase/basicPlayer.vue
+@@ -1,6 +1,6 @@
+ <template>
+ 	<section class="section">
+-		<div class="container">
++		<div class="vue-video-player-container">
+ 			<h2 class="title ">Basic setup</h2>
+ 
+ 			<p class="subtitle">
+diff --git a/node_modules/@algoz098/vue-player/src/showcase/minimumPlayer.vue b/node_modules/@algoz098/vue-player/src/showcase/minimumPlayer.vue
+index f28ea0f..90f52f7 100644
+--- a/node_modules/@algoz098/vue-player/src/showcase/minimumPlayer.vue
++++ b/node_modules/@algoz098/vue-player/src/showcase/minimumPlayer.vue
+@@ -1,6 +1,6 @@
+ <template>
+ 	<section class="section">
+-		<div class="container">
++		<div class="vue-video-player-container">
+ 			<h2 class="title ">Minimum setup</h2>
+ 
+ 			<p class="subtitle">
+diff --git a/node_modules/@algoz098/vue-player/src/showcase/posterPlayer.vue b/node_modules/@algoz098/vue-player/src/showcase/posterPlayer.vue
+index a4a2c5c..d558463 100644
+--- a/node_modules/@algoz098/vue-player/src/showcase/posterPlayer.vue
++++ b/node_modules/@algoz098/vue-player/src/showcase/posterPlayer.vue
+@@ -1,6 +1,6 @@
+ <template>
+ 	<section class="section">
+-		<div class="container">
++		<div class="vue-video-player-container">
+ 			<h2 class="title ">Poster video setup</h2>
+ 
+ 			<p class="subtitle">
+diff --git a/node_modules/@algoz098/vue-player/src/showcase/previewPlayer.vue b/node_modules/@algoz098/vue-player/src/showcase/previewPlayer.vue
+index c671c25..9cad7c0 100644
+--- a/node_modules/@algoz098/vue-player/src/showcase/previewPlayer.vue
++++ b/node_modules/@algoz098/vue-player/src/showcase/previewPlayer.vue
+@@ -1,6 +1,6 @@
+ <template>
+ 	<section class="section">
+-		<div class="container">
++		<div class="vue-video-player-container">
+ 			<h2 class="title ">Preview video setup</h2>
+ 
+ 			<p class="subtitle">
+diff --git a/node_modules/@algoz098/vue-player/tests/unit/.eslintrc.js b/node_modules/@algoz098/vue-player/tests/unit/.eslintrc.js
+deleted file mode 100644
+index 013a195..0000000
+--- a/node_modules/@algoz098/vue-player/tests/unit/.eslintrc.js
++++ /dev/null
+@@ -1,5 +0,0 @@
+-module.exports = {
+-  env: {
+-    jest: true
+-  }
+-}
+\ No newline at end of file
+diff --git a/node_modules/@algoz098/vue-player/tests/unit/player.spec.js b/node_modules/@algoz098/vue-player/tests/unit/player.spec.js
+deleted file mode 100644
+index 69cc8a5..0000000
+--- a/node_modules/@algoz098/vue-player/tests/unit/player.spec.js
++++ /dev/null
+@@ -1,234 +0,0 @@
+-import { shallowMount } from '@vue/test-utils'
+-import Player from '@/components/Player.vue'
+-import pButton from '@/components/button.vue'
+-
+-import enableInlineVideo from 'iphone-inline-video';
+-
+-jest.mock('iphone-inline-video', () => {
+-  return null
+-})
+-
+-describe('Player.vue', () => {
+-  it('renders props.src when passed', () => {
+-	const src = 'http://clips.vorwaerts-gmbh.de/VfE_html5.mp4'
+-
+-	const wrapper = shallowMount(Player, {
+-      propsData: { src }
+-	})
+-
+-    expect(wrapper.html()).toContain(src)
+-    expect(wrapper.props().src).toMatch(src)
+-  })
+-
+-  it('renders props.src when passed', () => {
+-	const src = [ '0', '1']
+-	const srcIndex = 1
+-
+-	const wrapper = shallowMount(Player, {
+-      propsData: { src, srcIndex }
+-	})
+-
+-    expect(wrapper.html()).toContain(src[srcIndex])
+-  })
+-
+-  it('renders props.autoplay when passed', () => {
+-	const autoplay = true
+-
+-	const wrapper = shallowMount(Player, {
+-      propsData: { src: '', autoplay }
+-	})
+-
+-    expect(wrapper.html()).toContain('autoplay')
+-  })
+-
+-  it('renders props.playsinline when passed', () => {
+-	const playsinline = true
+-
+-	const wrapper = shallowMount(Player, {
+-      propsData: { src: '', playsinline }
+-	})
+-
+-    expect(wrapper.html()).toContain('playsinline')
+-  })
+-
+-  it('renders props.previewOnMouse when passed', () => {
+-	const previewOnMouse = true
+-
+-	const wrapper = shallowMount(Player, {
+-      propsData: { src: '', previewOnMouse }
+-	})
+-	
+-    expect(wrapper.props().previewOnMouse).toBe(previewOnMouse)
+-  })
+-
+-  it('renders props.poster when passed', () => {
+-	const poster = 'http://www.test.com'
+-
+-	const wrapper = shallowMount(Player, {
+-      propsData: { src: '', poster }
+-	})
+-
+-    expect(wrapper.html()).toContain(poster)
+-  })
+-
+-  it('renders props.video-placeholder-src when passed', () => {
+-	const videoPlaceholderSrc = 'http://www.test.com'
+-
+-	const wrapper = shallowMount(Player, {
+-      propsData: { src: '', videoPlaceholderSrc }
+-	})
+-
+-    expect(wrapper.html()).toContain(videoPlaceholderSrc)
+-  })
+-
+-  it('renders props.volume when passed', () => {
+-	const volume  = 0.5
+-
+-	const wrapper = shallowMount(Player, {
+-		propsData: { src: '', volume }
+-	})
+-
+-    expect(wrapper.props().volume).toBe(volume)
+-  })
+-
+-  it('renders props.controls when passed', () => {
+-	const controls  = true
+-
+-	const wrapper = shallowMount(Player, {
+-		propsData: { src: '', controls }
+-	})
+-
+-    expect(wrapper.props().controls).toBe(controls)
+-  })
+-
+-  it('renders props.overlayClass when passed', () => {
+-	const overlayClass  = 'a-class-exists'
+-
+-	const wrapper = shallowMount(Player, {
+-		propsData: { src: '', overlayClass }
+-	})
+-
+-    expect(wrapper.props().overlayClass).toBe(overlayClass)
+-  })
+-
+-  it('renders props.controlsClass when passed', () => {
+-	const controlsClass  = 'a-class-exists'
+-
+-	const wrapper = shallowMount(Player, {
+-		propsData: { src: '', controlsClass }
+-	})
+-
+-    expect(wrapper.props().controlsClass).toBe(controlsClass)
+-  })
+-
+-  it('renders props.playButtonClass when passed', () => {
+-	const playButtonClass  = 'a-class-exists'
+-
+-	const wrapper = shallowMount(Player, {
+-		propsData: { src: '', playButtonClass }
+-	})
+-
+-    expect(wrapper.props().playButtonClass).toBe(playButtonClass)
+-  })
+-
+-  it('renders props.playButtonStyle when passed', () => {
+-	const playButtonStyle  = 'background-color: black'
+-
+-	const wrapper = shallowMount(Player, {
+-		propsData: { src: '', playButtonStyle }
+-	})
+-
+-    expect(wrapper.props().playButtonStyle).toBe(playButtonStyle)
+-  })
+-
+-  it('renders props.volumeButtonClass when passed', () => {
+-	const volumeButtonClass  = 'a-class-exists'
+-
+-	const wrapper = shallowMount(Player, {
+-		propsData: { src: '', volumeButtonClass }
+-	})
+-
+-    expect(wrapper.props().volumeButtonClass).toBe(volumeButtonClass)
+-  })
+-
+-  it('renders props.volumeButtonStyle when passed', () => {
+-	const volumeButtonStyle  = 'background-color: black'
+-
+-	const wrapper = shallowMount(Player, {
+-		propsData: { src: '', volumeButtonStyle }
+-	})
+-
+-    expect(wrapper.props().volumeButtonStyle).toBe(volumeButtonStyle)
+-  })
+-
+-  it('renders props.timerClass when passed', () => {
+-	const timerClass  = 'a-class-exists'
+-
+-	const wrapper = shallowMount(Player, {
+-		propsData: { src: '', timerClass }
+-	})
+-
+-    expect(wrapper.props().timerClass).toBe(timerClass)
+-  })
+-
+-  it('renders props.timerStyle when passed', () => {
+-	const timerStyle  = 'a-class-exists'
+-
+-	const wrapper = shallowMount(Player, {
+-		propsData: { src: '', timerStyle }
+-	})
+-
+-    expect(wrapper.props().timerStyle).toBe(timerStyle)
+-  })
+-
+-  it('renders props.fullscreenButtonClass when passed', () => {
+-	const fullscreenButtonClass  = 'a-class-exists'
+-
+-	const wrapper = shallowMount(Player, {
+-		propsData: { src: '', fullscreenButtonClass }
+-	})
+-
+-    expect(wrapper.props().fullscreenButtonClass).toBe(fullscreenButtonClass)
+-  })
+-
+-  it('renders props.fullscreenButtonStyle when passed', () => {
+-	const fullscreenButtonStyle  = 'a-class-exists'
+-
+-	const wrapper = shallowMount(Player, {
+-		propsData: { src: '', fullscreenButtonStyle }
+-	})
+-
+-    expect(wrapper.props().fullscreenButtonStyle).toBe(fullscreenButtonStyle)
+-  })
+-
+-  it('renders props.controlsStyle when passed', () => {
+-	const controlsStyle  = 'a-class-exists'
+-
+-	const wrapper = shallowMount(Player, {
+-		propsData: { src: '', controlsStyle }
+-	})
+-
+-    expect(wrapper.props().controlsStyle).toBe(controlsStyle)
+-  })
+-
+-  it('event fullscreen is emmited on click', () => {
+-	const wrapper = shallowMount(Player, {
+-		propsData: { src: '' }
+-	})
+-	
+-	wrapper.findAll(pButton).at(4).vm.$emit('click')
+-	
+-    expect(wrapper.emitted('fullscreen').flat()[0]).toBe(true)
+-  })
+-
+-  it('event update:srcIndex is emmited on ended', () => {
+-	const srcIndex = 1
+-	const wrapper = shallowMount(Player, {
+-		propsData: { src: ['', ''],  srcIndex }
+-	})
+-	
+-	wrapper.find('video').trigger('ended')
+-
+-	expect(wrapper.emitted('update:srcIndex').flat()[0]).toBe(2)
+-	})
+-})
