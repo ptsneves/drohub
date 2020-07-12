@@ -74,7 +74,7 @@
     </section>
 </div>
 @section Scripts {
-<script type="text/javascript" src="~/vue/js/app.js"></script>
+<script type="text/javascript" src="~/vue/js/Gallery.js"></script>
 <script type="application/javascript">
     window.init_data = JSON.parse('@Html.Raw(JsonConvert.SerializeObject(@Model.FilesPerTimestamp, new JsonSerializerSettings() {ReferenceLoopHandling = ReferenceLoopHandling.Ignore}))');
     window.anti_forgery_token = "@GetAntiXsrfRequestToken()"

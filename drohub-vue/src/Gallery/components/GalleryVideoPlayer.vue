@@ -14,25 +14,25 @@
         <template v-slot:play-button-content>
             <inline-svg
                 class="overlay-button"
-                v-bind:src="require('../../../wwwroot/images/assets/video-play.svg')"
+                v-bind:src="require('../../../../wwwroot/images/assets/video-play.svg')"
             />
         </template>
         <template v-slot:pause-button-content>
             <inline-svg
                 class="overlay-button"
-                v-bind:src="require('../../../wwwroot/images/assets/video-pause.svg')"
+                v-bind:src="require('../../../../wwwroot/images/assets/video-pause.svg')"
             />
         </template>
         <template v-slot:fullscreen-button-content>
             <inline-svg
                 class="overlay-button"
-                v-bind:src="require('../../../wwwroot/images/assets/expand-solid.svg')"
+                v-bind:src="require('../../../../wwwroot/images/assets/expand-solid.svg')"
             />
         </template>
         <template v-slot:play-button-overlay-content>
             <inline-svg
                 class="overlay-button"
-                v-bind:src="require('../../../wwwroot/images/assets/video-play.svg')"
+                v-bind:src="require('../../../../wwwroot/images/assets/video-play.svg')"
             />
         </template>
         <template v-slot:optional-settings-controls>
@@ -42,7 +42,7 @@
             >
                 <inline-svg
                     class="overlay-button"
-                    v-bind:src="require('../../../wwwroot/images/assets/3-vertical-dots.svg')"
+                    v-bind:src="require('../../../../wwwroot/images/assets/3-vertical-dots.svg')"
                 />
             </p-button>
             <video-drop-up-menu
@@ -57,7 +57,7 @@
 <script>
 import vuePlayer, { pButton } from '@algoz098/vue-player'
 import InlineSvg from 'vue-inline-svg';
-import VideoDropUpMenu from "./VideoDropUpMenu.vue";
+import VideoDropUpMenu from "./GalleryVideoDropUpMenu";
 
 export default {
     name: "GalleryVideoPlayer",

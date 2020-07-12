@@ -9,7 +9,7 @@
                    v-on:click="deleteFiles"
                 >
                     <inline-svg
-                        v-bind:src="require('../../../wwwroot/images/assets/system-thrash.svg')">
+                        v-bind:src="require('../../../../wwwroot/images/assets/system-thrash.svg')">
                     </inline-svg>
                     Delete...
                 </a>
@@ -19,7 +19,7 @@
                    v-on:click="downloadFiles"
                 >
                     <inline-svg
-                        v-bind:src="require('../../../wwwroot/images/assets/timeline-download.svg')">
+                        v-bind:src="require('../../../../wwwroot/images/assets/timeline-download.svg')">
                     </inline-svg>
                     Download...
                 </a>
@@ -29,7 +29,7 @@
                    v-on:click="addTags"
                 >
                     <inline-svg
-                        v-bind:src="require('../../../wwwroot/images/assets/timeline-tag-on.svg')">
+                        v-bind:src="require('../../../../wwwroot/images/assets/timeline-tag-on.svg')">
                     </inline-svg>
                     Add Tags...
                 </a>
@@ -40,7 +40,7 @@
 <script>
     import InlineSvg from 'vue-inline-svg';
     import GalleryAddTagModal from "./GalleryAddTagModal";
-    import DropDown from './mixins/dropdown-mixin.js';
+    import DropDown from './../../components/mixins/dropdown-mixin';
 
     export default {
         name: "GallerySettingsDropDown",

@@ -13,4 +13,10 @@ module.exports = {
             }
         },
     },
+    pages: {
+      Gallery: {
+        entry: 'src/Gallery/gallery.js'
+      }
+
+    }
 }

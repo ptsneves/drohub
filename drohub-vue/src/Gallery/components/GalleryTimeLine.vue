@@ -35,7 +35,7 @@
 
                 <span class="drohub-glyphicon">
                     <inline-svg
-                        v-bind:src="require('../../../wwwroot/images/assets/device-id-drone.svg')"
+                        v-bind:src="require('../../../../wwwroot/images/assets/device-id-drone.svg')"
                     />
                 </span>
                 <div class="drohub-gallery-content-margin timeline-item">
@@ -48,11 +48,11 @@
                             >
                                 <inline-svg
                                     v-show="show_tags"
-                                    v-bind:src="require('../../../wwwroot/images/assets/timeline-tag-off.svg')"
+                                    v-bind:src="require('../../../../wwwroot/images/assets/timeline-tag-off.svg')"
                                 />
                                 <inline-svg
                                     v-show="!show_tags"
-                                    v-bind:src="require('../../../wwwroot/images/assets/timeline-tag-on.svg')"
+                                    v-bind:src="require('../../../../wwwroot/images/assets/timeline-tag-on.svg')"
                                 />
                             </button>
                             <button
@@ -60,7 +60,7 @@
                                 class="btn btn-link"
                             >
                                 <inline-svg
-                                    v-bind:src="require('../../../wwwroot/images/assets/device-window-settings.svg')"
+                                    v-bind:src="require('../../../../wwwroot/images/assets/device-window-settings.svg')"
                                 />
                             </button>
                     </span>
@@ -104,7 +104,7 @@
 <script>
     import { createPopper } from '@popperjs/core';
     import InlineSvg from 'vue-inline-svg';
-    import TimeLabel from "./TimeLabel";
+    import TimeLabel from "../../components/TimeLabel";
     import GalleryVideoPlayer from "./GalleryVideoPlayer";
     import GallerySettingsDropDown from "./GallerySettingsDropDown";
     import GalleryItemSelect from "./GalleryItemSelect";

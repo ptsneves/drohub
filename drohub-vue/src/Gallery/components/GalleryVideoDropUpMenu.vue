@@ -10,7 +10,7 @@
                v-on:click="showDeleteFilesModal"
                >
                 <inline-svg
-                    v-bind:src="require('../../../wwwroot/images/assets/system-thrash.svg')">
+                    v-bind:src="require('../../../../wwwroot/images/assets/system-thrash.svg')">
                 </inline-svg>
                 Delete
             </a>
@@ -18,7 +18,7 @@
         <li>
             <a v-bind:href="getDownloadURL">
                 <inline-svg
-                    v-bind:src="require('../../../wwwroot/images/assets/timeline-download.svg')">
+                    v-bind:src="require('../../../../wwwroot/images/assets/timeline-download.svg')">
                 </inline-svg>
                 Download
             </a>
@@ -27,7 +27,7 @@
             <a
                 v-on:click="showAddTagModal">
                 <inline-svg
-                    v-bind:src="require('../../../wwwroot/images/assets/timeline-tag-on.svg')">
+                    v-bind:src="require('../../../../wwwroot/images/assets/timeline-tag-on.svg')">
                 </inline-svg>
                 Add Tags
             </a>
@@ -38,7 +38,7 @@
 <script>
     import InlineSvg from 'vue-inline-svg';
     import GalleryAddTagModal from "./GalleryAddTagModal";
-    import DropDown from './mixins/dropdown-mixin.js';
+    import DropDown from '../../components/mixins/dropdown-mixin';
 
     export default {
         name: "VideoDropUpMenu",

@@ -98,7 +98,7 @@
 </script>
 
 <style lang="css" scoped>
-    @import '../assets/modal.css';
+    @import '../../assets/modal.css';
     .vue-tags-input {
         max-width: 450px;
         position: relative;

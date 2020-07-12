@@ -77,5 +77,5 @@
 </script>
 
 <style scoped>
-    @import '../assets/modal.css';
+    @import '../../assets/modal.css';
 </style>
