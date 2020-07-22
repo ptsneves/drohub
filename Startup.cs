@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
@@ -7,11 +8,13 @@ using DroHub.Areas.DHub.Models;
 using DroHub.Areas.DHub.SignalRHubs;
 using DroHub.Areas.Identity.Data;
 using DroHub.Areas.Identity.Pages;
+using DroHub.Areas.Identity.Services;
 using DroHub.Data;
 using DroHub.Helpers;
 using DroHub.Helpers.AuthenticationHandler;
 using DroHub.Helpers.Thrift;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -74,6 +77,10 @@ namespace DroHub
             services.Configure<JanusServiceOptions>(Configuration.GetSection("JanusServiceOptions"));
             services.AddHostedService<NotificationsHubPoller>();
             services.AddHttpClient<JanusService>();
+
+            services.AddDataProtection()
+                .PersistKeysToFileSystem(new DirectoryInfo(
+                    Configuration.GetValue<string>("KeysDirectory")));
 
             services.AddSignalR();
 
