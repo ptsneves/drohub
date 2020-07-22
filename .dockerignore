@@ -9,6 +9,6 @@
 bin
 obj
 out
-parrot-service
 DroHub.Tests
+parrot-backend
 drohub-vue/node_modules/
