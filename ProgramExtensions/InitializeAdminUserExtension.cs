@@ -34,7 +34,7 @@ namespace DroHub.IdentityClaims
 {
     public static class InitializeAdminUserHelper
     {
-        private const string _ADMIN_USER_NAME = "admin";
+        private const string _ADMIN_USER_NAME = "admin@drohub.xyz";
         private const string _ADMIN_ORGANIZATION = "Administrators";
 
         internal static async Task<string> createAdminUser(ILogger logger, UserManager<DroHubUser> user_manager,

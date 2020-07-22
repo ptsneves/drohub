@@ -65,7 +65,7 @@ namespace DroHub.Tests
         [InlineData("1", true)]
         [Theory]
         public async void TestAdminAccount(string password, bool expect_login_fail) {
-            await testLogin("admin", password ?? _fixture.AdminPassword, expect_login_fail);
+            await testLogin("admin@drohub.xyz", password ?? _fixture.AdminPassword, expect_login_fail);
         }
 
         [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, false, true)]
@@ -216,7 +216,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestLogout() {
-            using var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, "admin", _fixture.AdminPassword);
+            using var http_client_helper = await HttpClientHelper.createLoggedInUser(_fixture, "admin@drohub.xyz", _fixture.AdminPassword);
             var logout_url = new Uri(DroHubFixture.SiteUri, "Identity/Account/Logout");
 
             using var response = await http_client_helper.Client.GetAsync(logout_url);
@@ -226,16 +226,16 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestQueryDeviceInfoIsEmpty() {
-            var token = (await HttpClientHelper.getApplicationToken(_fixture, "admin",
+            var token = (await HttpClientHelper.getApplicationToken(_fixture, "admin@drohub.xyz",
                 _fixture.AdminPassword))["result"];
-            var device_info = await HttpClientHelper.queryDeviceInfo(_fixture, "admin", token,
+            var device_info = await HttpClientHelper.queryDeviceInfo(_fixture, "admin@drohub.xyz", token,
                 DEFAULT_DEVICE_SERIAL);
             Assert.Null(device_info["result"]);
         }
 
         [Fact]
         public async void TestCreateExistingDeviceFails() {
-            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin",
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
                 _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
             await using var s = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
@@ -262,7 +262,7 @@ namespace DroHub.Tests
         [Theory]
         public async void TestIncompleteCreateDeviceModelFails(string device_name, string device_serial) {
                 await Assert.ThrowsAsync<HttpRequestException>(async () => {
-                    await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin",
+                    await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
                         _fixture.AdminPassword, device_name, device_serial);
                 });
         }
@@ -270,7 +270,7 @@ namespace DroHub.Tests
         [Fact]
         public async void TestNODEVICECreateDeviceFails() {
             await Assert.ThrowsAsync<InvalidDataException>(async () => {
-                await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin",
+                await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
                     _fixture.AdminPassword, DEFAULT_DEVICE_NAME, "NODEVICE");
             });
         }
@@ -321,7 +321,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestWebSocketWithNonExistingDevice() {
-            const string user = "admin";
+            const string user = "admin@drohub.xyz";
             var password = _fixture.AdminPassword;
             var token = (await HttpClientHelper.getApplicationToken(_fixture, user, password))["result"];
             await Assert.ThrowsAsync<WebSocketException>(async () =>
@@ -330,7 +330,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestWebSocketWithDeviceNotBelongingToSubscriptionFails() {
-            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin",
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
                 _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
             await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
@@ -346,7 +346,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestWebSocketWithDeviceBelongingToSubscriptionSucceeds() {
-            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin",
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
                 _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
             await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
@@ -375,23 +375,23 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestDeviceFlightStartTime() {
-            Assert.Null(await HttpClientHelper.getDeviceFlightStartTime(_fixture, 999999, "admin",
+            Assert.Null(await HttpClientHelper.getDeviceFlightStartTime(_fixture, 999999, "admin@drohub.xyz",
                 _fixture.AdminPassword));
-            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin",
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
                 _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
-            var token = (await HttpClientHelper.getApplicationToken(_fixture, "admin",
+            var token = (await HttpClientHelper.getApplicationToken(_fixture, "admin@drohub.xyz",
                 _fixture.AdminPassword))["result"];
 
             var device_id = await HttpClientHelper.getDeviceId(_fixture, DEFAULT_DEVICE_SERIAL,
-                "admin", _fixture.AdminPassword);
-            Assert.Null(await HttpClientHelper.getDeviceFlightStartTime(_fixture, device_id, "admin",
+                "admin@drohub.xyz", _fixture.AdminPassword);
+            Assert.Null(await HttpClientHelper.getDeviceFlightStartTime(_fixture, device_id, "admin@drohub.xyz",
                 _fixture.AdminPassword));
 
             var time_start = DateTime.Now.ToUniversalTime();
-            using var f = await HttpClientHelper.openWebSocket(_fixture, "admin", token, DEFAULT_DEVICE_SERIAL);
+            using var f = await HttpClientHelper.openWebSocket(_fixture, "admin@drohub.xyz", token, DEFAULT_DEVICE_SERIAL);
             await Task.Delay(TimeSpan.FromSeconds(5));
-            var received = await HttpClientHelper.getDeviceFlightStartTime(_fixture, device_id, "admin",
+            var received = await HttpClientHelper.getDeviceFlightStartTime(_fixture, device_id, "admin@drohub.xyz",
                 _fixture.AdminPassword);
 
             Assert.True(received.HasValue);
@@ -431,7 +431,7 @@ namespace DroHub.Tests
         serial_number, StageThriftDroneTestDelegate del) {
             var telemetry_mock = new TelemetryMock(serial_number);
 
-            var password = (user_name == "admin") ? _fixture.AdminPassword : DEFAULT_PASSWORD;
+            var password = (user_name == "admin@drohub.xyz") ? _fixture.AdminPassword : DEFAULT_PASSWORD;
             await telemetry_mock.startMock(_fixture, user_name, password, organization,
                 "ActingPilot", minutes, DEFAULT_ALLOWED_USER_COUNT,
                 "ws://localhost:5000/telemetryhub");
@@ -524,7 +524,7 @@ namespace DroHub.Tests
             const int minutes = 999;
             var tasks = new List<Task>();
             for (var i = 0; i < 1; i++) {
-                var t = stageThriftDrone(true, minutes, "admin", "administrators", DEFAULT_DEVICE_SERIAL+i,
+                var t = stageThriftDrone(true, minutes, "admin@drohub.xyz", "administrators", DEFAULT_DEVICE_SERIAL+i,
                     async (drone_rpc, telemetry_mock, user_name, token) => {
                         await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
                             async () => {

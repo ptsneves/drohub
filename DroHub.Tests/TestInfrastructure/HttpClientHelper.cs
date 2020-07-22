@@ -47,7 +47,7 @@ namespace DroHub.Tests.TestInfrastructure
                 long allowed_flight_time_minutes,
                 int allowed_user_count) {
 
-                if (user_email == "admin")
+                if (user_email == "admin@drohub.xyz")
                     return new AddUserHelper(test_fixture, user_email, user_password);
 
                 var http_helper = await createLoggedInUser(test_fixture, user_email_of_creator, password_of_creator);
@@ -91,12 +91,12 @@ namespace DroHub.Tests.TestInfrastructure
                 long allowed_flight_time_minutes,
                 int allowed_user_count) {
 
-                return await addUser(test_fixture, "admin", test_fixture.AdminPassword, user_email, user_password,
+                return await addUser(test_fixture, "admin@drohub.xyz", test_fixture.AdminPassword, user_email, user_password,
                     organization, user_base_type, allowed_flight_time_minutes, allowed_user_count);
             }
 
             private static async Task deleteUser(DroHubFixture test_fixture, string user_email, string user_password) {
-                if (user_email == "admin")
+                if (user_email == "admin@drohub.xyz")
                     return;
 
                 var http_helper = await createLoggedInUser(test_fixture, user_email, user_password);
@@ -183,7 +183,7 @@ namespace DroHub.Tests.TestInfrastructure
 
             public static async ValueTask<CreateDeviceHelper> createDevice(DroHubFixture test_fixture, string user, string password,
                 string device_name, string device_serial, bool delete_flight_sessions = true) {
-                if (user == "admin")
+                if (user == "admin@drohub.xyz")
                     password = test_fixture.AdminPassword;
 
                 var token_result = await getApplicationToken(test_fixture, user, password);
