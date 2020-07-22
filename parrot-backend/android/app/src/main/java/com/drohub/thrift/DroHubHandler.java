@@ -390,10 +390,16 @@ public class DroHubHandler implements Drone.Iface {
     }
     
     public boolean setMicrophoneMute(boolean enabled) {
+        if (_peerConnectionClient == null)
+            return false;
+
         return _peerConnectionClient.setMicrophoneMute(enabled);
     }
 
     public void onStop() {
+        if (_peerConnectionClient == null)
+            return;
+
         _peerConnectionClient.onStop();
     }
 }
