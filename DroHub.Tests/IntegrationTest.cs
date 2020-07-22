@@ -113,9 +113,18 @@ namespace DroHub.Tests
                 await using var u = await t;
             }
             else {
-                await Assert.ThrowsAsync<InvalidOperationException>(async () => {
+                var threw = false;
+                try {
                     await using var u = await t;
-                });
+                }
+                catch (InvalidOperationException) {
+                    threw = true;
+                }
+                catch (HttpRequestException) {
+                    threw = true;
+                }
+
+                Assert.True(threw);
             }
         }
 

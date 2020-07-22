@@ -24,9 +24,8 @@ namespace DroHub.Helpers {
         public void OnAuthorization(AuthorizationFilterContext context)
         {
             var has_claim = context.HttpContext.User.Claims.Any(c => c.Type == _claim.Type && c.Value == _claim.Value);
-            if (!has_claim)
-            {
-                context.Result = new ForbidResult();
+            if (!has_claim) {
+                context.Result = new UnauthorizedObjectResult("Claim not found");
             }
         }
     }

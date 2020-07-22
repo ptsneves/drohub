@@ -53,7 +53,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return Json(c.Id);
             }
             catch (DeviceAuthorizationException) {
-                return new ForbidResult();
+                return Unauthorized();
             }
             catch (DeviceConnectionException e) {
                 return StatusCode(503, new { message = e.Message});
@@ -67,7 +67,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return Json(c.positions);
             }
             catch (DeviceAuthorizationException) {
-                return new ForbidResult();
+                return Unauthorized();
             }
         }
 
@@ -78,7 +78,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return Json(c.battery_levels);
             }
             catch (DeviceAuthorizationException) {
-                return new ForbidResult();
+                return Unauthorized();
             }
         }
 
@@ -89,7 +89,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return Json(c.radio_signals);
             }
             catch (DeviceAuthorizationException) {
-                return new ForbidResult();
+                return Unauthorized();
             }
         }
 
@@ -100,7 +100,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return Json(c.flying_states);
             }
             catch (DeviceAuthorizationException) {
-                return new ForbidResult();
+                return Unauthorized();
             }
         }
 
@@ -111,7 +111,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return Json(c.drone_replies);
             }
             catch (DeviceAuthorizationException) {
-                return new ForbidResult();
+                return Unauthorized();
             }
         }
 
@@ -122,7 +122,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return Json(c.drone_video_states);
             }
             catch (DeviceAuthorizationException e) {
-                return new ForbidResult(e.Message);
+                return Unauthorized(e.Message);
             }
         }
 
@@ -141,7 +141,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return Ok();
             }
             catch (DeviceAuthorizationException e) {
-                return new ForbidResult(e.Message);
+                return Unauthorized(e.Message);
             }
             catch (DeviceConnectionException e) {
                 return StatusCode(503, new { message = e.Message});
@@ -155,7 +155,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return Ok();
             }
             catch (DeviceAuthorizationException e) {
-                return new ForbidResult(e.Message);
+                return Unauthorized(e.Message);
             }
             catch (DeviceConnectionException e) {
                 return StatusCode(503, new { message = e.Message});
@@ -170,7 +170,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return Ok();
             }
             catch (DeviceAuthorizationException e) {
-                return new ForbidResult(e.Message);
+                return Unauthorized(e.Message);
             }
             catch (DeviceConnectionException e) {
                 return StatusCode(503, new { message = e.Message});
@@ -194,7 +194,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return Ok();
             }
             catch (DeviceAuthorizationException e) {
-                return new ForbidResult(e.Message);
+                return Unauthorized(e.Message);
             }
             catch (DeviceConnectionException e) {
                 return StatusCode(503, new { message = e.Message});
@@ -211,7 +211,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return Ok();
             }
             catch (DeviceAuthorizationException e) {
-                return new ForbidResult(e.Message);
+                return Unauthorized(e.Message);
             }
             catch (DeviceConnectionException e) {
                 return StatusCode(503, new { message = e.Message});
@@ -227,7 +227,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return Ok();
             }
             catch (DeviceAuthorizationException e) {
-                return new ForbidResult(e.Message);
+                return Unauthorized(e.Message);
             }
             catch (DeviceConnectionException e) {
                 return StatusCode(503, new { message = e.Message});
@@ -241,7 +241,7 @@ namespace DroHub.Areas.DHub.Controllers
                     await client.getFileListAsync(CancellationToken.None)));
             }
             catch (DeviceAuthorizationException e) {
-                return new ForbidResult(e.Message);
+                return Unauthorized(e.Message);
             }
             catch (DeviceConnectionException e) {
                 return StatusCode(503, new { message = e.Message});
@@ -260,7 +260,7 @@ namespace DroHub.Areas.DHub.Controllers
                     Json(null);
             }
             catch (DeviceAuthorizationException e) {
-                return new ForbidResult(e.Message);
+                return Unauthorized(e.Message);
             }
         }
 

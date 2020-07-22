@@ -81,7 +81,7 @@ namespace DroHub.Areas.DHub.Controllers
                 public MediaInfo media_object { get; internal set; }
             }
 
-            public Dictionary<long, Dictionary<string, List<FileInfoModel>>> FilesPerTimestamp { get; internal set; }
+            public Dictionary<long, Dictionary<string, List<FileInfoModel>>> FilesPerTimestamp { get; set; }
         }
 
         public async Task<IActionResult> Gallery() {
@@ -135,7 +135,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return RedirectToAction("Gallery");
             }
             catch (MediaObjectAuthorizationException e) {
-                return new ForbidResult(e.Message);
+                return Unauthorized();
             }
             catch (MediaObjectAndTagException e) {
                 return NotFound(e.Message);
@@ -172,7 +172,7 @@ namespace DroHub.Areas.DHub.Controllers
                     var converted_media_id = MediaObjectAndTagAPI.convertToBackEndFilePath(media_id);
                     if (!await _media_objectAnd_tag_api.authorizeMediaObjectOperation(converted_media_id,
                             ResourceOperations.Read))
-                        return new ForbidResult("One or more files are not allowed to be downloaded");
+                        return Unauthorized();
 
                     file_list.Add(converted_media_id);
                 }
@@ -185,7 +185,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return res;
             }
             catch (MediaObjectAuthorizationException e) {
-                return new ForbidResult(e.Message);
+                return Unauthorized();
             }
             catch (MediaObjectAndTagException e) {
                 return NotFound(e.Message);
@@ -209,7 +209,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return res;
             }
             catch (MediaObjectAuthorizationException e) {
-                return new ForbidResult(e.Message);
+                return Unauthorized();
             }
             catch (MediaObjectAndTagException e) {
                 return NotFound(e.Message);
@@ -265,7 +265,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return RedirectToAction("Gallery");
             }
             catch (MediaObjectAuthorizationException e) {
-                return Forbid(e.Message);
+                return Unauthorized(e.Message);
             }
         }
 
@@ -279,7 +279,7 @@ namespace DroHub.Areas.DHub.Controllers
                 return Ok();
             }
             catch (MediaObjectAuthorizationException e) {
-                return Forbid(e.Message);
+                return Unauthorized(e.Message);
             }
             catch (System.InvalidOperationException) {
                 return BadRequest($"{media_id} could not be retrieved");
