@@ -88,18 +88,32 @@ public class MainActivity extends GroundSdkActivityBase {
                 showWaitingScreen();
                 return;
             }
-            if (!response.isNull("result")) { //We just care that there is something on the system
+            if (!response.isNull("result")) {
                 Intent intent = new Intent(this, CopterHudActivity.class);
                 addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid(), _connected_rc.getUid());
                 this.startActivity(intent);
+                finish();
             }
-            else {
-                Intent intent = new Intent(this, CreateDeviceActivity.class);
-                addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid(), _connected_rc.getUid());
-                this.startActivity(intent);
+            else if (response.has("error")) {
+                try {
+                    if (response.getString("error").equalsIgnoreCase("Device does not exist.")) {
+                        Intent intent = new Intent(this, CreateDeviceActivity.class);
+                        addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid(), _connected_rc.getUid());
+                        this.startActivity(intent);
+                        finish();
+                    }
+                    else {
+                        setStatusText(status_view,response.getString("error"), Color.RED);
+                    }
+                } catch (JSONException e) {
+                    setStatusText(status_view,"Error Could not Query device info..", Color.RED);
+                }
             }
         }, error -> {
-            setStatusText(status_view,"Error Could not Query device info..", Color.RED);
+            if (error.networkResponse.statusCode == 401)
+                setStatusText(status_view,"You are not authorized use the device connected.", Color.RED);
+            else
+                setStatusText(status_view,"Error Could not Query device info..", Color.RED);
             findViewById(R.id.login_group).setVisibility(View.VISIBLE);
         });
         token_validation_request.setShouldCache(false);

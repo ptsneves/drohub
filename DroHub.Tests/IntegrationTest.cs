@@ -606,12 +606,15 @@ namespace DroHub.Tests
         }
 
         [Fact]
-        public async void TestQueryDeviceInfoIsEmpty() {
+        public async void TestQueryDeviceInfoOnNonExistingDeviceIsEmpty() {
             var token = (await HttpClientHelper.getApplicationToken(_fixture, "admin@drohub.xyz",
                 _fixture.AdminPassword))["result"];
             var device_info = await HttpClientHelper.queryDeviceInfo(_fixture, "admin@drohub.xyz", token,
                 DEFAULT_DEVICE_SERIAL);
-            Assert.Null(device_info["result"]);
+
+            Assert.False(device_info.TryGetValue("result", out var _));
+            Assert.True(device_info.TryGetValue("error", out var error));
+            Assert.Equal("Device does not exist.", error);
         }
 
         [Fact]
@@ -626,6 +629,25 @@ namespace DroHub.Tests
             await Assert.ThrowsAsync<InvalidDataException>(async () => {
                 await using var f = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
                     DEFAULT_PASSWORD, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+            });
+        }
+
+
+        [Fact]
+        public async void TestQueryDeviceInfoWhenDeviceIsInOtherSubscriptionFails() {
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
+                _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+
+            await using var s = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
+                DEFAULT_ORGANIZATION,
+                DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+
+            var token = (await HttpClientHelper.getApplicationToken(_fixture, DEFAULT_USER,
+                DEFAULT_PASSWORD))["result"];
+
+            await Assert.ThrowsAsync<HttpRequestException>(async () => {
+                await HttpClientHelper.queryDeviceInfo(_fixture, DEFAULT_USER, token,
+                    DEFAULT_DEVICE_SERIAL);
             });
         }
 
@@ -680,8 +702,8 @@ namespace DroHub.Tests
                         DEFAULT_PASSWORD))["result"];
                     var device_info = (await HttpClientHelper.queryDeviceInfo(_fixture, DEFAULT_USER, token,
                         device_serial));
-                    Assert.Equal(device_name, device_info["result"].Name);
-                    Assert.Equal(device_serial, device_info["result"].SerialNumber);
+                    Assert.Equal(device_name, (string)device_info["result"]["name"]);
+                    Assert.Equal(device_serial, (string)device_info["result"]["serialNumber"]);
                 }
                 else {
                     await Assert.ThrowsAsync<InvalidCredentialException>(async () => {

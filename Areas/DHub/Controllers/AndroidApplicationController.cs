@@ -26,9 +26,11 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         private readonly DeviceAPI _device_api;
+        private readonly IAuthorizationService _authorization_service;
 
-        public AndroidApplicationController(DeviceAPI device_api) {
+        public AndroidApplicationController(DeviceAPI device_api, IAuthorizationService authorizationService) {
             _device_api = device_api;
+            _authorization_service = authorizationService;
         }
 
         [HttpPost]
@@ -50,11 +52,21 @@ namespace DroHub.Areas.DHub.Controllers
 
         [HttpPost]
         public async Task<IActionResult> QueryDeviceInfo([FromBody] QueryDeviceModel device_query) {
-            var response = new Dictionary<string, Device> {
-                ["result"] = await _device_api.getDeviceBySerialOrDefault(
-                    new DeviceAPI.DeviceSerial(device_query.DeviceSerialNumber))
-            };
-            return new JsonResult(response);
+            var result = await _device_api.getDeviceBySerialOrDefault(
+                new DeviceAPI.DeviceSerial(device_query.DeviceSerialNumber));
+
+            if (result == null) {
+                return new JsonResult(new Dictionary<string, string>() {
+                    ["error"] = "Device does not exist."
+                });
+            }
+
+            if (!(await _authorization_service.AuthorizeAsync(User, result, ResourceOperations.Read)).Succeeded) {
+                return new UnauthorizedResult();
+            }
+            return new JsonResult(new Dictionary<string, Device> {
+                ["result"] = result
+            });
         }
     }
 }
