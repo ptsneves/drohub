@@ -143,13 +143,16 @@ public class MainActivity extends GroundSdkActivityBase {
     }
 
     public void tryPilotLogin(View view) {
-        if (_user_email == null)
-            return;
-
         _user_email = email_ctrl.getText().toString();
         String password = password_ctrl.getText().toString();
         String url = getString(R.string.drohub_url) + "/api/GetToken/GetApplicationToken";
         JSONObject request = new JSONObject();
+
+        if (_user_email.isEmpty() || password.isEmpty()) {
+            setStatusText(status_view, "Email or password is empty.", Color.RED);
+            return;
+        }
+
         try {
             request.put("UserName", _user_email);
             request.put("Password", password);
