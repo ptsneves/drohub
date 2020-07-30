@@ -22,16 +22,16 @@
                     v-on:click="onCancelSelection"
             ><i class="fa fa-times"></i></a>
         </div>
-        <ul class="timeline" v-for="(point_in_time_files, unix_date, index) in getEventList" v-bind:key="unix_date" >
+        <ul class="timeline" v-for="unix_timestamp in getEventList" v-bind:key="unix_timestamp" >
             <li class="drohub-time-label">
                 <time-label class='time'
-                            v-bind:unix-time-stamp="unix_date"
+                            v-bind:unix-time-stamp="unix_timestamp"
                             unix-time-stamp-units="ms"
                             v-bind:show-only-date="true">
                 </time-label>
             </li>
 
-            <li v-for="(device_files, device_name, index) in point_in_time_files" v-bind:key="index">
+            <li v-for="(device_files, device_name, index) in last_filtered_model[unix_timestamp]" v-bind:key="index">
 
                 <span class="drohub-glyphicon">
                     <inline-svg
@@ -134,6 +134,7 @@
                 max_entries_visible: 5,
                 MAX_ENTRIES_INCREMENT: 5,
                 show_tags: true,
+                sorted_keys: [],
                 selection_model: this.getResetSelectionModel(),
 
             };
@@ -232,7 +233,11 @@
 
                 let new_model = JSON.parse(JSON.stringify(this.gallery_model));
 
-                for (let unix_date in this.gallery_model) {
+                const unix_times = Object.keys(this.gallery_model).sort(function(a,b) {
+                    return Number(a) - Number(b);
+                }).reverse();
+
+                for (let unix_date of unix_times) {
                     for(let device_name in this.gallery_model[unix_date]) {
                         let new_device_file_list = [];
 
@@ -254,8 +259,13 @@
                     if (Object.keys(new_model[unix_date]).length === 0)
                         delete new_model[unix_date];
                 }
+
+
                 this.last_filtered_model = new_model;
-                return new_model;
+
+                return Object.keys(new_model).sort(function(a,b) {
+                    return Number(a) - Number(b);
+                }).reverse();
             },
         }
     }

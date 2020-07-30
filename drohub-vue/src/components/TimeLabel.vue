@@ -20,7 +20,6 @@ export default {
     name: 'TimeLabel',
     props: {
         unixTimeStamp: {
-            type: String,
             required: true,
         },
         showOnlyDate: {
