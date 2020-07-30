@@ -101,7 +101,8 @@
         <div class="pull-right @*hidden-xs*@">
             <b>Version</b>
             @{
-                var build_hash = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
+                var build_hash = Assembly.GetEntryAssembly()?
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "ups";
             }
             <!-- @build_hash -->
             <strong>&copy; @DateTime.Now.Year <a href="https://www.drohub.xyz/">DROHUB</a> | </strong>
