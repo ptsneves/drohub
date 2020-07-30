@@ -50,8 +50,9 @@ button.login-submit-btn-drohub:hover {
 
 .login-box-drohub {
     width: 500px;
-    margin: 7% auto;
+    margin: 0 auto;
     max-width: 100%;
+    border-radius: 4px;
 }
 
 .login-box-body-drohub {
