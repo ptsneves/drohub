@@ -7,6 +7,9 @@ using System.Linq;
 using System.IO;
 using AngleSharp;
 using AngleSharp.Html.Parser;
+using DroHub.Helpers;
+using mailslurp.Api;
+using mailslurp.Model;
 
 namespace DroHub.Tests.TestInfrastructure
 {
@@ -60,10 +63,15 @@ namespace DroHub.Tests.TestInfrastructure
             return parser.ParseDocument(responseBody);
         }
 
-        public static string getVerificationToken(string responseBody)
+        public static string getVerificationToken(string responseBody,
+            string selector = "input[name='__RequestVerificationToken']",
+            string attribute = "value")
         {
             var document = getHtmlDOM(responseBody);
-            return document.QuerySelectorAll("input[name='__RequestVerificationToken']").First().GetAttribute("value");
+            return document
+                .QuerySelectorAll(selector)
+                .First()
+                .GetAttribute(attribute);
         }
         public void Dispose() {
             try {

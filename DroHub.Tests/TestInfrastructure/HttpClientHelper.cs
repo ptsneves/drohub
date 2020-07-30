@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Authentication;
+using AngleSharp;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Data.Migrations;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace DroHub.Tests.TestInfrastructure
 {
@@ -36,6 +38,64 @@ namespace DroHub.Tests.TestInfrastructure
                 d[key] = value;
         }
 
+        public static async Task sendInvitation(DroHubFixture fixture, string agent_email, string agent_password,
+            string[] emails) {
+
+            var http_helper = await createLoggedInUser(fixture, agent_email, agent_password);
+            var send_invitation_url = new Uri(DroHubFixture.SiteUri, "DHub/AccountManagement/SendInvitation");
+            using var create_page_response = await http_helper.Client.GetAsync(send_invitation_url);
+            create_page_response.EnsureSuccessStatusCode();
+
+
+            var verification_token = DroHubFixture.getVerificationToken(
+                await create_page_response.Content.ReadAsStringAsync(),
+                "account-send-invitation[anti-forgery-token]",
+                "anti-forgery-token");
+
+            var emails_dict = emails.ToDictionary(x => Array.IndexOf(emails, x));
+            var data_dic = new Dictionary<string, string> {
+                ["__RequestVerificationToken"] = verification_token,
+            };
+            foreach (var email in emails) {
+                var key = $"emails[{Array.IndexOf(emails, email).ToString()}]";
+                data_dic[key] = email;
+            }
+
+            var urlenc = new FormUrlEncodedContent(data_dic);
+            http_helper.Response?.Dispose();
+            http_helper.Response = await http_helper.Client.PostAsync(send_invitation_url, urlenc);
+            http_helper.Response.EnsureSuccessStatusCode();
+            http_helper.Dispose();
+        }
+
+
+        public static async Task changePermissions(DroHubFixture fixture, string agent_email, string agent_pass,
+            string victim_email, string victim_target_permission) {
+
+            if (victim_email == "admin@drohub.xyz")
+                return;
+
+            var http_helper = await createLoggedInUser(fixture, agent_email, agent_pass);
+            var change_permission_url = new Uri(DroHubFixture.SiteUri, "DHub/AccountManagement/ChangeUserPermissions");
+            using var create_page_response = await http_helper.Client.GetAsync(change_permission_url);
+            create_page_response.EnsureSuccessStatusCode();
+            var verification_token = DroHubFixture.getVerificationToken(
+                await create_page_response.Content.ReadAsStringAsync(),
+                "account-change-permissions-modal[anti-forgery-token]",
+                "anti-forgery-token");
+
+            var data_dic = new Dictionary<string, string> {
+                ["__RequestVerificationToken"] = verification_token,
+                ["user_email"] = victim_email,
+                ["permission_type"] = victim_target_permission.Replace("Acting", "").ToLower()
+            };
+            var urlenc = new FormUrlEncodedContent(data_dic);
+            http_helper.Response?.Dispose();
+            http_helper.Response = await http_helper.Client.PostAsync(change_permission_url, urlenc);
+            http_helper.Response.EnsureSuccessStatusCode();
+            http_helper.Dispose();
+        }
+
         public class AddUserHelper : IAsyncDisposable {
             public static async ValueTask<AddUserHelper> addUser(DroHubFixture test_fixture,
                 string user_email_of_creator,
@@ -45,10 +105,11 @@ namespace DroHub.Tests.TestInfrastructure
                 string organization,
                 string user_base_type,
                 long allowed_flight_time_minutes,
-                int allowed_user_count) {
+                int allowed_user_count,
+                bool remove_on_dispose = true) {
 
                 if (user_email == "admin@drohub.xyz")
-                    return new AddUserHelper(test_fixture, user_email, user_password);
+                    return new AddUserHelper(test_fixture, user_email, user_password, remove_on_dispose);
 
                 var http_helper = await createLoggedInUser(test_fixture, user_email_of_creator, password_of_creator);
                 await http_helper.Response.Content.ReadAsStringAsync();
@@ -76,7 +137,7 @@ namespace DroHub.Tests.TestInfrastructure
                 var errors = dom.QuerySelectorAll("div.validation-summary-errors");
                 var s = "";
                 if (!errors.Any())
-                    return new AddUserHelper(test_fixture, user_email, user_password);
+                    return new AddUserHelper(test_fixture, user_email, user_password, remove_on_dispose);
 
                 s = errors.Aggregate(s, (current, e) => current + (e.InnerHtml + "\n"));
                 throw new InvalidOperationException($"User Add has failed. Errors: {s}");
@@ -89,24 +150,32 @@ namespace DroHub.Tests.TestInfrastructure
                 string organization,
                 string user_base_type,
                 long allowed_flight_time_minutes,
-                int allowed_user_count) {
+                int allowed_user_count,
+                bool remove_on_dispose = true) {
 
-                return await addUser(test_fixture, "admin@drohub.xyz", test_fixture.AdminPassword, user_email, user_password,
-                    organization, user_base_type, allowed_flight_time_minutes, allowed_user_count);
+                return await addUser(test_fixture, "admin@drohub.xyz",
+                    test_fixture.AdminPassword, user_email, user_password,
+                    organization, user_base_type, allowed_flight_time_minutes, allowed_user_count, remove_on_dispose);
             }
 
-            private static async Task deleteUser(DroHubFixture test_fixture, string user_email, string user_password) {
-                if (user_email == "admin@drohub.xyz")
+            public static async Task excludeUser(DroHubFixture test_fixture, string deleter_email, string deleter_password,
+                    string user_email_to_delete) {
+                if (user_email_to_delete == "admin@drohub.xyz")
                     return;
 
-                var http_helper = await createLoggedInUser(test_fixture, user_email, user_password);
-                var create_device_url = new Uri(DroHubFixture.SiteUri, "Identity/Account/Manage/DeletePersonalData");
+                var http_helper = await createLoggedInUser(test_fixture, deleter_email, deleter_password);
+                var create_device_url = new Uri(DroHubFixture.SiteUri, "DHub/AccountManagement/ExcludeUser");
                 using var create_page_response = await http_helper.Client.GetAsync(create_device_url);
                 create_page_response.EnsureSuccessStatusCode();
-                var verification_token = DroHubFixture.getVerificationToken(await create_page_response.Content.ReadAsStringAsync());
-                var data_dic = new Dictionary<string, string>();
-                setIfNotNull(data_dic, "Password", user_password);
-                data_dic["__RequestVerificationToken"] = verification_token;
+                var verification_token = DroHubFixture.getVerificationToken(
+                    await create_page_response.Content.ReadAsStringAsync(),
+                    "account-exclude-user-modal[anti-forgery-token]",
+                    "anti-forgery-token");
+
+                var data_dic = new Dictionary<string, string> {
+                    ["__RequestVerificationToken"] = verification_token,
+                    ["user_email"] = user_email_to_delete
+                };
                 var urlenc = new FormUrlEncodedContent(data_dic);
                 http_helper.Response?.Dispose();
                 http_helper.Response = await http_helper.Client.PostAsync(create_device_url, urlenc);
@@ -114,18 +183,26 @@ namespace DroHub.Tests.TestInfrastructure
                 http_helper.Dispose();
             }
 
+            public static async Task excludeUser(DroHubFixture test_fixture, string user_email) {
+                await excludeUser(test_fixture, "admin@drohub.xyz", test_fixture.AdminPassword, user_email);
+            }
+
             private readonly DroHubFixture _fixture;
             private readonly string _user_email;
             private readonly string _password;
+            private readonly bool _remove_on_dispose;
 
-            private AddUserHelper(DroHubFixture test_fixture, string user_email, string user_password) {
+            private AddUserHelper(DroHubFixture test_fixture, string user_email, string user_password,
+                bool remove_on_dispose) {
                 _fixture = test_fixture;
                 _user_email = user_email;
                 _password = user_password;
+                _remove_on_dispose = remove_on_dispose;
             }
 
             public async ValueTask DisposeAsync() {
-                await deleteUser(_fixture, _user_email, _password);
+                if (_remove_on_dispose)
+                    await excludeUser(_fixture, _user_email);
             }
         }
 
@@ -340,13 +417,13 @@ namespace DroHub.Tests.TestInfrastructure
             return await http_helper.Response.Content.ReadAsStringAsync();
         }
 
-        public static async ValueTask<Dictionary<string, Device>> queryDeviceInfo(DroHubFixture test_fixture,
+        public static async ValueTask<Dictionary<string, dynamic>> queryDeviceInfo(DroHubFixture test_fixture,
             string user_name, string token, string device_serial_number) {
             var query = new AndroidApplicationController.QueryDeviceModel() {
                 DeviceSerialNumber = device_serial_number
             };
             var res = await retrieveFromAndroidApp(test_fixture, user_name, token, "QueryDeviceInfo", query);
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,Device>>(res);
+            return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,dynamic>>(res);
         }
 
         protected virtual void Dispose(bool disposing)

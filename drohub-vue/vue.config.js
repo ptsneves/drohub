@@ -16,7 +16,10 @@ module.exports = {
     pages: {
       Gallery: {
         entry: 'src/Gallery/gallery.js'
-      }
+      },
+      Account: {
+        entry: 'src/Account/account.js'
+      },
 
     }
 }

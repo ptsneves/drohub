@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="~/css/site.css">
     <!-- iCheck -->
     <link rel="stylesheet" href="~/AdminLTE/plugins/iCheck/square/blue.css">
+    @RenderSection("css", required: false)
     <!-- AdminLTE Skins. Choose a skin from the css/skins
          folder instead of downloading all of them to reduce the load. -->
     @*<link rel="stylesheet" href="~/AdminLTE/dist/css/skins/_all-skins.min.css">*@
@@ -30,7 +31,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/logo/tabbar-icon-32x32.png">
 </head>
-<body class="hold-transition skin-blue-light login-page">
+<body class="hold-transition skin-blue-light" style="background: #eef1f4; font-family: 'Noto Sans'">
     @*<div class="wrapper">*@
         <!-- Cookie Consent -->
         <partial name="_CookieConsentPartial" />

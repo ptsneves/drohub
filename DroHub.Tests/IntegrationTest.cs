@@ -12,7 +12,7 @@ using System.Threading;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
 using DroHub.Helpers;
-using Ductus.FluentDocker.Services.Extensions;
+using mailslurp.Model;
 
 // ReSharper disable StringLiteralTypo
 
@@ -154,6 +154,387 @@ namespace DroHub.Tests
                 await using var u = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
                     DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 0);
             });
+        }
+
+        private const bool EXPECT_SUCCESS = true;
+        private const bool EXPECT_FAIL = false;
+        private const bool SAME_ORG = true;
+        private const bool OTHER_ORG = false;
+
+        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, true)]
+        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM, true)]
+        [InlineData(DroHubUser.OWNER_POLICY_CLAIM, true)]
+        [InlineData(DroHubUser.PILOT_POLICY_CLAIM, false)]
+        [InlineData(DroHubUser.GUEST_POLICY_CLAIM, false)]
+        [Theory]
+        public async void TestSendInvitation(string agent_role, bool expect_success) {
+
+            var mail_slurp_helper = new MailSlurpHelper
+                ("132892a34e183e7264f2f13a47adf67f26e1381c5fb1401b70d0f3f64046a883", "TestSendInvitation");
+
+            var timeout = new TimeSpan(0, 0, 5);
+            var match_options = new MatchOptions {
+                Matches = new List<MatchOption> {
+                    new MatchOption {
+                        Field = MatchOption.FieldEnum.FROM,
+                        Should = MatchOption.ShouldEnum.EQUAL,
+                        Value = "postmaster@drohub.xyz"
+                    },
+                    new MatchOption {
+                        Field = MatchOption.FieldEnum.TO,
+                        Should = MatchOption.ShouldEnum.EQUAL,
+                        Value = mail_slurp_helper.EMAIL_ADDRESS
+                    }
+                }
+            };
+
+            await using var agent_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, agent_role,
+                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+
+            var t = HttpClientHelper.sendInvitation(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
+                new[] {mail_slurp_helper.EMAIL_ADDRESS});
+
+            if (expect_success) {
+                await t;
+                var emails = await mail_slurp_helper.receiveEmail(timeout, match_options, 1);
+                Assert.True(1 == emails.Count);
+                await HttpClientHelper.AddUserHelper.excludeUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
+                    mail_slurp_helper.EMAIL_ADDRESS);
+            }
+            else {
+                await Assert.ThrowsAsync<HttpRequestException>(async () => {
+                    await t;
+                });
+            }
+        }
+
+        [Fact]
+        public async void TestSendInvitationMoreThanOnceOnPendingFails() {
+            var mail_slurp_helper = new MailSlurpHelper
+                ("132892a34e183e7264f2f13a47adf67f26e1381c5fb1401b70d0f3f64046a883", "TestSendInvitationMoreThanOnceOnPendingFails");
+
+            var timeout = new TimeSpan(0, 0, 5);
+            var match_options = new MatchOptions {
+                Matches = new List<MatchOption> {
+                    new MatchOption {
+                        Field = MatchOption.FieldEnum.FROM,
+                        Should = MatchOption.ShouldEnum.EQUAL,
+                        Value = "postmaster@drohub.xyz"
+                    },
+                    new MatchOption {
+                        Field = MatchOption.FieldEnum.TO,
+                        Should = MatchOption.ShouldEnum.EQUAL,
+                        Value = mail_slurp_helper.EMAIL_ADDRESS
+                    }
+                }
+            };
+
+            await HttpClientHelper.sendInvitation(_fixture, "admin@drohub.xyz", _fixture.AdminPassword,
+                new[] {"a@a@b.com"});
+
+            var t = HttpClientHelper.sendInvitation(_fixture, "admin@drohub.xyz", _fixture.AdminPassword,
+                new[] {"a@a@b.com"});
+
+            await Assert.ThrowsAsync<HttpRequestException>(async () => {
+                await t;
+            });
+        }
+
+        [Fact]
+        public async void TestSendInvitationInValidEmailFails() {
+            await Assert.ThrowsAsync<HttpRequestException>(async () => {
+                await HttpClientHelper.sendInvitation(_fixture, "admin@drohub.xyz", _fixture.AdminPassword,
+                    new[] {"a@a@b.com"});;
+            });
+        }
+
+        [InlineData("sdasd")]
+        [Theory]
+        public async void TestChangePermissionsInvalidInputFails(string victim_target_role) {
+
+
+        }
+
+        [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM,  DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(OTHER_ORG,DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG,DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG,DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG,DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+
+
+        [InlineData(SAME_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_SUCCESS)]
+
+
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_SUCCESS)]
+
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_SUCCESS)]
+
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_SUCCESS)]
+
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_SUCCESS)]
+
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_SUCCESS)]
+
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+        [Theory]
+        public async void TestChangePermissions(bool same_org, string agent_role, string victim_original_role,
+            string victim_target_role, bool expect_success) {
+
+            const string AGENT_USER_EMAIL = DEFAULT_USER;
+            const string VICTIM_USER_EMAIL = DEFAULT_USER + "1";
+            var victim_user_org = same_org ? DEFAULT_ORGANIZATION : DEFAULT_ORGANIZATION + "1";
+
+            await using var agent_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                AGENT_USER_EMAIL, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, agent_role,
+                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+
+
+            await using var to_be_excluded_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                VICTIM_USER_EMAIL, DEFAULT_PASSWORD,
+                victim_user_org, victim_original_role, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES,
+                DEFAULT_ALLOWED_USER_COUNT);
+
+            var t = HttpClientHelper.changePermissions(_fixture, AGENT_USER_EMAIL, DEFAULT_PASSWORD,
+                VICTIM_USER_EMAIL, victim_target_role);
+            if (expect_success) {
+                    await t;
+            }
+            else {
+                await Assert.ThrowsAsync<HttpRequestException>( async () =>
+                    await t
+                );
+            }
+
+        }
+
+        [Fact]
+        public async void TestExcludeSelfUserFails() {
+            await using var agent_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM,
+                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+
+            await Assert.ThrowsAsync<HttpRequestException>( async () =>
+                await HttpClientHelper.AddUserHelper
+                    .excludeUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_USER)
+            );
+        }
+
+        [InlineData("")]
+        [InlineData("sdasd")]
+        [InlineData("sdasd@df@.com")]
+        [Theory]
+        public async void TestExcludeUserInputValidationFails(string email_to_delete) {
+            await using var agent_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM,
+                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+
+            await Assert.ThrowsAsync<HttpRequestException>( async () =>
+                await HttpClientHelper.AddUserHelper
+                    .excludeUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD, email_to_delete)
+            );
+        }
+
+        [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(OTHER_ORG,DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_SUCCESS)]
+
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(OTHER_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.SUBSCRIBER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(SAME_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(OTHER_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+        //
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(SAME_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_FAIL)]
+        [InlineData(OTHER_ORG, DroHubUser.GUEST_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_FAIL)]
+        [Theory]
+        public async void TestExcludeUserPermissions(bool same_org, string agent_role, string victim_role,
+            bool expect_success) {
+            await using var agent_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, agent_role,
+                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+
+            var new_user_org = same_org ? DEFAULT_ORGANIZATION : DEFAULT_ORGANIZATION + "1";
+            await using var to_be_excluded_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+                DEFAULT_USER+"1", DEFAULT_PASSWORD,
+                new_user_org, victim_role, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT,
+                !expect_success);
+
+            var t = HttpClientHelper.AddUserHelper.excludeUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_USER+"1");
+            if (expect_success) {
+                try {
+                    await t;
+                }
+                catch(Exception) {
+                    await HttpClientHelper.AddUserHelper.excludeUser(_fixture, DEFAULT_USER + "1");
+                    throw;
+                }
+            }
+            else {
+                await Assert.ThrowsAsync<HttpRequestException>( async () =>
+                    await t
+                );
+            }
+
         }
 
         [Fact]

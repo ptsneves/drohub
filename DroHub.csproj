@@ -31,6 +31,22 @@
     <None Remove="wwwroot\vue\**" />
     <Content Remove="wwwroot\vue\**" />
     <Content Remove="wwwroot\js\video-player.js" />
+    <Content Update="Areas\DHub\Views\Management\AccountManagement.cshtml">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="Areas\DHub\Pages\HelloWorld\AccountManagement.cshtml">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="Areas\Identity\Pages\Account\InvitationConfirmation.cshtml">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\mail\EmailInvitation.html">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -45,6 +61,7 @@
     <PackageReference Include="Google.Protobuf" Version="3.6.1" />
     <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
     <PackageReference Include="JetBrains.dotTrace.CommandLineTools.Linux" Version="2019.3.20191207.71700" />
+    <PackageReference Include="Mailjet.Api" Version="1.2.2" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="3.1.4" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="3.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="3.1.2" />
@@ -92,14 +109,9 @@
 
   <ItemGroup>
     <Folder Include="Areas\DHub\Data\" />
+    <Folder Include="Areas\DHub\Pages" />
     <Folder Include="Areas\Identity\Services\" />
     <Folder Include="wwwroot\images\logo" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Update="Areas\Identity\Pages\Account\_Layout.cshtml">
-      <Pack>$(IncludeRazorContentInPack)</Pack>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>

@@ -60,6 +60,22 @@ namespace DroHub.Areas.DHub.API {
             return _user;
         }
 
+        public async Task<bool> isUserCountBelowMaximum() {
+            var query_result = await querySubscription(getSubscriptionName())
+                .Select(s => new {
+                    UsersCount = s.Users.Count(),
+                    AllowedUsersCount = s.AllowedUserCount
+                })
+                .SingleAsync();
+
+            return query_result.UsersCount < query_result.AllowedUsersCount;
+        }
+
+        private async Task<int> getAllowedUserCount() {
+            var subscription = await getSubscription(getSubscriptionName());
+            return subscription.AllowedUserCount;
+        }
+
         public async Task<TimeSpan> getSubscriptionTimeLeft() {
             var subscription = await getSubscription(getSubscriptionName());
             return subscription.AllowedFlightTime;
@@ -85,11 +101,11 @@ namespace DroHub.Areas.DHub.API {
             return querySubscription(organization_name).SingleAsync();
         }
 
-        public IQueryable<ICollection<DroHubUser>> getSubscriptionUsers(OrganizationName organization_name) {
+        public IQueryable<DroHubUser> getSubscriptionUsers(OrganizationName organization_name) {
             return _db_context.Subscriptions
                 .Where(s => s.OrganizationName == organization_name.Value)
                 .Include(s => s.Users)
-                .Select(s => s.Users);
+                .SelectMany(s => s.Users);
         }
 
         public bool isSameSubscriptionOrganization(OrganizationName organization_name) {
@@ -162,6 +178,47 @@ namespace DroHub.Areas.DHub.API {
 
             _db_context.Subscriptions.Remove(sub);
             await _db_context.SaveChangesAsync();
+        }
+
+        public struct UserTypeAttributes {
+            public string human_description;
+        }
+
+        public Dictionary<string, UserTypeAttributes> getAvailableUserTypes() {
+            var r =  new Dictionary<string, UserTypeAttributes>();
+
+            if (getCurrentUserClaims().Any(c => c.Type == DroHubUser.ADMIN_POLICY_CLAIM &&
+                                                c.Value == DroHubUser.CLAIM_VALID_VALUE)) {
+                r["admin"] = new UserTypeAttributes {
+                    human_description =
+                        "Manage all the subscriptions registered with the web site, as well as the users and data."
+                };
+            }
+
+            if (getCurrentUserClaims().Any(c => c.Type == DroHubUser.SUBSCRIBER_POLICY_CLAIM &&
+                                                c.Value == DroHubUser.CLAIM_VALID_VALUE)) {
+                r["subscriber"] = new UserTypeAttributes {
+                    human_description =
+                        "Manage own subscription settings within the limits allowed, as well as the users and their permissions. Can also perform the roles of the pilot and guest."
+                };
+            }
+
+            if (!getCurrentUserClaims().Any(c => c.Type == DroHubUser.OWNER_POLICY_CLAIM &&
+                                                 c.Value == DroHubUser.CLAIM_VALID_VALUE))
+                return r;
+
+            r["owner"] = new UserTypeAttributes {
+                human_description =
+                    "Can do everything the subscriber can, except change parameters of the subscription"
+            };
+            r["pilot"] = new UserTypeAttributes {
+                human_description = "User who can use the application, and use the media functions of drohub."
+            };
+            r["guest"] = new UserTypeAttributes {
+                human_description = "Can only see the gallery and live videos. No actions allowed."
+            };
+
+            return r;
         }
     }
 }

@@ -1,0 +1,50 @@
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+@functions{
+    private string GetAntiXsrfRequestToken() {
+        return Xsrf.GetAndStoreTokens(Context).RequestToken;
+    }
+}
+@model DroHub.Areas.DHub.Models.AccountManagementModel
+@{
+    var json_user_type_attributes_json = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.user_attributes));
+    var json_user_permission_json = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.user_permissions));
+    ViewData["Title"] = "Index";
+}
+<div id="app">
+    <account-change-permissions-modal
+        anti-forgery-token="@GetAntiXsrfRequestToken()"
+        post-location="@Url.Action("ChangeUserPermissions")"
+        v-bind:available-user-types='@json_user_type_attributes_json'>
+    </account-change-permissions-modal>
+
+    <account-exclude-user-modal
+        anti-forgery-token="@GetAntiXsrfRequestToken()"
+        post-location="@Url.Action("ExcludeUser")"></account-exclude-user-modal>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="col-lg-4 col-md-4 col-sm-2">
+                    <img style="width: 100%" class="img-circle" src="~/AdminLTE/dist/img/user2-160x160.jpg">
+                </div>
+                <div class="col-lg-8 col-md-8 col-sm-10">
+                    <div style="font-size: 20px; padding: 10px;">@Model.user_name</div>
+                </div>
+            </div>
+        </div>
+
+        <account-send-invitation
+            anti-forgery-token="@GetAntiXsrfRequestToken()"
+            post-location="@Url.Action("SendInvitation")"></account-send-invitation>
+        <account-user-permissions
+            agent-user-email="@Model.user_email"
+            anti-forgery-token="@GetAntiXsrfRequestToken()"
+            v-bind:user-permissions='@json_user_permission_json'>
+        </account-user-permissions>
+    </div>
+</div>
+
+@section Scripts {
+<script type="text/javascript" src="~/vue/js/Account.js"></script>
+<partial name="_ValidationScriptsPartial" />
+}

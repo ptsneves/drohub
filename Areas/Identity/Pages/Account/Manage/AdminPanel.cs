@@ -251,17 +251,6 @@ namespace DroHub.Areas.Identity.Pages.Account
 
                 _logger.LogInformation("User created a new account with password.");
 
-                var code = await _user_manager.GenerateEmailConfirmationTokenAsync(user);
-                var callback_url = Url.Page(
-                    "/Account/ConfirmEmail",
-                    pageHandler: null,
-                    values: new {userId = user.Id},
-                    protocol: Request.Scheme);
-
-                await _email_sender.SendEmailAsync(Input.Email, "Confirm your email",
-                    $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callback_url)}'>clicking here</a>.");
-
-
                 foreach (var claim in DroHubUser.UserClaims[Input.ActingType])
                     await _user_manager.AddClaimAsync(user, claim);
 

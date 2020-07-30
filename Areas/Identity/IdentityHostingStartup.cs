@@ -30,7 +30,7 @@ namespace DroHub.Areas.Identity
                     // options.Lockout.MaxFailedAccessAttempts = 5;
                     // options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(3);
                     //
-                    // options.User.RequireUniqueEmail = true;
+                    options.User.RequireUniqueEmail = true;
                 });
             });
         }

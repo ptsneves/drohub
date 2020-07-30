@@ -103,6 +103,8 @@ namespace DroHub
             services.AddSubscriptionAPI();
             services.AddDeviceResourceAuthorization();
             services.AddMediaObjectResourceAuthorization();
+            services.AddDroHubUserResourceAuthorization();
+            services.AddMailJetEmailSenderExtensions(Configuration);
             services.AddDeviceAPI();
             services.AddDeviceConnectionSessionAPI();
 
@@ -110,9 +112,12 @@ namespace DroHub
 
 
             services.AddWebSocketManager();
-            services.AddMvc().AddRazorRuntimeCompilation().AddRazorPagesOptions(options => {
-                options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/Account/");
-            });
+            services
+                .AddMvc()
+                .AddRazorRuntimeCompilation()
+                .AddRazorPagesOptions(options => {
+                    options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/Account/");
+                });
 
             services.AddScoped<IUserClaimsPrincipalFactory<DroHubUser>, DroHubClaimsIdentityFactory>();
         }
