@@ -36,7 +36,7 @@ public class JanusTransactions {
         } else if (response_type.equals("error")) {
             String transaction = jsonObject.optString("transaction");
             JanusTransaction jt = transactions.get(transaction);
-            if (jt.error != null) {
+            if (jt != null && jt.error != null) {
                 jt.error.error(jsonObject);
             }
             transactions.remove(transaction);
