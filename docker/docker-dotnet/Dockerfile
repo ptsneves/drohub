@@ -1,4 +1,7 @@
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build-env
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list && \
+    apt update && apt install -y --no-install-recommends nodejs npm yarn
 
 WORKDIR /app
 # Copy csproj and restore as distinct layers
@@ -8,10 +11,6 @@ RUN dotnet restore
 # Copy everything else and build
 COPY . ./
 WORKDIR /app/drohub-vue
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
-    echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list && \
-    apt update && apt install -y --no-install-recommends nodejs npm yarn
-
 RUN PATH=$(yarn global bin):$PATH; echo $PATH; yarn install && yarn build --mode=development
 WORKDIR /app/
 RUN dotnet publish -c Release -o out -p:InformationalVersion=$(cat .git/$(cat .git/HEAD | cut -d' ' -f2)) ./DroHub.csproj
