@@ -460,6 +460,8 @@ $(function () {
 
             _render_refresher.addOnRefreshFunction(function() {
                 let data_telemetry = element.attr('data-telemetry')
+                if (data_telemetry === undefined)
+                    return;
                 let flight_start = JSON.parse(data_telemetry);
                 if (flight_start == null)
                     return;
@@ -487,7 +489,9 @@ $(function () {
                 case 0: //Live
                     if (element.data("render-state") === "stopped") {
                         element.data("render-state", "starting");
-                        initJanus(element.data('janus-url'), element.data('stun-server-url'), element.data('room-id'));
+                        if (window.opaqueId === undefined || window.opaqueId == null)
+                            return;
+                        janus.attach(attachToRoom(element.data('room-id'), window.opaqueId));
                     }
                     break;
                 default:
@@ -701,7 +705,7 @@ $(function () {
         }
     }();
 
-    JanusVideoClass = function () {
+    let JanusVideoClass = function () {
         function makeElementFullScreen(webrtc_video_element) {
             if (document.fullscreenElement
                 || document.webkitFullscreenElement
@@ -744,8 +748,13 @@ $(function () {
 
         return {
             init: function () {
-                $('button[data-toggle="video-fullscreen"]').each(_initFullscreenButton)
-                $('a[data-toggle="video-fullscreen"]').each(_initFullscreenButton)
+                $('button[data-toggle="video-fullscreen"]').each(_initFullscreenButton);
+                $('a[data-toggle="video-fullscreen"]').each(_initFullscreenButton);
+
+                const section_element = $('section.janus-section');
+                const janus_url = section_element.data('janus-url');
+                const stun_server_url = section_element.data('stun-server-url');
+                initJanus(janus_url, stun_server_url);
             }
         }
     }();

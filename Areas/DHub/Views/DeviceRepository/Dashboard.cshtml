@@ -200,10 +200,15 @@
                                         </div>
                                     </div>
                                     <audio class="device-audio" data-room-id="@device.Id" data-serial="@device.SerialNumber"></audio>
-                                    <video class="rounded centered embed-responsive-item controls janus-video
-                                    device-video" data-janus-url='@ViewData["FrontEndJanusUrl"]'
-                                    data-telemetry='@video_state_initial'
-                                    data-stun-server-url='@ViewData["FrontEndStunServerUrl"]' data-renderer="renderLiveVideo" data-render-state="stopped" data-room-id="@device.Id" data-serial="@device.SerialNumber" autoplay playsinline></video>
+                                    <video
+                                           class="rounded centered embed-responsive-item controls janus-video device-video"
+                                           data-telemetry='@video_state_initial'
+                                           data-renderer="renderLiveVideo"
+                                           data-render-state="stopped"
+                                           data-room-id="@device.Id"
+                                           data-serial="@device.SerialNumber"
+                                           autoplay playsinline>
+                                    </video>
                                 </div>
                                 <div class="box collapsed-box drone-control-box" data-serial="@device.SerialNumber">
                                     <div class="box-body">
