@@ -549,6 +549,7 @@ public class CopterHudActivity extends GroundSdkActivityBase{
     private void setupLiveVideo(String user_email, String auth_token) {
         CopterHudActivity activity = this;
         ParrotStreamServer stream_server = new ParrotStreamServer(_drone);
+        final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
         stream_server.setPeripheralListener(new ParrotPeripheralManager.PeripheralListener<StreamServer>() {
             @Override
             public void onChange(@NonNull StreamServer parrot_server) {
@@ -556,6 +557,7 @@ public class CopterHudActivity extends GroundSdkActivityBase{
 
             @Override
             public boolean onFirstTimeAvailable(@NonNull StreamServer parrot_server) {
+                final String CONNECTION_ERROR = "DROHUB rejected our connection. Please contact help@drohub.xyz";
                 String[] res_turn_urls = activity.getResources().getStringArray(R.array.turn_servers);
                 PeerConnectionGLSurfaceParameters peerConnectionParameters = new PeerConnectionGLSurfaceParameters(
                         mStreamView,
@@ -584,10 +586,16 @@ public class CopterHudActivity extends GroundSdkActivityBase{
                 setupMuteMicrophoneButton(_drohub_handler);
 
                 _thrift_connection = new ThriftConnection();
-                _thrift_connection.onStart(_drone.getUid(),
-                        getString(R.string.drohub_ws_url),
-                        _drohub_handler, user_email, auth_token);
+                try {
+                    _thrift_connection.onStart(_drone.getUid(),
+                            getString(R.string.drohub_ws_url),
+                            _drohub_handler, user_email, auth_token);
+                } catch (InterruptedException e) {
+                    e_v.addError(CONNECTION_ERROR);
+                    return false;
+                }
                 Log.w("COPTER", "Started thrift connection to " + getString(R.string.drohub_ws_url));
+                e_v.removeError(CONNECTION_ERROR);
                 return true;
             }
         });
