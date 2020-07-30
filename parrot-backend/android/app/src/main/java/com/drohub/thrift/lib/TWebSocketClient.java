@@ -79,8 +79,16 @@ public class TWebSocketClient extends TTransport {
         host_uri = host;
         http_headers = httpHeaders;
     }
+
     @Override
     public boolean isOpen() {
+        while (_client == null) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                return false;
+            }
+        }
         return _client.isOpen();
     }
 

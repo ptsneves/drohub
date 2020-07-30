@@ -17,9 +17,10 @@ public class ThriftConnection {
     private TThreadPoolServer _server_engine;
     private Thread _server_thread;
     private DroHubHandler _drohub_handler;
+    TWebSocketClient _thrift_websocket_client;
 
     public void onStart(String drone_serial, String thrift_ws_url,
-                        DroHubHandler drohub_handler, String user, String password) {
+                        DroHubHandler drohub_handler, String user, String password) throws InterruptedException {
         Log.w("COPTER", "Started thrift connection to " + thrift_ws_url );
         HashMap<String, String> http_headers = new HashMap<>();
         http_headers.put("User-Agent", "AirborneProjects");
@@ -27,14 +28,13 @@ public class ThriftConnection {
         http_headers.put("x-drohub-user", user);
         http_headers.put("x-drohub-token", password);
         http_headers.put("x-device-expected-serial", drone_serial);
-        TWebSocketClient tws = new TWebSocketClient(thrift_ws_url, http_headers);
+        _thrift_websocket_client = new TWebSocketClient(thrift_ws_url, http_headers);
 
-        TReverseTunnelServer trts = new TReverseTunnelServer(tws);
+        TReverseTunnelServer trts = new TReverseTunnelServer(_thrift_websocket_client);
         TProtocolFactory message_validator_factory = new TMessageValidatorProtocol.Factory(
                 new TJSONProtocol.Factory(),
                 TMessageValidatorProtocol.ValidationModeEnum.KEEP_READING,
                 TMessageValidatorProtocol.OperationModeEnum.SEQID_SLAVE);
-
 
         TThreadPoolServer.Args args = new TThreadPoolServer.Args(trts);
         args.minWorkerThreads(8);
@@ -47,6 +47,13 @@ public class ThriftConnection {
         _server_engine = new TThreadPoolServer(args);
         _server_thread = new Thread(() -> _server_engine.serve());
         _server_thread.start();
+
+        if (!_thrift_websocket_client.isOpen()) {
+            Thread.sleep(5000);
+            if (!_thrift_websocket_client.isOpen()) {
+                throw new InterruptedException("Was not able to connect to DROHUB server");
+            }
+        }
     }
 
     public void handleActivityResult(int requestCode, int resultCode, Intent data) {
