@@ -121,15 +121,14 @@
                                                         <span class=" battery-level fa" data-renderer="renderBatteryLevel" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>No data</span>
                                                     </i>
                                                 </div>
-                                                <i>|</i>
-                                                <div class="minimum-size" style="padding-right: 3%; padding-left: 3%;">
-                                                    <img src="/images/assets/video-info-satelite.svg">
-                                                    <span class="satellite-count" data-renderer="renderSatelliteCount" data-serial="@device.SerialNumber" data-telemetry='null'>-1</span>
-                                                    <img src="/images/assets/video-info-controlsignal-good.svg">
-                                                    <img src="/images/assets/video-info-height.svg">
-                                                    <span class="position" data-renderer="renderAltitude" data-serial="@device.SerialNumber" data-telemetry='@position_initial'>-1</span>
-                                                </div>
-                                                <i>|</i>
+                                                @* <div class="minimum-size" style="padding-right: 3%; padding-left: 3%;"> *@
+                                                @*     <img src="/images/assets/video-info-satelite.svg"> *@
+                                                @*     <span class="satellite-count" data-renderer="renderSatelliteCount" data-serial="@device.SerialNumber" data-telemetry='null'>-1</span> *@
+                                                @*     <img src="/images/assets/video-info-controlsignal-good.svg"> *@
+                                                @*     <img src="/images/assets/video-info-height.svg"> *@
+                                                @*     <span class="position" data-renderer="renderAltitude" data-serial="@device.SerialNumber" data-telemetry='@position_initial'>-1</span> *@
+                                                @* </div> *@
+                                                @* <i>|</i> *@
                                                 <div class="minimum-size" style="padding-right: 3%; padding-left: 3%;">
                                                     <span class="  " data-renderer="renderFlightTimeText" data-url="@get_device_flight_start_time_url" data-serial="@device.SerialNumber" data-telemetry='null'>00:00</span>
                                                     <i>-</i>
@@ -159,15 +158,15 @@
                                         </div>
                                         <div class="video-overlay-bottom row row-no-padding vertical-align">
                                             <div class="col-md-3 max-width">
-                                                <div class="video-overlay-rth column-vertical-center no-side-padding">
-                                                    <form method="post" action="@toggle_record_video_action_url" data-toggle="ajax-request" autocomplete="off">
-                                                        <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.START" checked>
-                                                        <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.STOP">
-                                                        <button type="submit" class="btn-transparent-bg video-overlay-record-icon" title="Toggle Video Recording">
-                                                            <img class="fit-to-parent" src="/images/assets/video-btn-home.svg">
-                                                        </button>
-                                                    </form>
-                                                </div>
+                                                @* <div class="video-overlay-rth column-vertical-center no-side-padding"> *@
+                                                @*     <form method="post" action="@toggle_record_video_action_url" data-toggle="ajax-request" autocomplete="off"> *@
+                                                @*         <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.START" checked> *@
+                                                @*         <input type="radio" name="@nameof(DroneRecordVideoRequest.ActionType)" value="@ActionType.STOP"> *@
+                                                @*         <button type="submit" class="btn-transparent-bg video-overlay-record-icon" title="Toggle Video Recording"> *@
+                                                @*             <img class="fit-to-parent" src="/images/assets/video-btn-home.svg"> *@
+                                                @*         </button> *@
+                                                @*     </form> *@
+                                                @* </div> *@
                                             </div>
                                             <div class="col-md-3 max-width"></div>
                                             <div class="col-md-3 max-width"></div>
@@ -194,10 +193,10 @@
                                                 </div>
                                             </div>
                                             @* <div class="row video-overlay-centered">
-                                                        <a href="#" data-toggle="drone-control-box" class="btn-transparent-bg link-unstyled video-overlay-controls-toggle plus-right" data-serial="@device.SerialNumber" >
-                                                                Open Controls
-                                                        </a>
-                                                    </div> *@
+                                                <a href="#" data-toggle="drone-control-box" class="btn-transparent-bg link-unstyled video-overlay-controls-toggle plus-right" data-serial="@device.SerialNumber" >
+                                                        Open Controls
+                                                </a>
+                                            </div> *@
                                         </div>
                                     </div>
                                     <audio class="device-audio" data-room-id="@device.Id" data-serial="@device.SerialNumber"></audio>
