@@ -375,6 +375,12 @@ public class CopterHudActivity extends GroundSdkActivityBase{
     }
 
     @Override
+    public void onBackPressed() {
+        finishAndRemoveTask();
+        System.exit(0);
+    }
+
+    @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 

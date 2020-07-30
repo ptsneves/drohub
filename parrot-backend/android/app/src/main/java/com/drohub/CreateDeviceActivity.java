@@ -76,6 +76,7 @@ public class CreateDeviceActivity extends DroHubActivityBase {
                 if (response.getString("result").equals("ok")) {
                     Intent intent = new Intent(this, MainActivity.class);
                     this.startActivity(intent);
+                    finish();
                 }
                 else {
                     setStatusText(status_view, "Failed to create device try again", Color.RED);
