@@ -17,8 +17,8 @@ namespace DroHub.Tests.TestInfrastructure
     {
         public ICompositeService Containers { get; }
         private IHostService Docker { get; }
-        public static Uri SiteUri => new Uri("http://localhost:5000/");
-        public static Uri ThriftUri => new Uri("ws://localhost:5000/ws");
+        public static Uri SiteUri => new Uri("https://localhost/");
+        public static Uri ThriftUri => new Uri("wss://localhost/ws");
         public string TargetLiveStreamStoragePath { get; }
         public string AdminPassword { get; private set; }
         private static string DroHubTestsPath => Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory + "../../../");
@@ -32,7 +32,7 @@ namespace DroHub.Tests.TestInfrastructure
                             .UseContainer()
                             .UseCompose()
                             .FromFile(docker_compose_file)
-                            .WaitForHttp("web", SiteUri.ToString())
+                            .WaitForHttp("web", "http://localhost:5000")
                             .RemoveOrphans()
                             // .ForceBuild()
                             .Build()
@@ -75,7 +75,7 @@ namespace DroHub.Tests.TestInfrastructure
         }
         public void Dispose() {
             try {
-                // _containers.Dispose();
+                Containers.Dispose();
             } catch (Ductus.FluentDocker.Common.FluentDockerException) {
                 //Do nothing. This exception seems a bug in FluentDocker
             }

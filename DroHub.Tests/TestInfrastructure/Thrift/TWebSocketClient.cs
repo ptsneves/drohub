@@ -14,10 +14,13 @@ public class TWebSocketClient : Thrift.Transport.TTransport
     private readonly SemaphoreSlim _read_semapthore;
     private readonly SemaphoreSlim _send_semapthore;
 
-    public TWebSocketClient(Uri transport_uri, WebSocketMessageType message_type) {
+    public TWebSocketClient(Uri transport_uri, WebSocketMessageType message_type, bool validate_certs = true) {
         _read_semapthore = new SemaphoreSlim(1);
         _send_semapthore = new SemaphoreSlim(1);
         ws = new ClientWebSocket();
+        if (!validate_certs)
+            ws.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, errors) => true;
+
         disposed = false;
         TransportUri = transport_uri;
         MessageType = message_type;

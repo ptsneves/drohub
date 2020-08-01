@@ -29,7 +29,10 @@ namespace DroHub.Tests.TestInfrastructure
             _disposed = false;
             _test_fixture = test_fixture;
             cookieContainer = new CookieContainer();
-            handlerHttp = new HttpClientHandler { UseCookies = true, UseDefaultCredentials = true, CookieContainer = cookieContainer };
+            handlerHttp = new HttpClientHandler {
+                UseCookies = true, UseDefaultCredentials = true, CookieContainer = cookieContainer,
+                ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+            };
             Client = new HttpClient(handlerHttp);
         }
 
@@ -325,7 +328,8 @@ namespace DroHub.Tests.TestInfrastructure
 
         public static TWebSocketClient getTWebSocketClient(DroHubFixture fixture, string user, string token,
             string device_serial) {
-            var ws_transport = new TWebSocketClient(DroHubFixture.ThriftUri, System.Net.WebSockets.WebSocketMessageType.Text);
+            var ws_transport = new TWebSocketClient(DroHubFixture.ThriftUri, System.Net.WebSockets
+            .WebSocketMessageType.Text, false);
             ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
             ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
             ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", user);

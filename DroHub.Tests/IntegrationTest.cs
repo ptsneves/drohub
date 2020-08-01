@@ -718,7 +718,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestConnectionClosedOnNoSerial() {
-            using var ws_transport = new TWebSocketClient(DroHubFixture.ThriftUri, WebSocketMessageType.Text);
+            using var ws_transport = new TWebSocketClient(DroHubFixture.ThriftUri, WebSocketMessageType.Text, false);
             await Assert.ThrowsAsync<WebSocketException>(async () => await ws_transport.OpenAsync());
         }
 
