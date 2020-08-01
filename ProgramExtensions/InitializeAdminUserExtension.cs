@@ -71,15 +71,18 @@ namespace DroHub.IdentityClaims
 
             user.EmailConfirmed = true;
             user.UserName = _ADMIN_USER_NAME;
+            user.Email = _ADMIN_USER_NAME;
             user.Subscription = subscription;
             user.BaseActingType = DroHubUser.ADMIN_POLICY_CLAIM;
 
             if (new_user) {
                 var admin_password = generatePassword(10, 0);
+                var create_result = await user_manager.CreateAsync(user, admin_password);
+                if (!create_result.Succeeded)
+                    throw new InvalidProgramException("Unable to create an administrator account. Aborting");
+
                 logger.LogWarning("Initialized admin password. Please change it. GENERATED ROOT PASSWORD {admin}\n",
                     admin_password);
-
-                await user_manager.CreateAsync(user, admin_password);
             }
             else {
                 db_context.Users.Update(user);
