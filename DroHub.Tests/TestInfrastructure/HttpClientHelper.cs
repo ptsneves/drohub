@@ -216,6 +216,14 @@ namespace DroHub.Tests.TestInfrastructure
             return http_helper;
         }
 
+        public static async Task createJanusHandle(DroHubFixture fixture) {
+            var http_helper = new HttpClientHelper(fixture);
+            http_helper.Response = await http_helper.Client.PostAsJsonAsync(DroHubFixture.JanusUri, new {
+                janus = "help"
+            });
+            http_helper.Response.EnsureSuccessStatusCode();
+        }
+
         public static async ValueTask<HttpClientHelper> createLoggedInUser(DroHubFixture test_fixture, string user, string password) {
             var login_uri = new Uri(DroHubFixture.SiteUri, "Identity/Account/Login");
             var http_helper = new HttpClientHelper(test_fixture);

@@ -19,6 +19,7 @@ namespace DroHub.Tests.TestInfrastructure
         private IHostService Docker { get; }
         public static Uri SiteUri => new Uri("https://localhost/");
         public static Uri ThriftUri => new Uri("wss://localhost/ws");
+        public static Uri JanusUri => new Uri("https://localhost/janus");
         public string TargetLiveStreamStoragePath { get; }
         public string AdminPassword { get; private set; }
         private static string DroHubTestsPath => Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory + "../../../");

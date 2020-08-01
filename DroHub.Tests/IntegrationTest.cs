@@ -68,6 +68,11 @@ namespace DroHub.Tests
             await testLogin("admin@drohub.xyz", password ?? _fixture.AdminPassword, expect_login_fail);
         }
 
+        [Fact]
+        public async void TestJanusOnline() {
+            await HttpClientHelper.createJanusHandle(_fixture);
+        }
+
         [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, false, true)]
         [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, false, true)]
         [InlineData(DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, false, true)]
