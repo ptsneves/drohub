@@ -61,8 +61,8 @@ namespace DroHub.Tests
                 using (await HttpClientHelper.createLoggedInUser(_fixture, user, password)) { }
         }
 
-        [InlineData(null, false)]
-        [InlineData("1", true)]
+        [InlineData(null, EXPECT_FAIL)]
+        [InlineData("1", EXPECT_SUCCESS)]
         [Theory]
         public async void TestAdminAccount(string password, bool expect_login_fail) {
             await testLogin("admin@drohub.xyz", password ?? _fixture.AdminPassword, expect_login_fail);
