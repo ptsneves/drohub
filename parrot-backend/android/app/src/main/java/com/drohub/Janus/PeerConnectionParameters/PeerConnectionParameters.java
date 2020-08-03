@@ -51,11 +51,13 @@ public class PeerConnectionParameters {
 
     iceServers = new PeerConnection.IceServer[ice_servers.length];
     for (int i = 0; i < iceServers.length; i++) {
-      iceServers[i] =  PeerConnection.IceServer
-              .builder(ice_servers[i])
-              .setUsername(turn_user_name)
-              .setPassword(turn_credential)
-              .createIceServer();
+      PeerConnection.IceServer.Builder b =  PeerConnection.IceServer.builder(ice_servers[i]);
+
+      if (turn_user_name != null && turn_credential != null)
+            b.setUsername(turn_user_name)
+              .setPassword(turn_credential);
+
+      iceServers[i] = b.createIceServer();
       System.out.println("Added turn server " + ice_servers[i]);
     }
     localView = local_view;

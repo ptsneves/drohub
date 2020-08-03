@@ -558,12 +558,12 @@ public class CopterHudActivity extends GroundSdkActivityBase{
             @Override
             public boolean onFirstTimeAvailable(@NonNull StreamServer parrot_server) {
                 final String CONNECTION_ERROR = "DROHUB rejected our connection. Please contact help@drohub.xyz";
-                String[] res_turn_urls = activity.getResources().getStringArray(R.array.turn_servers);
+                String[] res_turn_urls = activity.getResources().getStringArray(R.array.ice_servers);
                 PeerConnectionGLSurfaceParameters peerConnectionParameters = new PeerConnectionGLSurfaceParameters(
                         mStreamView,
                         null,
-                        getResources().getString(R.string.turn_user_name),
-                        getResources().getString(R.string.turn_credential),
+                        null,
+                        null,
                         res_turn_urls,
                         getString(R.string.janus_websocket_uri), activity,
                         20,
