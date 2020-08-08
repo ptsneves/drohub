@@ -12,7 +12,7 @@
                         v-bind:disabled="isDisabled"
                         class="drohub-btn-default drohub-btn-default-text"
                         :class="{'drohub-btn-default-disabled': isDisabled}"
-                    >Send Invite</button>
+                    >Invite</button>
                 </form>
             </div>
             <div style="width: 100%;max-width: 800px;">
