@@ -175,6 +175,24 @@ iframe {
     -webkit-transition: all 0.4s ease-in-out;
 }
 
+.login-create-account-btn {
+	padding-top: 20px;
+	color: #1099FF !important;
+	padding-bottom: 20px;
+	display: block;
+	border-top: 1px solid rgba(113,129,150,0.45);
+}
+
+.login-create-account-btn:hover {
+	color: white !important;
+	font-style: normal !important;
+	background: #4a90e2;
+	-webkit-transition: all 0.5s ease;
+	-moz-transition: all 0.5s ease;
+	-o-transition: all 0.5s ease;
+	transition: all 0.5s ease;
+}
+
 .white-text{
 	color: #fff;
 }
@@ -1050,7 +1068,8 @@ blockquote {
 /* ========================================================== */
 
 .price-box{
-	min-height: 612px;
+	height: 100%;
+	min-height: inherit;
 	text-align: center;
 	background-color: #fff;
 	border-top: 3px solid #1099FF;
@@ -1088,7 +1107,7 @@ blockquote {
 }
 
 ul.pricing-list{
-	padding: 0 55px;
+	padding: 0 25px;
 }
 
 ul.pricing-list li.price-title{
@@ -1128,6 +1147,25 @@ ul.pricing-list li.price-text{
 	font-weight: 400;
 	margin-bottom: 5px;
 	text-transform: capitalize;
+	min-height: 28px;
+}
+
+ul.pricing-list li.price-tag-disabled a:hover {
+	color: white;
+}
+
+ul.pricing-list li.price-tag-disabled a{
+	color: #fff;
+	background: grey;
+	border:1px solid #1e90ff;
+	border-radius: 5px 5px;
+	padding: 15px 30px;
+	display: inline-block;
+	font-size: 15px;
+	line-height: 24px;
+	font-weight: 600;
+	margin: 30px 0 5px 0;
+	cursor: not-allowed;
 }
 
 ul.pricing-list li.price-tag a{
@@ -1147,6 +1185,7 @@ ul.pricing-list li.price-tag a{
 
 ul.pricing-list li.price-tag a:hover{
 	background: #037aef;
+	color: white;
 }
 
 ul.pricing-list li.price-tag-line a{

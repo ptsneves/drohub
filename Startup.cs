@@ -77,6 +77,7 @@ namespace DroHub
             services.Configure<JanusServiceOptions>(Configuration.GetSection("JanusServiceOptions"));
             services.AddHostedService<NotificationsHubPoller>();
             services.AddHttpClient<JanusService>();
+            services.AddSingleton<IConfiguration>(provider => Configuration);
 
             services.AddDataProtection()
                 .PersistKeysToFileSystem(new DirectoryInfo(

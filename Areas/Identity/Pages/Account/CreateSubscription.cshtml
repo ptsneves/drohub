@@ -1,0 +1,42 @@
+@page
+@model CreateSubscription
+
+<div class="login-box-drohub">
+    <div class="drohub-logo">
+        <img alt="DROHUB" src="/images/logo/drohub-small.png"/>
+    </div> <!-- /.login-logo -->
+    <div class="login-box-body-drohub">
+        <div>
+            @* @Model.SubscriptionType *@
+        </div>
+        <form method="post">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <div class="form-group content-centered has-feedback">
+                <input asp-for="Input.Email" placeholder="Account email" class="form-control-drohub"/>
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+            <div class="form-group content-centered has-feedback">
+                <input asp-for="Input.Password" placeholder="Password" class="form-control-drohub"/>
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+            <div class="form-group content-centered has-feedback">
+                <input asp-for="Input.ConfirmPassword" placeholder="Retype Password" class="form-control-drohub"/>
+                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+            </div>
+            <div class="form-group content-centered has-feedback">
+                <input asp-for="Input.OrganizationName" placeholder="Organization Name" class="form-control-drohub"/>
+                <span asp-validation-for="Input.OrganizationName" class="text-danger"></span>
+            </div>
+            <div class="form-group content-centered has-feedback">
+                <input asp-for="Input.TermsAgreement" class="form-control-drohub"/>
+                <span asp-validation-for="Input.TermsAgreement" class="text-danger"></span>
+                <a href="~/privacy.html">I agree to the Terms of Service and Privacy and Security Policy</a>
+            </div>
+
+            <div class="form-group content-centered has-feedback">
+                <button type="submit" class="btn login-submit-btn-drohub">Create</button>
+            </div>
+        </form>
+    </div>
+
+</div>
