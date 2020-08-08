@@ -151,18 +151,22 @@ namespace DroHub.Helpers {
             long i = 0;
             foreach (var conversion_result in conversion_results) {
                 ffmpeg_input_args += $" -i {conversion_result.result_path}";
-                if (conversion_result.media_type == ConvertResult.MediaType.VIDEO) {
-                    ffmpeg_map_args += $" -map {i}:v -c:v copy ";
-                }
-                else if (conversion_result.media_type == ConvertResult.MediaType.AUDIO) {
-                    var delay_ms = Math.Max(0, (conversion_result.creation_date_utc - video_result.creation_date_utc)
-                    .Milliseconds);
+                switch (conversion_result.media_type) {
+                    case ConvertResult.MediaType.VIDEO:
+                        ffmpeg_map_args += $" -map {i}:v -c:v copy ";
+                        break;
+                    case ConvertResult.MediaType.AUDIO: {
+                        var delay_ms = Math.Max(0, (conversion_result.creation_date_utc - video_result.creation_date_utc)
+                            .TotalMilliseconds);
 
-                    ffmpeg_adelay_args += $"[{i}]adelay={delay_ms}|{delay_ms}[s{i}];";
-                    ffmpeg_amix_args += $"[s{i}]";
-                }
-                else {
-                    throw new NotImplementedException();
+                        ffmpeg_adelay_args += $"[{i}]adelay={delay_ms}|{delay_ms}[s{i}];";
+                        ffmpeg_amix_args += $"[s{i}]";
+                        break;
+                    }
+                    case ConvertResult.MediaType.DATA:
+                        break;
+                    default:
+                        throw new NotImplementedException();
                 }
                 i++;
             }
@@ -173,9 +177,10 @@ namespace DroHub.Helpers {
             if (File.Exists(final_dst))
                 throw new InvalidProgramException($"Destination {final_dst} already exists. This should not happen. Keeping the original mjr");
 
+            var ffmpeg_arguments =
+                $"{ffmpeg_input_args} -filter_complex {ffmpeg_adelay_args}{ffmpeg_amix_args} {ffmpeg_map_args} {final_dst}";
 
-            using var __ = await runProcess(_FFMPEG_BIN,
-                $"{ffmpeg_input_args} -filter_complex {ffmpeg_adelay_args}{ffmpeg_amix_args} {ffmpeg_map_args} {final_dst}");
+            using var __ = await runProcess(_FFMPEG_BIN, ffmpeg_arguments);
 
 
             if (!File.Exists(final_dst))
