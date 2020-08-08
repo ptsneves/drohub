@@ -7,7 +7,7 @@ services:
         network_mode: host
         ports:
             - "8088:8088"
-            - "6004-6200:6004-6200/udp"
+            - "20000-40000:20000-40000/udp"
         volumes:
             - live-video-storage:/var/live-video-storage
         logging:
