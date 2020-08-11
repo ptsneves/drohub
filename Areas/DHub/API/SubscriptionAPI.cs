@@ -36,11 +36,13 @@ namespace DroHub.Areas.DHub.API {
 
         private readonly DroHubContext _db_context;
         private readonly ClaimsPrincipal _user;
+        private Subscription _current_subscription;
         public SubscriptionAPI(DroHubContext db_context, IHttpContextAccessor http_context) {
             _db_context = db_context;
             _user = http_context.HttpContext.User;
             if (!_user.Identity.IsAuthenticated)
                 throw new AuthenticationException("Cannot use SubscriptionAPI on non authenticated users");
+            _current_subscription = null;
         }
 
         public IEnumerable<Claim> getCurrentUserClaims() {
@@ -74,6 +76,10 @@ namespace DroHub.Areas.DHub.API {
         private async Task<int> getAllowedUserCount() {
             var subscription = await getSubscription(getSubscriptionName());
             return subscription.AllowedUserCount;
+        }
+
+        private async Task<Subscription> getSubscription() {
+            return _current_subscription ??= await getSubscription(getSubscriptionName());
         }
 
         public async Task<TimeSpan> getSubscriptionTimeLeft() {
