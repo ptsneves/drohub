@@ -20,6 +20,8 @@ namespace DroHub.Areas.DHub.Models
         [Required]
         public string OrganizationName { get; set; }
 
+        public string BillingPlanName { get; set; } = "FREE";
+
         [Required]
         public int AllowedUserCount { get; set; }
 
