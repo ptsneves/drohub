@@ -17,6 +17,15 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace DroHub.Areas.Identity.Pages.Account {
+    [AttributeUsage(AttributeTargets.Property)]
+    public class MustBeTrueAttribute : ValidationAttribute
+    {
+        public override bool IsValid(object value)
+        {
+            return value != null && value is bool && (bool)value;
+        }
+    }
+
     [AllowAnonymous]
     public class CreateSubscription : PageModel {
 
@@ -40,6 +49,7 @@ namespace DroHub.Areas.Identity.Pages.Account {
             public string OrganizationName { get; set; }
 
             [Required]
+            [MustBeTrue(ErrorMessage = "You must agree with the terms")]
             public bool TermsAgreement { get; set; }
         }
 
@@ -99,12 +109,6 @@ namespace DroHub.Areas.Identity.Pages.Account {
             if (string.IsNullOrWhiteSpace(Input.OrganizationName)) {
                 Input.OrganizationName = Guid.NewGuid().ToString();
             }
-
-            if (Input.TermsAgreement == false) {
-                ModelState.AddModelError(string.Empty, "You need to accept the conditions, to proceed.");
-                return Page();
-            }
-
 
             if (Input.Password != Input.ConfirmPassword) {
                 ModelState.AddModelError(string.Empty, "Password does not match confirmation password");
