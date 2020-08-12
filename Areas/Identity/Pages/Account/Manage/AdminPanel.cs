@@ -196,7 +196,8 @@ namespace DroHub.Areas.Identity.Pages.Account
             {
                 OrganizationName = Input.OrganizationName,
                 AllowedFlightTime = TimeSpan.FromMinutes((double) Input.AllowedFlightTime),
-                AllowedUserCount = (int) Input.AllowedUserCount
+                AllowedUserCount = (int) Input.AllowedUserCount,
+                BillingPlanName = "Custom"
             };
             _db_context.Subscriptions.Add(subscription);
             await _db_context.SaveChangesAsync();

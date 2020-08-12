@@ -55,6 +55,9 @@ namespace DroHub.Areas.DHub.Controllers {
             var drohub_user = await _signin_manager.UserManager.GetUserAsync(_subscription_api.getClaimsPrincipal());
             model.user_email = drohub_user.Email;
             model.user_name = drohub_user.UserName;
+            model.allowed_flight_time = await _subscription_api.getSubscriptionTimeLeft();
+            model.allowed_users = await _subscription_api.getRemainingUserCount();
+            model.subscription_name = _subscription_api.getSubscriptionName().Value;
 
             var subscription_users = await _subscription_api
                 .getSubscriptionUsers(_subscription_api.getSubscriptionName())

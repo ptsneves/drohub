@@ -26,12 +26,37 @@ namespace DroHub.Areas.Identity.Pages.Account {
         }
     }
 
+    [AttributeUsage(AttributeTargets.Property)]
+    public class MustBeValidBillingPlan : ValidationAttribute
+    {
+        private Dictionary<string, CreateSubscription.SubscriptionInfo> _subscription_info;
+        private bool isValidSubscriptionType(string subscription_type) {
+            return _subscription_info.ContainsKey(subscription_type);
+        }
+        protected override ValidationResult IsValid(object value, ValidationContext context) {
+            if (!(context.GetService(typeof(IConfiguration)) is IConfiguration configuration))
+                throw new InvalidProgramException("No valid IConfiguration injected.");
+
+            _subscription_info = configuration
+                .GetSection("SubscriptionInfo")
+                .Get<Dictionary<string, CreateSubscription.SubscriptionInfo>>();
+
+            return value is string subscription_type && isValidSubscriptionType(subscription_type)
+                ? ValidationResult.Success
+                : new ValidationResult(FormatErrorMessage(context.DisplayName), null);
+        }
+    }
+
     [AllowAnonymous]
     public class CreateSubscription : PageModel {
 
-        private class SubscriptionInfo {
+        internal class SubscriptionInfo {
             public int AllowedFlightTimeInMinutes { get; set; }
             public int AllowedUserCount{ get; set; }
+
+            public int AllowedVotes { get; set; }
+
+            public int Price { get; set; }
         }
 
         public class InputModel {
@@ -70,39 +95,43 @@ namespace DroHub.Areas.Identity.Pages.Account {
                 .Get<Dictionary<string, SubscriptionInfo>>();
         }
 
+        public int Price {
+            get {
+                if (_subscription_info.TryGetValue(Type, out var subscription_info))
+                    return subscription_info.Price;
+                throw new InvalidProgramException();
+            }
+        }
+
         [BindProperty]
         public InputModel Input { get; set; }
 
-        private bool isValidSubscriptionType(string subscription_type) {
-            return _subscription_info.ContainsKey(subscription_type);
-        }
+        [Required]
+        [MustBeValidBillingPlan(ErrorMessage = "Billing Plan is not valid. Go back to the main page.")]
+        [BindProperty(SupportsGet = true)]
+        public string Type { get; set; } = "FREE";
 
-        public string SubscriptionType { get; set; }
-
-        private TimeSpan getFlightMinutes(string subscription_type) {
-            if (_subscription_info.TryGetValue(subscription_type, out var subscription_info))
+        public TimeSpan getFlightMinutes() {
+            if (_subscription_info.TryGetValue(Type, out var subscription_info))
                 return new TimeSpan(0, subscription_info.AllowedFlightTimeInMinutes, 0);
             throw new InvalidProgramException();
         }
 
-        private int getAllowedUserCount(string subscription_type) {
-            if (_subscription_info.TryGetValue(subscription_type, out var subscription_info))
+        public int getAllowedUserCount() {
+            if (_subscription_info.TryGetValue(Type, out var subscription_info))
                 return subscription_info.AllowedUserCount;
             throw new InvalidProgramException();
         }
 
-        public IActionResult OnGet([Required]string Type) {
-            if (!ModelState.IsValid || !isValidSubscriptionType(Type))
+        public IActionResult OnGet() {
+            if (!ModelState.IsValid)
                 return BadRequest();
 
-            SubscriptionType = Type;
+            this.Type = Type;
             return Page();
         }
 
-        public async Task<IActionResult> OnPostAsync([Required]string Type) {
-            if (!isValidSubscriptionType(Type))
-                return BadRequest();
-
+        public async Task<IActionResult> OnPostAsync() {
             if (!ModelState.IsValid)
                 return Page();
 
@@ -125,8 +154,9 @@ namespace DroHub.Areas.Identity.Pages.Account {
 
             var subscription = new Subscription() {
                 OrganizationName = Input.OrganizationName,
-                AllowedFlightTime = getFlightMinutes(Type),
-                AllowedUserCount = getAllowedUserCount(Type)
+                AllowedFlightTime = getFlightMinutes(),
+                AllowedUserCount = getAllowedUserCount(),
+                BillingPlanName = Type
             };
             await _context.AddAsync(subscription);
             await _context.SaveChangesAsync();

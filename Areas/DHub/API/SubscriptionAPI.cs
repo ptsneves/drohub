@@ -62,7 +62,7 @@ namespace DroHub.Areas.DHub.API {
             return _user;
         }
 
-        public async Task<bool> isUserCountBelowMaximum() {
+        public async Task<int> getRemainingUserCount() {
             var query_result = await querySubscription(getSubscriptionName())
                 .Select(s => new {
                     UsersCount = s.Users.Count(),
@@ -70,11 +70,15 @@ namespace DroHub.Areas.DHub.API {
                 })
                 .SingleAsync();
 
-            return query_result.UsersCount < query_result.AllowedUsersCount;
+            return query_result.AllowedUsersCount - query_result.UsersCount;
         }
 
-        private async Task<int> getAllowedUserCount() {
-            var subscription = await getSubscription(getSubscriptionName());
+        public async Task<bool> isUserCountBelowMaximum() {
+            return await getRemainingUserCount() > 0;
+        }
+
+        public async Task<int> getAllowedUserCount() {
+            var subscription = await getSubscription();
             return subscription.AllowedUserCount;
         }
 
@@ -83,11 +87,11 @@ namespace DroHub.Areas.DHub.API {
         }
 
         public async Task<TimeSpan> getSubscriptionTimeLeft() {
-            var subscription = await getSubscription(getSubscriptionName());
+            var subscription = await getSubscription();
             return subscription.AllowedFlightTime;
         }
 
-        public async Task<TimeSpan> getSubscriptionTimeLeft(OrganizationName organization_name) {
+        private async Task<TimeSpan> getSubscriptionTimeLeft(OrganizationName organization_name) {
             var subscription = await getSubscription(organization_name);
             return subscription.AllowedFlightTime;
         }

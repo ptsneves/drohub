@@ -28,7 +28,22 @@
                     <img style="width: 100%" class="img-circle" src="~/AdminLTE/dist/img/user2-160x160.jpg">
                 </div>
                 <div class="col-lg-8 col-md-8 col-sm-10">
-                    <div style="font-size: 20px; padding: 10px;">@Model.user_name</div>
+                    <div class="sub-field">
+                        Flight Area Name
+                        <div class="sub-data">@Model.subscription_name</div>
+                    </div>
+                    <div class="sub-field">
+                        User Name
+                        <div class="sub-data">@Model.user_name</div>
+                    </div>
+                    <div class="sub-field">
+                        Allowed flight time (minutes)
+                        <div class="sub-data">@Model.allowed_flight_time.TotalMinutes</div>
+                    </div>
+                    <div class="sub-field">
+                        Aditional Users To Add To Flight Area
+                        <div class="sub-data">@Model.allowed_users</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -47,4 +62,16 @@
 @section Scripts {
 <script type="text/javascript" src="~/vue/js/Account.js"></script>
 <partial name="_ValidationScriptsPartial" />
+}
+
+@section head {
+<style>
+    .sub-field {
+        font-size: 16px;
+        padding-bottom: 10px;
+    }
+    .sub-data {
+        font-size: 20px;
+    }
+</style>
 }

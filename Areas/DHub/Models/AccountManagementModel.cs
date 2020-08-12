@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DroHub.Areas.DHub.API;
 
@@ -17,6 +18,9 @@ namespace DroHub.Areas.DHub.Models {
         public Dictionary<string, SubscriptionAPI.UserTypeAttributes> user_attributes;
         public string user_name;
         public string user_email;
+        public string subscription_name;
+        public int allowed_users;
+        public TimeSpan allowed_flight_time;
         public List<UserPermissionsModel> user_permissions;
     }
 }

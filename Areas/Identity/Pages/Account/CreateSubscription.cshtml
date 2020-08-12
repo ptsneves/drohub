@@ -6,8 +6,24 @@
         <img alt="DROHUB" src="/images/logo/drohub-small.png"/>
     </div> <!-- /.login-logo -->
     <div class="login-box-body-drohub">
-        <div>
-            @* @Model.SubscriptionType *@
+        <div class="subscription-info-header">
+            <div class="plan-title">
+                @Model.Type (BETA)
+            </div>
+
+            <div class="plan-data @(Model.Price != 0 ? "strike" : "")">
+                @Model.Price€
+                <span>Per Month</span>
+            </div>
+
+            <div class="plan-data">
+                @Model.getFlightMinutes().TotalMinutes
+                <span>Monthly Flight Minutes</span>
+            </div>
+            <div class="plan-data">
+                @Model.getAllowedUserCount()
+                <span>Allowed Users</span>
+            </div>
         </div>
         <form method="post">
             <div asp-validation-summary="All" class="text-danger"></div>
@@ -35,3 +51,48 @@
     </div>
 
 </div>
+
+@section css {
+<style>
+    .subscription-info-header {
+        display: grid;
+        border-bottom: 1px solid #E0E0E0;
+        padding-bottom: 2%;
+        overflow-wrap: anywhere;
+    }
+
+    .subscription-info-header > div {
+        margin-left: 12%;
+        margin-right: 12%;
+    }
+
+    .plan-title {
+        color: #1099FF;
+        font-size: 32px;
+        font-weight: bold;
+        letter-spacing: 0;
+        line-height: 43px;
+        text-transform: capitalize;
+    }
+
+    .plan-data {
+        font-size: 28px;
+    }
+
+    .plan-data.strike {
+        text-decoration: line-through;
+    }
+
+    .plan-data > span {
+        font-size: 18px;
+    }
+
+    form {
+        padding-top: 5%;
+    }
+
+    form > .validation-summary-errors {
+        padding: 4% 6% 2% 6%;
+    }
+</style>
+}

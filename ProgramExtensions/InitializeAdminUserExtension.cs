@@ -58,6 +58,7 @@ namespace DroHub.IdentityClaims
             }
 
             subscription.OrganizationName = _ADMIN_ORGANIZATION;
+            subscription.BillingPlanName = "Administrator";
 
             subscription.AllowedFlightTime = TimeSpan.FromMinutes(50338); // MySQL allows maximum 838:59:59.000000 so in minutes 838*60+58 = 50338 minutes,
             subscription.AllowedUserCount = Int32.MaxValue;
