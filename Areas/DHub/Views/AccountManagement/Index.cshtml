@@ -4,11 +4,20 @@
         return Xsrf.GetAndStoreTokens(Context).RequestToken;
     }
 }
+@using DroHub.Areas.Identity.Data
+@using System.Security.Claims
 @model DroHub.Areas.DHub.Models.AccountManagementModel
 @{
     var json_user_type_attributes_json = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.user_attributes));
     var json_user_permission_json = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.user_permissions));
     ViewData["Title"] = "Index";
+    var delete_user_url = Url.Page(
+        "/Account/Manage/DeletePersonalData",
+        "null",
+        new {
+            area = "Identity"
+        }
+    );
 }
 <div id="app">
     <account-change-permissions-modal
@@ -24,8 +33,10 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-lg-4 col-md-6 col-sm-12">
-                <div class="col-lg-4 col-md-4 col-sm-2">
+                <div class="col-lg-4 col-md-4 col-sm-2 content-centered">
                     <img style="width: 100%" class="img-circle" src="~/AdminLTE/dist/img/user2-160x160.jpg">
+                    <a href="@delete_user_url" asp-require-claim="@(new Claim(DroHubUser.OWNER_POLICY_CLAIM, DroHubUser.CLAIM_VALID_VALUE))"
+                    class="text-danger">Delete User</a>
                 </div>
                 <div class="col-lg-8 col-md-8 col-sm-10">
                     <div class="sub-field">
