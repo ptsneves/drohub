@@ -47,11 +47,11 @@
                         User Name
                         <div class="sub-data">@Model.user_name</div>
                     </div>
-                    <div class="sub-field">
+                    <div class="sub-field" asp-require-claim="@(new Claim(DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.CLAIM_VALID_VALUE))">
                         Allowed flight time (minutes)
                         <div class="sub-data">@Model.allowed_flight_time.TotalMinutes</div>
                     </div>
-                    <div class="sub-field">
+                    <div class="sub-field" asp-require-claim="@(new Claim(DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.CLAIM_VALID_VALUE))">
                         Aditional Users To Add To Flight Area
                         <div class="sub-data">@Model.allowed_users</div>
                     </div>
