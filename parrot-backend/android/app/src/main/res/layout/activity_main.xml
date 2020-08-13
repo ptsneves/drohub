@@ -24,7 +24,7 @@
         <TextView
                 android:id="@+id/login_status"
                 android:layout_width="351dp"
-                android:layout_height="0dp"
+                android:layout_height="wrap_content"
                 android:gravity="center"
                 android:visibility="invisible"
                 android:text="Should not be visible"
