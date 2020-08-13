@@ -93,6 +93,7 @@ public class MainActivity extends GroundSdkActivityBase {
             if (!response.isNull("result")) {
                 Intent intent = new Intent(this, CopterHudActivity.class);
                 addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid(), _connected_rc.getUid());
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 this.startActivity(intent);
                 finish();
             }
@@ -101,6 +102,7 @@ public class MainActivity extends GroundSdkActivityBase {
                     if (response.getString("error").equalsIgnoreCase("Device does not exist.")) {
                         Intent intent = new Intent(this, CreateDeviceActivity.class);
                         addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid(), _connected_rc.getUid());
+                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                         this.startActivity(intent);
                         finish();
                     }

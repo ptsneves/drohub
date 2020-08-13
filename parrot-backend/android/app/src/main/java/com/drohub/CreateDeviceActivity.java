@@ -75,6 +75,7 @@ public class CreateDeviceActivity extends DroHubActivityBase {
             try {
                 if (response.getString("result").equals("ok")) {
                     Intent intent = new Intent(this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     this.startActivity(intent);
                     finish();
                 }
