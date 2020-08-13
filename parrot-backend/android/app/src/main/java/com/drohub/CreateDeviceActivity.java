@@ -69,7 +69,7 @@ public class CreateDeviceActivity extends DroHubActivityBase {
         } catch (JSONException e) {
             setStatusText(status_view, "Could not create a json query", Color.RED);
         }
-
+        setStatusText(status_view, "Registering new device...Please wait", Color.BLACK);
         JsonObjectRequest device_creation_request = new DroHubObjectRequest(_user_email, _user_token, Request.Method.POST,
                 url, request, response -> {
             try {
