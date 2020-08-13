@@ -114,7 +114,9 @@ public class MainActivity extends GroundSdkActivityBase {
                 }
             }
         }, error -> {
-            if (error.networkResponse.statusCode == 401)
+            if(error.networkResponse == null)
+                setStatusText(status_view,"No response. Are you connected to the internet?", Color.RED);
+            else if (error.networkResponse.statusCode == 401)
                 setStatusText(status_view,"You are not authorized use the device connected.", Color.RED);
             else
                 setStatusText(status_view,"Error Could not Query device info..", Color.RED);
