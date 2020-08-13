@@ -71,7 +71,9 @@ public class MainActivity extends GroundSdkActivityBase {
             return;
 
         String url = getString(R.string.drohub_url) + "/api/AndroidApplication/QueryDeviceInfo";
-        String device_serial =  _connected_drone == null ? "NODEVICE" : _connected_drone.getUid();
+        if (_connected_drone == null)
+            return;
+        String device_serial =  _connected_drone.getUid();
         JSONObject request = new JSONObject();
 
         try {
