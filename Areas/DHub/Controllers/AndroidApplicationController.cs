@@ -61,9 +61,10 @@ namespace DroHub.Areas.DHub.Controllers
                 });
             }
 
-            if (!(await _authorization_service.AuthorizeAsync(User, result, ResourceOperations.Read)).Succeeded) {
+            if (!(await _authorization_service.AuthorizeAsync(User, result, DeviceAuthorizationHandler.DeviceResourceOperations.CanPerformFlightActions)).Succeeded) {
                 return new UnauthorizedResult();
             }
+
             return new JsonResult(new Dictionary<string, Device> {
                 ["result"] = result
             });
