@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
+using DroHub.Areas.Identity.Data;
 using DroHub.Data;
 using DroHub.Helpers.Thrift;
 using Microsoft.EntityFrameworkCore;
@@ -115,6 +116,16 @@ namespace DroHub.Areas.DHub.API {
 
         public async Task<IEnumerable<DeviceConnection>> getSubscribedDeviceConnections() {
             var org_name = _subscription_api.getSubscriptionName();
+            var is_admin = _subscription_api.getCurrentUserClaims().SingleOrDefault(c =>
+                c.Type == DroHubUser.ADMIN_POLICY_CLAIM && c.Value == DroHubUser.CLAIM_VALID_VALUE);
+
+            if (is_admin != null)
+                return await _db_context.DeviceConnections
+                    .Include(cd => cd.Device)
+                    .Include(cd => cd.MediaObjects)
+                    .ThenInclude(media => media.MediaObjectTags)
+                    .ToArrayAsync();
+
             return await _db_context.DeviceConnections
                 .Where(cd => cd.SubscriptionOrganizationName == org_name.Value)
                 .Include(cd => cd.Device)
