@@ -117,7 +117,7 @@ public class MainActivity extends GroundSdkActivityBase {
             if(error.networkResponse == null)
                 setStatusText(status_view,"No response. Are you connected to the internet?", Color.RED);
             else if (error.networkResponse.statusCode == 401)
-                setStatusText(status_view,"You are not authorized use the device connected.", Color.RED);
+                setStatusText(status_view,"Unauthorized. Is your subscription or drone valid?", Color.RED);
             else
                 setStatusText(status_view,"Error Could not Query device info..", Color.RED);
             findViewById(R.id.login_group).setVisibility(View.VISIBLE);
