@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace DroHub.Areas.DHub.Models
 {
@@ -25,8 +26,11 @@ namespace DroHub.Areas.DHub.Models
         public DateTime CreationDate { get; set; }
 
         public string SubscriptionOrganizationName { get; set; }
+
+        [JsonIgnore]
         public Subscription Subscription { get; set; }
 
+        [JsonIgnore]
         public ICollection<DeviceConnection> DeviceConnections { get; set; }
     }
 }
