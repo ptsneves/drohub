@@ -11,6 +11,7 @@ using System.Security.Authentication;
 using System.Threading;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
+using DroHub.Data;
 using DroHub.Helpers;
 using mailslurp.Model;
 
@@ -637,6 +638,14 @@ namespace DroHub.Tests
             });
         }
 
+        [Fact]
+        public async void TestGetApplicationToken() {
+            await Assert.ThrowsAsync<InvalidCredentialException>(async () => {
+                await HttpClientHelper.getApplicationToken(_fixture,
+                    DEFAULT_USER,
+                    DEFAULT_PASSWORD);
+            });
+        }
 
         [Fact]
         public async void TestQueryDeviceInfoWhenDeviceIsInOtherSubscriptionFails() {

@@ -411,7 +411,10 @@ namespace DroHub.Tests.TestInfrastructure
             http_helper.Response.EnsureSuccessStatusCode();
             var res = await http_helper.Response.Content.ReadAsStringAsync();
             if (http_helper.Response.RequestMessage.RequestUri == auth_token_uri) {
-                return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,string>>(res);
+                var deserialize_object = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,string>>(res);
+                if (deserialize_object["result"] == "nok")
+                    throw new InvalidCredentialException("Invalid credential");
+                return deserialize_object;
             }
 
             throw new InvalidProgramException($"Unexpected Redirect... ");
