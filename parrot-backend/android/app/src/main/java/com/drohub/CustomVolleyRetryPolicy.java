@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class CustomVolleyRetryPolicy implements RetryPolicy {
     public interface IRetryListener {
-        void onRetry(VolleyError retry_error);
+        void onRetry(VolleyError retry_error, int retry_count) throws VolleyError;
     }
 
     @Nullable
@@ -36,6 +36,6 @@ public class CustomVolleyRetryPolicy implements RetryPolicy {
     public void retry(VolleyError retry_error) throws VolleyError {
         _retry_count++;
         if (_retry_callback != null)
-            _retry_callback.onRetry(retry_error);
+            _retry_callback.onRetry(retry_error,_retry_count);
     }
 }

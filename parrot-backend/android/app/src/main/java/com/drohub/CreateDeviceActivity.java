@@ -106,7 +106,9 @@ public class CreateDeviceActivity extends DroHubActivityBase {
         enableInput();
     }
 
-    public void processCreateDeviceRetryError(VolleyError retry_error) {
+    public void processCreateDeviceRetryError(VolleyError retry_error, int retry_count) throws VolleyError {
+        if (retry_count == 3)
+            throw retry_error;
         setStatusText(status_view,"Too slow response. Retrying again", Color.RED);
         enableInput();
     }
@@ -130,7 +132,9 @@ public class CreateDeviceActivity extends DroHubActivityBase {
                 url, request,
                 response -> processCreateDeviceResponse(response),
                 error -> processCreateDeviceError(error),
-                retry_error -> processCreateDeviceRetryError(retry_error));
+                (retry_error, retry_count) -> {
+                    processCreateDeviceRetryError(retry_error, retry_count);
+                });
         device_creation_request.setShouldCache(false);
         _request_queue.add(device_creation_request);
     }

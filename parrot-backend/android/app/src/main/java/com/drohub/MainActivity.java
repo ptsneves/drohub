@@ -104,8 +104,11 @@ public class MainActivity extends GroundSdkActivityBase {
         showLoginGroup();
     }
 
-    private void processQueryDeviceInfoRetry(VolleyError error) {
-        setStatusText(status_view,"Too slow response. Retrying again", Color.RED);
+    private void processQueryDeviceInfoRetry(VolleyError error, int retry_count) throws VolleyError {
+        if (retry_count == 3)
+            throw error;
+        setStatusText(status_view,"Too slow response. Retrying again " + error.getMessage(), Color.RED);
+        showLoginGroup();
     }
 
     private void validateDeviceRegisteredAndLaunchIfPossible() {
@@ -137,7 +140,7 @@ public class MainActivity extends GroundSdkActivityBase {
         DroHubObjectRequest token_validation_request = new DroHubObjectRequest(_user_email, _user_auth_token,
                 Request.Method.POST, url, request, response -> processQueryDeviceInfoResponse(response),
                 error -> processQueryDeviceInfoError(error),
-                retry_error -> processQueryDeviceInfoRetry(retry_error));
+                (retry_error, retry_count) -> processQueryDeviceInfoRetry(retry_error, retry_count));
 
         token_validation_request.setShouldCache(false);
         _request_queue.add(token_validation_request);
