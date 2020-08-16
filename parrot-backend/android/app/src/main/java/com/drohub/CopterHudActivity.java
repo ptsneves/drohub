@@ -241,7 +241,7 @@ public class CopterHudActivity extends GroundSdkActivityBase{
             final TextView height_text = findViewById(R.id.height_text);
 
             if (gps.lastKnownLocation() != null)
-                height_text.setText(String.format("%.1f", gps.lastKnownLocation().getAltitude()));
+                height_text.setText(String.format("%.1fm", gps.lastKnownLocation().getAltitude()));
         });
 
 
