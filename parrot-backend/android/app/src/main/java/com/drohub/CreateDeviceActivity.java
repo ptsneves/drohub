@@ -2,7 +2,10 @@ package com.drohub;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.TextView;
 
 import android.os.Bundle;
@@ -19,6 +22,10 @@ import org.json.JSONObject;
 public class CreateDeviceActivity extends DroHubActivityBase {
     private static String TAG = "CreateDeviceActivity";
     private EditText _device_name_input;
+
+    private Button _create_button;
+    private int original_create_button_color;
+
     private String _device_serial;
     private String _user_email;
     private String _user_token;
@@ -31,7 +38,11 @@ public class CreateDeviceActivity extends DroHubActivityBase {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_device);
+
         status_view = findViewById(R.id.status_text);
+        _create_button = findViewById(R.id.create_button);
+        original_create_button_color = ((ColorDrawable)_create_button.getBackground()).getColor();
+
         _device_serial = getIntent().getStringExtra(DRONE_UID);
         _user_email = getIntent().getStringExtra(EXTRA_USER_EMAIL);
         _user_token = getIntent().getStringExtra(EXTRA_USER_AUTH_TOKEN);
@@ -54,6 +65,18 @@ public class CreateDeviceActivity extends DroHubActivityBase {
         _request_queue.start();
     }
 
+    public void enableInput() {
+        _device_name_input.setEnabled(true);
+        _create_button.setEnabled(true);
+        _create_button.setBackgroundColor(original_create_button_color);
+    }
+
+    public void disableInput() {
+        _device_name_input.setEnabled(false);
+        _create_button.setEnabled(false);
+        _create_button.setBackgroundColor(R.color.common_google_signin_btn_text_light_disabled);
+    }
+
     public void processCreateDeviceResponse(JSONObject response) {
         try {
             if (response.getString("result").equals("ok")) {
@@ -64,20 +87,24 @@ public class CreateDeviceActivity extends DroHubActivityBase {
             }
             else {
                 setStatusText(status_view, "Failed to create device try again", Color.RED);
+                enableInput();
                 //TODO: Allow for retry
 //                    findViewById(R.id.login_group).setVisibility(View.VISIBLE);
             }
         } catch (JSONException e) {
             setStatusText(status_view, "Unexpected answer" + response.toString(), Color.RED);
+            enableInput();
         }
     }
 
     public void processCreateDeviceError(VolleyError error) {
-        setStatusText(status_view, "Error Could not authenticate token", Color.RED);
+        setStatusText(status_view, "Error Could not authenticate this mobile device", Color.RED);
+        enableInput();
     }
 
     public void processCreateDeviceRetryError(VolleyError retry_error) {
         setStatusText(status_view,"Too slow response. Retrying again", Color.RED);
+        enableInput();
     }
 
     public void tryCreateDevice(View view) {
@@ -91,7 +118,9 @@ public class CreateDeviceActivity extends DroHubActivityBase {
             request.put("Device", device);
         } catch (JSONException e) {
             setStatusText(status_view, "Could not create a json query", Color.RED);
+            enableInput();
         }
+        disableInput();
         setStatusText(status_view, "Registering new device...Please wait", Color.BLACK);
         JsonObjectRequest device_creation_request = new DroHubObjectRequest(_user_email, _user_token, Request.Method.POST,
                 url, request,

@@ -6,9 +6,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
-import androidx.annotation.Nullable;
 import com.android.volley.*;
 import com.android.volley.toolbox.BasicNetwork;
 import com.android.volley.toolbox.DiskBasedCache;
@@ -66,7 +64,7 @@ public class MainActivity extends GroundSdkActivityBase {
 
     private void processQueryDeviceInfoResponse(JSONObject response) {
         if (_connected_drone == null) {
-            showWaitingScreen();
+            hideLoginGroup();
             return;
         }
         if (!response.isNull("result")) {
@@ -86,9 +84,11 @@ public class MainActivity extends GroundSdkActivityBase {
                     finish();
                 } else {
                     setStatusText(status_view, response.getString("error"), Color.RED);
+                    showLoginGroup();
                 }
             } catch (JSONException e) {
                 setStatusText(status_view, "Error Could not Query device info..", Color.RED);
+                showLoginGroup();
             }
         }
     }
@@ -100,7 +100,8 @@ public class MainActivity extends GroundSdkActivityBase {
             setStatusText(status_view,"Unauthorized. Is your subscription or drone valid?", Color.RED);
         else
             setStatusText(status_view,"Error Could not Query device info..", Color.RED);
-        findViewById(R.id.login_group).setVisibility(View.VISIBLE);
+
+        showLoginGroup();
     }
 
     private void processQueryDeviceInfoRetry(VolleyError error) {
@@ -111,9 +112,15 @@ public class MainActivity extends GroundSdkActivityBase {
         if ( _user_email == null || _user_auth_token == null)
             return;
 
+        hideLoginGroup();
         String url = getString(R.string.drohub_url) + "/api/AndroidApplication/QueryDeviceInfo";
-        if (_connected_drone == null)
+        if (_connected_drone == null) {
+            setStatusText(status_view,
+                    "Using stored credentials. Waiting for drone to be connected",
+                    0xFF168849);
             return;
+        }
+
         String device_serial =  _connected_drone.getUid();
         JSONObject request = new JSONObject();
 
@@ -122,6 +129,7 @@ public class MainActivity extends GroundSdkActivityBase {
         }
          catch (JSONException e) {
             setStatusText(status_view,"Could not create a json query", Color.RED);
+            showLoginGroup();
         }
 
         setStatusText(status_view,"Retrieving device info", Color.BLACK);
@@ -148,12 +156,12 @@ public class MainActivity extends GroundSdkActivityBase {
         _connected_rc = null;
     }
 
+    public void showLoginGroup() {
+        findViewById(R.id.login_group).setVisibility(View.VISIBLE);
+    }
 
-    public void showWaitingScreen() {
+    public void hideLoginGroup() {
         hideKeyboard(this);
-        setStatusText(status_view,
-                "Successfully authenticated user. Waiting for drone to be connected",
-                0xFF168849);
         findViewById(R.id.login_group).setVisibility(View.GONE);
     }
 
@@ -173,9 +181,11 @@ public class MainActivity extends GroundSdkActivityBase {
             request.put("Password", password);
         }
         catch (JSONException e) {
-            setStatusText(status_view,"The server returned an unexpected answer", Color.RED);
+            setStatusText(status_view,"This is a bug. Please report", Color.RED);
         }
 
+
+        hideLoginGroup();
         setStatusText(status_view,"Retrieving token...", Color.BLACK);
         JsonObjectRequest login_request = new JsonObjectRequest(Request.Method.POST,
                 url, request, response ->
@@ -185,10 +195,12 @@ public class MainActivity extends GroundSdkActivityBase {
                 result = response.getString("result");
             } catch (JSONException e) {
                 setStatusText(status_view,"Unexpected server response" + response, Color.RED);
+                showLoginGroup();
             }
 
             if (result.equals("nok")) {
                 setStatusText(status_view,"Credentials provided are incorrect", Color.RED);
+                showLoginGroup();
             }
 
             else {
@@ -197,12 +209,17 @@ public class MainActivity extends GroundSdkActivityBase {
                 ed.putString(USER_EMAIL_STORE_KEY, _user_email);
                 ed.putString(USER_AUTH_TOKEN_STORE_KEY, _user_auth_token);
                 ed.commit();
-                showWaitingScreen();
+                setStatusText(status_view,
+                        "Successfully authenticated user. Waiting for drone to be connected",
+                        0xFF168849);
                 validateDeviceRegisteredAndLaunchIfPossible();
             }
         },
-        error -> setStatusText(status_view,
-                "An error occurred contacting Drohub servers" + request.toString(), Color.RED));
+        error -> {
+            setStatusText(status_view,
+                    "An error occurred contacting Drohub servers " + error.toString(), Color.RED);
+            showLoginGroup();
+        });
 
         login_request.setShouldCache(false);
         _request_queue.add(login_request);
