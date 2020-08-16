@@ -8,10 +8,8 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import com.android.volley.Cache;
-import com.android.volley.Network;
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
+import androidx.annotation.Nullable;
+import com.android.volley.*;
 import com.android.volley.toolbox.BasicNetwork;
 import com.android.volley.toolbox.DiskBasedCache;
 import com.android.volley.toolbox.HurlStack;
@@ -66,6 +64,49 @@ public class MainActivity extends GroundSdkActivityBase {
             _request_queue.start();
     }
 
+    private void processQueryDeviceInfoResponse(JSONObject response) {
+        if (_connected_drone == null) {
+            showWaitingScreen();
+            return;
+        }
+        if (!response.isNull("result")) {
+            Intent intent = new Intent(this, CopterHudActivity.class);
+            addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid(), _connected_rc.getUid());
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            this.startActivity(intent);
+            finish();
+        }
+        else if (response.has("error")) {
+            try {
+                if (response.getString("error").equalsIgnoreCase("Device does not exist.")) {
+                    Intent intent = new Intent(this, CreateDeviceActivity.class);
+                    addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid(), _connected_rc.getUid());
+                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    this.startActivity(intent);
+                    finish();
+                } else {
+                    setStatusText(status_view, response.getString("error"), Color.RED);
+                }
+            } catch (JSONException e) {
+                setStatusText(status_view, "Error Could not Query device info..", Color.RED);
+            }
+        }
+    }
+
+    private void processQueryDeviceInfoError(VolleyError error) {
+        if(error.networkResponse == null)
+            setStatusText(status_view,"No response. Are you connected to the internet?", Color.RED);
+        else if (error.networkResponse.statusCode == 401)
+            setStatusText(status_view,"Unauthorized. Is your subscription or drone valid?", Color.RED);
+        else
+            setStatusText(status_view,"Error Could not Query device info..", Color.RED);
+        findViewById(R.id.login_group).setVisibility(View.VISIBLE);
+    }
+
+    private void processQueryDeviceInfoRetry(VolleyError error) {
+        setStatusText(status_view,"Too slow response. Retrying again", Color.RED);
+    }
+
     private void validateDeviceRegisteredAndLaunchIfPossible() {
         if ( _user_email == null || _user_auth_token == null)
             return;
@@ -84,44 +125,12 @@ public class MainActivity extends GroundSdkActivityBase {
         }
 
         setStatusText(status_view,"Retrieving device info", Color.BLACK);
+
         DroHubObjectRequest token_validation_request = new DroHubObjectRequest(_user_email, _user_auth_token,
-                Request.Method.POST, url, request, response -> {
-            if (_connected_drone == null) {
-                showWaitingScreen();
-                return;
-            }
-            if (!response.isNull("result")) {
-                Intent intent = new Intent(this, CopterHudActivity.class);
-                addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid(), _connected_rc.getUid());
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                this.startActivity(intent);
-                finish();
-            }
-            else if (response.has("error")) {
-                try {
-                    if (response.getString("error").equalsIgnoreCase("Device does not exist.")) {
-                        Intent intent = new Intent(this, CreateDeviceActivity.class);
-                        addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid(), _connected_rc.getUid());
-                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        this.startActivity(intent);
-                        finish();
-                    }
-                    else {
-                        setStatusText(status_view,response.getString("error"), Color.RED);
-                    }
-                } catch (JSONException e) {
-                    setStatusText(status_view,"Error Could not Query device info..", Color.RED);
-                }
-            }
-        }, error -> {
-            if(error.networkResponse == null)
-                setStatusText(status_view,"No response. Are you connected to the internet?", Color.RED);
-            else if (error.networkResponse.statusCode == 401)
-                setStatusText(status_view,"Unauthorized. Is your subscription or drone valid?", Color.RED);
-            else
-                setStatusText(status_view,"Error Could not Query device info..", Color.RED);
-            findViewById(R.id.login_group).setVisibility(View.VISIBLE);
-        });
+                Request.Method.POST, url, request, response -> processQueryDeviceInfoResponse(response),
+                error -> processQueryDeviceInfoError(error),
+                retry_error -> processQueryDeviceInfoRetry(retry_error));
+
         token_validation_request.setShouldCache(false);
         _request_queue.add(token_validation_request);
     }

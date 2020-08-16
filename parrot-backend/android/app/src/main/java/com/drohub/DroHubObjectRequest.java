@@ -12,10 +12,12 @@ public class DroHubObjectRequest extends JsonObjectRequest {
     private String _user_email;
     private String _user_auth_token;
     public DroHubObjectRequest(String user_email, String user_auth_token, int method, String url, @Nullable JSONObject jsonRequest,
-                               Response.Listener<JSONObject> listener, @Nullable Response.ErrorListener errorListener) {
-        super(method, url, jsonRequest, listener, errorListener);
+                               Response.Listener<JSONObject> listener, @Nullable Response.ErrorListener error_listener,
+                               CustomVolleyRetryPolicy.IRetryListener retry_listener) {
+        super(method, url, jsonRequest, listener, error_listener);
         _user_email = user_email;
         _user_auth_token = user_auth_token;
+        super.setRetryPolicy(new CustomVolleyRetryPolicy(5000, retry_listener));
     }
 
     @Override

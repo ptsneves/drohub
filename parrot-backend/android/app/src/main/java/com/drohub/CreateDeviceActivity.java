@@ -8,10 +8,7 @@ import android.widget.TextView;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
-import com.android.volley.Cache;
-import com.android.volley.Network;
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
+import com.android.volley.*;
 import com.android.volley.toolbox.BasicNetwork;
 import com.android.volley.toolbox.DiskBasedCache;
 import com.android.volley.toolbox.HurlStack;
@@ -57,6 +54,32 @@ public class CreateDeviceActivity extends DroHubActivityBase {
         _request_queue.start();
     }
 
+    public void processCreateDeviceResponse(JSONObject response) {
+        try {
+            if (response.getString("result").equals("ok")) {
+                Intent intent = new Intent(this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                this.startActivity(intent);
+                finish();
+            }
+            else {
+                setStatusText(status_view, "Failed to create device try again", Color.RED);
+                //TODO: Allow for retry
+//                    findViewById(R.id.login_group).setVisibility(View.VISIBLE);
+            }
+        } catch (JSONException e) {
+            setStatusText(status_view, "Unexpected answer" + response.toString(), Color.RED);
+        }
+    }
+
+    public void processCreateDeviceError(VolleyError error) {
+        setStatusText(status_view, "Error Could not authenticate token", Color.RED);
+    }
+
+    public void processCreateDeviceRetryError(VolleyError retry_error) {
+        setStatusText(status_view,"Too slow response. Retrying again", Color.RED);
+    }
+
     public void tryCreateDevice(View view) {
         String device_name = _device_name_input.getText().toString();
         String url = getString(R.string.drohub_url) + "/api/AndroidApplication/CreateDevice";
@@ -71,23 +94,10 @@ public class CreateDeviceActivity extends DroHubActivityBase {
         }
         setStatusText(status_view, "Registering new device...Please wait", Color.BLACK);
         JsonObjectRequest device_creation_request = new DroHubObjectRequest(_user_email, _user_token, Request.Method.POST,
-                url, request, response -> {
-            try {
-                if (response.getString("result").equals("ok")) {
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    this.startActivity(intent);
-                    finish();
-                }
-                else {
-                    setStatusText(status_view, "Failed to create device try again", Color.RED);
-                    //TODO: Allow for retry
-//                    findViewById(R.id.login_group).setVisibility(View.VISIBLE);
-                }
-            } catch (JSONException e) {
-                setStatusText(status_view, "Unexpected answer" + response.toString(), Color.RED);
-            }
-        }, error -> setStatusText(status_view, "Error Could not authenticate token", Color.RED));
+                url, request,
+                response -> processCreateDeviceResponse(response),
+                error -> processCreateDeviceError(error),
+                retry_error -> processCreateDeviceRetryError(retry_error));
         device_creation_request.setShouldCache(false);
         _request_queue.add(device_creation_request);
     }
