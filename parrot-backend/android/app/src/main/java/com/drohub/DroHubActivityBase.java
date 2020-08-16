@@ -30,9 +30,11 @@ public class DroHubActivityBase  extends AppCompatActivity {
     }
 
     protected void setStatusText(TextView status_view, String text, int color) {
-        status_view.setText(text);
-        status_view.setTextColor(color);
-        status_view.setVisibility(View.VISIBLE);
+        runOnUiThread(() -> {
+            status_view.setText(text);
+            status_view.setTextColor(color);
+            status_view.setVisibility(View.VISIBLE);
+        });
     }
 
     public static void hideKeyboard(Activity activity) {
