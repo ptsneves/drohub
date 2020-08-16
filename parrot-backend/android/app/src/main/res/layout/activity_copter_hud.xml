@@ -85,14 +85,14 @@
                     app:layout_constraintTop_toTopOf="parent"
                     android:background="@color/overlay_background">
 
-                <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+<!--                <ImageView-->
+<!--                        android:layout_width="wrap_content"-->
+<!--                        android:layout_height="wrap_content"-->
 
-                        app:srcCompat="@drawable/ic_video_info_signal_bad"
-                        android:id="@+id/image_video_info_signal_bad"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"/>
+<!--                        app:srcCompat="@drawable/ic_video_info_signal_bad"-->
+<!--                        android:id="@+id/image_video_info_signal_bad"-->
+<!--                        app:layout_constraintStart_toStartOf="parent"-->
+<!--                        app:layout_constraintTop_toTopOf="parent"/>-->
 
                 <ImageView
                         android:id="@+id/drone_battery_icon"
@@ -100,8 +100,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="16dp"
                         app:srcCompat="@drawable/ic_info_battery_empty"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintStart_toEndOf="@+id/image_video_info_signal_bad"/>
+                        app:layout_constraintLeft_toLeftOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"/>
 
                 <TextView
                         android:id="@+id/drone_battery_level_text"
