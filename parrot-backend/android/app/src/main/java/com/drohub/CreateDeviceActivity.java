@@ -66,15 +66,19 @@ public class CreateDeviceActivity extends DroHubActivityBase {
     }
 
     public void enableInput() {
-        _device_name_input.setEnabled(true);
-        _create_button.setEnabled(true);
-        _create_button.setBackgroundColor(original_create_button_color);
+        runOnUiThread(() -> {
+            _device_name_input.setEnabled(true);
+            _create_button.setEnabled(true);
+            _create_button.setBackgroundColor(original_create_button_color);
+        });
     }
 
     public void disableInput() {
-        _device_name_input.setEnabled(false);
-        _create_button.setEnabled(false);
-        _create_button.setBackgroundColor(R.color.common_google_signin_btn_text_light_disabled);
+        runOnUiThread(() -> {
+            _device_name_input.setEnabled(false);
+            _create_button.setEnabled(false);
+            _create_button.setBackgroundColor(R.color.common_google_signin_btn_text_light_disabled);
+        });
     }
 
     public void processCreateDeviceResponse(JSONObject response) {

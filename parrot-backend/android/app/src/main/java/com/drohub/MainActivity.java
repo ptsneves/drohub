@@ -157,12 +157,14 @@ public class MainActivity extends GroundSdkActivityBase {
     }
 
     public void showLoginGroup() {
-        findViewById(R.id.login_group).setVisibility(View.VISIBLE);
+        runOnUiThread(() -> findViewById(R.id.login_group).setVisibility(View.VISIBLE));
     }
 
     public void hideLoginGroup() {
-        hideKeyboard(this);
-        findViewById(R.id.login_group).setVisibility(View.GONE);
+        runOnUiThread(() -> {
+            hideKeyboard(this);
+            findViewById(R.id.login_group).setVisibility(View.GONE);
+        });
     }
 
     public void tryPilotLogin(View view) {
