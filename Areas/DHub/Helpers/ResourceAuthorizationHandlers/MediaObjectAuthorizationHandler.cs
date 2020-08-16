@@ -3,8 +3,10 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Models;
+using DroHub.Areas.Identity.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers {
@@ -37,7 +39,14 @@ namespace DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers {
                 new SubscriptionAPI.OrganizationName(res.SubscriptionOrganizationName));
         }
 
+
+        private bool amIAdmin(AuthorizationHandlerContext ctx) {
+            return ctx.User.HasClaim(c => c.Type == DroHubUser.ADMIN_POLICY_CLAIM && c.Value == DroHubUser.CLAIM_VALID_VALUE);
+        }
+
         private bool isClaimAuthorized(AuthorizationHandlerContext ctx, MediaObject res, Claim claim) {
+            if (amIAdmin(ctx))
+                return true;
             return isSameSubscription(res) && ctx.User.HasClaim(c => c.Type == claim.Type && c.Value == claim.Value);
         }
 
