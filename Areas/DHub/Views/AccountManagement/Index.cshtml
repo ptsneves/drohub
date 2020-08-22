@@ -71,9 +71,11 @@
         </div>
 
         <account-send-invitation
+            asp-require-claim="@(new Claim(DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.CLAIM_VALID_VALUE))"
             anti-forgery-token="@GetAntiXsrfRequestToken()"
             post-location="@Url.Action("SendInvitation")"></account-send-invitation>
         <account-user-permissions
+            asp-require-claim="@(new Claim(DroHubUser.PILOT_POLICY_CLAIM, DroHubUser.CLAIM_VALID_VALUE))"
             agent-user-email="@Model.user_email"
             anti-forgery-token="@GetAntiXsrfRequestToken()"
             v-bind:user-permissions='@json_user_permission_json'>
