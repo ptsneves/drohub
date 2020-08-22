@@ -8,6 +8,7 @@
                     v-on:click="$store.commit('ADD_TRACKED_TAG', text)"
                 >{{ this.text }}</span>
                 <i
+                    v-if="allowDelete"
                     style="cursor: pointer; padding-left: 10px"
                     v-on:click="deleteTag"
                     class="fa fa-times"
@@ -28,6 +29,10 @@
             },
             mediaId: {
                 type: String,
+            },
+            allowDelete: {
+                type: Boolean,
+                required: true,
             }
         },
         data() {

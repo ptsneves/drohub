@@ -38,6 +38,7 @@
         <template v-slot:optional-settings-controls>
             <p-button
                 class="main-controls-right"
+                v-if="allowSettings"
                 v-on:click="activateVideoDropUp"
             >
                 <inline-svg
@@ -70,6 +71,10 @@ export default {
     props: {
         videoSrc: {
             type: String,
+            required: true,
+        },
+        allowSettings: {
+            type: Boolean,
             required: true,
         },
     },

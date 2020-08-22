@@ -1,5 +1,6 @@
 @using Microsoft.AspNetCore.Hosting
 @using Newtonsoft.Json
+@using DroHub.Areas.Identity.Data
 @model DroHub.Areas.DHub.Controllers.DeviceRepositoryController.GalleryPageModel
 @inject IWebHostEnvironment _host_env
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
@@ -13,6 +14,8 @@
 
 @{
     ViewData["Title"] = "Gallery";
+    var allow_settings = User.Claims.Any(
+        c => c.Type == DroHubUser.PILOT_POLICY_CLAIM && c.Value == DroHubUser.CLAIM_VALID_VALUE);
 }
 
 <div id="app">
@@ -68,7 +71,9 @@
             <h2>Nothing in this gallery yet. Try using your drone making a live stream.</h2>
         }
         else {
-            <gallery-timeline>
+            <gallery-timeline
+                v-bind:allow-settings="@allow_settings.ToString().ToLower()"
+            >
             </gallery-timeline>
          }
     </section>

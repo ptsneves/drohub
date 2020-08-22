@@ -5,8 +5,10 @@
             ref="settings"/>
 
         <gallery-add-tag-modal
+            v-if="allowSettings"
         />
         <gallery-delete-files-modal
+            v-if="allowSettings"
         />
         <div
             class="selection-confirmation-bar"
@@ -57,6 +59,7 @@
                             </button>
                             <button
                                 v-on:click="openGallerySettings"
+                                v-if="allowSettings"
                                 class="btn btn-link"
                             >
                                 <inline-svg
@@ -81,12 +84,14 @@
                                 />
                                 <gallery-video-player
                                     v-bind:videoSrc="file.media_object.VideoPath"
+                                    v-bind:allow-settings="allowSettings"
                                 />
                                 <media-tag-label
                                     v-show="show_tags"
                                     v-for="tag in file.media_object.Tags"
                                     v-bind:key="tag"
                                     v-bind:media-id="file.media_object.VideoPath"
+                                    v-bind:allow-delete="allowSettings"
                                     v-bind:text="tag">
                                 </media-tag-label>
                             </div>
@@ -122,6 +127,12 @@
             GalleryVideoPlayer,
             GallerySettingsDropDown,
             TimeLabel,
+        },
+        props: {
+            allowSettings: {
+                type: Boolean,
+                required: true,
+            },
         },
         data() {
             return {
