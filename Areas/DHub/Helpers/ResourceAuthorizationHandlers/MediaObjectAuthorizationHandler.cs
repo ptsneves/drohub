@@ -22,6 +22,9 @@ namespace DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers {
 
     public class MediaObjectAuthorizationHandler  : AuthorizationHandler<OperationAuthorizationRequirement, MediaObject> {
         public class MediaObjectResourceOperations : ResourceOperations {
+            public static OperationAuthorizationRequirement ManipulateTags =
+                new OperationAuthorizationRequirement { Name = nameof(ManipulateTags) };
+
             private const string DEFAULT_CLAIM_VALUE = "Yes";
             public static readonly Claim ReadClaim = new Claim($"Can{Read.Name}Media", DEFAULT_CLAIM_VALUE);
             public static readonly Claim DeleteClaim = new Claim($"Can{Delete.Name}Media", DEFAULT_CLAIM_VALUE);
@@ -58,6 +61,10 @@ namespace DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers {
             return isClaimAuthorized(ctx, res, MediaObjectResourceOperations.DeleteClaim);
         }
 
+        private bool isManipulateTagsAuthorized(AuthorizationHandlerContext ctx, MediaObject res) {
+            return isDeleteAuthorized(ctx, res); //For now only somebody who can manipulate videos can manipulate tags
+        }
+
         protected override Task HandleRequirementAsync(AuthorizationHandlerContext ctx,
         OperationAuthorizationRequirement requirement, MediaObject res) {
 
@@ -65,6 +72,9 @@ namespace DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers {
             if (requirement.Name == ResourceOperations.Read.Name && isReadAuthorized(ctx, res))
                 ctx.Succeed(requirement);
             else if (requirement.Name == ResourceOperations.Delete.Name && isDeleteAuthorized(ctx, res)) //No difference
+                ctx.Succeed(requirement);
+            else if (requirement.Name == MediaObjectResourceOperations.ManipulateTags.Name &&
+                     isManipulateTagsAuthorized(ctx, res))
                 ctx.Succeed(requirement);
             else
                 ctx.Fail();

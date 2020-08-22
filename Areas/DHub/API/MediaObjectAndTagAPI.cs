@@ -205,7 +205,7 @@ namespace DroHub.Areas.DHub.API {
         }
 
         public async Task removeTag(string tag_name, string media_path, bool save_changes = true) {
-            if (! await authorizeMediaObjectOperation(media_path, ResourceOperations.Read))
+            if (! await authorizeMediaObjectOperation(media_path, MediaObjectAuthorizationHandler.MediaObjectResourceOperations.ManipulateTags))
                 throw new MediaObjectAuthorizationException("User is not authorized to read this media");
 
             var mot = await _db_context.MediaObjectTags
@@ -220,7 +220,7 @@ namespace DroHub.Areas.DHub.API {
         public async Task addTags(string media_path, IEnumerable<string> tags, DateTime? date_time,
             bool save_changes = true, bool authorize = true) {
 
-            if (authorize && ! await authorizeMediaObjectOperation(media_path, ResourceOperations.Read))
+            if (authorize && ! await authorizeMediaObjectOperation(media_path, MediaObjectAuthorizationHandler.MediaObjectResourceOperations.ManipulateTags))
                 throw new MediaObjectAuthorizationException("User is not authorized to read this media");
             var unique_tags = tags.Select(x => x.ToLower()).Distinct().ToList();
 
