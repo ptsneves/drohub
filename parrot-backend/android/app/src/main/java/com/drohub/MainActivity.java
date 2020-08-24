@@ -23,16 +23,19 @@ public class MainActivity extends GroundSdkActivityBase {
     public static final String USER_AUTH_TOKEN_STORE_KEY = "USER_AUTH_TOKEN";
     private static String TAG = "MainActivity";
     private static final String ACCOUNTS = "com.drohub.accounts";
+    private final VolleyHelper _volley;
     private SharedPreferences _saved_accounts;
     private Drone _connected_drone;
     private RemoteControl _connected_rc;
 
-    private Cache _volley_cache;
-    private Network _volley_network;
-    private RequestQueue _request_queue;
     private TextView status_view;
     TextInputEditText email_ctrl;
     EditText password_ctrl;
+
+    MainActivity() {
+        super();
+        _volley = new VolleyHelper(getCacheDir());
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,7 +45,6 @@ public class MainActivity extends GroundSdkActivityBase {
 
         email_ctrl = findViewById(R.id.email_input);
         password_ctrl = findViewById(R.id.password_input);
-        initializeVolley();
         _saved_accounts = getSharedPreferences(ACCOUNTS, MODE_PRIVATE);
         if (_saved_accounts == null)
             return;
@@ -53,13 +55,6 @@ public class MainActivity extends GroundSdkActivityBase {
             email_ctrl.setText(_user_email);
             validateDeviceRegisteredAndLaunchIfPossible();
         }
-    }
-
-    private void initializeVolley() {
-            _volley_cache = new DiskBasedCache(getCacheDir(), 1024); // 1kB cap
-            _volley_network = new BasicNetwork(new HurlStack());
-            _request_queue = new RequestQueue(_volley_cache, _volley_network);
-            _request_queue.start();
     }
 
     private void processQueryDeviceInfoResponse(JSONObject response) {
@@ -143,7 +138,7 @@ public class MainActivity extends GroundSdkActivityBase {
                 (retry_error, retry_count) -> processQueryDeviceInfoRetry(retry_error, retry_count));
 
         token_validation_request.setShouldCache(false);
-        _request_queue.add(token_validation_request);
+        _volley.getRequestQueue().add(token_validation_request);
     }
 
     @Override
@@ -227,6 +222,6 @@ public class MainActivity extends GroundSdkActivityBase {
         });
 
         login_request.setShouldCache(false);
-        _request_queue.add(login_request);
+        _volley.getRequestQueue().add(login_request);
     }
 }

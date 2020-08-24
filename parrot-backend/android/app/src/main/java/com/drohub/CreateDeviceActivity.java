@@ -3,7 +3,6 @@ package com.drohub;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
@@ -11,16 +10,15 @@ import android.widget.TextView;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
-import com.android.volley.*;
-import com.android.volley.toolbox.BasicNetwork;
-import com.android.volley.toolbox.DiskBasedCache;
-import com.android.volley.toolbox.HurlStack;
+import com.android.volley.Request;
+import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class CreateDeviceActivity extends DroHubActivityBase {
     private static String TAG = "CreateDeviceActivity";
+    private final VolleyHelper _volley_helper;
     private EditText _device_name_input;
 
     private Button _create_button;
@@ -30,9 +28,10 @@ public class CreateDeviceActivity extends DroHubActivityBase {
     private String _user_email;
     private String _user_token;
     private TextView status_view;
-    private Cache _volley_cache;
-    private Network _volley_network;
-    private RequestQueue _request_queue;
+
+    public CreateDeviceActivity() {
+        _volley_helper = new VolleyHelper(getCacheDir());
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,14 +54,6 @@ public class CreateDeviceActivity extends DroHubActivityBase {
         _device_name_input = findViewById(R.id.device_name_input);
         String hint_with_serial = _device_name_input.getHint().toString() + " " + _device_serial;
         _device_name_input.setHint(hint_with_serial);
-        initializeVolley();
-    }
-
-    private void initializeVolley() {
-        _volley_cache = new DiskBasedCache(getCacheDir(), 1024); // 1kB cap
-        _volley_network = new BasicNetwork(new HurlStack());
-        _request_queue = new RequestQueue(_volley_cache, _volley_network);
-        _request_queue.start();
     }
 
     public void enableInput() {
@@ -136,6 +127,6 @@ public class CreateDeviceActivity extends DroHubActivityBase {
                     processCreateDeviceRetryError(retry_error, retry_count);
                 });
         device_creation_request.setShouldCache(false);
-        _request_queue.add(device_creation_request);
+        _volley_helper.getRequestQueue().add(device_creation_request);
     }
 }
