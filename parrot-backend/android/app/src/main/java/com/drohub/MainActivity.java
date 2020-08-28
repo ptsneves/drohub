@@ -1,40 +1,61 @@
 package com.drohub;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.text.Editable;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
-import com.android.volley.*;
-import com.android.volley.toolbox.BasicNetwork;
-import com.android.volley.toolbox.DiskBasedCache;
-import com.android.volley.toolbox.HurlStack;
+import android.widget.Toast;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import com.android.volley.Request;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.android.material.textfield.TextInputEditText;
-import com.parrot.drone.groundsdk.device.Drone;
-import com.parrot.drone.groundsdk.device.RemoteControl;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class MainActivity extends GroundSdkActivityBase {
+import java.util.HashSet;
+import java.util.Set;
+
+import static com.drohub.DroHubHelper.EXTRA_USER_AUTH_TOKEN;
+import static com.drohub.DroHubHelper.EXTRA_USER_EMAIL;
+
+public class MainActivity extends AppCompatActivity {
     public static final String USER_EMAIL_STORE_KEY = "USER_NAME";
     public static final String USER_AUTH_TOKEN_STORE_KEY = "USER_AUTH_TOKEN";
-    private static String TAG = "MainActivity";
     private static final String ACCOUNTS = "com.drohub.accounts";
-    private final VolleyHelper _volley;
+    protected String _user_auth_token;
+    protected String _user_email;
     private SharedPreferences _saved_accounts;
-    private Drone _connected_drone;
-    private RemoteControl _connected_rc;
+    private final VolleyHelper _volley;
 
     private TextView status_view;
     TextInputEditText email_ctrl;
     EditText password_ctrl;
 
-    MainActivity() {
+
+    private static final String[] PERMISSIONS_NEEDED = new String[] {
+            Manifest.permission.ACCESS_NETWORK_STATE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE, /* for ULog Recorder. */
+            Manifest.permission.CAMERA, /* For HMD see-through. */
+            Manifest.permission.INTERNET,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.RECORD_AUDIO,
+    };
+
+    /** Code for permission request result handling. */
+    private static final int REQUEST_CODE_PERMISSIONS_REQUEST = 1;
+
+
+    public MainActivity() {
         super();
-        _volley = new VolleyHelper(getCacheDir());
+        _volley = new VolleyHelper();
     }
 
     @Override
@@ -49,124 +70,86 @@ public class MainActivity extends GroundSdkActivityBase {
         if (_saved_accounts == null)
             return;
 
+        Set<String> permissionsToRequest = new HashSet<>();
+        for (String permission : PERMISSIONS_NEEDED) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this, permission)) {
+                    Toast.makeText(this, "Please allow permission " + permission, Toast.LENGTH_LONG).show();
+                    finish();
+                    return;
+                } else {
+                    permissionsToRequest.add(permission);
+                }
+            }
+        }
+        if (!permissionsToRequest.isEmpty()) {
+            ActivityCompat.requestPermissions(this, permissionsToRequest.toArray(new String[0]),
+                    REQUEST_CODE_PERMISSIONS_REQUEST);
+        }
+
+
         _user_auth_token = _saved_accounts.getString(USER_AUTH_TOKEN_STORE_KEY, null);
         _user_email = _saved_accounts.getString(USER_EMAIL_STORE_KEY, null);
+        email_ctrl.setText(_user_email);
+        hideLoginGroup();
+
         if (_user_auth_token != null && _user_email != null) {
-            email_ctrl.setText(_user_email);
-            validateDeviceRegisteredAndLaunchIfPossible();
+            validateAndLaunchLobbyActivity();
         }
     }
 
-    private void processQueryDeviceInfoResponse(JSONObject response) {
-        if (_connected_drone == null) {
-            hideLoginGroup();
-            return;
-        }
-        if (!response.isNull("result")) {
-            Intent intent = new Intent(this, CopterHudActivity.class);
-            addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid(), _connected_rc.getUid());
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            this.startActivity(intent);
-            finish();
-        }
-        else if (response.has("error")) {
-            try {
-                if (response.getString("error").equalsIgnoreCase("Device does not exist.")) {
-                    Intent intent = new Intent(this, CreateDeviceActivity.class);
-                    addThriftDataToIntent(intent, _user_email, _user_auth_token, _connected_drone.getUid(), _connected_rc.getUid());
+    private void validateAndLaunchLobbyActivity() {
+        DroHubObjectRequest token_validation_request = new DroHubObjectRequest(
+                _user_email,
+                _user_auth_token,
+                Request.Method.GET,
+                getString(R.string.validate_token_url),
+                null,
+                response -> {
+                    email_ctrl.setText(_user_email);
+                    Intent intent = new Intent(this, LobbyActivity.class);
+                    intent.putExtra(EXTRA_USER_EMAIL, _user_email);
+                    intent.putExtra(EXTRA_USER_AUTH_TOKEN, _user_auth_token);
                     intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     this.startActivity(intent);
                     finish();
-                } else {
-                    setStatusText(status_view, response.getString("error"), Color.RED);
+                },
+                error -> {
                     showLoginGroup();
-                }
-            } catch (JSONException e) {
-                setStatusText(status_view, "Error Could not Query device info..", Color.RED);
-                showLoginGroup();
-            }
-        }
-    }
-
-    private void processQueryDeviceInfoError(VolleyError error) {
-        if(error.networkResponse == null)
-            setStatusText(status_view,"No response. Are you connected to the internet?", Color.RED);
-        else if (error.networkResponse.statusCode == 401)
-            setStatusText(status_view,"Unauthorized. Is your subscription or drone valid?", Color.RED);
-        else
-            setStatusText(status_view,"Error Could not Query device info..", Color.RED);
-
-        showLoginGroup();
-    }
-
-    private void processQueryDeviceInfoRetry(VolleyError error, int retry_count) throws VolleyError {
-        if (retry_count == 3)
-            throw error;
-        setStatusText(status_view,"Too slow response. Retrying again " + error.getMessage(), Color.RED);
-        showLoginGroup();
-    }
-
-    private void validateDeviceRegisteredAndLaunchIfPossible() {
-        if ( _user_email == null || _user_auth_token == null)
-            return;
-
-        hideLoginGroup();
-        String url = getString(R.string.drohub_url) + "/api/AndroidApplication/QueryDeviceInfo";
-        if (_connected_drone == null) {
-            setStatusText(status_view,
-                    "Using stored credentials. Waiting for drone to be connected",
-                    0xFF168849);
-            return;
-        }
-
-        String device_serial =  _connected_drone.getUid();
-        JSONObject request = new JSONObject();
-
-        try {
-            request.put("DeviceSerialNumber", device_serial);
-        }
-         catch (JSONException e) {
-            setStatusText(status_view,"Could not create a json query", Color.RED);
-            showLoginGroup();
-        }
-
-        setStatusText(status_view,"Retrieving device info", Color.BLACK);
-
-        DroHubObjectRequest token_validation_request = new DroHubObjectRequest(_user_email, _user_auth_token,
-                Request.Method.POST, url, request, response -> processQueryDeviceInfoResponse(response),
-                error -> processQueryDeviceInfoError(error),
-                (retry_error, retry_count) -> processQueryDeviceInfoRetry(retry_error, retry_count));
+                    setStatusText(status_view, "Token is not valid. Re-log in", Color.RED);
+                } ,
+                (retry_error, retry_count) -> {throw retry_error;});
 
         token_validation_request.setShouldCache(false);
         _volley.getRequestQueue().add(token_validation_request);
     }
 
-    @Override
-    protected void onDroneConnected(Drone drone, RemoteControl rc) {
-        _connected_drone = drone;
-        _connected_rc = rc;
-        validateDeviceRegisteredAndLaunchIfPossible();
+    protected void setStatusText(TextView status_view, String text, int color) {
+        runOnUiThread(() -> {
+            status_view.setText(text);
+            status_view.setTextColor(color);
+            status_view.setVisibility(View.VISIBLE);
+        });
     }
 
-    @Override
-    protected void onDroneDisconnected() {
-        _connected_drone = null;
-        _connected_rc = null;
-    }
-
-    public void showLoginGroup() {
+    private void showLoginGroup() {
         runOnUiThread(() -> findViewById(R.id.login_group).setVisibility(View.VISIBLE));
     }
 
-    public void hideLoginGroup() {
+    private void hideLoginGroup() {
         runOnUiThread(() -> {
-            hideKeyboard(this);
+            DroHubHelper.hideKeyboard(this);
             findViewById(R.id.login_group).setVisibility(View.GONE);
         });
     }
 
     public void tryPilotLogin(View view) {
-        _user_email = email_ctrl.getText().toString();
+        Editable d = email_ctrl.getText();
+        if (d == null) //for whatever reason it needs a null check, contrary to the password view
+            return;
+        _user_email = d.toString();
+
+
         String password = password_ctrl.getText().toString();
         String url = getString(R.string.drohub_url) + "/api/GetToken/GetApplicationToken";
         JSONObject request = new JSONObject();
@@ -190,12 +173,16 @@ public class MainActivity extends GroundSdkActivityBase {
         JsonObjectRequest login_request = new JsonObjectRequest(Request.Method.POST,
                 url, request, response ->
         {
-            String result = null;
+            if (response == null)
+                return;
+
+            String result;
             try {
                 result = response.getString("result");
             } catch (JSONException e) {
                 setStatusText(status_view,"Unexpected server response" + response, Color.RED);
                 showLoginGroup();
+                return;
             }
 
             if (result.equals("nok")) {
@@ -209,10 +196,17 @@ public class MainActivity extends GroundSdkActivityBase {
                 ed.putString(USER_EMAIL_STORE_KEY, _user_email);
                 ed.putString(USER_AUTH_TOKEN_STORE_KEY, _user_auth_token);
                 ed.commit();
+
+                Bundle bundle = new Bundle();
+                bundle.putString(USER_EMAIL_STORE_KEY, _user_email);
+                bundle.putString(USER_AUTH_TOKEN_STORE_KEY, _user_auth_token);
+
                 setStatusText(status_view,
                         "Successfully authenticated user. Waiting for drone to be connected",
                         0xFF168849);
-                validateDeviceRegisteredAndLaunchIfPossible();
+
+                validateAndLaunchLobbyActivity();
+
             }
         },
         error -> {

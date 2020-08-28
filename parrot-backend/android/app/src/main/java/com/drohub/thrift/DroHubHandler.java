@@ -8,7 +8,7 @@ import android.util.Log;
 
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
-import com.drohub.ParrotHelpers.ParrotMainCamera;
+import com.drohub.ParrotHelpers.Peripherals.ParrotMainCamera;
 import org.apache.thrift.*;
 
 
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import com.drohub.GroundSdkActivityBase;
+import com.drohub.GroundSdkHelperActivity;
 import com.drohub.Janus.PeerConnectionClient;
 import com.drohub.thift.gen.*;
 import com.parrot.drone.groundsdk.device.instrument.BatteryInfo;
@@ -67,7 +67,7 @@ public class DroHubHandler implements Drone.Iface {
     final private TelemetryContainer<DroneRadioSignal> _drone_radio_signal;
     final private ParrotMainCamera _main_camera;
 
-    private GroundSdkActivityBase _activity;
+    private GroundSdkHelperActivity _activity;
     private PeerConnectionClient _peerConnectionClient;
     private DroneLiveVideoState _video_state;
 
@@ -77,7 +77,7 @@ public class DroHubHandler implements Drone.Iface {
     private com.parrot.drone.groundsdk.device.Drone _drone_handle;
 
     public DroHubHandler(String serial, PeerConnectionParameters connection_parameters,
-                         GroundSdkActivityBase activity)  {
+                         GroundSdkHelperActivity activity)  {
         _drone_handle = activity.getParrotSDKHandle().getDrone(serial);
         if (_drone_handle == null)
             throw new RuntimeException("Could not retrieve drone handle");

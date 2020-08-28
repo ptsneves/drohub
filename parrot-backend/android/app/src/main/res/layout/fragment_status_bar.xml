@@ -1,0 +1,56 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             xmlns:tools="http://schemas.android.com/tools"
+             android:layout_width="match_parent"
+             android:layout_height="match_parent" xmlns:app="http://schemas.android.com/apk/res-auto"
+             tools:context="com.drohub.Fragments.StatusBarFragment">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/flight_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fitsSystemWindows="true"
+            android:paddingBottom="10dp"
+            android:paddingTop="10dp"
+            android:paddingHorizontal="16dp"
+            android:background="@color/overlay_background">
+
+        <ImageView
+                android:id="@+id/rc_status"
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                android:src="@drawable/ic_video_info_controlsignal_disconnected"
+                android:layout_marginRight="10dp"
+                android:layout_marginLeft="10dp"
+        />
+        <ImageView
+                android:id="@+id/drone_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                android:src="@drawable/ic_device_id_drone_disconnected"
+                android:layout_marginRight="10dp"
+                android:layout_marginLeft="10dp"
+                app:layout_constraintLeft_toRightOf="@id/rc_status"
+        />
+        <TextView
+                android:id="@+id/user_email"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:fontFamily="@font/noto_sans"
+                android:textSize="15dp"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:layout_marginRight="10dp"
+                android:layout_marginLeft="10dp"
+                app:layout_constraintLeft_toRightOf="@id/drone_status"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+        >
+
+        </TextView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</FrameLayout>

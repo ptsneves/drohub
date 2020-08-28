@@ -1,5 +1,6 @@
-package com.drohub.ParrotHelpers;
+package com.drohub.ParrotHelpers.Peripherals;
 
+import com.drohub.ParrotHelpers.Peripherals.IParrotPeripheral;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.peripheral.MediaStore;
 

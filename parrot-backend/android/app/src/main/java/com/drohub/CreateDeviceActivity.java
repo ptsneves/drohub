@@ -10,14 +10,17 @@ import android.widget.TextView;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
+import androidx.appcompat.app.AppCompatActivity;
 import com.android.volley.Request;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class CreateDeviceActivity extends DroHubActivityBase {
-    private static String TAG = "CreateDeviceActivity";
+import static com.drohub.DroHubHelper.*;
+
+public class CreateDeviceActivity extends AppCompatActivity {
+    final private static String TAG = "CreateDeviceActivity";
     private final VolleyHelper _volley_helper;
     private EditText _device_name_input;
 
@@ -30,7 +33,7 @@ public class CreateDeviceActivity extends DroHubActivityBase {
     private TextView status_view;
 
     public CreateDeviceActivity() {
-        _volley_helper = new VolleyHelper(getCacheDir());
+        _volley_helper = new VolleyHelper();
     }
 
     @Override
@@ -75,9 +78,7 @@ public class CreateDeviceActivity extends DroHubActivityBase {
     public void processCreateDeviceResponse(JSONObject response) {
         try {
             if (response.getString("result").equals("ok")) {
-                Intent intent = new Intent(this, MainActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                this.startActivity(intent);
+                setResult(RESULT_OK);
                 finish();
             }
             else {
@@ -119,14 +120,26 @@ public class CreateDeviceActivity extends DroHubActivityBase {
         }
         disableInput();
         setStatusText(status_view, "Registering new device...Please wait", Color.BLACK);
-        JsonObjectRequest device_creation_request = new DroHubObjectRequest(_user_email, _user_token, Request.Method.POST,
-                url, request,
-                response -> processCreateDeviceResponse(response),
-                error -> processCreateDeviceError(error),
-                (retry_error, retry_count) -> {
-                    processCreateDeviceRetryError(retry_error, retry_count);
-                });
+        JsonObjectRequest device_creation_request = new DroHubObjectRequest(
+                _user_email,
+                _user_token,
+                Request.Method.POST,
+                url,
+                request,
+                this::processCreateDeviceResponse,
+                this::processCreateDeviceError,
+                this::processCreateDeviceRetryError);
+
         device_creation_request.setShouldCache(false);
         _volley_helper.getRequestQueue().add(device_creation_request);
+    }
+
+
+    protected void setStatusText(TextView status_view, String text, int color) {
+        runOnUiThread(() -> {
+            status_view.setText(text);
+            status_view.setTextColor(color);
+            status_view.setVisibility(View.VISIBLE);
+        });
     }
 }

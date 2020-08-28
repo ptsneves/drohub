@@ -1,4 +1,4 @@
-package com.drohub.ParrotHelpers;
+package com.drohub.ParrotHelpers.Peripherals;
 
 import androidx.annotation.NonNull;
 import com.parrot.drone.groundsdk.device.Drone;

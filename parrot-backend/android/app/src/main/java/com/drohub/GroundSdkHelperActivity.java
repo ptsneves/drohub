@@ -39,12 +39,14 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -63,10 +65,12 @@ import com.parrot.drone.sdkcore.ulog.ULog;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.drohub.DroHubHelper.EXTRA_USER_AUTH_TOKEN;
+
 /**
  * Base for an activity that uses GroundSdk. Manages GroundSdk lifecycle properly.
  */
-public abstract class GroundSdkActivityBase extends DroHubActivityBase {
+public abstract class GroundSdkHelperActivity extends AppCompatActivity {
     /** List of runtime permission we need. */
     private static final String[] PERMISSIONS_NEEDED = new String[] {
             Manifest.permission.ACCESS_NETWORK_STATE,
@@ -80,6 +84,7 @@ public abstract class GroundSdkActivityBase extends DroHubActivityBase {
     /** Code for permission request result handling. */
     private static final int REQUEST_CODE_PERMISSIONS_REQUEST = 1;
 
+    private static final String TAG = "GroundSDKHelperActivity";
     /** Ground SDK interface. */
     private GroundSdk mGroundSdk;
     protected ThriftConnection _thrift_connection;
@@ -124,7 +129,7 @@ public abstract class GroundSdkActivityBase extends DroHubActivityBase {
         for (String permission : PERMISSIONS_NEEDED) {
             if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, permission)) {
-                    ULog.w(TAG, "User has not allowed permission " + permission);
+                    Log.w(TAG, "User has not allowed permission " + permission);
                     Toast.makeText(this, "Please allow permission " + permission, Toast.LENGTH_LONG).show();
                     finish();
                     return;
@@ -142,16 +147,15 @@ public abstract class GroundSdkActivityBase extends DroHubActivityBase {
     @Override
     protected void onStart() {
         super.onStart();
-        LocalBroadcastManager.getInstance(this).registerReceiver(mGamepadEventReceiver, FILTER_GAMEPAD_EVENT);
         mGroundSdk.getFacility(AutoConnection.class, auto_connection -> {
             if (auto_connection == null) {
-                ULog.w(TAG, "Auto connectio is null?");
+                Log.w(TAG, "Auto connectio is null?");
                 return;
             }
 
             if (auto_connection.getStatus() != AutoConnection.Status.STARTED) {
                 auto_connection.start();
-                ULog.w(TAG, "Started auto connection");
+                Log.w(TAG, "Started auto connection");
             }
 
             Drone temp_drone = auto_connection.getDrone();
@@ -168,35 +172,8 @@ public abstract class GroundSdkActivityBase extends DroHubActivityBase {
     }
 
 
-        protected abstract void onDroneConnected(Drone drone, RemoteControl rc);
-        protected abstract void onDroneDisconnected();
-
-    private static final IntentFilter FILTER_GAMEPAD_EVENT = new IntentFilter(
-            VirtualGamepad.ACTION_GAMEPAD_APP_EVENT);
-
-    private final BroadcastReceiver mGamepadEventReceiver = new BroadcastReceiver() {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            int actionOrdinal = intent.getIntExtra(VirtualGamepad.EXTRA_GAMEPAD_APP_EVENT_ACTION, -1);
-            if (actionOrdinal != -1) {
-                Snackbar.make(getContentView(), "Gamepad app event [action: "
-                                                + ButtonsMappableAction.values()[actionOrdinal] + "]",
-                        Snackbar.LENGTH_SHORT).show();
-            }
-        }
-
-        @NonNull
-        private View getContentView() {
-            return ((ViewGroup) getWindow().getDecorView().findViewById(android.R.id.content)).getChildAt(0);
-        }
-    };
-
-    @Override
-    protected void onStop() {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mGamepadEventReceiver);
-        super.onStop();
-    }
+    protected abstract void onDroneConnected(Drone drone, RemoteControl rc);
+    protected abstract void onDroneDisconnected();
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -212,19 +189,19 @@ public abstract class GroundSdkActivityBase extends DroHubActivityBase {
         boolean denied = false;
         if (permissions.length == 0) {
             // canceled, finish
-            ULog.w(TAG, "User canceled permission(s) request");
+            Log.w(TAG, "User canceled permission(s) request");
             denied = true;
         } else {
             for (int i = 0; i < permissions.length; i++) {
                 if (grantResults[i] == PackageManager.PERMISSION_DENIED) {
-                    ULog.w(TAG, "User denied permission: " + permissions[i]);
+                    Log.w(TAG, "User denied permission: " + permissions[i]);
                     denied = true;
                 }
             }
         }
 
         if (denied) {
-            ULog.w(TAG, "Finished due to now permissions received");
+            Log.w(TAG, "Finished due to new permissions received");
             finish();
         }
     }

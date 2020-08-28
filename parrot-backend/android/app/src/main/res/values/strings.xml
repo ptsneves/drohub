@@ -37,6 +37,8 @@
     <string name="drohub_ws_url">wss://drohub.xyz/ws</string>
     <string name="janus_websocket_uri">wss://drohub.xyz/ws_janus</string>
     <string name="drohub_url">https://drohub.xyz</string>
+    <string name="query_device_info_url">https://drohub.xyz/api/AndroidApplication/QueryDeviceInfo</string>
+    <string name="validate_token_url">https://drohub.xyz/api/AndroidApplication/ValidateToken</string>
     <string-array name="ice_servers">
         <item>stun:stun.l.google.com</item>
     </string-array>

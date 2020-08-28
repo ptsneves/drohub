@@ -37,6 +37,8 @@
     <string name="drohub_ws_url">ws://master:5000/ws</string>
     <string name="janus_websocket_uri">ws://master:8188</string>
     <string name="drohub_url">http://master:5000</string>
+    <string name="query_device_info_url">http://master:5000/api/AndroidApplication/QueryDeviceInfo</string>
+    <string name="validate_token_url">http://master:5000/api/AndroidApplication/ValidateToken</string>
     <string-array name="ice_servers">
         <item>stun:stun.l.google.com</item>
     </string-array>

@@ -50,6 +50,11 @@ namespace DroHub.Areas.DHub.Controllers
             return new JsonResult(new Dictionary<string, string>() {{"result", "ok"}});
         }
 
+        public IActionResult ValidateToken() {
+            //If we got here it means the authentication middleware allowed
+            return new JsonResult(new Dictionary<string, string>() {{"result", "ok"}});
+        }
+
         [HttpPost]
         public async Task<IActionResult> QueryDeviceInfo([FromBody] QueryDeviceModel device_query) {
             var result = await _device_api.getDeviceBySerialOrDefault(

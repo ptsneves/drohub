@@ -34,6 +34,7 @@ package com.drohub;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.location.Location;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -47,17 +48,16 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionGLSurfaceParameters;
-import com.drohub.ParrotHelpers.ParrotMainCamera;
-import com.drohub.ParrotHelpers.ParrotMediaStore;
-import com.drohub.ParrotHelpers.ParrotPeripheralManager;
-import com.drohub.ParrotHelpers.ParrotStreamServer;
+import com.drohub.ParrotHelpers.Peripherals.ParrotMainCamera;
+import com.drohub.ParrotHelpers.Peripherals.ParrotMediaStore;
+import com.drohub.ParrotHelpers.Peripherals.ParrotPeripheralManager;
+import com.drohub.ParrotHelpers.Peripherals.ParrotStreamServer;
 import com.drohub.Views.DroHubMapView;
 import com.drohub.Views.ErrorTextView;
 import com.drohub.Views.TimerView;
 import com.drohub.Views.ToggleButtonExView;
 import com.drohub.thrift.DroHubHandler;
 import com.drohub.thrift.ThriftConnection;
-import com.google.android.gms.maps.GoogleMap;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.RemoteControl;
 import com.parrot.drone.groundsdk.device.instrument.*;
@@ -73,9 +73,11 @@ import com.parrot.drone.groundsdk.facility.AutoConnection;
 import com.parrot.drone.groundsdk.facility.UserLocation;
 import org.webrtc.SurfaceViewRenderer;
 
+import static com.drohub.DroHubHelper.*;
+
 
 /** Activity to pilot a copter. */
-public class CopterHudActivity extends GroundSdkActivityBase{
+public class CopterHudActivity extends GroundSdkHelperActivity {
 
     private static final String TAG = "CopterHudActivity";
     private static final String MAP_VIEW_BUNDLE_KEY = "MapViewBundleKey";
@@ -115,7 +117,7 @@ public class CopterHudActivity extends GroundSdkActivityBase{
         String rc_uid = getIntent().getStringExtra(RC_UID);
         String user_email = getIntent().getStringExtra(EXTRA_USER_EMAIL);
         String auth_token = getIntent().getStringExtra(EXTRA_USER_AUTH_TOKEN);
-        if (drone_uid == null || user_email == null || auth_token == null) {
+        if (drone_uid == null || rc_uid == null || user_email == null || auth_token == null) {
             Log.e(TAG, "Device uid, user or auth_token were not passed in intent");
             finish();
             return;
@@ -240,8 +242,9 @@ public class CopterHudActivity extends GroundSdkActivityBase{
             map_view.setDroneLocation(gps.lastKnownLocation());
             final TextView height_text = findViewById(R.id.height_text);
 
-            if (gps.lastKnownLocation() != null)
-                height_text.setText(String.format("%.1fm", gps.lastKnownLocation().getAltitude()));
+            Location last_known_location = gps.lastKnownLocation();
+            if (last_known_location != null)
+                height_text.setText(String.format("%.1fm", last_known_location.getAltitude()));
         });
 
 
@@ -576,8 +579,14 @@ public class CopterHudActivity extends GroundSdkActivityBase{
                         parrot_server);
 
                 _audio_manager = (AudioManager)activity.getSystemService(Context.AUDIO_SERVICE);
-                _audio_manager.setMode(AudioManager.MODE_IN_CALL);
-                _audio_manager.setSpeakerphoneOn(true);
+                if (_audio_manager != null) {
+                    _audio_manager.setMode(AudioManager.MODE_IN_CALL);
+                    _audio_manager.setSpeakerphoneOn(true);
+                }
+                else {
+                    final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
+                    e_v.addError("Could not setup audio error");
+                }
 
 
                 _drohub_handler = new DroHubHandler(_drone.getUid(), peerConnectionParameters, activity);

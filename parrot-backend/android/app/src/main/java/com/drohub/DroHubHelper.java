@@ -7,9 +7,12 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.material.snackbar.Snackbar;
 import com.parrot.drone.sdkcore.ulog.ULogTag;
 
-public class DroHubActivityBase  extends AppCompatActivity {
+public class DroHubHelper {
+    public static final int CREATE_DEVICE_INTENT_RESULT = 1001;
+
     @NonNull
     public static String withKey(@NonNull String key) {
         return "com.drohub.EXTRA_" + key;
@@ -22,6 +25,11 @@ public class DroHubActivityBase  extends AppCompatActivity {
     /** Logging tag. */
     protected static final ULogTag TAG = new ULogTag("DROHUB");
 
+    public interface CredentialGetters {
+        String getUserEmail();
+        String getAuthToken();
+    }
+
     public static void addThriftDataToIntent(Intent intent, String user_name, String token, String serial, String rc_serial) {
         intent.putExtra(DRONE_UID, serial);
         intent.putExtra(RC_UID, rc_serial);
@@ -29,12 +37,8 @@ public class DroHubActivityBase  extends AppCompatActivity {
         intent.putExtra(EXTRA_USER_AUTH_TOKEN, token);
     }
 
-    protected void setStatusText(TextView status_view, String text, int color) {
-        runOnUiThread(() -> {
-            status_view.setText(text);
-            status_view.setTextColor(color);
-            status_view.setVisibility(View.VISIBLE);
-        });
+    public static void setStatusText(View root_view, String msg) {
+        Snackbar.make(root_view, msg, Snackbar.LENGTH_LONG).show();
     }
 
     public static void hideKeyboard(Activity activity) {

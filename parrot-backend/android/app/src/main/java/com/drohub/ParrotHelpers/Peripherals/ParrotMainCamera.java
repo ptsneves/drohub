@@ -1,13 +1,18 @@
-package com.drohub.ParrotHelpers;
+package com.drohub.ParrotHelpers.Peripherals;
 
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.peripheral.MainCamera;
 import com.parrot.drone.groundsdk.device.peripheral.camera.Camera;
 import com.parrot.drone.groundsdk.device.peripheral.camera.CameraPhoto;
+import com.parrot.drone.groundsdk.device.peripheral.camera.CameraRecording;
 import com.parrot.drone.groundsdk.device.peripheral.camera.CameraZoom;
 import com.parrot.drone.groundsdk.value.EnumSetting;
 
-public class ParrotMainCamera implements IParrotPeripheral{
+import static com.parrot.drone.groundsdk.device.peripheral.camera.CameraPhoto.State.FunctionState.STOPPED;
+import static com.parrot.drone.groundsdk.device.peripheral.camera.CameraPhoto.State.FunctionState.STOPPING;
+import static com.parrot.drone.groundsdk.device.peripheral.camera.CameraRecording.State.FunctionState.*;
+
+public class ParrotMainCamera implements IParrotPeripheral {
     public interface ZoomLevelListener {
         void onChange(double new_zoom_level);
     }

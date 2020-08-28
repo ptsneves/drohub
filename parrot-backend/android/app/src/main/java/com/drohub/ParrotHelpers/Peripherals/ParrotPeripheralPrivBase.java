@@ -1,6 +1,6 @@
-package com.drohub.ParrotHelpers;
+package com.drohub.ParrotHelpers.Peripherals;
 
-public abstract class ParrotPeripheralPrivBase<C> implements ParrotPeripheralManager.PeripheralListener<C>  {
+public abstract class ParrotPeripheralPrivBase<C> implements ParrotPeripheralManager.PeripheralListener<C> {
     protected ParrotPeripheralManager.PeripheralListener<C> _peripheral_listener;
 
     protected void setPeripheralListener(ParrotPeripheralManager.PeripheralListener l) {
