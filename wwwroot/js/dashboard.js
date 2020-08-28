@@ -482,16 +482,49 @@ $(function () {
                 console.error("Cannot find renderer " + fn);
         }
 
+        function _renderMuteButton(element, is_muted) {
+            const child = element.children('i').eq(0);
+            if(is_muted)
+                child.removeClass('fa-microphone-slash').addClass('fa-microphone');
+            else
+                child.removeClass('fa-microphone').addClass('fa-microphone-slash');
+        }
+
         function _renderLiveVideo(_, element) {
+            function _toggleMute(element, sfu) {
+                if (sfu === undefined)
+                    return;
+                let is_audio_muted = sfu.isAudioMuted();
+                if(is_audio_muted)
+                    sfu.unmuteAudio();
+                else
+                    sfu.muteAudio();
+                is_audio_muted = sfu.isAudioMuted();
+                _renderMuteButton(element, is_audio_muted);
+            }
+
             element = $(element);
             let live_video_result = JSON.parse(element.attr('data-telemetry'));
+            let serial = element.data('serial');
             switch (live_video_result.State) {
                 case 0: //Live
                     if (element.data("render-state") === "stopped") {
                         element.data("render-state", "starting");
                         if (window.opaqueId === undefined || window.opaqueId == null)
                             return;
-                        janus.attach(attachToRoom(element.data('room-id'), window.opaqueId));
+                        const janus_instance = attachToRoom(element.data('room-id'), window.opaqueId, function (sfu) {
+                            $(`button[data-toggle="video-mute"][data-serial=${serial}]`).each(function (index, element) {
+                                element = $(element);
+                                element.on('click', _toggleMute.bind(this, element, sfu));
+                            });
+                        },
+                            function (sfu) {
+                            $(`button[data-toggle="video-mute"][data-serial=${serial}]`).each(function (index, e) {
+                                e = $(e);
+                                e.off('click', _toggleMute.bind(this, e, sfu));
+                            });
+                        })
+                        janus.attach(janus_instance);
                     }
                     break;
                 default:
@@ -738,7 +771,7 @@ $(function () {
 
         function _initFullscreenButton(index, element) {
             element = $(element);
-            fullscreen_serial = element.data('serial');
+            let fullscreen_serial = element.data('serial');
             if (!fullscreen_serial)
                 throw Error("Fullscreen does not hava data about which device it refers to");
 
@@ -749,7 +782,6 @@ $(function () {
         return {
             init: function () {
                 $('button[data-toggle="video-fullscreen"]').each(_initFullscreenButton);
-                $('a[data-toggle="video-fullscreen"]').each(_initFullscreenButton);
 
                 const section_element = $('section.janus-section');
                 const janus_url = section_element.data('janus-url');

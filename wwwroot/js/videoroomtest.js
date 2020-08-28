@@ -119,8 +119,9 @@ function newRemoteFeed(opaque_id, id, display, room_id) {
 		});
 }
 
-function attachToRoom(room_id, opaque_id) {
+function attachToRoom(room_id, opaque_id, on_local_stream_cb, on_local_stream_cleanup_cb) {
 	return {
+		sfutest: undefined,
 		plugin: "janus.plugin.videoroom",
 		opaqueId: opaque_id,
 		success: function (pluginHandle) {
@@ -201,6 +202,7 @@ function attachToRoom(room_id, opaque_id) {
 		},
 		onlocalstream: function (stream) {
 			Janus.log(" ::: Got a local stream :::");
+			on_local_stream_cb(sfutest);
 			element = $(`audio.device-audio[data-room-id=${room_id}]`);
 			Janus.attachMediaStream(element.get(0), stream);
 			if (sfutest.webrtcStuff.pc.iceConnectionState !== "completed" &&
@@ -213,6 +215,7 @@ function attachToRoom(room_id, opaque_id) {
 			// The publisher stream is sendonly, we don't expect anything here
 		},
 		oncleanup: function () {
+			on_local_stream_cleanup_cb(sfutest);
 			Janus.log(" ::: Got a cleanup notification: we are unpublished now ::: publisher");
 			mystream = null;
 		}
