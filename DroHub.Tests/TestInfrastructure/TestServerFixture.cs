@@ -115,12 +115,10 @@ namespace DroHub.Tests.TestInfrastructure
                 .First()
                 .GetAttribute(attribute);
         }
+
         public void Dispose() {
-            try {
-                Containers.Dispose();
-            } catch (Ductus.FluentDocker.Common.FluentDockerException) {
-                //Do nothing. This exception seems a bug in FluentDocker
-            }
+            Docker.Dispose();
+            Containers.Dispose();
         }
     }
 }
