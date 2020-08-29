@@ -7,6 +7,7 @@ using System.Linq;
 using System.IO;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using AngleSharp;
 using AngleSharp.Html.Parser;
 using DroHub.Data;
@@ -44,8 +45,22 @@ namespace DroHub.Tests.TestInfrastructure
                             .UseContainer()
                             .UseCompose()
                             .FromFile(docker_compose_file)
-                            .WaitForHttp("web", "http://localhost:5000")
                             .RemoveOrphans()
+                            .Wait("nginx", (service, i) => {
+
+                                while (true) {
+                                    using var handlerHttp = new HttpClientHandler {
+                                        ServerCertificateCustomValidationCallback =
+                                            (sender, cert, chain, sslPolicyErrors) => true
+                                    };
+                                    using var client = new HttpClient(handlerHttp);
+                                    var response = client.GetAsync(SiteUri).Result;
+
+                                    if (response.IsSuccessStatusCode)
+                                        return 0;
+                                    Thread.Sleep(1000);
+                                }
+                            } )
                             // .ForceBuild()
                             .Build()
                             .Start();
