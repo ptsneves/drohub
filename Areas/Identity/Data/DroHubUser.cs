@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Net.Http.Headers;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
 using Microsoft.AspNetCore.Identity;
@@ -74,5 +76,24 @@ namespace DroHub.Areas.Identity.Data
 
         public Subscription Subscription { get; set; }
         public string SubscriptionOrganizationName { get; set; }
+
+        public static async Task<IdentityResult> refreshClaims(SignInManager<DroHubUser> sign_in_manager,
+            DroHubUser user, string acting_type) {
+
+            if (!UserClaims.ContainsKey(acting_type))
+                return IdentityResult.Failed(new IdentityError {Description = "Invalid acting type"});
+
+            var old_claims = await sign_in_manager.UserManager.GetClaimsAsync(user);
+            var remove_result = await sign_in_manager.UserManager.RemoveClaimsAsync(user, old_claims);
+            if (!remove_result.Succeeded)
+                return remove_result;
+
+            var add_result = await sign_in_manager.UserManager.AddClaimsAsync(user, UserClaims[acting_type]);
+            var add_orgname_result = await sign_in_manager.UserManager.AddClaimAsync(user,
+                new Claim(SUBSCRIPTION_KEY_CLAIM, user.SubscriptionOrganizationName));
+            if (add_result == IdentityResult.Failed())
+                return add_result;
+            return add_orgname_result == IdentityResult.Failed() ? add_orgname_result : IdentityResult.Success;
+        }
     }
 }

@@ -3,14 +3,12 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
-using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
-using DroHub.Data;
 using DroHub.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -125,11 +123,10 @@ namespace DroHub.Areas.DHub.Controllers {
                         continue;
                     }
 
-                    foreach (var claim in DroHubUser.UserClaims[DroHubUser.GUEST_POLICY_CLAIM])
-                            await _signin_manager.UserManager.AddClaimAsync(new_user, claim);
-
-                    await _signin_manager.UserManager.AddClaimAsync(new_user,
-                        new Claim(DroHubUser.SUBSCRIPTION_KEY_CLAIM, new_user.SubscriptionOrganizationName));
+                    var refresh_result = await DroHubUser.refreshClaims(_signin_manager, new_user,
+                        DroHubUser.GUEST_POLICY_CLAIM);
+                    if (refresh_result == IdentityResult.Failed())
+                        _logger.LogError("Failed to refresh claims on creating a user.");
 
                     _logger.LogInformation("User created a new account without password for invitation.");
 
@@ -211,6 +208,10 @@ namespace DroHub.Areas.DHub.Controllers {
             var result = await _signin_manager.UserManager.UpdateAsync(user);
             if (!result.Succeeded)
                 throw new InvalidOperationException($"Unexpected error updating the permissions of user ${user_email}");
+
+
+            if (await DroHubUser.refreshClaims(_signin_manager, user, sanitized_acting_type) == IdentityResult.Failed())
+                _logger.LogError("Failed to refresh claims.");
 
             return RedirectToAction("Index");
         }
