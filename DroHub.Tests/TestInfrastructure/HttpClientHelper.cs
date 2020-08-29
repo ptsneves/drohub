@@ -17,7 +17,6 @@ namespace DroHub.Tests.TestInfrastructure
     public class HttpClientHelper : IDisposable
     {
         private bool _disposed;
-        private DroHubFixture _test_fixture;
         public HttpClientHandler handlerHttp { get; private set; }
         public HttpClient Client {get; set; }
         public HttpResponseMessage Response { get; private set; }
@@ -25,9 +24,8 @@ namespace DroHub.Tests.TestInfrastructure
         public string verificationToken { get; private set; }
         public Cookie loginCookie { get; private set; }
 
-        public HttpClientHelper(DroHubFixture test_fixture) {
+        public HttpClientHelper() {
             _disposed = false;
-            _test_fixture = test_fixture;
             cookieContainer = new CookieContainer();
             handlerHttp = new HttpClientHandler {
                 UseCookies = true, UseDefaultCredentials = true, CookieContainer = cookieContainer,
@@ -41,10 +39,10 @@ namespace DroHub.Tests.TestInfrastructure
                 d[key] = value;
         }
 
-        public static async Task sendInvitation(DroHubFixture fixture, string agent_email, string agent_password,
+        public static async Task sendInvitation(string agent_email, string agent_password,
             string[] emails) {
 
-            var http_helper = await createLoggedInUser(fixture, agent_email, agent_password);
+            var http_helper = await createLoggedInUser(agent_email, agent_password);
             var send_invitation_url = new Uri(DroHubFixture.SiteUri, "DHub/AccountManagement/SendInvitation");
             using var create_page_response = await http_helper.Client.GetAsync(send_invitation_url);
             create_page_response.EnsureSuccessStatusCode();
@@ -72,13 +70,13 @@ namespace DroHub.Tests.TestInfrastructure
         }
 
 
-        public static async Task changePermissions(DroHubFixture fixture, string agent_email, string agent_pass,
+        public static async Task changePermissions(string agent_email, string agent_pass,
             string victim_email, string victim_target_permission) {
 
             if (victim_email == "admin@drohub.xyz")
                 return;
 
-            var http_helper = await createLoggedInUser(fixture, agent_email, agent_pass);
+            var http_helper = await createLoggedInUser(agent_email, agent_pass);
             var change_permission_url = new Uri(DroHubFixture.SiteUri, "DHub/AccountManagement/ChangeUserPermissions");
             using var create_page_response = await http_helper.Client.GetAsync(change_permission_url);
             create_page_response.EnsureSuccessStatusCode();
@@ -114,7 +112,7 @@ namespace DroHub.Tests.TestInfrastructure
                 if (user_email == "admin@drohub.xyz")
                     return new AddUserHelper(test_fixture, user_email, user_password, remove_on_dispose);
 
-                var http_helper = await createLoggedInUser(test_fixture, user_email_of_creator, password_of_creator);
+                var http_helper = await createLoggedInUser(user_email_of_creator, password_of_creator);
                 await http_helper.Response.Content.ReadAsStringAsync();
                 var create_user_url = new Uri(DroHubFixture.SiteUri, "Identity/Account/Manage/AdminPanel");
                 using var create_page_response = await http_helper.Client.GetAsync(create_user_url);
@@ -161,12 +159,12 @@ namespace DroHub.Tests.TestInfrastructure
                     organization, user_base_type, allowed_flight_time_minutes, allowed_user_count, remove_on_dispose);
             }
 
-            public static async Task excludeUser(DroHubFixture test_fixture, string deleter_email, string deleter_password,
+            public static async Task excludeUser(string deleter_email, string deleter_password,
                     string user_email_to_delete) {
                 if (user_email_to_delete == "admin@drohub.xyz")
                     return;
 
-                var http_helper = await createLoggedInUser(test_fixture, deleter_email, deleter_password);
+                var http_helper = await createLoggedInUser(deleter_email, deleter_password);
                 var create_device_url = new Uri(DroHubFixture.SiteUri, "DHub/AccountManagement/ExcludeUser");
                 using var create_page_response = await http_helper.Client.GetAsync(create_device_url);
                 create_page_response.EnsureSuccessStatusCode();
@@ -187,7 +185,7 @@ namespace DroHub.Tests.TestInfrastructure
             }
 
             public static async Task excludeUser(DroHubFixture test_fixture, string user_email) {
-                await excludeUser(test_fixture, "admin@drohub.xyz", test_fixture.AdminPassword, user_email);
+                await excludeUser("admin@drohub.xyz", test_fixture.AdminPassword, user_email);
             }
 
             private readonly DroHubFixture _fixture;
@@ -209,24 +207,24 @@ namespace DroHub.Tests.TestInfrastructure
             }
         }
 
-        public static async ValueTask<HttpClientHelper> createHttpClient(DroHubFixture test_fixture, Uri uri) {
-            var http_helper = new HttpClientHelper(test_fixture);
+        public static async ValueTask<HttpClientHelper> createHttpClient(Uri uri) {
+            var http_helper = new HttpClientHelper();
             http_helper.Response = await http_helper.Client.GetAsync(uri);
             http_helper.Response.EnsureSuccessStatusCode();
             return http_helper;
         }
 
-        public static async Task createJanusHandle(DroHubFixture fixture) {
-            var http_helper = new HttpClientHelper(fixture);
+        public static async Task createJanusHandle() {
+            var http_helper = new HttpClientHelper();
             http_helper.Response = await http_helper.Client.PostAsJsonAsync(DroHubFixture.JanusUri, new {
                 janus = "help"
             });
             http_helper.Response.EnsureSuccessStatusCode();
         }
 
-        public static async ValueTask<HttpClientHelper> createLoggedInUser(DroHubFixture test_fixture, string user, string password) {
+        public static async ValueTask<HttpClientHelper> createLoggedInUser(string user, string password) {
             var login_uri = new Uri(DroHubFixture.SiteUri, "Identity/Account/Login");
-            var http_helper = new HttpClientHelper(test_fixture);
+            var http_helper = new HttpClientHelper();
             http_helper.Response = await http_helper.Client.GetAsync(login_uri);
             http_helper.Response.EnsureSuccessStatusCode();
             http_helper.verificationToken = DroHubFixture.getVerificationToken(await http_helper.Response.Content.ReadAsStringAsync());
@@ -251,9 +249,9 @@ namespace DroHub.Tests.TestInfrastructure
         public static readonly DateTime UnixEpoch =
             new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        public static async ValueTask<List<Device>> getDeviceList(DroHubFixture test_fixture, string user, string
+        public static async ValueTask<List<Device>> getDeviceList(string user, string
         password) {
-            using (var http_helper = await createLoggedInUser(test_fixture, user, password)) {
+            using (var http_helper = await createLoggedInUser(user, password)) {
                 var create_device_url = new Uri(DroHubFixture.SiteUri, "DHub/Devices/GetDevicesList");
                 http_helper.Response?.Dispose();
                 http_helper.Response = await http_helper.Client.GetAsync(create_device_url);
@@ -263,7 +261,6 @@ namespace DroHub.Tests.TestInfrastructure
         }
 
         public class CreateDeviceHelper : IAsyncDisposable {
-            private readonly DroHubFixture _fixture;
             private readonly string _user_email;
             private readonly string _password;
             private readonly string _device_serial;
@@ -274,7 +271,7 @@ namespace DroHub.Tests.TestInfrastructure
                 if (user == "admin@drohub.xyz")
                     password = test_fixture.AdminPassword;
 
-                var token_result = await getApplicationToken(test_fixture, user, password);
+                var token_result = await getApplicationToken(user, password);
                 var m = new AndroidApplicationController.DeviceCreateModel() {
                     Device = new Device() {
                         SerialNumber = device_serial,
@@ -284,7 +281,7 @@ namespace DroHub.Tests.TestInfrastructure
                 if (token_result["result"] == "nok")
                     throw new InvalidCredentialException("Could not retrieve token");
 
-                var result = await retrieveFromAndroidApp(test_fixture, user, token_result["result"],
+                var result = await retrieveFromAndroidApp(user, token_result["result"],
                     "CreateDevice", m);
 
                 var json_obj = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,string>>(result);
@@ -294,9 +291,9 @@ namespace DroHub.Tests.TestInfrastructure
                 return new CreateDeviceHelper(test_fixture, user, password, device_serial, delete_flight_sessions);
             }
 
-            private static async Task deleteDevice(DroHubFixture test_fixture, int device_id, string user, string
+            private static async Task deleteDevice(int device_id, string user, string
             password, bool delete_flight_sessions = true) {
-                var http_helper = await createLoggedInUser(test_fixture, user, password);
+                var http_helper = await createLoggedInUser(user, password);
                 var content = await http_helper.Response.Content.ReadAsStringAsync();
                 var create_device_url = new Uri(DroHubFixture.SiteUri, $"DHub/Devices/Delete/{device_id}");
                 using var create_page_response = await http_helper.Client.GetAsync(create_device_url);
@@ -313,16 +310,15 @@ namespace DroHub.Tests.TestInfrastructure
                 http_helper?.Dispose();
             }
 
-            private static async Task deleteDevice(DroHubFixture test_fixture, string serial_number, string user,
+            private static async Task deleteDevice(string serial_number, string user,
                 string password, bool delete_flight_sessions = true) {
-                var devices_list = await getDeviceList(test_fixture, user, password);
+                var devices_list = await getDeviceList(user, password);
                 int device_id = devices_list.First(d => d.SerialNumber == serial_number).Id;
-                await deleteDevice(test_fixture, device_id, user, password, delete_flight_sessions);
+                await deleteDevice(device_id, user, password, delete_flight_sessions);
             }
 
             private CreateDeviceHelper(DroHubFixture test_fixture, string user_email, string user_password,
                     string device_serial, bool delete_flight_sessions) {
-                _fixture = test_fixture;
                 _user_email = user_email;
                 _password = user_password;
                 _device_serial = device_serial;
@@ -330,11 +326,11 @@ namespace DroHub.Tests.TestInfrastructure
             }
 
             public async ValueTask DisposeAsync() {
-                await deleteDevice(_fixture, _device_serial, _user_email, _password, _delete_flight_sessions);
+                await deleteDevice(_device_serial, _user_email, _password, _delete_flight_sessions);
             }
         }
 
-        public static TWebSocketClient getTWebSocketClient(DroHubFixture fixture, string user, string token,
+        public static TWebSocketClient getTWebSocketClient(string user, string token,
             string device_serial) {
             var ws_transport = new TWebSocketClient(DroHubFixture.ThriftUri, System.Net.WebSockets
             .WebSocketMessageType.Text, false);
@@ -345,22 +341,22 @@ namespace DroHub.Tests.TestInfrastructure
             return ws_transport;
         }
 
-        public static async Task<TWebSocketClient> openWebSocket(DroHubFixture fixture, string user, string token, string
+        public static async Task<TWebSocketClient> openWebSocket(string user, string token, string
         device_serial) {
-            var ws_transport = getTWebSocketClient(fixture, user, token, device_serial);
+            var ws_transport = getTWebSocketClient(user, token, device_serial);
             await ws_transport.OpenAsync();
             return ws_transport;
         }
 
-        public static async Task<int> getDeviceId(DroHubFixture test_fixture, string serial_number, string user,
+        public static async Task<int> getDeviceId(string serial_number, string user,
             string password) {
-            var devices_list = await getDeviceList(test_fixture, user, password);
+            var devices_list = await getDeviceList(user, password);
             return devices_list.Single(d => d.SerialNumber == serial_number).Id;
         }
 
-        public static async Task<long?> getDeviceFlightStartTime(DroHubFixture test_fixture, int device_id,
+        public static async Task<long?> getDeviceFlightStartTime(int device_id,
             string user, string password) {
-            var http_helper = await createLoggedInUser(test_fixture, user, password);
+            var http_helper = await createLoggedInUser(user, password);
             var create_device_url = new Uri(DroHubFixture.SiteUri,
                 $"DHub/Devices/GetDeviceFlightStartTime/{device_id}");
 
@@ -371,9 +367,9 @@ namespace DroHub.Tests.TestInfrastructure
             return Newtonsoft.Json.JsonConvert.DeserializeObject<long?>(s);
         }
 
-        public static async Task<long?> geLastConnectionId(DroHubFixture test_fixture, int device_id,
+        public static async Task<long?> geLastConnectionId(int device_id,
             string user, string password) {
-            var http_helper = await createLoggedInUser(test_fixture, user, password);
+            var http_helper = await createLoggedInUser(user, password);
             var create_device_url = new Uri(DroHubFixture.SiteUri,
                 $"DHub/Devices/GetLastConnectionId/{device_id}");
 
@@ -384,10 +380,10 @@ namespace DroHub.Tests.TestInfrastructure
             return Newtonsoft.Json.JsonConvert.DeserializeObject<long?>(s);
         }
 
-        public static async ValueTask<List<T>> getDeviceTelemetry<T>(DroHubFixture test_fixture, string serial_number, string user, string password) {
-            var device_id = await getDeviceId(test_fixture, serial_number, user, password);
-            var connection_id = await geLastConnectionId(test_fixture, device_id, user, password);
-            using (var http_helper = await createLoggedInUser(test_fixture, user, password)) {
+        public static async ValueTask<List<T>> getDeviceTelemetry<T>(string serial_number, string user, string password) {
+            var device_id = await getDeviceId(serial_number, user, password);
+            var connection_id = await geLastConnectionId(device_id, user, password);
+            using (var http_helper = await createLoggedInUser(user, password)) {
                 var content = await http_helper.Response.Content.ReadAsStringAsync();
                 var create_device_url = new Uri(DroHubFixture.SiteUri, $"DHub/Devices/Get{typeof(T)}s/{connection_id}");
                 http_helper.Response?.Dispose();
@@ -398,7 +394,7 @@ namespace DroHub.Tests.TestInfrastructure
             }
         }
 
-        public static async ValueTask<Dictionary<string, string>> getApplicationToken(DroHubFixture test_fixture, string user_name,
+        public static async ValueTask<Dictionary<string, string>> getApplicationToken(string user_name,
             string password) {
             var auth_token_uri = new Uri(DroHubFixture.SiteUri, "api/GetToken/GetApplicationToken");
             var content_to_send = new GetTokenController.GetTokenModel() {
@@ -406,7 +402,7 @@ namespace DroHub.Tests.TestInfrastructure
                 Password = password,
             };
 
-            var http_helper = new HttpClientHelper(test_fixture);
+            var http_helper = new HttpClientHelper();
             http_helper.Response = await http_helper.Client.PostAsJsonAsync(auth_token_uri, content_to_send);
             http_helper.Response.EnsureSuccessStatusCode();
             var res = await http_helper.Response.Content.ReadAsStringAsync();
@@ -420,11 +416,11 @@ namespace DroHub.Tests.TestInfrastructure
             throw new InvalidProgramException($"Unexpected Redirect... ");
         }
 
-        private static async ValueTask<string> retrieveFromAndroidApp(DroHubFixture test_fixture, string user,
+        private static async ValueTask<string> retrieveFromAndroidApp(string user,
             string token, string action_name, object query) {
 
             var auth_token_uri = new Uri(DroHubFixture.SiteUri, $"api/AndroidApplication/{action_name}");
-            var http_helper = new HttpClientHelper(test_fixture);
+            var http_helper = new HttpClientHelper();
             http_helper.Client.DefaultRequestHeaders.Add("x-drohub-user", user);
             http_helper.Client.DefaultRequestHeaders.Add("x-drohub-token", token);
             http_helper.Response = await http_helper.Client.PostAsJsonAsync(auth_token_uri, query);
@@ -432,12 +428,13 @@ namespace DroHub.Tests.TestInfrastructure
             return await http_helper.Response.Content.ReadAsStringAsync();
         }
 
-        public static async ValueTask<Dictionary<string, dynamic>> queryDeviceInfo(DroHubFixture test_fixture,
-            string user_name, string token, string device_serial_number) {
+        public static async ValueTask<Dictionary<string, dynamic>> queryDeviceInfo(string user_name, string token,
+            string device_serial_number) {
+
             var query = new AndroidApplicationController.QueryDeviceModel() {
                 DeviceSerialNumber = device_serial_number
             };
-            var res = await retrieveFromAndroidApp(test_fixture, user_name, token, "QueryDeviceInfo", query);
+            var res = await retrieveFromAndroidApp(user_name, token, "QueryDeviceInfo", query);
             return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,dynamic>>(res);
         }
 

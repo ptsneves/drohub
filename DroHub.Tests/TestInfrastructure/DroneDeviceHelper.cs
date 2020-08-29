@@ -174,7 +174,7 @@ namespace DroHub.Tests.TestInfrastructure
             _device = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, user,
                 password, _device_serial, _device_serial);
 
-            http_helper = await HttpClientHelper.createLoggedInUser(_fixture, user, password);
+            http_helper = await HttpClientHelper.createLoggedInUser(user, password);
 
             _connection = new HubConnectionBuilder()
                 .WithUrl(new Uri(hub_uri), options => { options
