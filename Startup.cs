@@ -38,18 +38,9 @@ namespace DroHub
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<DroHubContext>(options =>
-            {
-                switch (Configuration.GetValue<string>("DatabaseProvider")){
-                    case "mssql":
-                        options.UseSqlServer(Configuration.GetConnectionString("DroHubConnectionMSSQL"));
-                        break;
-                    case "mysql":
-                        options.UseMySql(Configuration.GetConnectionString("DroHubConnectionMySQL"));
-                        break;
-                    default:
-                        throw new InvalidProgramException("You need to set DatabaseProvider property to mysql or mssql");
-                }
+            services.AddDbContext<DroHubContext>(options => {
+                var db_provider = Configuration.GetValue<string>(Program.DATABASE_PROVIDER_KEY);
+                options.UseMySql(Configuration.GetConnectionString(db_provider));
             });
 
             services.Configure<ForwardedHeadersOptions>(options =>

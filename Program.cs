@@ -9,8 +9,8 @@ using DroHub.Data;
 
 namespace DroHub
 {
-    public class Program
-    {
+    public class Program {
+        public static String DATABASE_PROVIDER_KEY = "DatabaseProvider";
         public static async Task Main(string[] args)
         {
             var appsettings = "";
