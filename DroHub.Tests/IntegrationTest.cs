@@ -11,9 +11,9 @@ using System.Security.Authentication;
 using System.Threading;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
-using DroHub.Data;
 using DroHub.Helpers;
 using mailslurp.Model;
+using Microsoft.EntityFrameworkCore;
 
 // ReSharper disable StringLiteralTypo
 
@@ -174,7 +174,6 @@ namespace DroHub.Tests
         [InlineData(DroHubUser.GUEST_POLICY_CLAIM, false)]
         [Theory]
         public async void TestSendInvitation(string agent_role, bool expect_success) {
-
             var mail_slurp_helper = new MailSlurpHelper
                 ("132892a34e183e7264f2f13a47adf67f26e1381c5fb1401b70d0f3f64046a883", "TestSendInvitation");
 
@@ -414,22 +413,40 @@ namespace DroHub.Tests
                 DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
 
 
-            await using var to_be_excluded_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
+            await using var victim_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
                 VICTIM_USER_EMAIL, DEFAULT_PASSWORD,
                 victim_user_org, victim_original_role, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES,
                 DEFAULT_ALLOWED_USER_COUNT);
 
             var t = HttpClientHelper.changePermissions(_fixture, AGENT_USER_EMAIL, DEFAULT_PASSWORD,
                 VICTIM_USER_EMAIL, victim_target_role);
+
+            var victim_user_id = _fixture.DbContext.Users
+                .Single(u => u.Email == VICTIM_USER_EMAIL)
+                .Id;
+
+
             if (expect_success) {
                     await t;
+                    var victim_claims = _fixture.DbContext.UserClaims
+                        .Where(c => c.UserId == victim_user_id)
+                        .ToList();
+
+                    //The other +1 is the subscription name
+                    Assert.Equal(victim_claims.Count, DroHubUser.UserClaims[victim_target_role].Count + 1);
             }
             else {
                 await Assert.ThrowsAsync<HttpRequestException>( async () =>
+
                     await t
                 );
-            }
+                var victim_claims = _fixture.DbContext.UserClaims
+                    .Where(c => c.UserId == victim_user_id)
+                    .ToList();
 
+                //The other +1 is the subscription name
+                Assert.Equal(victim_claims.Count, DroHubUser.UserClaims[victim_original_role].Count + 1);
+            }
         }
 
         [Fact]
