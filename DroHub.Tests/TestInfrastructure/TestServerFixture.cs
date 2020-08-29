@@ -5,11 +5,18 @@ using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Commands;
 using System.Linq;
 using System.IO;
+using System.Net.Http;
+using System.Text;
 using AngleSharp;
 using AngleSharp.Html.Parser;
+using DroHub.Data;
 using DroHub.Helpers;
+using Ductus.FluentDocker.Services.Extensions;
 using mailslurp.Api;
 using mailslurp.Model;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace DroHub.Tests.TestInfrastructure
 {
@@ -25,6 +32,10 @@ namespace DroHub.Tests.TestInfrastructure
         private static string DroHubTestsPath => Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory + "../../../");
         private static string DroHubPath => Path.GetFullPath(Path.Join(DroHubTestsPath, "../"));
         public static string TestAssetsPath => Path.Join(DroHubTestsPath, "TestAssets");
+
+        public IConfiguration Configuration { get; private set; }
+
+        public DroHubContext DbContext { get; private set; }
 
         public DroHubFixture() {
             var docker_compose_file = Path.Join(DroHubPath, "docker-compose.yml");
@@ -50,6 +61,9 @@ namespace DroHub.Tests.TestInfrastructure
                     .Split(null).Last();
             }
 
+            initializeConfiguration(web_container);
+            initializeDBContext();
+
             var live_video_mount = web_container
                 .GetConfiguration().Mounts
                 .Single(m => m.Source.Contains("live-video-storage"));
@@ -57,9 +71,36 @@ namespace DroHub.Tests.TestInfrastructure
             Console.WriteLine("Ready to start");
         }
 
+        private void initializeConfiguration(IContainerService web_container) {
+            var app_settings_result = web_container.Execute("cat /app/appsettings.json");
+            if (!app_settings_result.Success)
+                throw new InvalidProgramException("Cannot read appsettings file for tests. Exiting");
+
+            var appsettings_data = app_settings_result.Data;
+            var json_string = appsettings_data.Aggregate("", (current, item) => current + item);
+            var json_stream = new MemoryStream();
+            json_stream.Write(Encoding.UTF8.GetBytes(json_string));
+            json_stream.Seek(0, SeekOrigin.Begin);
+            var builder = new ConfigurationBuilder()
+                .AddJsonStream(json_stream);
+
+            Configuration = builder.Build();
+        }
+
+        private void initializeDBContext() {
+            var db_provider = Configuration.GetValue<string>(Program.DATABASE_PROVIDER_KEY);
+            var db_connection_string = Configuration
+                .GetConnectionString(db_provider);
+
+            var options = new DbContextOptionsBuilder<DroHubContext>()
+                .UseMySql(db_connection_string)
+                .Options;
+            DbContext = new DroHubContext(options);
+        }
+
         public static AngleSharp.Html.Dom.IHtmlDocument getHtmlDOM(string responseBody)
         {
-            var context = BrowsingContext.New(Configuration.Default);
+            var context = BrowsingContext.New(AngleSharp.Configuration.Default);
             var parser = context.GetService<IHtmlParser>();
             return parser.ParseDocument(responseBody);
         }
