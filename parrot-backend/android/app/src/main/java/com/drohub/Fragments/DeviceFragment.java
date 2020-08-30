@@ -11,6 +11,8 @@ import com.drohub.ParrotHelpers.ParrotDroneObserver;
 import com.drohub.ParrotHelpers.ParrotRCObserver;
 import com.drohub.R;
 
+import java.net.URISyntaxException;
+
 public class DeviceFragment extends Fragment {
     private final int _fragment_id;
     protected DroHubDevice _connected_rc;
@@ -34,6 +36,12 @@ public class DeviceFragment extends Fragment {
         if (! (getActivity() instanceof DroHubHelper.CredentialGetters))
             throw new IllegalArgumentException();
 
+        String query_device_info_url;
+        try {
+            query_device_info_url = DroHubHelper.getURL(getContext(), R.string.query_device_info_url);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException();
+        }
         _user_auth_token = ((DroHubHelper.CredentialGetters) getActivity()).getAuthToken();
         _user_email = ((DroHubHelper.CredentialGetters) getActivity()).getUserEmail();
 
@@ -41,7 +49,7 @@ public class DeviceFragment extends Fragment {
         _parrot_rc_helper = new ParrotRCObserver(_view, this.getActivity(), this::onNewRC);
         _parrot_drone_helper = new ParrotDroneObserver(
                 _view,
-                this.getString(R.string.query_device_info_url),
+                query_device_info_url,
                 _user_email,
                 _user_auth_token,
                 this.getActivity(),

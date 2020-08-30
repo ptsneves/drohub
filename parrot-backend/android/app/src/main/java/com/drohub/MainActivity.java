@@ -19,6 +19,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -49,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
 
     /** Code for permission request result handling. */
     private static final int REQUEST_CODE_PERMISSIONS_REQUEST = 1;
+    private String _validate_token_url;
+    private String _get_application_token_url;
 
 
     public MainActivity() {
@@ -84,6 +87,17 @@ public class MainActivity extends AppCompatActivity {
                     REQUEST_CODE_PERMISSIONS_REQUEST);
         }
 
+        try {
+            _validate_token_url = DroHubHelper.getURL(getApplicationContext(), R.string.validate_token_url);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
+            _get_application_token_url = DroHubHelper.getURL(getApplicationContext(), R.string.get_application_token_url);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
 
         _user_auth_token = _saved_accounts.getString(USER_AUTH_TOKEN_STORE_KEY, null);
         _user_email = _saved_accounts.getString(USER_EMAIL_STORE_KEY, null);
@@ -98,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
     private void validateAndLaunchLobbyActivity() {
         APIHelper api_helper = new APIHelper(findViewById(android.R.id.content), _user_email, _user_auth_token);
         api_helper.get(
-                getString(R.string.validate_token_url),
+                _validate_token_url,
                 response -> {
                     email_ctrl.setText(_user_email);
                     Intent intent = new Intent(this, LobbyActivity.class);
@@ -142,7 +156,6 @@ public class MainActivity extends AppCompatActivity {
 
 
         String password = password_ctrl.getText().toString();
-        String url = getString(R.string.drohub_url) + "/api/GetToken/GetApplicationToken";
         JSONObject request = new JSONObject();
 
         if (_user_email.isEmpty() || password.isEmpty()) {
@@ -162,9 +175,10 @@ public class MainActivity extends AppCompatActivity {
         hideLoginGroup();
         setStatusText(status_view,"Retrieving token...", Color.BLACK);
         APIHelper api_helper = new APIHelper(findViewById(android.R.id.content), _user_email, _user_auth_token);
-        api_helper.post(url,
+        api_helper.post(_get_application_token_url,
                 request,
                 response -> {
+
             if (response == null)
                 return;
 

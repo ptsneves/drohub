@@ -1,6 +1,7 @@
 package com.drohub;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -9,6 +10,9 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.snackbar.Snackbar;
 import com.parrot.drone.sdkcore.ulog.ULogTag;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public class DroHubHelper {
     public static final int CREATE_DEVICE_INTENT_RESULT = 1001;
@@ -50,5 +54,10 @@ public class DroHubHelper {
             view = new View(activity);
         }
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+    }
+
+    public static String getURL(Context context, int url_id) throws URISyntaxException {
+        URI drohub_url = new URI(context.getString(R.string.drohub_url));
+        return drohub_url.resolve(context.getString(url_id)).toString();
     }
 }
