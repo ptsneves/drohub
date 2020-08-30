@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.view.View;
 import androidx.annotation.NonNull;
 import com.drohub.Models.DroHubDevice;
-import com.drohub.QueryDeviceInfoHelper;
+import com.drohub.api.QueryDeviceInfoHelper;
 import com.parrot.drone.groundsdk.GroundSdk;
 import com.parrot.drone.groundsdk.ManagedGroundSdk;
 import com.parrot.drone.groundsdk.device.DeviceState;
