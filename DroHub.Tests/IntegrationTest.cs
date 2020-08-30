@@ -638,6 +638,23 @@ namespace DroHub.Tests
             Assert.Equal("Device does not exist.", error);
         }
 
+        [InlineData(DroHubUser.ADMIN_POLICY_CLAIM)]
+        [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM)]
+        [InlineData(DroHubUser.OWNER_POLICY_CLAIM)]
+        [InlineData(DroHubUser.PILOT_POLICY_CLAIM)]
+        [Theory]
+        public async void TestValidateToken(string user_role) {
+            await using var s = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
+                DEFAULT_ORGANIZATION, user_role, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+
+            var token = (await HttpClientHelper.getApplicationToken(DEFAULT_USER,
+                DEFAULT_PASSWORD))["result"];
+
+            var result = await HttpClientHelper.validateToken(DEFAULT_USER, token);
+            Assert.True(result.TryGetValue("result", out var message));
+            Assert.Equal(message, "ok");
+        }
+
         [Fact]
         public async void TestCreateExistingDeviceFails() {
             await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",

@@ -423,7 +423,11 @@ namespace DroHub.Tests.TestInfrastructure
             var http_helper = new HttpClientHelper();
             http_helper.Client.DefaultRequestHeaders.Add("x-drohub-user", user);
             http_helper.Client.DefaultRequestHeaders.Add("x-drohub-token", token);
-            http_helper.Response = await http_helper.Client.PostAsJsonAsync(auth_token_uri, query);
+            if (query != null)
+                http_helper.Response = await http_helper.Client.PostAsJsonAsync(auth_token_uri, query);
+            else {
+                http_helper.Response = await http_helper.Client.GetAsync(auth_token_uri);
+            }
             http_helper.Response.EnsureSuccessStatusCode();
             return await http_helper.Response.Content.ReadAsStringAsync();
         }
@@ -435,6 +439,11 @@ namespace DroHub.Tests.TestInfrastructure
                 DeviceSerialNumber = device_serial_number
             };
             var res = await retrieveFromAndroidApp(user_name, token, "QueryDeviceInfo", query);
+            return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,dynamic>>(res);
+        }
+
+        public static async ValueTask<Dictionary<string, dynamic>> validateToken(string user_name, string token) {
+            var res = await retrieveFromAndroidApp(user_name, token, "ValidateToken", null);
             return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,dynamic>>(res);
         }
 
