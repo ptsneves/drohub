@@ -11,19 +11,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
-public class QueryDeviceInfoHelper {
+public class QueryDeviceInfoHelper extends APIHelper {
     public interface Listener {
         void onDeviceInfoResponse(JSONObject response);
         void onDeviceNotRegistered();
     }
 
-    private final View _snackbar_view;
     private final Listener _listener;
-    private final String _user_email;
-    private final String _user_auth_token;
     private final String _serial;
     private final String _query_device_url;
-    private final VolleyHelper _volley;
 
     public QueryDeviceInfoHelper(View snackbar_info_view,
                                  @NonNull Listener listener,
@@ -31,20 +27,14 @@ public class QueryDeviceInfoHelper {
                                  String user_email,
                                  String user_auth_token,
                                  String serial) {
-
-        _snackbar_view = snackbar_info_view;
+        super(snackbar_info_view, user_email, user_auth_token);
         _listener = listener;
-        _user_email = user_email;
-        _user_auth_token = user_auth_token;
         _serial = serial;
         _query_device_url = query_device_string;
-        _volley = new VolleyHelper();
+
     }
 
     public void validateDeviceRegistered() {
-        if ( _user_email == null || _user_auth_token == null)
-            DroHubHelper.setStatusText(_snackbar_view, "User or token not set???");
-
         JSONObject request = new JSONObject();
         try {
             request.put("DeviceSerialNumber", _serial);

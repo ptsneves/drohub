@@ -14,8 +14,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import com.android.volley.Request;
-import com.android.volley.toolbox.JsonObjectRequest;
+import com.drohub.api.APIHelper;
 import com.google.android.material.textfield.TextInputEditText;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -33,7 +32,6 @@ public class MainActivity extends AppCompatActivity {
     protected String _user_auth_token;
     protected String _user_email;
     private SharedPreferences _saved_accounts;
-    private final VolleyHelper _volley;
 
     private TextView status_view;
     TextInputEditText email_ctrl;
@@ -55,7 +53,6 @@ public class MainActivity extends AppCompatActivity {
 
     public MainActivity() {
         super();
-        _volley = new VolleyHelper();
     }
 
     @Override
@@ -99,12 +96,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void validateAndLaunchLobbyActivity() {
-        DroHubObjectRequest token_validation_request = new DroHubObjectRequest(
-                _user_email,
-                _user_auth_token,
-                Request.Method.GET,
+        APIHelper api_helper = new APIHelper(findViewById(android.R.id.content), _user_email, _user_auth_token);
+        api_helper.get(
                 getString(R.string.validate_token_url),
-                null,
                 response -> {
                     email_ctrl.setText(_user_email);
                     Intent intent = new Intent(this, LobbyActivity.class);
@@ -117,11 +111,8 @@ public class MainActivity extends AppCompatActivity {
                 error -> {
                     showLoginGroup();
                     setStatusText(status_view, "Token is not valid. Re-log in", Color.RED);
-                } ,
-                (retry_error, retry_count) -> {throw retry_error;});
-
-        token_validation_request.setShouldCache(false);
-        _volley.getRequestQueue().add(token_validation_request);
+                },
+                null);
     }
 
     protected void setStatusText(TextView status_view, String text, int color) {
@@ -170,9 +161,10 @@ public class MainActivity extends AppCompatActivity {
 
         hideLoginGroup();
         setStatusText(status_view,"Retrieving token...", Color.BLACK);
-        JsonObjectRequest login_request = new JsonObjectRequest(Request.Method.POST,
-                url, request, response ->
-        {
+        APIHelper api_helper = new APIHelper(findViewById(android.R.id.content), _user_email, _user_auth_token);
+        api_helper.post(url,
+                request,
+                response -> {
             if (response == null)
                 return;
 
@@ -206,16 +198,13 @@ public class MainActivity extends AppCompatActivity {
                         0xFF168849);
 
                 validateAndLaunchLobbyActivity();
-
             }
         },
         error -> {
             setStatusText(status_view,
                     "An error occurred contacting Drohub servers " + error.toString(), Color.RED);
             showLoginGroup();
-        });
-
-        login_request.setShouldCache(false);
-        _volley.getRequestQueue().add(login_request);
+        },
+        null);
     }
 }
