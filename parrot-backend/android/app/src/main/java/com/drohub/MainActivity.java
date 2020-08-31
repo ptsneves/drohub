@@ -102,7 +102,6 @@ public class MainActivity extends AppCompatActivity {
         _user_auth_token = _saved_accounts.getString(USER_AUTH_TOKEN_STORE_KEY, null);
         _user_email = _saved_accounts.getString(USER_EMAIL_STORE_KEY, null);
         email_ctrl.setText(_user_email);
-        hideLoginGroup();
 
         if (_user_auth_token != null && _user_email != null) {
             validateAndLaunchLobbyActivity();
@@ -110,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void validateAndLaunchLobbyActivity() {
+        hideLoginGroup();
         APIHelper api_helper = new APIHelper(findViewById(android.R.id.content), _user_email, _user_auth_token);
         api_helper.get(
                 _validate_token_url,
