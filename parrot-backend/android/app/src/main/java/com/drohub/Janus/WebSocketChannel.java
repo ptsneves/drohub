@@ -128,6 +128,9 @@ public class WebSocketChannel extends WebSocketClient {
     }
 
     private void processEvent(JanusHandle handle, JSONObject jo) {
+        if (!jo.optJSONObject("plugindata").has("plugindata"))
+            return;
+
         JSONObject plugin = jo.optJSONObject("plugindata").optJSONObject("data");
         if (plugin.optString("videoroom").equals("joined")) {
             handle.onJoined.onJoined(handle);
@@ -184,7 +187,7 @@ public class WebSocketChannel extends WebSocketClient {
     }
 
     private void publisherJoinRoom(JanusHandle handle) {
-        JSONObject msg = new JSONObject();
+        JSONObject msg = janusTransactions.addTransaction("message", null);
         JSONObject body = new JSONObject();
         try {
             body.putOpt("request", "join");
@@ -192,9 +195,7 @@ public class WebSocketChannel extends WebSocketClient {
             body.putOpt("ptype", "publisher");
             body.putOpt("display", displayName);
 
-            msg.putOpt("janus", "message");
             msg.putOpt("body", body);
-            msg.putOpt("transaction", randomString(12));
             msg.putOpt("session_id", mSessionId);
             msg.putOpt("handle_id", handle.handleId);
         } catch (JSONException e) {
@@ -206,7 +207,7 @@ public class WebSocketChannel extends WebSocketClient {
     public void publisherCreateOffer(final BigInteger handleId, final SessionDescription sdp) {
         JSONObject publish = new JSONObject();
         JSONObject jsep = new JSONObject();
-        JSONObject message = new JSONObject();
+        JSONObject message = janusTransactions.addTransaction("message", null);
         try {
             publish.putOpt("request", "configure");
             publish.putOpt("bitrate", _peerConnectionParameters.videoStartBitrate);
@@ -225,12 +226,11 @@ public class WebSocketChannel extends WebSocketClient {
             jsep.putOpt("type", sdp.type);
             jsep.putOpt("sdp", sdp.description);
 
-            message.putOpt("janus", "message");
             message.putOpt("body", publish);
             message.putOpt("jsep", jsep);
-            message.putOpt("transaction", randomString(12));
             message.putOpt("session_id", mSessionId);
             message.putOpt("handle_id", handleId);
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -240,7 +240,7 @@ public class WebSocketChannel extends WebSocketClient {
     public void subscriberCreateAnswer(final BigInteger handleId, final SessionDescription sdp) {
         JSONObject body = new JSONObject();
         JSONObject jsep = new JSONObject();
-        JSONObject message = new JSONObject();
+        JSONObject message = janusTransactions.addTransaction("message", null);
 
         try {
             body.putOpt("request", "start");
@@ -248,13 +248,13 @@ public class WebSocketChannel extends WebSocketClient {
 
             jsep.putOpt("type", sdp.type);
             jsep.putOpt("sdp", sdp.description);
-            message.putOpt("janus", "message");
+
             message.putOpt("body", body);
             message.putOpt("jsep", jsep);
-            message.putOpt("transaction", randomString(12));
             message.putOpt("session_id", mSessionId);
             message.putOpt("handle_id", handleId);
             Log.e(TAG, "-------------"  + message.toString());
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -264,15 +264,13 @@ public class WebSocketChannel extends WebSocketClient {
 
     public void trickleCandidate(final BigInteger handleId, final IceCandidate iceCandidate) {
         JSONObject candidate = new JSONObject();
-        JSONObject message = new JSONObject();
+        JSONObject message = janusTransactions.addTransaction("trickle", null);
         try {
             candidate.putOpt("candidate", iceCandidate.sdp);
             candidate.putOpt("sdpMid", iceCandidate.sdpMid);
             candidate.putOpt("sdpMLineIndex", iceCandidate.sdpMLineIndex);
 
-            message.putOpt("janus", "trickle");
             message.putOpt("candidate", candidate);
-            message.putOpt("transaction", randomString(12));
             message.putOpt("session_id", mSessionId);
             message.putOpt("handle_id", handleId);
         } catch (JSONException e) {
@@ -283,12 +281,11 @@ public class WebSocketChannel extends WebSocketClient {
 
     public void trickleCandidateComplete(final BigInteger handleId) {
         JSONObject candidate = new JSONObject();
-        JSONObject message = new JSONObject();
+        JSONObject message = janusTransactions.addTransaction("trickle", null);
         try {
             candidate.putOpt("completed", true);
-            message.putOpt("janus", "trickle");
+
             message.putOpt("candidate", candidate);
-            message.putOpt("transaction", randomString(12));
             message.putOpt("session_id", mSessionId);
             message.putOpt("handle_id", handleId);
         } catch (JSONException e) {
@@ -322,8 +319,7 @@ public class WebSocketChannel extends WebSocketClient {
     }
 
     private void subscriberJoinRoom(JanusHandle handle) {
-
-        JSONObject msg = new JSONObject();
+        JSONObject msg = janusTransactions.addTransaction("message", null);
         JSONObject body = new JSONObject();
         try {
             body.putOpt("request", "join");
@@ -331,9 +327,7 @@ public class WebSocketChannel extends WebSocketClient {
             body.putOpt("ptype", "listener");
             body.putOpt("feed", handle.feedId);
 
-            msg.putOpt("janus", "message");
             msg.putOpt("body", body);
-            msg.putOpt("transaction", randomString(12));
             msg.putOpt("session_id", mSessionId);
             msg.putOpt("handle_id", handle.handleId);
         } catch (JSONException e) {
@@ -364,12 +358,9 @@ public class WebSocketChannel extends WebSocketClient {
     private Runnable fireKeepAlive = new Runnable() {
         @Override
         public void run() {
-            String transaction = randomString(12);
-            JSONObject msg = new JSONObject();
+            JSONObject msg = janusTransactions.addTransaction("keepalive", null);
             try {
-                msg.putOpt("janus", "keepalive");
                 msg.putOpt("session_id", mSessionId);
-                msg.putOpt("transaction", transaction);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -389,15 +380,5 @@ public class WebSocketChannel extends WebSocketClient {
         Log.e(TAG, "onFailure " + ex.getMessage());
         ex.printStackTrace();
         keepaliveThread.quitSafely();
-    }
-
-    private String randomString(Integer length) {
-        final String str = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZz";
-        final Random rnd = new Random();
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            sb.append(str.charAt(rnd.nextInt(str.length())));
-        }
-        return sb.toString();
     }
 }
