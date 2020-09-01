@@ -96,52 +96,64 @@ public class WebSocketChannel extends WebSocketClient {
     public void onMessage(String message) {
         _activity.runOnUiThread(() -> {
             Log.e(TAG, "onMessage" + message);
+            JSONObject jo;
             try {
-                JSONObject jo = new JSONObject(message);
-                String janus = jo.optString("janus");
-                if (JanusTransactions.isTransaction(jo)) {
-                    janusTransactions.processTransaction(jo);
-                } else {
-                    JanusHandle handle = handles.get(new BigInteger(jo.optString("sender")));
-                    if (handle == null) {
-                        Log.e(TAG, "missing handle");
-                    } else if (janus.equals("event")) {
-                        JSONObject plugin = jo.optJSONObject("plugindata").optJSONObject("data");
-                        if (plugin.optString("videoroom").equals("joined")) {
-                            handle.onJoined.onJoined(handle);
-                        }
-
-                        JSONArray publishers = plugin.optJSONArray("publishers");
-                        if (publishers != null && publishers.length() > 0) {
-                            for (int i = 0, size = publishers.length(); i <= size - 1; i++) {
-                                JSONObject publisher = publishers.optJSONObject(i);
-                                BigInteger feed = new BigInteger(publisher.optString("id"));
-                                String display = publisher.optString("display");
-                                subscriberCreateHandle(feed, display);
-                            }
-                        }
-
-                        String leaving = plugin.optString("leaving");
-                        if (!TextUtils.isEmpty(leaving)) {
-                            JanusHandle jhandle = feeds.get(new BigInteger(leaving));
-                            if (jhandle != null)
-                                jhandle.onLeaving.onJoined(jhandle);
-                        }
-
-                        JSONObject jsep = jo.optJSONObject("jsep");
-                        if (jsep != null) {
-                            handle.onRemoteJsep.onRemoteJsep(handle, jsep);
-                        }
-
-                    } else if (janus.equals("detached")) {
-                        handle.onLeaving.onJoined(handle);
-                    }
-                }
+                jo = new JSONObject(message);
             } catch (JSONException e) {
                 e.printStackTrace();
+                return;
+            }
+
+            String janus = jo.optString("janus");
+            if (JanusTransactions.isTransaction(jo)) {
+                janusTransactions.processTransaction(jo);
+                return;
+            }
+
+            JanusHandle handle = handles.get(new BigInteger(jo.optString("sender")));
+            if (handle == null) {
+                Log.e(TAG, "missing handle");
+                return;
+            }
+
+            switch (janus) {
+                case "event":
+                    processEvent(handle, jo);
+                    break;
+                case "detached":
+                    handle.onLeaving.onJoined(handle);
+                    break;
+            }
+        })  ;
+    }
+
+    private void processEvent(JanusHandle handle, JSONObject jo) {
+        JSONObject plugin = jo.optJSONObject("plugindata").optJSONObject("data");
+        if (plugin.optString("videoroom").equals("joined")) {
+            handle.onJoined.onJoined(handle);
+        }
+
+        JSONArray publishers = plugin.optJSONArray("publishers");
+        if (publishers != null && publishers.length() > 0) {
+            for (int i = 0, size = publishers.length(); i <= size - 1; i++) {
+                JSONObject publisher = publishers.optJSONObject(i);
+                BigInteger feed = new BigInteger(publisher.optString("id"));
+                String display = publisher.optString("display");
+                subscriberCreateHandle(feed, display);
             }
         }
-    );
+
+        String leaving = plugin.optString("leaving");
+        if (!TextUtils.isEmpty(leaving)) {
+            JanusHandle jhandle = feeds.get(new BigInteger(leaving));
+            if (jhandle != null)
+                jhandle.onLeaving.onJoined(jhandle);
+        }
+
+        JSONObject jsep = jo.optJSONObject("jsep");
+        if (jsep != null) {
+            handle.onRemoteJsep.onRemoteJsep(handle, jsep);
+        }
     }
 
     @Override
