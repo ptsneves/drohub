@@ -80,24 +80,16 @@ public class WebSocketChannel extends WebSocketClient {
         keepaliveThread.start();
         keepaliveHandler = new Handler(keepaliveThread.getLooper());
 
-        String transaction = randomString(12);
-        JanusTransactions.JanusTransaction jt = janusTransactions.new JanusTransaction();
-        jt.tid = transaction;
-        jt.success = jo -> {
+        JSONObject transaction = janusTransactions.addTransaction("create", (type, jo) -> {
+            if (type != JanusTransactions.Listener.CallBackType.SUCCESS)
+                return;
+
             mSessionId = new BigInteger(jo.optJSONObject("data").optString("id"));
             keepaliveHandler.post(fireKeepAlive);
             publisherCreateHandle();
-        };
-        jt.error = jo -> {};
-        janusTransactions.addTransaction(jt);
-        JSONObject msg = new JSONObject();
-        try {
-            msg.putOpt("janus", "create");
-            msg.putOpt("transaction", transaction);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        send(msg.toString());
+        });
+
+        send(transaction.toString());
     }
 
     @Override
@@ -159,29 +151,24 @@ public class WebSocketChannel extends WebSocketClient {
     }
 
     private void publisherCreateHandle() {
-        String transaction = randomString(12);
-        JanusTransactions.JanusTransaction jt = janusTransactions.new JanusTransaction();
-        jt.tid = transaction;
-        jt.success = jo -> {
+        JSONObject transaction = janusTransactions.addTransaction("attach", (type, jo) -> {
+            if (type != JanusTransactions.Listener.CallBackType.SUCCESS)
+                return;
             JanusHandle janusHandle = new JanusHandle();
             janusHandle.handleId = new BigInteger(jo.optJSONObject("data").optString("id"));
             janusHandle.onJoined = jh -> delegate.onPublisherJoined(jh.handleId);
             janusHandle.onRemoteJsep = (jh, jsep) -> delegate.onPublisherRemoteJsep(jh.handleId, jsep);
             handles.put(janusHandle.handleId, janusHandle);
             publisherJoinRoom(janusHandle);
-        };
-        jt.error = jo -> {};
-        janusTransactions.addTransaction(jt);
-        JSONObject msg = new JSONObject();
+        });
+
         try {
-            msg.putOpt("janus", "attach");
-            msg.putOpt("plugin", "janus.plugin.videoroom");
-            msg.putOpt("transaction", transaction);
-            msg.putOpt("session_id", mSessionId);
+            transaction.putOpt("plugin", "janus.plugin.videoroom");
+            transaction.putOpt("session_id", mSessionId);
         } catch (JSONException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-        send(msg.toString());
+        send(transaction.toString());
     }
 
     private void publisherJoinRoom(JanusHandle handle) {
@@ -298,10 +285,9 @@ public class WebSocketChannel extends WebSocketClient {
     }
 
     private void subscriberCreateHandle(final BigInteger feed, final String display) {
-        String transaction = randomString(12);
-        JanusTransactions.JanusTransaction jt = janusTransactions.new JanusTransaction();
-        jt.tid = transaction;
-        jt.success = jo -> {
+
+        JSONObject transaction = janusTransactions.addTransaction("attach",
+                (type, jo) -> {
             JanusHandle janusHandle = new JanusHandle();
             janusHandle.handleId = new BigInteger(jo.optJSONObject("data").optString("id"));
             janusHandle.feedId = feed;
@@ -311,20 +297,16 @@ public class WebSocketChannel extends WebSocketClient {
             handles.put(janusHandle.handleId, janusHandle);
             feeds.put(janusHandle.feedId, janusHandle);
             subscriberJoinRoom(janusHandle);
-        };
-        jt.error = jo -> {};
-        janusTransactions.addTransaction(jt);
-        JSONObject msg = new JSONObject();
+        });
+
         try {
-            msg.putOpt("janus", "attach");
-            msg.putOpt("plugin", "janus.plugin.videoroom");
-            msg.putOpt("transaction", transaction);
-            msg.putOpt("session_id", mSessionId);
+            transaction.putOpt("plugin", "janus.plugin.videoroom");
+            transaction.putOpt("session_id", mSessionId);
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
-        send(msg.toString());
+        send(transaction.toString());
     }
 
     private void subscriberJoinRoom(JanusHandle handle) {
@@ -349,28 +331,22 @@ public class WebSocketChannel extends WebSocketClient {
     }
 
     private void subscriberOnLeaving(final JanusHandle handle) {
-        String transaction = randomString(12);
-        JanusTransactions.JanusTransaction jt = janusTransactions.new JanusTransaction();
-        jt.tid = transaction;
-        jt.success = jo -> {
+        JSONObject transaction = janusTransactions.addTransaction("detatch",
+                (type, jo) -> {
+            if (type != JanusTransactions.Listener.CallBackType.SUCCESS)
+                return;
             delegate.onLeaving(handle.handleId);
             handles.remove(handle.handleId);
             feeds.remove(handle.feedId);
-        };
-        jt.error = jo -> {};
+        });
 
-        janusTransactions.addTransaction(jt);
-
-        JSONObject jo = new JSONObject();
         try {
-            jo.putOpt("janus", "detach");
-            jo.putOpt("transaction", transaction);
-            jo.putOpt("session_id", mSessionId);
-            jo.putOpt("handle_id", handle.handleId);
+            transaction.putOpt("session_id", mSessionId);
+            transaction.putOpt("handle_id", handle.handleId);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        send(jo.toString());
+        send(transaction.toString());
     }
 
     private Runnable fireKeepAlive = new Runnable() {

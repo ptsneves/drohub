@@ -2,21 +2,25 @@ package com.drohub.Janus;
 
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
-interface TransactionCallbackSuccess {
-    void success(JSONObject jo);
-}
-
-interface TransactionCallbackError {
-    void error(JSONObject jo);
-}
-
-
 public class JanusTransactions {
-    private ConcurrentHashMap<String, JanusTransaction> transactions = new ConcurrentHashMap<>();
+    public interface Listener {
+        enum CallBackType {
+            ERROR,
+            SUCCESS,
+            ACK,
+        }
+        void onTransaction(CallBackType type, JSONObject jo);
+    }
+
+    final private ConcurrentHashMap<String, JanusTransaction> transactions = new ConcurrentHashMap<>();
     public static boolean isTransaction(JSONObject jsonObject) {
         String response_type = jsonObject.optString("janus");
         return response_type.equals("success") ||
@@ -26,32 +30,68 @@ public class JanusTransactions {
 
     public void processTransaction(JSONObject jsonObject) {
         String response_type = jsonObject.optString("janus");
-        if (response_type.equals("success")) {
-            String transaction = jsonObject.optString("transaction");
-            JanusTransaction jt = transactions.get(transaction);
-            if (jt.success != null) {
-                jt.success.success(jsonObject);
-            }
+        String transaction = jsonObject.optString("transaction");
+
+        JanusTransaction jt = transactions.get(transaction);
+        if (jt == null) {
+            Log.e("JanusTransactions", "Notified of a transaction not on record");
             transactions.remove(transaction);
-        } else if (response_type.equals("error")) {
-            String transaction = jsonObject.optString("transaction");
-            JanusTransaction jt = transactions.get(transaction);
-            if (jt != null && jt.error != null) {
-                jt.error.error(jsonObject);
-            }
-            transactions.remove(transaction);
-        } else if (response_type.equals("ack")) {
-            Log.d("JanusTransaction", "Just an ack");
+            return;
         }
+
+        switch (response_type) {
+            case "success":
+                jt.listener.onTransaction(Listener.CallBackType.SUCCESS, jsonObject);
+                break;
+            case "error":
+                jt.listener.onTransaction(Listener.CallBackType.ERROR, jsonObject);
+                break;
+            case "ack":
+                jt.listener.onTransaction(Listener.CallBackType.ACK, jsonObject);
+                break;
+        }
+
+        transactions.remove(transaction);
     }
 
-    public void addTransaction(JanusTransaction transaction) {
-        transactions.put(transaction.tid, transaction);
+    private String randomString(Integer length) {
+        final String str = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZz";
+        final Random rnd = new Random();
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(str.charAt(rnd.nextInt(str.length())));
+        }
+        return sb.toString();
     }
 
-    public class JanusTransaction {
-        public String tid;
-        public TransactionCallbackSuccess success;
-        public TransactionCallbackError error;
+    private void doNoOp(Listener.CallBackType type, JSONObject jo) {
+
+    }
+
+    private String addTransaction(@Nullable JanusTransactions.Listener listener) {
+        Listener l = (listener == null) ? this::doNoOp : listener;
+        JanusTransaction t = new JanusTransaction(randomString(12), l);
+        transactions.put(t.tid, t);
+        return t.tid;
+    }
+
+    public JSONObject addTransaction(String verb, @Nullable JanusTransactions.Listener listener) {
+        JSONObject msg = new JSONObject();
+        try {
+            msg.putOpt("janus", verb);
+            msg.putOpt("transaction", addTransaction(listener));
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+        return msg;
+    }
+
+    private class JanusTransaction {
+        JanusTransaction(String tid, @NonNull Listener listener) {
+            this.listener = listener;
+            this.tid = tid;
+        }
+        final String tid;
+        final JanusTransactions.Listener listener;
     }
 }
