@@ -128,29 +128,28 @@ public class WebSocketChannel extends WebSocketClient {
     }
 
     private void processEvent(JanusHandle handle, JSONObject jo) {
-        if (!jo.optJSONObject("plugindata").has("plugindata"))
-            return;
+        JSONObject plugin_data = jo.optJSONObject("plugindata");
+        JSONObject plugin;
+        if (plugin_data != null && (plugin = plugin_data.optJSONObject("data")) != null){
+            if (plugin.optString("videoroom").equals("joined"))
+                handle.onJoined.onJoined(handle);
 
-        JSONObject plugin = jo.optJSONObject("plugindata").optJSONObject("data");
-        if (plugin.optString("videoroom").equals("joined")) {
-            handle.onJoined.onJoined(handle);
-        }
-
-        JSONArray publishers = plugin.optJSONArray("publishers");
-        if (publishers != null && publishers.length() > 0) {
-            for (int i = 0, size = publishers.length(); i <= size - 1; i++) {
-                JSONObject publisher = publishers.optJSONObject(i);
-                BigInteger feed = new BigInteger(publisher.optString("id"));
-                String display = publisher.optString("display");
-                subscriberCreateHandle(feed, display);
+            JSONArray publishers = plugin.optJSONArray("publishers");
+            if (publishers != null && publishers.length() > 0) {
+                for (int i = 0, size = publishers.length(); i <= size - 1; i++) {
+                    JSONObject publisher = publishers.optJSONObject(i);
+                    BigInteger feed = new BigInteger(publisher.optString("id"));
+                    String display = publisher.optString("display");
+                    subscriberCreateHandle(feed, display);
+                }
             }
-        }
 
-        String leaving = plugin.optString("leaving");
-        if (!TextUtils.isEmpty(leaving)) {
-            JanusHandle jhandle = feeds.get(new BigInteger(leaving));
-            if (jhandle != null)
-                jhandle.onLeaving.onJoined(jhandle);
+            String leaving = plugin.optString("leaving");
+            if (!TextUtils.isEmpty(leaving)) {
+                JanusHandle jhandle = feeds.get(new BigInteger(leaving));
+                if (jhandle != null)
+                    jhandle.onLeaving.onJoined(jhandle);
+            }
         }
 
         JSONObject jsep = jo.optJSONObject("jsep");
@@ -169,8 +168,11 @@ public class WebSocketChannel extends WebSocketClient {
         JSONObject transaction = janusTransactions.addTransaction("attach", (type, jo) -> {
             if (type != JanusTransactions.Listener.CallBackType.SUCCESS)
                 return;
+            JSONObject data = jo.optJSONObject("data");
+            if (data == null)
+                return;
             JanusHandle janusHandle = new JanusHandle();
-            janusHandle.handleId = new BigInteger(jo.optJSONObject("data").optString("id"));
+            janusHandle.handleId = new BigInteger(data.optString("id"));
             janusHandle.onJoined = jh -> delegate.onPublisherJoined(jh.handleId);
             janusHandle.onRemoteJsep = (jh, jsep) -> delegate.onPublisherRemoteJsep(jh.handleId, jsep);
             handles.put(janusHandle.handleId, janusHandle);
@@ -297,8 +299,12 @@ public class WebSocketChannel extends WebSocketClient {
 
         JSONObject transaction = janusTransactions.addTransaction("attach",
                 (type, jo) -> {
+
+            JSONObject data = jo.optJSONObject("data");
+            if (data == null)
+                return;
             JanusHandle janusHandle = new JanusHandle();
-            janusHandle.handleId = new BigInteger(jo.optJSONObject("data").optString("id"));
+            janusHandle.handleId = new BigInteger(data.optString("id"));
             janusHandle.feedId = feed;
             janusHandle.display = display;
             janusHandle.onRemoteJsep = (jh, jsep) -> delegate.subscriberHandleRemoteJsep(jh.handleId, jsep);
@@ -355,7 +361,7 @@ public class WebSocketChannel extends WebSocketClient {
         send(transaction.toString());
     }
 
-    private Runnable fireKeepAlive = new Runnable() {
+    private final Runnable fireKeepAlive = new Runnable() {
         @Override
         public void run() {
             JSONObject msg = janusTransactions.addTransaction("keepalive", null);
