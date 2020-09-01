@@ -58,12 +58,10 @@ public class ErrorTextView extends androidx.appcompat.widget.AppCompatTextView {
 
 
     private void show() {
-        TextView info_warning_errors = findViewById(R.id.info_warnings_errors);
-        info_warning_errors.setVisibility(VISIBLE);
+        setVisibility(VISIBLE);
     }
 
     private void hide() {
-        TextView info_warning_errors = findViewById(R.id.info_warnings_errors);
-        info_warning_errors.setVisibility(INVISIBLE);
+        setVisibility(INVISIBLE);
     }
 }
