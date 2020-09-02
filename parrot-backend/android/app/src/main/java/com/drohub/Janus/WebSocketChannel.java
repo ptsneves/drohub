@@ -38,10 +38,10 @@ public class WebSocketChannel extends WebSocketClient {
     HandlerThread keepaliveThread;
     private Handler keepaliveHandler;
     private BigInteger mSessionId;
-    private JanusRTCInterface delegate;
-    private Activity _activity;
-    private long _room_id;
-    private PeerConnectionParameters _peerConnectionParameters;
+    private final JanusRTCInterface delegate;
+    private final Activity _activity;
+    private final long _room_id;
+    private final PeerConnectionParameters _peerConnectionParameters;
 
     public static WebSocketChannel createWebSockeChannel(long room_id,
                                                          String displayName,

@@ -385,13 +385,13 @@ public class DroHubHandler implements Drone.Iface {
 
     @Override
     public DroneReply recordVideo(DroneRecordVideoRequest request) {
-        Boolean r = _main_camera.recordVideo(request.action_type == ActionType.START);
+        boolean r = _main_camera.recordVideo(request.action_type == ActionType.START);
         return new DroneReply(r, _serial_number, System.currentTimeMillis());
     }
 
     @Override
     public DroneReply takePicture(DroneTakePictureRequest request) {
-        Boolean r = _main_camera.triggerPhotoPicture(request.action_type == ActionType.START);
+        boolean r = _main_camera.triggerPhotoPicture(request.action_type == ActionType.START);
         return new DroneReply(r, _serial_number, System.currentTimeMillis());
     }
     
