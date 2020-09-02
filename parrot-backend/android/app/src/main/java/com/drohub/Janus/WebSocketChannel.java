@@ -5,14 +5,10 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.text.TextUtils;
 import android.util.Log;
-
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
-
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft_6455;
-import org.java_websocket.extensions.IExtension;
 import org.java_websocket.handshake.ServerHandshake;
-import org.java_websocket.protocols.IProtocol;
 import org.java_websocket.protocols.Protocol;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -25,7 +21,6 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 

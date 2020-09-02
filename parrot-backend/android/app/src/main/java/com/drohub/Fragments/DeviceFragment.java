@@ -68,8 +68,7 @@ public class DeviceFragment extends Fragment {
         if (_view == null)
             return null;
 
-        T rc_view = (T)_view.findViewById(id);
-        return rc_view;
+        return (T)_view.findViewById(id);
     }
 
     protected boolean isRCAndDronePairConnected() {
