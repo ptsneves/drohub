@@ -6,6 +6,7 @@ import android.location.Location;
 import android.media.projection.MediaProjectionManager;
 import android.util.Log;
 
+import com.drohub.IInfoDisplay;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
 import com.drohub.ParrotHelpers.Peripherals.ParrotMainCamera;
@@ -59,8 +60,9 @@ public class DroHubHandler implements Drone.Iface {
     }
     private static final String TAG = "DroHubHandler";
     private static final int _CAPTURE_PERMISSION_REQUEST_CODE = 1;
-    
+
     private String _serial_number;
+    final private IInfoDisplay _display;
     final private TelemetryContainer<DronePosition> _drone_position;
     final private TelemetryContainer<DroneBatteryLevel> _drone_battery_level;
     final private TelemetryContainer<DroneFlyingState> _drone_flying_state;
@@ -77,7 +79,9 @@ public class DroHubHandler implements Drone.Iface {
     private com.parrot.drone.groundsdk.device.Drone _drone_handle;
 
     public DroHubHandler(String serial, PeerConnectionParameters connection_parameters,
-                         GroundSdkHelperActivity activity)  {
+                         GroundSdkHelperActivity activity,
+                         IInfoDisplay display)  {
+
         _drone_handle = activity.getParrotSDKHandle().getDrone(serial);
         if (_drone_handle == null)
             throw new RuntimeException("Could not retrieve drone handle");
@@ -211,6 +215,7 @@ public class DroHubHandler implements Drone.Iface {
 
         }).get();
 
+        _display = display;
     }
 
     void handleCapturePermissionCallback(int requestCode, int resultCode, Intent data) {
@@ -225,13 +230,14 @@ public class DroHubHandler implements Drone.Iface {
         try {
             _peerConnectionClient = new PeerConnectionClient(_room_id, _serial_number,
                     _activity,
+                    _display,
                     _peer_connection_parameters);
             _video_state = DroneLiveVideoState.LIVE;
         }
         catch (Exception e) {
             Log.e(TAG, Arrays.toString(e.getStackTrace()));
             _video_state = DroneLiveVideoState.DIED;
-            _activity.alertBox(e.getMessage());
+            _display.addError(e.getMessage());
         }
     }
 

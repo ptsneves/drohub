@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.media.projection.MediaProjection;
 import android.util.Log;
 
+import com.drohub.IInfoDisplay;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionGLSurfaceParameters;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
@@ -48,6 +49,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
   private VideoCapturer videoCapturer;
 
   public PeerConnectionClient(long room_id, String displayName, final Context context,
+                               IInfoDisplay display,
                                final PeerConnectionParameters peerConnectionParameters) throws InterruptedException, InvalidObjectException, URISyntaxException {
     try {
       peerConnectionMap = new ConcurrentHashMap<>();
@@ -92,7 +94,8 @@ public class PeerConnectionClient implements JanusRTCInterface {
               peerConnectionParameters.activity,
               this,
               peerConnectionParameters.janusWebSocketURL,
-              peerConnectionParameters);
+              peerConnectionParameters,
+              display);
     }
     catch (Exception e) {
       onStop();

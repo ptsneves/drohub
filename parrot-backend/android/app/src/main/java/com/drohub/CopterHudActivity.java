@@ -552,7 +552,6 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
     private void setupLiveVideo(String user_email, String auth_token) {
         CopterHudActivity activity = this;
         ParrotStreamServer stream_server = new ParrotStreamServer(_drone);
-        final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
         stream_server.setPeripheralListener(new ParrotPeripheralManager.PeripheralListener<StreamServer>() {
             @Override
             public void onChange(@NonNull StreamServer parrot_server) {
@@ -579,17 +578,22 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
                         parrot_server);
 
                 _audio_manager = (AudioManager)activity.getSystemService(Context.AUDIO_SERVICE);
+                final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
+
                 if (_audio_manager != null) {
                     _audio_manager.setMode(AudioManager.MODE_IN_CALL);
                     _audio_manager.setSpeakerphoneOn(true);
                 }
-                else {
-                    final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
+                else
                     e_v.getInfoDisplay().addError("Could not setup audio error");
-                }
 
 
-                _drohub_handler = new DroHubHandler(_drone.getUid(), peerConnectionParameters, activity);
+                _drohub_handler = new DroHubHandler(
+                        _drone.getUid(),
+                        peerConnectionParameters,
+                        activity,
+                        e_v.getInfoDisplay()
+                        );
 
                 setupTimer();
                 setupMuteMicrophoneButton(_drohub_handler);

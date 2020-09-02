@@ -5,7 +5,9 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.text.TextUtils;
 import android.util.Log;
+import com.drohub.IInfoDisplay;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
+import com.drohub.WatchDog;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.handshake.ServerHandshake;
@@ -26,6 +28,9 @@ import java.util.concurrent.TimeUnit;
 
 public class WebSocketChannel extends WebSocketClient {
     private static final String TAG = "WebSocketChannel";
+
+    final private IInfoDisplay _display;
+
     private String displayName;
     private JanusTransactions janusTransactions = new JanusTransactions();
     private ConcurrentHashMap<BigInteger, JanusHandle> handles = new ConcurrentHashMap<>();
@@ -43,12 +48,13 @@ public class WebSocketChannel extends WebSocketClient {
                                                          Activity activity,
                                                          JanusRTCInterface delegate,
                                                          String url,
-                                                         PeerConnectionParameters connection_parameters
+                                                         PeerConnectionParameters connection_parameters,
+                                                         IInfoDisplay display
                                                          ) throws URISyntaxException, InterruptedException, InvalidObjectException {
         Draft_6455 janus_draft = new Draft_6455(Collections.emptyList(),
                 Collections.singletonList(new Protocol("janus-protocol")));
         return new WebSocketChannel(room_id, displayName, activity, delegate, url, janus_draft,
-                connection_parameters);
+                connection_parameters, display);
     }
 
     private WebSocketChannel(long room_id,
@@ -57,7 +63,8 @@ public class WebSocketChannel extends WebSocketClient {
                              JanusRTCInterface delegate,
                              String url,
                              Draft_6455 janus_draft,
-                             PeerConnectionParameters peerConnectionParameters) throws URISyntaxException, InterruptedException, InvalidObjectException {
+                             PeerConnectionParameters peerConnectionParameters,
+                             IInfoDisplay display) throws URISyntaxException, InterruptedException, InvalidObjectException {
 
         super(new URI(url), janus_draft);
         this.displayName = "drone-" + displayName + "-" + System.currentTimeMillis();
@@ -65,6 +72,7 @@ public class WebSocketChannel extends WebSocketClient {
         _activity = activity;
         _room_id = room_id;
         _peerConnectionParameters = peerConnectionParameters;
+        _display = display;
         if (!connectBlocking(10, TimeUnit.SECONDS))
             throw new InvalidObjectException("Could not connect to janus");
     }
