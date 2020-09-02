@@ -41,10 +41,6 @@ public class DroHubHelper {
         intent.putExtra(EXTRA_USER_AUTH_TOKEN, token);
     }
 
-    public static void setStatusText(View root_view, String msg) {
-        Snackbar.make(root_view, msg, Snackbar.LENGTH_LONG).show();
-    }
-
     public static void hideKeyboard(Activity activity) {
         InputMethodManager imm = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
         //Find the currently focused view, so we can grab the correct window token from it.

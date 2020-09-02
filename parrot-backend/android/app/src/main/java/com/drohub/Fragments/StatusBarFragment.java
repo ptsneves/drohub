@@ -6,7 +6,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import com.drohub.DroHubHelper;
 import com.drohub.Models.DroHubDevice;
 import com.drohub.R;
 
@@ -36,7 +35,7 @@ public class StatusBarFragment extends DeviceFragment {
         else
             rc_icon.setImageResource(R.drawable.ic_video_info_controlsignal_disconnected);
 
-        DroHubHelper.setStatusText(_view, String.format("%s is %s", rc.model, rc.connection_state.name()));
+        _error_display.addErrorTemporarily(String.format("%s is %s", rc.model, rc.connection_state.name()), 5000);
     }
 
     public void onNewDrone(DroHubDevice drone) {
@@ -50,6 +49,6 @@ public class StatusBarFragment extends DeviceFragment {
         else
             drone_icon.setImageResource(R.drawable.ic_device_id_drone_disconnected);
 
-        DroHubHelper.setStatusText(_view, String.format("%s is %s", drone.model, drone.connection_state.name()));
+        _error_display.addErrorTemporarily(String.format("%s is %s", drone.model, drone.connection_state.name()), 5000);
     }
 }

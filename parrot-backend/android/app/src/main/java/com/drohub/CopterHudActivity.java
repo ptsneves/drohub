@@ -422,7 +422,7 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
     public void setupMainCameraComponents() {
         final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
         final String StartupErrorMessage = "Main camera not yet initialized";
-        e_v.addError(StartupErrorMessage);
+        e_v.getInfoDisplay().addError(StartupErrorMessage);
 
         _main_camera = new ParrotMainCamera(_drone);
 
@@ -431,7 +431,7 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
             public void onChange(@NonNull MainCamera o) {}
             @Override
             public boolean onFirstTimeAvailable(@NonNull MainCamera o) {
-                e_v.removeError(StartupErrorMessage);
+                e_v.getInfoDisplay().removeError(StartupErrorMessage);
                 setupRecordingButton();
                 setupTriggerPictureButton();
                 setupMultiTouchGestures();
@@ -483,14 +483,14 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
         final float min_zoom = 1.0f; //As per docs
         final Handler retry_handler = new Handler(getMainLooper());
 
-        e_v.removeError(ErrorMessage);
+        e_v.getInfoDisplay().removeError(ErrorMessage);
 
         final double max_zoom = _main_camera.getZoom().getMaxLossyLevel();
         final double cur_zoom = _main_camera.getZoom().getCurrentLevel();
 
         mtg.setOnScaleListener(min_zoom, (float)max_zoom, (float)cur_zoom, scale_factor -> {
             if (!_main_camera.setZoom(scale_factor)) {
-                e_v.addError(ErrorMessage);
+                e_v.getInfoDisplay().addError(ErrorMessage);
                 retry_handler.postDelayed(() -> setupZoomGesture(mtg), 1000);
                 return false;
             }
@@ -505,12 +505,12 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
 
         final Gimbal gimbal = _drone.getPeripheral(Gimbal.class, g -> {}).get();
         if (gimbal == null || !gimbal.getSupportedAxes().contains(Gimbal.Axis.PITCH) ) {
-            e_v.addError(ErrorMessage);
+            e_v.getInfoDisplay().addError(ErrorMessage);
             retry_handler.postDelayed(() -> setupGimbalPitchGesture(mtg, scrollable_view), 1000);
             return;
         }
 
-        e_v.removeError(ErrorMessage);
+        e_v.getInfoDisplay().removeError(ErrorMessage);
         mtg.setOnScrollListener(scrollable_view.getWidth(), 0, scrollable_view.getHeight(), 0,
                 (dx, dy) -> FlightActions.setVerticalGimbalPosition(_drone, dx, dy*10.0f));
     }
@@ -529,7 +529,7 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
         _media_store = new ParrotMediaStore(_drone);
         final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
         final String startup_warning = "Media store not available";
-        e_v.addError(startup_warning);
+        e_v.getInfoDisplay().addError(startup_warning);
 
         _media_store.setPeripheralListener(new ParrotPeripheralManager.PeripheralListener<MediaStore>() {
             @Override
@@ -538,12 +538,12 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
 
             @Override
             public boolean onFirstTimeAvailable(@NonNull MediaStore media_store) {
-                e_v.removeError(startup_warning);
+                e_v.getInfoDisplay().removeError(startup_warning);
                 _media_store.setStoredPhotoCountListener(new_photo_count ->
-                        e_v.addErrorTemporarily(String.format("Photos: %d", new_photo_count), 5000));
+                        e_v.getInfoDisplay().addErrorTemporarily(String.format("Photos: %d", new_photo_count), 5000));
 
                 _media_store.setStoredVideoCountListener(new_video_count ->
-                        e_v.addErrorTemporarily(String.format("Videos: %d", new_video_count), 5000));
+                        e_v.getInfoDisplay().addErrorTemporarily(String.format("Videos: %d", new_video_count), 5000));
                 return true;
             }
         });
@@ -585,7 +585,7 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
                 }
                 else {
                     final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
-                    e_v.addError("Could not setup audio error");
+                    e_v.getInfoDisplay().addError("Could not setup audio error");
                 }
 
 
@@ -600,11 +600,11 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
                             getString(R.string.drohub_ws_url),
                             _drohub_handler, user_email, auth_token);
                 } catch (InterruptedException e) {
-                    e_v.addError(CONNECTION_ERROR);
+                    e_v.getInfoDisplay().addError(CONNECTION_ERROR);
                     return false;
                 }
                 Log.w("COPTER", "Started thrift connection to " + getString(R.string.drohub_ws_url));
-                e_v.removeError(CONNECTION_ERROR);
+                e_v.getInfoDisplay().removeError(CONNECTION_ERROR);
                 return true;
             }
         });

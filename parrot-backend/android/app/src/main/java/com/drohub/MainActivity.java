@@ -32,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String ACCOUNTS = "com.drohub.accounts";
     protected String _user_auth_token;
     protected String _user_email;
+
+    private IInfoDisplay _error_display;
     private SharedPreferences _saved_accounts;
 
     private TextView status_view;
@@ -102,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
         _user_auth_token = _saved_accounts.getString(USER_AUTH_TOKEN_STORE_KEY, null);
         _user_email = _saved_accounts.getString(USER_EMAIL_STORE_KEY, null);
         email_ctrl.setText(_user_email);
+        _error_display = new SnackBarInfoDisplay(findViewById(android.R.id.content), 5000);
 
         if (_user_auth_token != null && _user_email != null) {
             validateAndLaunchLobbyActivity();
@@ -110,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void validateAndLaunchLobbyActivity() {
         hideLoginGroup();
-        APIHelper api_helper = new APIHelper(findViewById(android.R.id.content), _user_email, _user_auth_token);
+        APIHelper api_helper = new APIHelper(_error_display, _user_email, _user_auth_token);
         api_helper.get(
                 _validate_token_url,
                 response -> {
@@ -174,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
 
         hideLoginGroup();
         setStatusText(status_view,"Retrieving token...", Color.BLACK);
-        APIHelper api_helper = new APIHelper(findViewById(android.R.id.content), _user_email, _user_auth_token);
+        APIHelper api_helper = new APIHelper(_error_display, _user_email, _user_auth_token);
         api_helper.post(_get_application_token_url,
                 request,
                 response -> {

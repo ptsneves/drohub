@@ -1,7 +1,5 @@
 package com.drohub.api;
 
-import android.content.Intent;
-import android.graphics.Color;
 import android.view.View;
 import androidx.annotation.Nullable;
 import com.android.volley.Request;
@@ -10,22 +8,18 @@ import com.android.volley.VolleyError;
 import com.drohub.*;
 import org.json.JSONObject;
 
-import static com.drohub.DroHubHelper.EXTRA_USER_AUTH_TOKEN;
-import static com.drohub.DroHubHelper.EXTRA_USER_EMAIL;
-
 public class APIHelper {
-
+    protected final IInfoDisplay _display;
     protected final String _user_email;
     protected final String _user_auth_token;
-    protected final View _snackbar_view;
     protected final VolleyHelper _volley;
 
-    public APIHelper(View snackbar_view, String user_email, String user_auth_token) {
-        _snackbar_view = snackbar_view;
+    public APIHelper(IInfoDisplay display, String user_email, String user_auth_token) {
+        _display = display;
         _user_auth_token = user_auth_token;
         _user_email = user_email;
         if ( _user_email == null || _user_auth_token == null)
-            DroHubHelper.setStatusText(_snackbar_view, "User or token not set???");
+            _display.addErrorTemporarily( "User or token not set???", 5000);
         _volley = new VolleyHelper();
     }
 

@@ -6,15 +6,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import androidx.fragment.app.Fragment;
 import com.drohub.DroHubHelper;
+import com.drohub.IInfoDisplay;
 import com.drohub.Models.DroHubDevice;
 import com.drohub.ParrotHelpers.ParrotDroneObserver;
 import com.drohub.ParrotHelpers.ParrotRCObserver;
 import com.drohub.R;
+import com.drohub.SnackBarInfoDisplay;
 
 import java.net.URISyntaxException;
 
 public class DeviceFragment extends Fragment {
     private final int _fragment_id;
+    protected IInfoDisplay _error_display;
     protected DroHubDevice _connected_rc;
     protected DroHubDevice _connected_drone;
 
@@ -42,13 +45,17 @@ public class DeviceFragment extends Fragment {
         } catch (URISyntaxException e) {
             throw new RuntimeException();
         }
+
+        View root_view = getActivity().getWindow().getDecorView().findViewById(android.R.id.content);
+
         _user_auth_token = ((DroHubHelper.CredentialGetters) getActivity()).getAuthToken();
         _user_email = ((DroHubHelper.CredentialGetters) getActivity()).getUserEmail();
 
         _view = inflater.inflate(_fragment_id, container, false);
-        _parrot_rc_helper = new ParrotRCObserver(_view, this.getActivity(), this::onNewRC);
+        _error_display = new SnackBarInfoDisplay(root_view, 5000);
+        _parrot_rc_helper = new ParrotRCObserver(this.getActivity(), this::onNewRC);
         _parrot_drone_helper = new ParrotDroneObserver(
-                _view,
+                _error_display,
                 query_device_info_url,
                 _user_email,
                 _user_auth_token,

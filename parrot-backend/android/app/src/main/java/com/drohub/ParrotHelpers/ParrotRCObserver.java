@@ -1,15 +1,11 @@
 package com.drohub.ParrotHelpers;
 
 import android.app.Activity;
-import android.view.View;
 import androidx.annotation.NonNull;
-import com.drohub.DroHubHelper;
 import com.drohub.Models.DroHubDevice;
 import com.parrot.drone.groundsdk.GroundSdk;
 import com.parrot.drone.groundsdk.ManagedGroundSdk;
-import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.RemoteControl;
-import com.parrot.drone.groundsdk.device.RemoteControlListEntry;
 import com.parrot.drone.groundsdk.facility.AutoConnection;
 
 public class ParrotRCObserver {
@@ -19,7 +15,7 @@ public class ParrotRCObserver {
 
     private GroundSdk _parrot_sdk;
 
-    public ParrotRCObserver(View snackbar_view, Activity activity, @NonNull Listener listener) {
+    public ParrotRCObserver(Activity activity, @NonNull Listener listener) {
         final String PROVIDER_NAME = "ParrotRC";
         assert activity != null;
 

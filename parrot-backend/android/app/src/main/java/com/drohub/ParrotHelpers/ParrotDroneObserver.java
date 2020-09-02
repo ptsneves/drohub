@@ -3,6 +3,8 @@ package com.drohub.ParrotHelpers;
 import android.app.Activity;
 import android.view.View;
 import androidx.annotation.NonNull;
+import com.drohub.IInfoDisplay;
+import com.drohub.InfoDisplayBase;
 import com.drohub.Models.DroHubDevice;
 import com.drohub.api.QueryDeviceInfoHelper;
 import com.parrot.drone.groundsdk.GroundSdk;
@@ -23,7 +25,7 @@ public class ParrotDroneObserver {
     private GroundSdk _parrot_sdk;
     private Listener _listener;
 
-    public ParrotDroneObserver(View snackbar_view,
+    public ParrotDroneObserver(IInfoDisplay display,
                                String query_device_info_url,
                                String user_mail,
                                String user_auth_token,
@@ -49,7 +51,7 @@ public class ParrotDroneObserver {
             if (drone == null)
                 return;
 
-            processParrotDrone(snackbar_view,
+            processParrotDrone(display,
                     query_device_info_url,
                     user_mail,
                     user_auth_token,
@@ -57,14 +59,14 @@ public class ParrotDroneObserver {
         });
     }
 
-    synchronized private void processParrotDrone(View snackbar_view,
+    synchronized private void processParrotDrone(IInfoDisplay display,
                                                  String query_device_info_url,
                                                  String user_mail,
                                                  String user_auth_token,
                                                  Drone drone) {
 
         QueryDeviceInfoHelper device_info_helper = new QueryDeviceInfoHelper(
-                snackbar_view, new QueryDeviceInfoHelper.Listener() {
+                display, new QueryDeviceInfoHelper.Listener() {
                     @Override
                     public void onDeviceInfoResponse(JSONObject response) {
                         try {

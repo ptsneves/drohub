@@ -6,6 +6,7 @@ import com.android.volley.Request;
 import com.android.volley.VolleyError;
 import com.drohub.DroHubHelper;
 import com.drohub.DroHubObjectRequest;
+import com.drohub.IInfoDisplay;
 import com.drohub.VolleyHelper;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,13 +22,13 @@ public class QueryDeviceInfoHelper extends APIHelper {
     private final String _serial;
     private final String _query_device_url;
 
-    public QueryDeviceInfoHelper(View snackbar_info_view,
+    public QueryDeviceInfoHelper(IInfoDisplay display,
                                  @NonNull Listener listener,
                                  String query_device_string,
                                  String user_email,
                                  String user_auth_token,
                                  String serial) {
-        super(snackbar_info_view, user_email, user_auth_token);
+        super(display, user_email, user_auth_token);
         _listener = listener;
         _serial = serial;
         _query_device_url = query_device_string;
@@ -40,7 +41,7 @@ public class QueryDeviceInfoHelper extends APIHelper {
             request.put("DeviceSerialNumber", _serial);
         }
         catch (JSONException e) {
-            DroHubHelper.setStatusText(_snackbar_view, "Could not create a json query");
+            _display.addErrorTemporarily( "Could not create a json query", 5000);
             return;
         }
 
@@ -66,26 +67,26 @@ public class QueryDeviceInfoHelper extends APIHelper {
                 if (response.getString("error").equalsIgnoreCase("Device does not exist.")) {
                     _listener.onDeviceNotRegistered();
                 } else {
-                    DroHubHelper.setStatusText(_snackbar_view, response.getString("error"));
+                    _display.addErrorTemporarily(response.getString("error"), 5000);
                 }
             } catch (JSONException e) {
-                DroHubHelper.setStatusText(_snackbar_view, "Error Could not Query device info.");
+                _display.addErrorTemporarily("Error Could not Query device info.", 5000);
             }
         }
     }
 
     private void processQueryDeviceInfoError(VolleyError error) {
         if(error.networkResponse == null)
-            DroHubHelper.setStatusText(_snackbar_view,"No response. Are you connected to the internet?");
+            _display.addErrorTemporarily("No response. Are you connected to the internet?", 5000);
         else if (error.networkResponse.statusCode == 401)
-            DroHubHelper.setStatusText(_snackbar_view,"Unauthorized. Is your subscription or drone valid?");
+            _display.addErrorTemporarily("Unauthorized. Is your subscription or drone valid?", 5000);
         else
-            DroHubHelper.setStatusText(_snackbar_view,"Error Could not Query device info..");
+            _display.addErrorTemporarily("Error Could not Query device info..", 5000);
     }
 
     private void processQueryDeviceInfoRetry(VolleyError error, int retry_count) throws VolleyError {
         if (retry_count == 3)
             throw error;
-        DroHubHelper.setStatusText(_snackbar_view,"Too slow response. Retrying again");
+        _display.addErrorTemporarily("Too slow response. Retrying again", 5000);
     }
 }
