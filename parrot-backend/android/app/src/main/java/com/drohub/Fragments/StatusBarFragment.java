@@ -35,7 +35,7 @@ public class StatusBarFragment extends DeviceFragment {
         else
             rc_icon.setImageResource(R.drawable.ic_video_info_controlsignal_disconnected);
 
-        _error_display.addErrorTemporarily(String.format("%s is %s", rc.model, rc.connection_state.name()), 5000);
+        _error_display.addTemporarily(String.format("%s is %s", rc.model, rc.connection_state.name()), 5000);
     }
 
     public void onNewDrone(DroHubDevice drone) {
@@ -49,6 +49,6 @@ public class StatusBarFragment extends DeviceFragment {
         else
             drone_icon.setImageResource(R.drawable.ic_device_id_drone_disconnected);
 
-        _error_display.addErrorTemporarily(String.format("%s is %s", drone.model, drone.connection_state.name()), 5000);
+        _error_display.addTemporarily(String.format("%s is %s", drone.model, drone.connection_state.name()), 5000);
     }
 }

@@ -383,7 +383,7 @@ public class WebSocketChannel extends WebSocketClient {
 
     void onKeepAliveAlarm(WatchDog.ALARM_TYPE alarm) {
         if (alarm == WatchDog.ALARM_TYPE.EXPIRED)
-            _display.addError("Did not receive keep alive from janus");
+            _display.add("Did not receive keep alive from janus");
     }
 
     void onKeepAliveAck(JanusTransactions.Listener.CallBackType type) {
@@ -392,21 +392,21 @@ public class WebSocketChannel extends WebSocketClient {
 
         _watchdog.keepAlive();
         _watchdog.stop();
-        _display.removeError("Did not receive keep alive from janus");
+        _display.remove("Did not receive keep alive from janus");
     }
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
         Log.e(TAG, "Connection closed by " + ( remote ? "remote peer" : "us" ) + " Code: " + code + " Reason: " + reason );
         keepaliveThread.quitSafely();
-        _display.addError("DROHUB Video connection closed");
+        _display.add("DROHUB Video connection closed");
         _watchdog.stop();
     }
 
     @Override
     public void onError(Exception ex) {
         Log.e(TAG, "onFailure " + ex.getMessage());
-        _display.addError("DROHUB Video failure");
+        _display.add("DROHUB Video failure");
         _watchdog.stop();
         ex.printStackTrace();
         keepaliveThread.quitSafely();

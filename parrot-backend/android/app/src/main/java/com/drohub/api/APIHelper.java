@@ -1,6 +1,5 @@
 package com.drohub.api;
 
-import android.view.View;
 import androidx.annotation.Nullable;
 import com.android.volley.Request;
 import com.android.volley.Response;
@@ -19,7 +18,7 @@ public class APIHelper {
         _user_auth_token = user_auth_token;
         _user_email = user_email;
         if ( _user_email == null || _user_auth_token == null)
-            _display.addErrorTemporarily( "User or token not set???", 5000);
+            _display.addTemporarily( "User or token not set???", 5000);
         _volley = new VolleyHelper();
     }
 

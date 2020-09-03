@@ -237,7 +237,7 @@ public class DroHubHandler implements Drone.Iface {
         catch (Exception e) {
             Log.e(TAG, Arrays.toString(e.getStackTrace()));
             _video_state = DroneLiveVideoState.DIED;
-            _display.addError(e.getMessage());
+            _display.add(e.getMessage());
         }
     }
 
