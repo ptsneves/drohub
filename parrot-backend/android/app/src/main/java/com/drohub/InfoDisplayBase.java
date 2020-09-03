@@ -22,6 +22,8 @@ public abstract class InfoDisplayBase implements IInfoDisplay {
     }
 
     public synchronized void addError(String msg) {
+        if (_errors.contains(msg))
+            return;
         _errors.add(msg);
         if (_errors.size() == 1) {
             cycleText();

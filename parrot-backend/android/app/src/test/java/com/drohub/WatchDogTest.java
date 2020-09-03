@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class WatchDogTest {
     @Test
@@ -53,11 +54,38 @@ public class WatchDogTest {
     }
 
     @Test
-    public void AlarmStopInterrupts() {
-        WatchDog w = new WatchDog(1000, alarm -> {
+    public void AlarmStopInterrupts() throws InterruptedException {
+        AtomicBoolean alarm_set = new AtomicBoolean(false);
+        WatchDog w = new WatchDog(150, alarm -> {
             Assert.assertEquals(WatchDog.ALARM_TYPE.INTERRUPTED, alarm);
+            alarm_set.set(true);
         });
         w.start();
+        Thread.sleep(100);
+        w.stop();
+        Assert.assertEquals(true, alarm_set.get());
+    }
+
+    @Test
+    public void AlarmDoubleStop1Interrupts() {
+        AtomicInteger counter = new AtomicInteger(0);
+        WatchDog w = new WatchDog(1000, alarm -> {
+            Assert.assertEquals(WatchDog.ALARM_TYPE.INTERRUPTED, alarm);
+            counter.getAndIncrement();
+        });
+        w.start();
+        w.stop();
+        Assert.assertEquals(1, counter.get());
+    }
+
+    @Test
+    public void StartTwiceOnlyOneTrigger() throws InterruptedException {
+        AtomicInteger counter = new AtomicInteger(0);
+        WatchDog w = new WatchDog(300, alarm -> counter.getAndIncrement());
+        w.start();
+        w.start();
+        Thread.sleep(550);
+        Assert.assertEquals(1, counter.get());
         w.stop();
     }
 }

@@ -1,7 +1,10 @@
 package com.drohub;
 
 import androidx.annotation.NonNull;
-
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class WatchDog {
@@ -17,9 +20,10 @@ public class WatchDog {
     private final Listener _listener;
     private final long _watch_duration_ms;
     final private AtomicLong _time_ms;
+    final private ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
+    private ScheduledFuture task;
     private boolean _active;
-    private Thread _thread;
 
 
     public WatchDog(long watch_duration_ms, @NonNull Listener listener) {
@@ -27,22 +31,6 @@ public class WatchDog {
         _listener = listener;
         _time_ms = new AtomicLong(0);
         _active = false;
-        _thread = new Thread(this::watch);
-    }
-
-    private void watch() {
-        _time_ms.set(System.currentTimeMillis());
-        while(_active) {
-            try {
-                Thread.sleep(_watch_duration_ms);
-            } catch (InterruptedException e) {
-                _active = false;
-                _listener.onAlarm(ALARM_TYPE.INTERRUPTED);
-            }
-
-            if (getTimeToExpire() > _watch_duration_ms)
-                _listener.onAlarm(ALARM_TYPE.EXPIRED);
-        }
     }
 
     public long getTimeToExpire() {
@@ -54,19 +42,21 @@ public class WatchDog {
     }
 
     public void start() {
+        if (_active)
+            return;
         _active = true;
-        _thread.start();
+        keepAlive();
+        task = ses.scheduleAtFixedRate(() -> {
+            if (getTimeToExpire() > _watch_duration_ms)
+                _listener.onAlarm(ALARM_TYPE.EXPIRED);
+        }, 0, _watch_duration_ms, TimeUnit.MILLISECONDS);
     }
 
     public void stop() {
+        if (!_active)
+            return;
         _active = false;
-        _thread.interrupt();
-        do {
-            try {
-                _thread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        } while (_thread.isAlive());
+        task.cancel(true);
+        _listener.onAlarm(ALARM_TYPE.INTERRUPTED);
     }
 }
