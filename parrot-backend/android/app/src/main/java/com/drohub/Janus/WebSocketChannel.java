@@ -42,6 +42,7 @@ public class WebSocketChannel extends WebSocketClient {
     private final Activity _activity;
     private final long _room_id;
     private final PeerConnectionParameters _peerConnectionParameters;
+    private final WatchDog _watchdog;
 
     public static WebSocketChannel createWebSockeChannel(long room_id,
                                                          String displayName,
@@ -73,6 +74,7 @@ public class WebSocketChannel extends WebSocketClient {
         _room_id = room_id;
         _peerConnectionParameters = peerConnectionParameters;
         _display = display;
+        _watchdog = new WatchDog(_peerConnectionParameters.keepAliveTimeout, this::onKeepAliveAlarm);
         if (!connectBlocking(10, TimeUnit.SECONDS))
             throw new InvalidObjectException("Could not connect to janus");
     }
@@ -367,26 +369,45 @@ public class WebSocketChannel extends WebSocketClient {
     private final Runnable fireKeepAlive = new Runnable() {
         @Override
         public void run() {
-            JSONObject msg = janusTransactions.addTransaction("keepalive", null);
+            _watchdog.start();
+            JSONObject msg = janusTransactions.addTransaction("keepalive", (type, jo) -> onKeepAliveAck(type));
             try {
                 msg.putOpt("session_id", mSessionId);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
             send(msg.toString());
-            keepaliveHandler.postDelayed(fireKeepAlive, 30000);
+            keepaliveHandler.postDelayed(fireKeepAlive, (long)(1.f/_peerConnectionParameters.keepAliveFrequency*1000));
         }
     };
+
+    void onKeepAliveAlarm(WatchDog.ALARM_TYPE alarm) {
+        if (alarm == WatchDog.ALARM_TYPE.EXPIRED)
+            _display.addError("Did not receive keep alive from janus");
+    }
+
+    void onKeepAliveAck(JanusTransactions.Listener.CallBackType type) {
+        if (type != JanusTransactions.Listener.CallBackType.ACK)
+            return;
+
+        _watchdog.keepAlive();
+        _watchdog.stop();
+        _display.removeError("Did not receive keep alive from janus");
+    }
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
         Log.e(TAG, "Connection closed by " + ( remote ? "remote peer" : "us" ) + " Code: " + code + " Reason: " + reason );
         keepaliveThread.quitSafely();
+        _display.addError("DROHUB Video connection closed");
+        _watchdog.stop();
     }
 
     @Override
     public void onError(Exception ex) {
         Log.e(TAG, "onFailure " + ex.getMessage());
+        _display.addError("DROHUB Video failure");
+        _watchdog.stop();
         ex.printStackTrace();
         keepaliveThread.quitSafely();
     }

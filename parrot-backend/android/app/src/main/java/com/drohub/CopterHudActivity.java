@@ -575,7 +575,9 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
                         20480000,
                         128000,
                         "opus",
-                        parrot_server);
+                        parrot_server,
+                        1.0f/10.0f,
+                        2000);
 
                 _audio_manager = (AudioManager)activity.getSystemService(Context.AUDIO_SERVICE);
                 final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);

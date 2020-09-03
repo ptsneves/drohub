@@ -23,14 +23,15 @@ public class PeerConnectionScreenShareParameters extends PeerConnectionParameter
                                                int videoFps,
                                                String videoCodec,
                                                int videoStartBitrate,
-                                               int audioStartBitrate, String audioCodec
+                                               int audioStartBitrate, String audioCodec,
+                                               float keepAliveFrequency, long keepAliveTimeout
                                                ) {
 
         super(local_view, remote_view, turn_user_name, turn_credential, ice_servers, janus_web_socket_uri, activity,
                 activity.getResources().getDisplayMetrics().widthPixels,
                 activity.getResources().getDisplayMetrics().heightPixels, videoFps, videoCodec,
-                videoStartBitrate, VideoCapturerType.SCREEN_SHARE, audioStartBitrate, audioCodec
-                );
+                videoStartBitrate, VideoCapturerType.SCREEN_SHARE, audioStartBitrate, audioCodec,
+                keepAliveFrequency, keepAliveTimeout);
 
         _is_permission_data_set = false;
         _is_permission_result_code_set = false;

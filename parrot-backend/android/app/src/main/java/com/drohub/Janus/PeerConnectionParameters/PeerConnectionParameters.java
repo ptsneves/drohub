@@ -2,13 +2,10 @@ package com.drohub.Janus.PeerConnectionParameters;
 
 import android.app.Activity;
 
-import com.drohub.R;
 import org.webrtc.PeerConnection;
 import org.webrtc.SurfaceViewRenderer;
 
 import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class PeerConnectionParameters {
   public enum VideoCapturerType {
@@ -29,6 +26,8 @@ public class PeerConnectionParameters {
   public final VideoCapturerType capturerType;
   public final SurfaceViewRenderer localView;
   public final SurfaceViewRenderer remoteView;
+  public final float keepAliveFrequency;
+  public final long keepAliveTimeout;
 
   PeerConnectionParameters(
           SurfaceViewRenderer local_view,
@@ -39,7 +38,9 @@ public class PeerConnectionParameters {
           String janus_web_socket_uri, Activity activity,
           int videoWidth, int videoHeight, int videoFps, String videoCodec, int videoStartBitrate,
           VideoCapturerType capturerType,
-          int audioStartBitrate, String audioCodec) {
+          int audioStartBitrate, String audioCodec, float keepAliveFrequency, long keepAliveTimeout) {
+    this.keepAliveFrequency = keepAliveFrequency;
+    this.keepAliveTimeout = keepAliveTimeout;
 
     // If video resolution is not specified, default to HD.
     if (videoWidth == 0 || videoHeight == 0)
