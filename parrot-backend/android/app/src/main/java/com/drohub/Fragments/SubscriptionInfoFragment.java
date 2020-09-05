@@ -52,7 +52,10 @@ public class SubscriptionInfoFragment extends BaseFragment {
                 _user_auth_token,
                 sub_info_url
         );
-        _view.setOnClickListener(v -> sub_info_helper.get());
+        _view.setOnClickListener(v -> {
+            error_display.addTemporarily("Flight Area Info Refreshed.", 2000);
+            sub_info_helper.get();
+        });
         sub_info_helper.get();
         return _view;
     }

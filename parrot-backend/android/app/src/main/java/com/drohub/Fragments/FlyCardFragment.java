@@ -23,6 +23,9 @@ public class FlyCardFragment extends DeviceFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         text_view = getFragmentViewById(R.id.header);
+        _view.setOnClickListener(v ->
+                _error_display.addTemporarily("Please connect to an RC and DRONE.", 3000)
+        );
         return _view;
     }
 
@@ -79,7 +82,9 @@ public class FlyCardFragment extends DeviceFragment {
         }
         else {
             text_view.setText("Awaiting Drone Connection...");
-            _view.setOnClickListener(v -> {/*NO OP*/});
+            _view.setOnClickListener(v ->
+                    _error_display.addTemporarily("Please connect to a DRONE.", 3000)
+            );
         }
     }
 
