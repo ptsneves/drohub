@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             xmlns:tools="http://schemas.android.com/tools"
+             android:layout_width="match_parent"
+             android:layout_height="300dp"
+             android:background="@drawable/slide_bg1_square"
+             android:orientation="vertical"
+             tools:context=".Fragments.SubscriptionInfoFragment">
+
+    <TextView
+            android:id="@+id/flight_area_name_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Flight Area Name"
+            android:textSize="25dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+    <TextView
+            android:id="@+id/flight_area_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Subscription Name"
+            android:textSize="20dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+    <TextView
+            android:id="@+id/user_id_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="User Id"
+            android:textSize="25dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+    <TextView
+            android:id="@+id/user_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="id"
+            android:textSize="20dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+    <TextView
+            android:id="@+id/allowed_flight_time_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Flight Time Remaining"
+            android:textSize="25dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+    <TextView
+            android:id="@+id/allowed_flight_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textSize="20dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+    <TextView
+            android:id="@+id/allowed_users_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Users in Flight Area"
+            android:textSize="25dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+    <TextView
+            android:id="@+id/allowed_users"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textSize="20dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+</LinearLayout>

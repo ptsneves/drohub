@@ -21,14 +21,14 @@ public class QueryDeviceInfoHelper extends APIHelper {
 
     public QueryDeviceInfoHelper(IInfoDisplay display,
                                  @NonNull Listener listener,
-                                 String query_device_string,
+                                 String query_device_url,
                                  String user_email,
                                  String user_auth_token,
                                  String serial) {
         super(display, user_email, user_auth_token);
         _listener = listener;
         _serial = serial;
-        _query_device_url = query_device_string;
+        _query_device_url = query_device_url;
 
     }
 

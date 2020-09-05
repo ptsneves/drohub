@@ -22,7 +22,7 @@ public class FlyCardFragment extends DeviceFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
-        text_view = getFragmentViewById(R.id.fly_ability_info);
+        text_view = getFragmentViewById(R.id.header);
         return _view;
     }
 

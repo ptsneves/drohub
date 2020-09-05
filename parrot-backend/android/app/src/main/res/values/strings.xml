@@ -39,6 +39,7 @@
     <string name="drohub_url">https://drohub.xyz</string>
     <string name="query_device_info_url">/api/AndroidApplication/QueryDeviceInfo</string>
     <string name="validate_token_url">/api/AndroidApplication/ValidateToken</string>
+    <string name="get_subscription_info_url">/api/AndroidApplication/GetSubscriptionInfo</string>
     <string name="get_application_token_url">/api/GetToken/GetApplicationToken</string>
     <string-array name="ice_servers">
         <item>stun:stun.l.google.com</item>

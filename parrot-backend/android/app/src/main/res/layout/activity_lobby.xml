@@ -17,22 +17,23 @@
     >
     </fragment>
 
-<!--    <androidx.cardview.widget.CardView-->
-<!--            android:id="@+id/flight_area_container"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="300dp"-->
-<!--            app:cardCornerRadius="8dp"-->
-<!--            app:cardElevation="8dp"-->
-<!--            app:cardUseCompatPadding="true"-->
-<!--            app:layout_constraintStart_toStartOf="parent"-->
-<!--            app:layout_constraintEnd_toEndOf="parent"-->
-<!--            app:layout_constraintTop_toBottomOf="@id/status_container"-->
-<!--    >-->
-<!--        <ImageButton android:layout_width="match_parent"-->
-<!--                     android:layout_height="match_parent"-->
-<!--            android:background="@drawable/slide_bg1_square">-->
-<!--        </ImageButton>-->
-<!--    </androidx.cardview.widget.CardView>-->
+    <androidx.cardview.widget.CardView
+            android:id="@+id/flight_area_container"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="8dp"
+            app:cardUseCompatPadding="true"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/status_container"
+    >
+        <fragment
+                android:name="com.drohub.Fragments.SubscriptionInfoFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+        </fragment>
+    </androidx.cardview.widget.CardView>
 
     <androidx.cardview.widget.CardView
             android:id="@+id/fly_container"
@@ -43,7 +44,7 @@
             app:cardUseCompatPadding="true"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/status_container"
+            app:layout_constraintTop_toBottomOf="@id/flight_area_container"
     >
         <fragment
                 android:name="com.drohub.Fragments.FlyCardFragment"

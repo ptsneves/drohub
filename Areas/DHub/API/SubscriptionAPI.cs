@@ -73,6 +73,11 @@ namespace DroHub.Areas.DHub.API {
             return query_result.AllowedUsersCount - query_result.UsersCount;
         }
 
+        public Task<int> getUserCount() {
+            return querySubscription(getSubscriptionName())
+                .Select(s => s.Users.Count()).SingleAsync();
+        }
+
         public async Task<bool> isUserCountBelowMaximum() {
             return await getRemainingUserCount() > 0;
         }
@@ -82,7 +87,7 @@ namespace DroHub.Areas.DHub.API {
             return subscription.AllowedUserCount;
         }
 
-        private async Task<Subscription> getSubscription() {
+        public async Task<Subscription> getSubscription() {
             return _current_subscription ??= await getSubscription(getSubscriptionName());
         }
 

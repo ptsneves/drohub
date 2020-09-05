@@ -16,11 +16,11 @@ namespace DroHub.Areas.DHub.Models {
         };
 
         public Dictionary<string, SubscriptionAPI.UserTypeAttributes> user_attributes;
-        public string user_name;
+        public string user_name { get; set; }
         public string user_email;
-        public string subscription_name;
-        public int allowed_users;
-        public TimeSpan allowed_flight_time;
+        public string subscription_name  { get; set; }
+        public int allowed_users { get; set; }
+        public TimeSpan allowed_flight_time { get; set; }
         public List<UserPermissionsModel> user_permissions;
     }
 }

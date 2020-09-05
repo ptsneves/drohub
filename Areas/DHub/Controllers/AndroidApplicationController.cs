@@ -26,11 +26,15 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         private readonly DeviceAPI _device_api;
+        private readonly SubscriptionAPI _subscription_api;
         private readonly IAuthorizationService _authorization_service;
 
-        public AndroidApplicationController(DeviceAPI device_api, IAuthorizationService authorizationService) {
+        public AndroidApplicationController(DeviceAPI device_api, IAuthorizationService authorizationService,
+            SubscriptionAPI subscriptionApi) {
+
             _device_api = device_api;
             _authorization_service = authorizationService;
+            _subscription_api = subscriptionApi;
         }
 
         [HttpPost]
@@ -53,6 +57,19 @@ namespace DroHub.Areas.DHub.Controllers
         public IActionResult ValidateToken() {
             //If we got here it means the authentication middleware allowed
             return new JsonResult(new Dictionary<string, string>() {{"result", "ok"}});
+        }
+
+        public async Task<IActionResult> GetSubscriptionInfo() {
+            var subscription = await _subscription_api.getSubscription();
+            var model = new AccountManagementModel {
+                user_name = User.Identity.Name,
+                subscription_name = subscription.OrganizationName,
+                allowed_flight_time = await _subscription_api.getSubscriptionTimeLeft(),
+                allowed_users = await _subscription_api.getUserCount()
+            };
+            return new JsonResult(new Dictionary<string, AccountManagementModel> {
+                ["result"] = model
+            });
         }
 
         [HttpPost]
