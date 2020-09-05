@@ -24,7 +24,7 @@ public class StatusBarFragment extends DeviceFragment {
     }
 
     @Override
-    public void onNewRC(DroHubDevice rc) {
+    synchronized public void onNewRC(DroHubDevice rc) {
         super.onNewRC(rc);
         ImageView rc_icon = getFragmentViewById(R.id.rc_status);
         if (rc_icon == null)
@@ -38,7 +38,7 @@ public class StatusBarFragment extends DeviceFragment {
         _error_display.addTemporarily(String.format("%s is %s", rc.model, rc.connection_state.name()), 5000);
     }
 
-    public void onNewDrone(DroHubDevice drone) {
+    synchronized public void onNewDrone(DroHubDevice drone) {
         super.onNewDrone(drone);
         ImageView drone_icon= getFragmentViewById(R.id.drone_status);
         if (drone_icon == null)
