@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class InfoDisplayBaseTest {
-    final AtomicInteger show_set = new AtomicInteger(0);
     final AtomicInteger hide_set = new AtomicInteger(0);
     final ArrayDeque<String> string_queue = new ArrayDeque<>();
     final AtomicBoolean visible_set = new AtomicBoolean(false);
@@ -26,12 +25,6 @@ public class InfoDisplayBaseTest {
         }
 
         @Override
-        protected void show() {
-            show_set.getAndIncrement();
-            visible_set.set(true);
-        }
-
-        @Override
         protected void hide() {
             hide_set.getAndIncrement();
             visible_set.set(false);
@@ -40,7 +33,6 @@ public class InfoDisplayBaseTest {
 
     @Before
     public void init() {
-        show_set.set(0);
         hide_set.set(0);
         string_queue.clear();
     }
@@ -50,7 +42,6 @@ public class InfoDisplayBaseTest {
         final InfoDisplayBase t = new TestSubclass(20);
         t.addTemporarily(test_string, 10);
         Thread.sleep(30);
-        Assert.assertEquals(1, show_set.get());
         Assert.assertEquals(1, hide_set.get());
         Assert.assertEquals(false, visible_set.get());
         Assert.assertEquals(test_string, string_queue.pop());
@@ -60,14 +51,15 @@ public class InfoDisplayBaseTest {
     @Test
     public void AddCycleAndRemove() throws InterruptedException {
         final  InfoDisplayBase t = new TestSubclass(9);
-        t.add(test_string);
-        t.add(test_string+"1");
-        Thread.sleep(27);
+        t.add(test_string); //one setText
+        t.add(test_string+"1"); //and seText
+        Thread.sleep(30); //expect 3 texts
         t.remove(test_string);
         t.remove(test_string+"1");
-        Assert.assertEquals(1, show_set.get());
         Assert.assertEquals(1, hide_set.get());
         Assert.assertEquals(false, visible_set.get());
+        Assert.assertEquals(test_string, string_queue.pop());
+        Assert.assertEquals(test_string+"1", string_queue.pop());
         Assert.assertEquals(test_string, string_queue.pop());
         Assert.assertEquals(test_string+"1", string_queue.pop());
         Assert.assertEquals(test_string, string_queue.pop());
@@ -78,16 +70,13 @@ public class InfoDisplayBaseTest {
     public void DoubleAddDoesNotCycle() throws InterruptedException {
         final InfoDisplayBase t = new TestSubclass(9);
         t.add(test_string);
-        t.add(test_string);
-        Thread.sleep(27);
+        t.add(test_string); // 1 time for both
+        Thread.sleep(30); //3 times
         t.remove(test_string);
-        Assert.assertEquals(1, show_set.get());
         Assert.assertEquals(1, hide_set.get());
         Assert.assertEquals(false, visible_set.get());
         Assert.assertEquals(test_string, string_queue.pop());
-        Assert.assertEquals(test_string, string_queue.pop());
-        Assert.assertEquals(test_string, string_queue.pop());
-        Assert.assertEquals(0, string_queue.size());
+        Assert.assertEquals(2, string_queue.size());
     }
 
     @Test
@@ -101,5 +90,16 @@ public class InfoDisplayBaseTest {
         final InfoDisplayBase t = new TestSubclass(9);
         t.add(test_string+"1");
         t.remove(test_string);
+    }
+
+    @Test
+    public void RemoveBeforeCycle() {
+        final InfoDisplayBase t = new TestSubclass(9);
+        t.add(test_string);
+        t.remove(test_string);
+        Assert.assertEquals(1, hide_set.get());
+        Assert.assertEquals(false, visible_set.get());
+        Assert.assertEquals(test_string, string_queue.pop());
+        Assert.assertEquals(0, string_queue.size());
     }
 }

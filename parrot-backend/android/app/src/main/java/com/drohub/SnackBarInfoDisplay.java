@@ -13,10 +13,6 @@ public class SnackBarInfoDisplay extends InfoDisplayBase {
     @Override
     protected void setText(String text) {
         _snackbar.setText(text);
-    }
-
-    @Override
-    protected void show() {
         _snackbar.show();
     }
 

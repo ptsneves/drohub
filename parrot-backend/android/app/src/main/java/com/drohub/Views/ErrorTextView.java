@@ -38,14 +38,15 @@ public class ErrorTextView extends androidx.appcompat.widget.AppCompatTextView {
             _view = view;
         }
 
+        @Override
         protected void setText(String text) {
-            _view.post(() -> _view.setText(text));
+            _view.post(() ->  {
+                _view.setText(text);
+                _view.setVisibility(VISIBLE);
+            });
         }
 
-        protected void show() {
-            _view.post(() -> _view.setVisibility(VISIBLE));
-        }
-
+        @Override
         protected void hide() {
             _view.post(() -> _view.setVisibility(INVISIBLE));
         }
