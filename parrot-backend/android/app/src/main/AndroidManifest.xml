@@ -34,7 +34,6 @@
         <activity
                 android:name=".CopterHudActivity"
                 android:screenOrientation="sensorLandscape"/>
-        <activity android:name=".DroHubHelper"/>
         <activity android:name=".CreateDeviceActivity"/>
 
         <meta-data
