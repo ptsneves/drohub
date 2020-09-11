@@ -4,13 +4,8 @@ import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.peripheral.MainCamera;
 import com.parrot.drone.groundsdk.device.peripheral.camera.Camera;
 import com.parrot.drone.groundsdk.device.peripheral.camera.CameraPhoto;
-import com.parrot.drone.groundsdk.device.peripheral.camera.CameraRecording;
 import com.parrot.drone.groundsdk.device.peripheral.camera.CameraZoom;
 import com.parrot.drone.groundsdk.value.EnumSetting;
-
-import static com.parrot.drone.groundsdk.device.peripheral.camera.CameraPhoto.State.FunctionState.STOPPED;
-import static com.parrot.drone.groundsdk.device.peripheral.camera.CameraPhoto.State.FunctionState.STOPPING;
-import static com.parrot.drone.groundsdk.device.peripheral.camera.CameraRecording.State.FunctionState.*;
 
 public class ParrotMainCamera implements IParrotPeripheral {
     public interface ZoomLevelListener {
@@ -26,6 +21,8 @@ public class ParrotMainCamera implements IParrotPeripheral {
     public CameraZoom getZoom() {
         return _priv.getZoom();
     }
+
+    private long last_zoom_set = System.currentTimeMillis();
 
 
     public boolean triggerPhotoPicture(boolean start) {
@@ -76,12 +73,21 @@ public class ParrotMainCamera implements IParrotPeripheral {
         return false;
     }
 
-    public boolean setZoom(float zoom_level) {
+    public enum ZoomResult {
+        GOOD,
+        BAD,
+        TOO_FAST
+    }
+
+    public ZoomResult setZoom(float zoom_level) {
         if (!_priv.getZoom().isAvailable())
-            return false;
+            return ZoomResult.BAD;
+        if (System.currentTimeMillis() - last_zoom_set < 250)
+            return ZoomResult.TOO_FAST;
 
         _priv.getZoom().control(CameraZoom.ControlMode.LEVEL, zoom_level);
-        return true;
+        last_zoom_set = System.currentTimeMillis();
+        return ZoomResult.GOOD;
     }
     
     public void setPeripheralListener(ParrotPeripheralManager.PeripheralListener l) {

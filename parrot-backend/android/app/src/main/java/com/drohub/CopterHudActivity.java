@@ -486,15 +486,25 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
         e_v.getInfoDisplay().remove(ErrorMessage);
 
         final double max_zoom = _main_camera.getZoom().getMaxLossyLevel();
-        final double cur_zoom = _main_camera.getZoom().getCurrentLevel();
 
-        mtg.setOnScaleListener(min_zoom, (float)max_zoom, (float)cur_zoom, scale_factor -> {
-            if (!_main_camera.setZoom(scale_factor)) {
-                e_v.getInfoDisplay().add(ErrorMessage);
-                retry_handler.postDelayed(() -> setupZoomGesture(mtg), 1000);
-                return false;
+        mtg.setOnScaleListener(min_zoom, (float) max_zoom, new MultiTouchGestures.OnScaleListener() {
+            @Override
+            public boolean onScale(float scale_factor) {
+                ParrotMainCamera.ZoomResult zr = _main_camera.setZoom(scale_factor);
+                if (zr == ParrotMainCamera.ZoomResult.BAD) {
+                    e_v.getInfoDisplay().add(ErrorMessage);
+                    retry_handler.postDelayed(() -> setupZoomGesture(mtg), 1000);
+                    return false;
+                }
+                else if (zr == ParrotMainCamera.ZoomResult.TOO_FAST)
+                    return false;
+                return true;
             }
-            return true;
+
+            @Override
+            public double getCurrentScale() {
+                return _main_camera.getZoom().getCurrentLevel();
+            }
         });
     }
 

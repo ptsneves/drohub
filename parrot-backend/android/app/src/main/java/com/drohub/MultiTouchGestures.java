@@ -9,6 +9,7 @@ import android.view.View;
 public class MultiTouchGestures implements View.OnTouchListener, ScaleGestureDetector.OnScaleGestureListener, GestureDetector.OnGestureListener {
     public interface OnScaleListener {
         boolean onScale(float scale_factor);
+        double getCurrentScale();
     }
 
     public interface OnScrollListener {
@@ -20,7 +21,6 @@ public class MultiTouchGestures implements View.OnTouchListener, ScaleGestureDet
 
     private float _max_scale_factor = 10;
     private float _min_scale_factor = 1;
-    private float _scale_factor = 1;
 
     private float _max_y_scroll = 10;
     private float _min_y_scroll = 0;
@@ -50,10 +50,9 @@ public class MultiTouchGestures implements View.OnTouchListener, ScaleGestureDet
         _scroll_l = scroll_l;
     }
 
-    public void setOnScaleListener(float min_scale_factor, float max_scale_factor, float initial_scale_factor, OnScaleListener scale_l) {
+    public void setOnScaleListener(float min_scale_factor, float max_scale_factor, OnScaleListener scale_l) {
         _min_scale_factor = min_scale_factor;
         _max_scale_factor = max_scale_factor;
-        _scale_factor = initial_scale_factor;
         _scale_l = scale_l;
     }
 
@@ -68,12 +67,13 @@ public class MultiTouchGestures implements View.OnTouchListener, ScaleGestureDet
     public boolean onScale(ScaleGestureDetector detector) {
         if (_scale_l == null)
             return false;
-        _scale_factor *= detector.getScaleFactor();
+
+        double _scale_factor = _scale_l.getCurrentScale();
+         _scale_factor *= detector.getScaleFactor();
         _scale_factor = Math.max(_scale_factor, _min_scale_factor);// prevent our view from becoming too small //
         _scale_factor = Math.min(_scale_factor, _max_scale_factor);// prevent our view from becoming too big //
-        _scale_factor = ((float)((int)(_scale_factor * 100))) / 100; // Change precision to help with jitter when user just rests their fingers //
 
-        return _scale_l.onScale(_scale_factor);
+        return _scale_l.onScale((float)_scale_factor);
     }
 
     @Override
