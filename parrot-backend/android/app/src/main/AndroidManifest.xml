@@ -17,7 +17,9 @@
             android:roundIcon="@mipmap/ic_launcher_drohub_round"
             android:supportsRtl="true"
             android:theme="@style/AppTheme">
-        <activity android:name=".LobbyActivity">
+        <activity
+                android:name=".LobbyActivity"
+                android:screenOrientation="sensorLandscape">
         </activity>
 
         <meta-data
