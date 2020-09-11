@@ -81,10 +81,10 @@ public class WatchDogTest {
     @Test
     public void StartTwiceOnlyOneTrigger() throws InterruptedException {
         AtomicInteger counter = new AtomicInteger(0);
-        WatchDog w = new WatchDog(300, alarm -> counter.getAndIncrement());
+        WatchDog w = new WatchDog(1000, alarm -> counter.getAndIncrement());
         w.start();
         w.start();
-        Thread.sleep(550);
+        Thread.sleep(1500);
         Assert.assertEquals(1, counter.get());
         w.stop();
     }

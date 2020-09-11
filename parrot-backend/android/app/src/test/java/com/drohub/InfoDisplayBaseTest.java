@@ -39,9 +39,9 @@ public class InfoDisplayBaseTest {
 
     @Test
     public void addTemporarily() throws InterruptedException {
-        final InfoDisplayBase t = new TestSubclass(20);
+        final InfoDisplayBase t = new TestSubclass(100);
         t.addTemporarily(test_string, 10);
-        Thread.sleep(30);
+        Thread.sleep(150);
         Assert.assertEquals(1, hide_set.get());
         Assert.assertEquals(false, visible_set.get());
         Assert.assertEquals(test_string, string_queue.pop());
@@ -50,10 +50,10 @@ public class InfoDisplayBaseTest {
 
     @Test
     public void AddCycleAndRemove() throws InterruptedException {
-        final  InfoDisplayBase t = new TestSubclass(9);
+        final  InfoDisplayBase t = new TestSubclass(90);
         t.add(test_string); //one setText
-        t.add(test_string+"1"); //and seText
-        Thread.sleep(30); //expect 3 texts
+        t.add(test_string+"1"); //one seText
+        Thread.sleep(320); //expect 3 texts
         t.remove(test_string);
         t.remove(test_string+"1");
         Assert.assertEquals(1, hide_set.get());
@@ -68,15 +68,17 @@ public class InfoDisplayBaseTest {
 
     @Test
     public void DoubleAddDoesNotCycle() throws InterruptedException {
-        final InfoDisplayBase t = new TestSubclass(9);
+        final InfoDisplayBase t = new TestSubclass(500);
         t.add(test_string);
         t.add(test_string); // 1 time for both
-        Thread.sleep(30); //3 times
+
+        Thread.sleep(1700); //3 times + initial
+
         t.remove(test_string);
         Assert.assertEquals(1, hide_set.get());
         Assert.assertEquals(false, visible_set.get());
         Assert.assertEquals(test_string, string_queue.pop());
-        Assert.assertEquals(2, string_queue.size());
+        Assert.assertEquals(3, string_queue.size());
     }
 
     @Test
