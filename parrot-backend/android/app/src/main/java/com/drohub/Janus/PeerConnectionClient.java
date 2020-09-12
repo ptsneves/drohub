@@ -7,7 +7,7 @@ import android.media.projection.MediaProjection;
 import android.util.Log;
 
 import com.drohub.IInfoDisplay;
-import com.drohub.Janus.PeerConnectionParameters.PeerConnectionGLSurfaceParameters;
+import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParrotStreamParameters;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
 
@@ -309,7 +309,8 @@ public class PeerConnectionClient implements JanusRTCInterface {
   private VideoCapturer createGroundSDKVideoCapturer(CapturerObserver capturerObserver) {
     SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("VideoCapturerThread", renderEGLContext);
     GLCapturer capturer = new GLCapturer(renderEGLContext,
-            ((PeerConnectionGLSurfaceParameters)peerConnectionParameters).LiveVideoStreamServer);
+            ((PeerConnectionParrotStreamParameters)peerConnectionParameters).LiveVideoStreamServer);
+
     capturer.initialize(surfaceTextureHelper, context, capturerObserver);
     capturer.startCapture(peerConnectionParameters.videoWidth, peerConnectionParameters.videoHeight,
             peerConnectionParameters.videoFps);

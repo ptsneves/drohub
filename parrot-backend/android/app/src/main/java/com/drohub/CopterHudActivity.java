@@ -47,7 +47,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
-import com.drohub.Janus.PeerConnectionParameters.PeerConnectionGLSurfaceParameters;
+import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParrotStreamParameters;
 import com.drohub.Devices.Peripherals.Parrot.ParrotMainCamera;
 import com.drohub.Devices.Peripherals.Parrot.ParrotMediaStore;
 import com.drohub.Devices.Peripherals.Parrot.ParrotPeripheralManager;
@@ -554,7 +554,7 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
             public boolean onFirstTimeAvailable(@NonNull StreamServer parrot_server) {
                 final String CONNECTION_ERROR = "DROHUB rejected our connection";
                 String[] res_turn_urls = activity.getResources().getStringArray(R.array.ice_servers);
-                PeerConnectionGLSurfaceParameters peerConnectionParameters = new PeerConnectionGLSurfaceParameters(
+                PeerConnectionParrotStreamParameters peerConnectionParameters = new PeerConnectionParrotStreamParameters(
                         mStreamView,
                         null,
                         null,
