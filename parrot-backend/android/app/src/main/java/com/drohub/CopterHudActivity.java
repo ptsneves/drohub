@@ -541,21 +541,14 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
         final String startup_warning = "Media store not available";
         e_v.getInfoDisplay().add(startup_warning);
 
-        _media_store.setPeripheralListener(new ParrotPeripheralManager.PeripheralListener<MediaStore>() {
-            @Override
-            public void onChange(@NonNull MediaStore o) {
-            }
+        _media_store.setStoredPhotoCountListener(new_photo_count -> {
+            e_v.getInfoDisplay().remove(startup_warning);
+            e_v.getInfoDisplay().addTemporarily(String.format("Photos: %d", new_photo_count), 5000);
+        });
 
-            @Override
-            public boolean onFirstTimeAvailable(@NonNull MediaStore media_store) {
-                e_v.getInfoDisplay().remove(startup_warning);
-                _media_store.setStoredPhotoCountListener(new_photo_count ->
-                        e_v.getInfoDisplay().addTemporarily(String.format("Photos: %d", new_photo_count), 5000));
-
-                _media_store.setStoredVideoCountListener(new_video_count ->
-                        e_v.getInfoDisplay().addTemporarily(String.format("Videos: %d", new_video_count), 5000));
-                return true;
-            }
+        _media_store.setStoredVideoCountListener(new_video_count -> {
+            e_v.getInfoDisplay().remove(startup_warning);
+            e_v.getInfoDisplay().addTemporarily(String.format("Videos: %d", new_video_count), 5000);
         });
     }
 
