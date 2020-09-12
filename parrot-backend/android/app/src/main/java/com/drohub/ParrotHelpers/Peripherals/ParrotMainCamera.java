@@ -31,11 +31,11 @@ public class ParrotMainCamera implements IParrotPeripheral {
 
         try {
             if (start) {
-                _priv.getMainCamera().get().startPhotoCapture();
-                return _priv.getMainCamera().get().photoState().get() == CameraPhoto.State.FunctionState.STARTED;
+                _priv.get().startPhotoCapture();
+                return _priv.get().photoState().get() == CameraPhoto.State.FunctionState.STARTED;
             } else {
-                _priv.getMainCamera().get().stopPhotoCapture();
-                switch (_priv.getMainCamera().get().photoState().get()) {
+                _priv.get().stopPhotoCapture();
+                switch (_priv.get().photoState().get()) {
                     case STOPPED:
                     case STOPPING:
                         return true;
@@ -53,15 +53,15 @@ public class ParrotMainCamera implements IParrotPeripheral {
 
         try {
             if (start) {
-                _priv.getMainCamera().get().startRecording();
-                switch (_priv.getMainCamera().get().recordingState().get()) {
+                _priv.get().startRecording();
+                switch (_priv.get().recordingState().get()) {
                     case STARTED:
                     case STARTING:
                         return true;
                 }
             } else {
-                _priv.getMainCamera().get().stopRecording();
-                switch (_priv.getMainCamera().get().recordingState().get()) {
+                _priv.get().stopRecording();
+                switch (_priv.get().recordingState().get()) {
                     case STOPPED:
                     case STOPPING:
                         return true;
@@ -99,12 +99,11 @@ public class ParrotMainCamera implements IParrotPeripheral {
         private CameraZoom _camera_zoom;
 
         private ZoomLevelListener _zoom_listener;
-        final private ParrotPeripheralManager<MainCamera> _camera_handle;
         private EnumSetting<Camera.Mode> _camera_mode;
         private double _last_recorded_zoom_level;
         
         ParrotMainCameraPriv(Drone drone) {
-            _camera_handle = new ParrotPeripheralManager<>(drone, MainCamera.class, this);
+            super(drone, MainCamera.class);
         }
 
 
@@ -116,10 +115,6 @@ public class ParrotMainCamera implements IParrotPeripheral {
             if (_camera_mode == null)
                 throw new IllegalArgumentException("Camera mode not available");
             return _camera_mode;
-        }
-
-        ParrotPeripheralManager<MainCamera> getMainCamera() {
-            return _camera_handle;
         }
 
         void setZoomLevelUpdateListener(ZoomLevelListener l) {

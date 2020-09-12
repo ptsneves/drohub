@@ -35,14 +35,13 @@ public class ParrotMediaStore implements IParrotPeripheral {
     }
 
     private class ParrotMediaStorePriv extends ParrotPeripheralPrivBase<MediaStore> {
-        final private ParrotPeripheralManager<MediaStore> _media_store_handle;
         private int _photo_count;
         private int _video_count;
         private StoredPhotoCountListener _stored_photo_count_listener;
         private StoredVideoCountListener _stored_video_count_listener;
 
         ParrotMediaStorePriv(Drone drone) {
-            _media_store_handle = new ParrotPeripheralManager<>(drone, MediaStore.class, this);
+            super(drone, MediaStore.class);
         }
 
         void setStoredPhotoCountListener(StoredPhotoCountListener l) {

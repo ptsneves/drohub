@@ -16,10 +16,8 @@ public class ParrotStreamServer implements IParrotPeripheral {
     }
 
     private class ParrotStreamServerPriv extends ParrotPeripheralPrivBase<StreamServer> {
-        final private ParrotPeripheralManager<StreamServer> _stream_server_handle;
-
         private ParrotStreamServerPriv(Drone drone) {
-            _stream_server_handle = new ParrotPeripheralManager<>(drone, StreamServer.class, this);
+            super(drone, StreamServer.class);
         }
 
         @Override
