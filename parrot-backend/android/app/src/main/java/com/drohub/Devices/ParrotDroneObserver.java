@@ -1,10 +1,8 @@
-package com.drohub.ParrotHelpers;
+package com.drohub.Devices;
 
 import android.app.Activity;
-import android.view.View;
 import androidx.annotation.NonNull;
 import com.drohub.IInfoDisplay;
-import com.drohub.InfoDisplayBase;
 import com.drohub.Models.DroHubDevice;
 import com.drohub.api.QueryDeviceInfoHelper;
 import com.parrot.drone.groundsdk.GroundSdk;

@@ -1,4 +1,4 @@
-package com.drohub.ParrotHelpers;
+package com.drohub.Devices;
 
 import android.app.Activity;
 import androidx.annotation.NonNull;

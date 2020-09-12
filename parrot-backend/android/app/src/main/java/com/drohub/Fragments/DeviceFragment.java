@@ -7,8 +7,8 @@ import android.view.ViewGroup;
 import com.drohub.DroHubHelper;
 import com.drohub.IInfoDisplay;
 import com.drohub.Models.DroHubDevice;
-import com.drohub.ParrotHelpers.ParrotDroneObserver;
-import com.drohub.ParrotHelpers.ParrotRCObserver;
+import com.drohub.Devices.ParrotDroneObserver;
+import com.drohub.Devices.ParrotRCObserver;
 import com.drohub.R;
 import com.drohub.SnackBarInfoDisplay;
 

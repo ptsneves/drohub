@@ -1,4 +1,4 @@
-package com.drohub.ParrotHelpers.Peripherals;
+package com.drohub.Devices.Peripherals.Parrot;
 
 import androidx.annotation.NonNull;
 import com.drohub.thift.gen.CameraMode;

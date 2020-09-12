@@ -10,7 +10,7 @@ import com.drohub.IInfoDisplay;
 import com.drohub.Janus.PeerConnectionClient;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
-import com.drohub.ParrotHelpers.Peripherals.ParrotMainCamera;
+import com.drohub.Devices.Peripherals.Parrot.ParrotMainCamera;
 import com.drohub.thift.gen.*;
 import com.parrot.drone.groundsdk.device.instrument.BatteryInfo;
 import com.parrot.drone.groundsdk.device.instrument.FlyingIndicators;
