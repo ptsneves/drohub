@@ -1,5 +1,5 @@
-package com.drohub.ParrotHelpers.Peripherals;
+package com.drohub.Devices.Peripherals.Parrot;
 
-public interface IParrotPeripheral {
+interface IParrotPeripheral {
     void setPeripheralListener(ParrotPeripheralManager.PeripheralListener l);
 }

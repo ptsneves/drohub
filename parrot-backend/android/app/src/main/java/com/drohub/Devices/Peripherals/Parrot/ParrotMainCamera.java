@@ -23,6 +23,10 @@ public class ParrotMainCamera implements IParrotPeripheral {
     final private ParrotMainCameraPriv _priv;
     final private String _serial;
 
+    private long last_zoom_set = System.currentTimeMillis();
+    private CameraStateListener _camera_state_listener = null;
+
+
     public ParrotMainCamera(Drone drone) {
         _serial = drone.getUid();
         _priv = new ParrotMainCameraPriv(drone);
@@ -59,21 +63,19 @@ public class ParrotMainCamera implements IParrotPeripheral {
         });
     }
 
-    public CameraZoom getZoom() {
-        return _priv.getZoom();
-    }
-
-    private long last_zoom_set = System.currentTimeMillis();
-    private CameraStateListener _camera_state_listener = null;
-
     public void setCameraStateListener(CameraStateListener l) {
         _camera_state_listener = l;
     }
 
 
     public boolean triggerPhotoPicture(boolean start) {
-        if (_priv.getCameraMode().getValue() != Camera.Mode.PHOTO)
-            _priv.getCameraMode().setValue(Camera.Mode.PHOTO);
+        try {
+            if (_priv.getCameraMode().getValue() != Camera.Mode.PHOTO)
+                _priv.getCameraMode().setValue(Camera.Mode.PHOTO);
+        }
+        catch (ParrotMainCameraPriv.ParrotMainCameraPrivException e) {
+            return false;
+        }
 
         try {
             if (start) {
@@ -94,8 +96,13 @@ public class ParrotMainCamera implements IParrotPeripheral {
     }
 
     public boolean recordVideo(boolean start) {
-        if (_priv.getCameraMode().getValue() != Camera.Mode.RECORDING)
-            _priv.getCameraMode().setValue(Camera.Mode.RECORDING);
+        try {
+            if (_priv.getCameraMode().getValue() != Camera.Mode.RECORDING)
+                _priv.getCameraMode().setValue(Camera.Mode.RECORDING);
+        }
+        catch (ParrotMainCameraPriv.ParrotMainCameraPrivException e) {
+            return false;
+        }
 
         try {
             if (start) {
@@ -126,12 +133,21 @@ public class ParrotMainCamera implements IParrotPeripheral {
     }
 
     public ZoomResult setZoom(double zoom_level) {
-        if (!_priv.getZoom().isAvailable())
-            return ZoomResult.BAD;
-        if (System.currentTimeMillis() - last_zoom_set < 250)
-            return ZoomResult.TOO_FAST;
+        try {
+            if (!_priv.getZoom().isAvailable())
+                return ZoomResult.BAD;
+            if (System.currentTimeMillis() - last_zoom_set < 250)
+                return ZoomResult.TOO_FAST;
 
-        _priv.getZoom().control(CameraZoom.ControlMode.LEVEL, zoom_level);
+            double _scale_factor = _priv.getZoom().getCurrentLevel() * zoom_level;
+            _scale_factor = Math.max(_scale_factor, 1.0f);// prevent our view from becoming too small //
+            _scale_factor = Math.min(_scale_factor, _priv.getZoom().getMaxLossyLevel());// prevent our view from becoming too big //
+            _priv.getZoom().control(CameraZoom.ControlMode.LEVEL, _scale_factor);
+        }
+        catch (ParrotMainCameraPriv.ParrotMainCameraPrivException e) {
+            return ZoomResult.BAD;
+        }
+
         last_zoom_set = System.currentTimeMillis();
         return ZoomResult.GOOD;
     }
@@ -142,6 +158,13 @@ public class ParrotMainCamera implements IParrotPeripheral {
 
 
     private class ParrotMainCameraPriv extends ParrotPeripheralPrivBase<MainCamera> {
+
+        public class ParrotMainCameraPrivException extends Exception {
+            protected ParrotMainCameraPrivException(String msg) {
+                super(msg);
+            }
+        }
+
         private CameraZoom _camera_zoom;
 
         private ZoomLevelListener _zoom_listener;
@@ -153,13 +176,15 @@ public class ParrotMainCamera implements IParrotPeripheral {
         }
 
 
-        CameraZoom getZoom() {
+        CameraZoom getZoom() throws ParrotMainCameraPrivException {
+            if (_camera_zoom == null)
+                throw new ParrotMainCameraPrivException("Zoom functionality not available");
             return _camera_zoom;
         }
 
-        EnumSetting<Camera.Mode> getCameraMode() {
+        EnumSetting<Camera.Mode> getCameraMode() throws ParrotMainCameraPrivException {
             if (_camera_mode == null)
-                throw new IllegalArgumentException("Camera mode not available");
+                throw new ParrotMainCameraPrivException("Camera mode not available");
             return _camera_mode;
         }
 

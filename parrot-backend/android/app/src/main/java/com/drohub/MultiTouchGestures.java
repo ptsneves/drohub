@@ -9,7 +9,6 @@ import android.view.View;
 public class MultiTouchGestures implements View.OnTouchListener, ScaleGestureDetector.OnScaleGestureListener, GestureDetector.OnGestureListener {
     public interface OnScaleListener {
         boolean onScale(float scale_factor);
-        double getCurrentScale();
     }
 
     public interface OnScrollListener {
@@ -19,16 +18,11 @@ public class MultiTouchGestures implements View.OnTouchListener, ScaleGestureDet
     private ScaleGestureDetector gesture_scale;
     private GestureDetector gesture_detector;
 
-    private float _max_scale_factor = 10;
-    private float _min_scale_factor = 1;
-
     private float _max_y_scroll = 10;
     private float _min_y_scroll = 0;
-    private float _scroll_y_pos = 1;
 
     private float _max_x_scroll = 10;
     private float _min_x_scroll = 0;
-    private float _scroll_x_pos = 1;
 
     private OnScrollListener _scroll_l;
     private OnScaleListener _scale_l;
@@ -38,21 +32,11 @@ public class MultiTouchGestures implements View.OnTouchListener, ScaleGestureDet
         gesture_detector = new GestureDetector(c, this);
     }
 
-    public void setOnScrollListener(float max_x_scroll, float min_x_scroll,
-                                    float max_y_scroll, float min_y_scroll,
-                                    OnScrollListener scroll_l) {
-
-        _max_x_scroll = max_x_scroll;
-        _min_x_scroll = min_x_scroll;
-
-        _max_y_scroll = max_y_scroll;
-        _min_y_scroll = min_y_scroll;
+    public void setOnScrollListener(OnScrollListener scroll_l) {
         _scroll_l = scroll_l;
     }
 
-    public void setOnScaleListener(float min_scale_factor, float max_scale_factor, OnScaleListener scale_l) {
-        _min_scale_factor = min_scale_factor;
-        _max_scale_factor = max_scale_factor;
+    public void setOnScaleListener(OnScaleListener scale_l) {
         _scale_l = scale_l;
     }
 
@@ -68,18 +52,14 @@ public class MultiTouchGestures implements View.OnTouchListener, ScaleGestureDet
         if (_scale_l == null)
             return false;
 
-        double _scale_factor = _scale_l.getCurrentScale();
-         _scale_factor *= detector.getScaleFactor();
-        _scale_factor = Math.max(_scale_factor, _min_scale_factor);// prevent our view from becoming too small //
-        _scale_factor = Math.min(_scale_factor, _max_scale_factor);// prevent our view from becoming too big //
-
-        return _scale_l.onScale((float)_scale_factor);
+        return _scale_l.onScale(detector.getScaleFactor());
     }
 
     @Override
     public boolean onScroll(MotionEvent event1, MotionEvent event2, float distanceX, float distanceY) {
         if (_scroll_l == null)
             return false;
+
         float adim_dx = -distanceX/ Math.abs(_max_x_scroll - _min_x_scroll);
         float adim_dy = -distanceY/ Math.abs(_max_y_scroll - _min_y_scroll);
 

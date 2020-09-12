@@ -479,31 +479,19 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
         final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
 
         final String ErrorMessage = "Zoom is not available";
-        final float min_zoom = 1.0f; //As per docs
         final Handler retry_handler = new Handler(getMainLooper());
 
         e_v.getInfoDisplay().remove(ErrorMessage);
-
-        final double max_zoom = _main_camera.getZoom().getMaxLossyLevel();
-
-        mtg.setOnScaleListener(min_zoom, (float) max_zoom, new MultiTouchGestures.OnScaleListener() {
-            @Override
-            public boolean onScale(float scale_factor) {
-                ParrotMainCamera.ZoomResult zr = _main_camera.setZoom(scale_factor);
-                if (zr == ParrotMainCamera.ZoomResult.BAD) {
-                    e_v.getInfoDisplay().add(ErrorMessage);
-                    retry_handler.postDelayed(() -> setupZoomGesture(mtg), 1000);
-                    return false;
-                }
-                else if (zr == ParrotMainCamera.ZoomResult.TOO_FAST)
-                    return false;
-                return true;
+        mtg.setOnScaleListener(scale_factor -> {
+            ParrotMainCamera.ZoomResult zr = _main_camera.setZoom(scale_factor);
+            if (zr == ParrotMainCamera.ZoomResult.BAD) {
+                e_v.getInfoDisplay().add(ErrorMessage);
+                retry_handler.postDelayed(() -> setupZoomGesture(mtg), 1000);
+                return false;
             }
-
-            @Override
-            public double getCurrentScale() {
-                return _main_camera.getZoom().getCurrentLevel();
-            }
+            else if (zr == ParrotMainCamera.ZoomResult.TOO_FAST)
+                return false;
+            return true;
         });
     }
 
@@ -512,16 +500,19 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
         final String ErrorMessage = "Gimbal pitch control is not available";
         final Handler retry_handler = new Handler(getMainLooper());
 
-        final Gimbal gimbal = _drone.getPeripheral(Gimbal.class, g -> {}).get();
-        if (gimbal == null || !gimbal.getSupportedAxes().contains(Gimbal.Axis.PITCH) ) {
-            e_v.getInfoDisplay().add(ErrorMessage);
-            retry_handler.postDelayed(() -> setupGimbalPitchGesture(mtg, scrollable_view), 1000);
-            return;
-        }
+        _drone.getPeripheral(Gimbal.class, gimbal -> {
+            if (gimbal == null || !gimbal.getSupportedAxes().contains(Gimbal.Axis.PITCH) ) {
+                e_v.getInfoDisplay().add(ErrorMessage);
+                return;
+            }
 
-        e_v.getInfoDisplay().remove(ErrorMessage);
-        mtg.setOnScrollListener(scrollable_view.getWidth(), 0, scrollable_view.getHeight(), 0,
-                (dx, dy) -> FlightActions.setVerticalGimbalPosition(_drone, dx, dy*10.0f));
+            e_v.getInfoDisplay().remove(ErrorMessage);
+            mtg.setOnScrollListener( (dx, dy) -> {
+                float adim_dy = -dy/ Math.abs(scrollable_view.getHeight());
+                return FlightActions.setVerticalGimbalPosition(_drone, adim_dy*10.0f);
+            });
+        });
+
     }
 
     private void setupMultiTouchGestures() {

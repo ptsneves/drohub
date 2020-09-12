@@ -10,7 +10,7 @@ public class FlightActions {
         return  !(gimbal == null || !gimbal.getSupportedAxes().contains(Gimbal.Axis.PITCH));
     }
 
-    public static boolean setVerticalGimbalPosition(Drone drone, float adim_dx, float adim_dy) {
+    public static boolean setVerticalGimbalPosition(Drone drone, float adim_dy) {
         final Gimbal gimbal = drone.getPeripheral(Gimbal.class, g -> {}).get();
 
         if (!isGimbalPitchAvailable(drone))
