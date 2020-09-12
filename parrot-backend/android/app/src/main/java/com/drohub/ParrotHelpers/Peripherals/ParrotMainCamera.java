@@ -79,7 +79,7 @@ public class ParrotMainCamera implements IParrotPeripheral {
         TOO_FAST
     }
 
-    public ZoomResult setZoom(float zoom_level) {
+    public ZoomResult setZoom(double zoom_level) {
         if (!_priv.getZoom().isAvailable())
             return ZoomResult.BAD;
         if (System.currentTimeMillis() - last_zoom_set < 250)
