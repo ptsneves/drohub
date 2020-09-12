@@ -11,6 +11,7 @@ import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParrotStreamParam
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
 
+import com.drohub.hud.GroundSDKVideoCapturer;
 import org.json.JSONObject;
 import org.webrtc.*;
 
@@ -308,8 +309,13 @@ public class PeerConnectionClient implements JanusRTCInterface {
 
   private VideoCapturer createGroundSDKVideoCapturer(CapturerObserver capturerObserver) {
     SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("VideoCapturerThread", renderEGLContext);
-    GLCapturer capturer = new GLCapturer(renderEGLContext,
-            ((PeerConnectionParrotStreamParameters)peerConnectionParameters).LiveVideoStreamServer);
+
+    GroundSDKVideoCapturer capturer = new GroundSDKVideoCapturer(
+            ((PeerConnectionParrotStreamParameters)peerConnectionParameters).LiveVideoStreamServer,
+            renderEGLContext,
+            peerConnectionParameters.videoWidth,
+            peerConnectionParameters.videoHeight
+    );
 
     capturer.initialize(surfaceTextureHelper, context, capturerObserver);
     capturer.startCapture(peerConnectionParameters.videoWidth, peerConnectionParameters.videoHeight,

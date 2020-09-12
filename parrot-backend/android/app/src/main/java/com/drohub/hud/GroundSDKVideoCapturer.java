@@ -1,31 +1,25 @@
 package com.drohub.hud;
 
+import android.content.Context;
 import android.graphics.Matrix;
 import android.graphics.Rect;
-import android.opengl.*;
+import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
-import android.view.TextureView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.parrot.drone.groundsdk.device.peripheral.StreamServer;
 import com.parrot.drone.groundsdk.device.peripheral.stream.CameraLive;
 import com.parrot.drone.groundsdk.internal.stream.GlRenderSink;
-import com.parrot.drone.groundsdk.stream.GsdkStreamView;
-import com.parrot.drone.groundsdk.stream.Stream;
 import org.webrtc.*;
 import org.webrtc.VideoFrame.TextureBuffer;
 
-import java.io.InvalidObjectException;
 import java.util.concurrent.TimeUnit;
 
-import static android.opengl.GLES20.*;
-import static android.opengl.GLES30.*;
-import static android.os.Process.PHONE_UID;
 import static android.os.Process.THREAD_PRIORITY_LOWEST;
 
-public class LiveVideoRenderer implements GlRenderSink.Callback {
+public class GroundSDKVideoCapturer implements GlRenderSink.Callback, VideoCapturer{
     /** Stream renderer. */
     @Nullable private GlRenderSink.Renderer _parrot_renderer;
 
@@ -37,21 +31,18 @@ public class LiveVideoRenderer implements GlRenderSink.Callback {
     private final HandlerThread _render_thread;
     private final Handler _render_handler;
     private final StreamServer _stream_server;
-    private final CapturerObserver _capturer_observer;
+    private CapturerObserver _capturer_observer;
     private long elapsed_time_since_last_frame_ms;
     private GlTextureFrameBuffer textureFrameBuffer;
 
     private EglBase.Context _egl_context;
     private EglBase _egl_base;
 
-    public LiveVideoRenderer(StreamServer stream_server, CapturerObserver capturer_observer,
-                             EglBase.Context egl_context, int width, int height) throws InvalidObjectException {
+    public GroundSDKVideoCapturer(@NonNull StreamServer stream_server,
+                                  EglBase.Context egl_context, int width, int height) {
 
-        if (stream_server == null)
-            throw new InvalidObjectException("Stream server peripheral is invalid?");
 
         _stream_server = stream_server;
-        _capturer_observer = capturer_observer;
         _render_thread = new HandlerThread("RenderingThread", THREAD_PRIORITY_LOWEST);
         _render_thread.start();
         _render_handler = new Handler(_render_thread.getLooper());
@@ -169,5 +160,34 @@ public class LiveVideoRenderer implements GlRenderSink.Callback {
                 yuvConverter.release();
             }));
         });
+    }
+
+    @Override
+    public void initialize(SurfaceTextureHelper surfaceTextureHelper, Context context, CapturerObserver capturerObserver) {
+        _capturer_observer = capturerObserver;
+    }
+
+    @Override
+    public void startCapture(int i, int i1, int i2) {
+        startStream();
+    }
+
+    @Override
+    public void stopCapture() throws InterruptedException {
+        stopStream();
+    }
+
+    @Override
+    public void changeCaptureFormat(int i, int i1, int i2) {
+        // Empty on purpose
+    }
+
+    @Override
+    public void dispose() {
+    }
+
+    @Override
+    public boolean isScreencast() {
+        return false;
     }
 }
