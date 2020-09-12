@@ -5,21 +5,12 @@ import android.content.Intent;
 import android.location.Location;
 import android.media.projection.MediaProjectionManager;
 import android.util.Log;
-
+import com.drohub.GroundSdkHelperActivity;
 import com.drohub.IInfoDisplay;
+import com.drohub.Janus.PeerConnectionClient;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
 import com.drohub.ParrotHelpers.Peripherals.ParrotMainCamera;
-import org.apache.thrift.*;
-
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ArrayBlockingQueue;
-
-import com.drohub.GroundSdkHelperActivity;
-import com.drohub.Janus.PeerConnectionClient;
 import com.drohub.thift.gen.*;
 import com.parrot.drone.groundsdk.device.instrument.BatteryInfo;
 import com.parrot.drone.groundsdk.device.instrument.FlyingIndicators;
@@ -28,6 +19,13 @@ import com.parrot.drone.groundsdk.device.instrument.Radio;
 import com.parrot.drone.groundsdk.device.peripheral.MediaStore;
 import com.parrot.drone.groundsdk.device.peripheral.media.MediaItem;
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf;
+import org.apache.thrift.TApplicationException;
+import org.apache.thrift.TException;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 
 public class DroHubHandler implements Drone.Iface {
@@ -67,6 +65,7 @@ public class DroHubHandler implements Drone.Iface {
     final private TelemetryContainer<DroneBatteryLevel> _drone_battery_level;
     final private TelemetryContainer<DroneFlyingState> _drone_flying_state;
     final private TelemetryContainer<DroneRadioSignal> _drone_radio_signal;
+    final private TelemetryContainer<CameraState> _camera_state;
     final private ParrotMainCamera _main_camera;
 
     private GroundSdkHelperActivity _activity;
@@ -92,6 +91,7 @@ public class DroHubHandler implements Drone.Iface {
         _drone_battery_level = new TelemetryContainer<>();
         _drone_flying_state = new TelemetryContainer<>();
         _drone_radio_signal = new TelemetryContainer<>();
+        _camera_state = new TelemetryContainer<>();
         _main_camera = new ParrotMainCamera(_drone_handle);
 
         _room_id = 0;
@@ -216,6 +216,13 @@ public class DroHubHandler implements Drone.Iface {
         }).get();
 
         _display = display;
+
+        _main_camera.setCameraStateListener(camera_state -> {
+            try {
+                _camera_state.push(camera_state);
+            } catch (TException e) {
+            }
+        });
     }
 
     void handleCapturePermissionCallback(int requestCode, int resultCode, Intent data) {
@@ -345,6 +352,12 @@ public class DroHubHandler implements Drone.Iface {
         return _drone_radio_signal.pop();
     }
 
+
+    @Override
+    public CameraState getCameraState() throws TException {
+        return _camera_state.pop();
+    }
+
     @Override
     public DroneReply moveToPosition(DroneRequestPosition request) {
         return null;
@@ -386,6 +399,13 @@ public class DroHubHandler implements Drone.Iface {
     @Override
     public DroneReply recordVideo(DroneRecordVideoRequest request) {
         boolean r = _main_camera.recordVideo(request.action_type == ActionType.START);
+        return new DroneReply(r, _serial_number, System.currentTimeMillis());
+    }
+
+    @Override
+    public DroneReply setCameraZoom(double zoom_level) {
+        ParrotMainCamera.ZoomResult zr = _main_camera.setZoom(zoom_level);
+        boolean r = zr == ParrotMainCamera.ZoomResult.GOOD ? true : false;
         return new DroneReply(r, _serial_number, System.currentTimeMillis());
     }
 

@@ -1,21 +1,62 @@
 package com.drohub.ParrotHelpers.Peripherals;
 
+import androidx.annotation.NonNull;
+import com.drohub.thift.gen.CameraMode;
+import com.drohub.thift.gen.CameraState;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.peripheral.MainCamera;
 import com.parrot.drone.groundsdk.device.peripheral.camera.Camera;
 import com.parrot.drone.groundsdk.device.peripheral.camera.CameraPhoto;
 import com.parrot.drone.groundsdk.device.peripheral.camera.CameraZoom;
 import com.parrot.drone.groundsdk.value.EnumSetting;
+import org.jetbrains.annotations.NotNull;
 
 public class ParrotMainCamera implements IParrotPeripheral {
     public interface ZoomLevelListener {
         void onChange(double new_zoom_level);
     }
 
+    public interface CameraStateListener {
+        void onChange(CameraState camera_state);
+    }
+
     final private ParrotMainCameraPriv _priv;
+    final private String _serial;
 
     public ParrotMainCamera(Drone drone) {
+        _serial = drone.getUid();
         _priv = new ParrotMainCameraPriv(drone);
+        _priv.setPeripheralListener(new ParrotPeripheralManager.PeripheralListener<MainCamera>() {
+            @Override
+            public void onChange(@NonNull @NotNull MainCamera main_camera) {
+                if (_camera_state_listener == null)
+                    return;
+
+                CameraMode mode = CameraMode.ERROR;
+                switch (main_camera.mode().getValue()) {
+                    case PHOTO:
+                        mode = CameraMode.PICTURE;
+                        break;
+                    case RECORDING:
+                        mode = CameraMode.VIDEO;
+                        break;
+                }
+
+                _camera_state_listener.onChange(new CameraState(
+                        mode,
+                        main_camera.zoom().getCurrentLevel(),
+                        1.0f,
+                        main_camera.zoom().getMaxLossyLevel(),
+                        _serial,
+                        System.currentTimeMillis()
+                ));
+            }
+
+            @Override
+            public boolean onFirstTimeAvailable(@NonNull @NotNull MainCamera mainCamera) {
+                return true;
+            }
+        });
     }
 
     public CameraZoom getZoom() {
@@ -23,6 +64,11 @@ public class ParrotMainCamera implements IParrotPeripheral {
     }
 
     private long last_zoom_set = System.currentTimeMillis();
+    private CameraStateListener _camera_state_listener = null;
+
+    public void setCameraStateListener(CameraStateListener l) {
+        _camera_state_listener = l;
+    }
 
 
     public boolean triggerPhotoPicture(boolean start) {
