@@ -1,13 +1,28 @@
 package com.drohub.Devices.Peripherals.Parrot;
 
 import androidx.annotation.NonNull;
+import com.drohub.Devices.Peripherals.IPeripheral;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.peripheral.Peripheral;
 
-public class ParrotPeripheralManager<C extends Peripheral> {
-    public interface PeripheralListener<C> {
+class ParrotPeripheralManager<C extends Peripheral> {
+    interface PeripheralListener<C> {
         void onChange(@NonNull C c); //Will be called after first time available
         boolean onFirstTimeAvailable(@NonNull C c);
+
+        static <C,O> ParrotPeripheralManager.PeripheralListener<C> convert(IPeripheral.IPeripheralListener<O> l, O instance){
+            return new ParrotPeripheralManager.PeripheralListener<C>() {
+                @Override
+                public void onChange(C peripheral) {
+                    l.onChange(instance);
+                }
+
+                @Override
+                public boolean onFirstTimeAvailable(C peripheral) {
+                    return l.onFirstTimeAvailable(instance);
+                }
+            };
+        }
     }
 
     private boolean _valid_handle;

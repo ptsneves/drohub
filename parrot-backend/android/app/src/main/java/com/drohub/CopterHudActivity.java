@@ -47,10 +47,11 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import com.drohub.Devices.Peripherals.IPeripheral;
+import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParrotStreamParameters;
 import com.drohub.Devices.Peripherals.Parrot.ParrotMainCamera;
 import com.drohub.Devices.Peripherals.Parrot.ParrotMediaStore;
-import com.drohub.Devices.Peripherals.Parrot.ParrotPeripheralManager;
 import com.drohub.Devices.Peripherals.Parrot.ParrotStreamServer;
 import com.drohub.Views.DroHubMapView;
 import com.drohub.Views.ErrorTextView;
@@ -62,8 +63,6 @@ import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.RemoteControl;
 import com.parrot.drone.groundsdk.device.instrument.*;
 import com.parrot.drone.groundsdk.device.peripheral.Gimbal;
-import com.parrot.drone.groundsdk.device.peripheral.MainCamera;
-import com.parrot.drone.groundsdk.device.peripheral.StreamServer;
 import com.parrot.drone.groundsdk.device.pilotingitf.Activable;
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf;
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf.SmartTakeOffLandAction;
@@ -425,11 +424,12 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
 
         _main_camera = new ParrotMainCamera(_drone);
 
-        _main_camera.setPeripheralListener(new ParrotPeripheralManager.PeripheralListener<MainCamera>() {
+        _main_camera.setPeripheralListener(new IPeripheral.IPeripheralListener<ParrotMainCamera>() {
             @Override
-            public void onChange(@NonNull MainCamera o) {}
+            public void onChange(@NonNull ParrotMainCamera o) {}
+
             @Override
-            public boolean onFirstTimeAvailable(@NonNull MainCamera o) {
+            public boolean onFirstTimeAvailable(@NonNull ParrotMainCamera o) {
                 e_v.getInfoDisplay().remove(StartupErrorMessage);
                 setupRecordingButton();
                 setupTriggerPictureButton();
@@ -545,32 +545,37 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
     private void setupLiveVideo(String user_email, String auth_token) {
         CopterHudActivity activity = this;
         ParrotStreamServer stream_server = new ParrotStreamServer(_drone);
-        stream_server.setPeripheralListener(new ParrotPeripheralManager.PeripheralListener<StreamServer>() {
+        stream_server.setPeripheralListener(new IPeripheral.IPeripheralListener<ParrotStreamServer>() {
             @Override
-            public void onChange(@NonNull StreamServer parrot_server) {
+            public void onChange(@NonNull ParrotStreamServer parrot_server) {
             }
 
             @Override
-            public boolean onFirstTimeAvailable(@NonNull StreamServer parrot_server) {
+            public boolean onFirstTimeAvailable(@NonNull ParrotStreamServer parrot_server) {
                 final String CONNECTION_ERROR = "DROHUB rejected our connection";
                 String[] res_turn_urls = activity.getResources().getStringArray(R.array.ice_servers);
-                PeerConnectionParrotStreamParameters peerConnectionParameters = new PeerConnectionParrotStreamParameters(
-                        mStreamView,
-                        null,
-                        null,
-                        null,
-                        res_turn_urls,
-                        getString(R.string.janus_websocket_uri), activity,
-                        20,
-                        "VP9",
-                        640,
-                        360,
-                        20480000,
-                        128000,
-                        "opus",
-                        parrot_server,
-                        1.0f/10.0f,
-                        2000);
+                PeerConnectionParrotStreamParameters peerConnectionParameters;
+                try {
+                    peerConnectionParameters = stream_server.getConnectionParameters(new PeerConnectionParameters(
+                            mStreamView,
+                            null,
+                            null,
+                            null,
+                            res_turn_urls,
+                            getString(R.string.janus_websocket_uri), activity,
+                            640,
+                            360,
+                            20,
+                            "VP9",
+                            20480000,
+                            PeerConnectionParameters.VideoCapturerType.UNDEFINED,
+                            128000,
+                            "opus",
+                            1.0f/10.0f,
+                            2000));
+                } catch (IllegalAccessException e) {
+                    return false;
+                }
 
                 _audio_manager = (AudioManager)activity.getSystemService(Context.AUDIO_SERVICE);
                 final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);

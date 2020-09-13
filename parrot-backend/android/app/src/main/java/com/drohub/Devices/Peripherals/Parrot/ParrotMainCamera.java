@@ -1,6 +1,7 @@
 package com.drohub.Devices.Peripherals.Parrot;
 
 import androidx.annotation.NonNull;
+import com.drohub.Devices.Peripherals.IPeripheral;
 import com.drohub.thift.gen.CameraMode;
 import com.drohub.thift.gen.CameraState;
 import com.parrot.drone.groundsdk.device.Drone;
@@ -11,7 +12,7 @@ import com.parrot.drone.groundsdk.device.peripheral.camera.CameraZoom;
 import com.parrot.drone.groundsdk.value.EnumSetting;
 import org.jetbrains.annotations.NotNull;
 
-public class ParrotMainCamera implements IParrotPeripheral {
+public class ParrotMainCamera implements IPeripheral<ParrotMainCamera> {
     public interface ZoomLevelListener {
         void onChange(double new_zoom_level);
     }
@@ -67,6 +68,11 @@ public class ParrotMainCamera implements IParrotPeripheral {
         _camera_state_listener = l;
     }
 
+
+    @Override
+    public void setPeripheralListener(IPeripheralListener<ParrotMainCamera> l) {
+        _priv.setPeripheralListener(ParrotPeripheralManager.PeripheralListener.convert(l, this));
+    }
 
     public boolean triggerPhotoPicture(boolean start) {
         try {
@@ -151,11 +157,6 @@ public class ParrotMainCamera implements IParrotPeripheral {
         last_zoom_set = System.currentTimeMillis();
         return ZoomResult.GOOD;
     }
-    
-    public void setPeripheralListener(ParrotPeripheralManager.PeripheralListener l) {
-        _priv.setPeripheralListener(l);
-    }
-
 
     private class ParrotMainCameraPriv extends ParrotPeripheralPrivBase<MainCamera> {
 

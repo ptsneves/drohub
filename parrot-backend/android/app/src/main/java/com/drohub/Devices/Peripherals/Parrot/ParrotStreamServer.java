@@ -1,18 +1,26 @@
 package com.drohub.Devices.Peripherals.Parrot;
 
 import androidx.annotation.NonNull;
+import com.drohub.Devices.Peripherals.IPeripheral;
+import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
+import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParrotStreamParameters;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.peripheral.StreamServer;
 
-public class ParrotStreamServer implements IParrotPeripheral {
+public class ParrotStreamServer implements IPeripheral<ParrotStreamServer> {
+
     ParrotStreamServerPriv _priv;
     public ParrotStreamServer(Drone drone) {
         _priv = new ParrotStreamServerPriv(drone);
     }
 
     @Override
-    public void setPeripheralListener(ParrotPeripheralManager.PeripheralListener l) {
-        _priv.setPeripheralListener(l);
+    public void setPeripheralListener(IPeripheralListener<ParrotStreamServer> l) {
+        _priv.setPeripheralListener(ParrotPeripheralManager.PeripheralListener.convert(l, this));
+    }
+
+    public PeerConnectionParrotStreamParameters getConnectionParameters(PeerConnectionParameters p) throws IllegalAccessException {
+        return new PeerConnectionParrotStreamParameters(p, _priv.get());
     }
 
     private class ParrotStreamServerPriv extends ParrotPeripheralPrivBase<StreamServer> {
