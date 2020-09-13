@@ -23,6 +23,11 @@ public class PeerConnectionParrotStreamParameters extends PeerConnectionParamete
                 video_height, videoFps, videoCodec,
                 videoStartBitrate, VideoCapturerType.GROUNDSDK_VIDEO_SHARE, audioStartBitrate,
                 audioCodec, keepAliveFrequency, keepAliveTimeout);
+         LiveVideoStreamServer = live_video_stream_server;
+     }
+
+    public PeerConnectionParrotStreamParameters(PeerConnectionParameters p, StreamServer live_video_stream_server) {
+        super(p);
         LiveVideoStreamServer = live_video_stream_server;
     }
 }

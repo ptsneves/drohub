@@ -2,6 +2,8 @@ package com.drohub.Janus.PeerConnectionParameters;
 
 import android.app.Activity;
 
+import com.drohub.CopterHudActivity;
+import com.drohub.Devices.Peripherals.Parrot.ParrotStreamServer;
 import org.webrtc.PeerConnection;
 import org.webrtc.SurfaceViewRenderer;
 
@@ -11,7 +13,8 @@ public class PeerConnectionParameters {
   public enum VideoCapturerType {
     CAMERA_FRONT,
     SCREEN_SHARE,
-    GROUNDSDK_VIDEO_SHARE
+    GROUNDSDK_VIDEO_SHARE,
+    UNDEFINED
   }
   public final PeerConnection.IceServer[] iceServers;
   public final int videoWidth;
@@ -29,16 +32,24 @@ public class PeerConnectionParameters {
   public final float keepAliveFrequency;
   public final long keepAliveTimeout;
 
-  PeerConnectionParameters(
+  public PeerConnectionParameters(
           SurfaceViewRenderer local_view,
           SurfaceViewRenderer remote_view,
           String turn_user_name,
           String turn_credential,
           String[] ice_servers,
-          String janus_web_socket_uri, Activity activity,
-          int videoWidth, int videoHeight, int videoFps, String videoCodec, int videoStartBitrate,
+          String janus_web_socket_uri,
+          Activity activity,
+          int videoWidth,
+          int videoHeight,
+          int videoFps,
+          String videoCodec,
+          int videoStartBitrate,
           VideoCapturerType capturerType,
-          int audioStartBitrate, String audioCodec, float keepAliveFrequency, long keepAliveTimeout) {
+          int audioStartBitrate,
+          String audioCodec,
+          float keepAliveFrequency,
+          long keepAliveTimeout) {
     this.keepAliveFrequency = keepAliveFrequency;
     this.keepAliveTimeout = keepAliveTimeout;
 
@@ -73,5 +84,23 @@ public class PeerConnectionParameters {
     this.audioStartBitrate = audioStartBitrate;
     this.audioCodec = audioCodec;
     this.capturerType = capturerType;
+  }
+
+  public PeerConnectionParameters(PeerConnectionParameters p) {
+    iceServers = p.iceServers;
+    videoWidth = p.videoWidth;
+    videoHeight = p.videoHeight;
+    videoFps = p.videoFps;
+    janusWebSocketURL = p.janusWebSocketURL;
+    videoCodec = p.videoCodec;
+    audioStartBitrate = p.audioStartBitrate;
+    videoStartBitrate = p.videoStartBitrate;
+    audioCodec = p.audioCodec;
+    activity = p.activity;
+    capturerType = p.capturerType;
+    localView = p.localView;
+    remoteView = p.remoteView;
+    keepAliveFrequency = p.keepAliveFrequency;
+    keepAliveTimeout = p.keepAliveTimeout;
   }
 }
