@@ -6,7 +6,6 @@ import android.os.HandlerThread;
 import android.text.TextUtils;
 import android.util.Log;
 import com.drohub.IInfoDisplay;
-import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
 import com.drohub.WatchDog;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft_6455;

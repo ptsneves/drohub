@@ -5,7 +5,7 @@ import android.util.Log;
 import com.drohub.GroundSdkHelperActivity;
 import com.drohub.IInfoDisplay;
 import com.drohub.Janus.PeerConnectionClient;
-import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
+import com.drohub.Janus.PeerConnectionParameters;
 import com.drohub.Devices.Peripherals.Parrot.ParrotMainCamera;
 import com.drohub.thift.gen.*;
 import com.parrot.drone.groundsdk.device.instrument.BatteryInfo;

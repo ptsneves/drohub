@@ -2,28 +2,138 @@ package com.drohub.Devices.Peripherals.Parrot;
 
 import androidx.annotation.NonNull;
 import com.drohub.Devices.Peripherals.IPeripheral;
-import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
-import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParrotStreamParameters;
+import com.drohub.Janus.PeerConnectionParameters;
+import com.drohub.hud.GroundSDKVideoCapturer;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.peripheral.StreamServer;
+import org.jetbrains.annotations.NotNull;
+import org.webrtc.SurfaceTextureHelper;
 
-public class ParrotStreamServer implements IPeripheral<ParrotStreamServer> {
-
+public class ParrotStreamServer implements IPeripheral<ParrotStreamServer>, IPeripheral.ICapturerProvider<ParrotStreamServer> {
     ParrotStreamServerPriv _priv;
+    private CapturerListenerPriv _capturer_l;
+    ParrotPeripheralManager.PeripheralListener<StreamServer> _peripheral_l;
+
     public ParrotStreamServer(Drone drone) {
         _priv = new ParrotStreamServerPriv(drone);
     }
 
     @Override
     public void setPeripheralListener(IPeripheralListener<ParrotStreamServer> l) {
-        _priv.setPeripheralListener(ParrotPeripheralManager.PeripheralListener.convert(l, this));
+        final ParrotStreamServer this_instance = this;
+        _peripheral_l = ParrotPeripheralManager.PeripheralListener.convert(l, this);
+
+        if (_capturer_l == null)
+            _priv.setPeripheralListener(_peripheral_l);
+        else {
+            _priv.setPeripheralListener(new ParrotPeripheralManager.PeripheralListener<StreamServer>() {
+                @Override
+                public void onChange(@NonNull StreamServer streamServer) {
+                    _peripheral_l.onChange(streamServer);
+                }
+
+                @Override
+                public boolean onFirstTimeAvailable(@NonNull StreamServer streamServer) {
+                    if (!_peripheral_l.onFirstTimeAvailable(streamServer))
+                        return false;
+
+                    if (_capturer_l != null) {
+                        _peripheral_l = getParrotPeripheralListenerAfterSuccessfulFirstTime();
+                        return _capturer_l.listener.onCapturerAvailable(
+                                this_instance,
+                                _capturer_l.generateCapturer(streamServer));
+                    }
+                    return true;
+                }
+            });
+        }
     }
 
-    public PeerConnectionParrotStreamParameters getConnectionParameters(PeerConnectionParameters p) throws IllegalAccessException {
-        return new PeerConnectionParrotStreamParameters(p, _priv.get());
+    //AHAHAHHHAHAH BIIIGGG nameees
+    private ParrotPeripheralManager.PeripheralListener<StreamServer> getParrotPeripheralListenerAfterSuccessfulFirstTime() {
+        final ParrotStreamServer this_instance = this;
+        return new ParrotPeripheralManager.PeripheralListener<StreamServer>() {
+            @Override
+            public void onChange(@NonNull @NotNull StreamServer streamServer) {
+                _peripheral_l.onChange(streamServer);
+            }
+
+            @Override
+            public boolean onFirstTimeAvailable(@NonNull @NotNull StreamServer streamServer) {
+                return _capturer_l.listener.onCapturerAvailable(
+                        this_instance,
+                        _capturer_l.generateCapturer(streamServer));
+            }
+        };
     }
 
-    private class ParrotStreamServerPriv extends ParrotPeripheralPrivBase<StreamServer> {
+    public void setCapturerListener(
+            int video_width,
+            int video_height,
+            int video_fps,
+            IVideoCapturerListener<ParrotStreamServer> listener) {
+
+        _capturer_l = new CapturerListenerPriv(listener, video_width, video_height, video_fps);
+        final ParrotStreamServer this_instance = this;
+        if (_peripheral_l == null) {
+            _priv.setPeripheralListener(new ParrotPeripheralManager.PeripheralListener<StreamServer>() {
+                @Override
+                public void onChange(@NonNull StreamServer streamServer) {
+                }
+
+                @Override
+                public boolean onFirstTimeAvailable(@NonNull StreamServer streamServer) {
+                    _capturer_l.listener.onCapturerAvailable(
+                            this_instance,
+                            _capturer_l.generateCapturer(streamServer));
+                    return true;
+
+                }
+            });
+        }
+        else
+            _priv.setPeripheralListener(_peripheral_l);
+    }
+
+    private static class CapturerListenerPriv {
+        private final int video_width;
+        private final int video_height;
+        private final int video_fps;
+        private final IVideoCapturerListener<ParrotStreamServer> listener;
+
+        private CapturerListenerPriv(
+                IVideoCapturerListener<ParrotStreamServer> listener,
+                int video_width,
+                int video_height,
+                int video_fps) {
+
+            this.listener = listener;
+            this.video_width = video_width;
+            this.video_height = video_height;
+            this.video_fps = video_fps;
+        }
+
+        private PeerConnectionParameters.CapturerGenerator generateCapturer(StreamServer stream_server) {
+
+            return ((egl_context, observer) -> {
+                SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("VideoCapturerThread",
+                        egl_context);
+
+                GroundSDKVideoCapturer capturer = new GroundSDKVideoCapturer(
+                        stream_server,
+                        egl_context,
+                        video_width,
+                        video_height
+                );
+
+                capturer.initialize(surfaceTextureHelper, null, observer);
+                capturer.startCapture(video_width, video_height, video_fps);
+                return capturer;
+            });
+        }
+    }
+
+    private static class ParrotStreamServerPriv extends ParrotPeripheralPrivBase<StreamServer> {
         private ParrotStreamServerPriv(Drone drone) {
             super(drone, StreamServer.class);
         }

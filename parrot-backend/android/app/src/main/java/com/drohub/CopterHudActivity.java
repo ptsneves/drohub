@@ -48,8 +48,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import com.drohub.Devices.Peripherals.IPeripheral;
-import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
-import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParrotStreamParameters;
+import com.drohub.Janus.PeerConnectionParameters;
 import com.drohub.Devices.Peripherals.Parrot.ParrotMainCamera;
 import com.drohub.Devices.Peripherals.Parrot.ParrotMediaStore;
 import com.drohub.Devices.Peripherals.Parrot.ParrotStreamServer;
@@ -545,72 +544,58 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
     private void setupLiveVideo(String user_email, String auth_token) {
         CopterHudActivity activity = this;
         ParrotStreamServer stream_server = new ParrotStreamServer(_drone);
-        stream_server.setPeripheralListener(new IPeripheral.IPeripheralListener<ParrotStreamServer>() {
-            @Override
-            public void onChange(@NonNull ParrotStreamServer parrot_server) {
+        stream_server.setCapturerListener(640, 480, 20, (peripheral, capturer_generator) -> {
+            final String CONNECTION_ERROR = "DROHUB rejected our connection";
+            String[] res_turn_urls = activity.getResources().getStringArray(R.array.ice_servers);
+            PeerConnectionParameters peerConnectionParameters = new PeerConnectionParameters(
+                    mStreamView,
+                    null,
+                    null,
+                    null,
+                    res_turn_urls,
+                    getString(R.string.janus_websocket_uri),
+                    activity,
+                    "VP9",
+                    20480000,
+                    capturer_generator,
+                    128000,
+                    "opus",
+                    1.0f/10.0f,
+                    2000);
+
+            _audio_manager = (AudioManager)activity.getSystemService(Context.AUDIO_SERVICE);
+            final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
+
+            if (_audio_manager != null) {
+                _audio_manager.setMode(AudioManager.MODE_IN_CALL);
+                _audio_manager.setSpeakerphoneOn(true);
             }
-
-            @Override
-            public boolean onFirstTimeAvailable(@NonNull ParrotStreamServer parrot_server) {
-                final String CONNECTION_ERROR = "DROHUB rejected our connection";
-                String[] res_turn_urls = activity.getResources().getStringArray(R.array.ice_servers);
-                PeerConnectionParrotStreamParameters peerConnectionParameters;
-                try {
-                    peerConnectionParameters = stream_server.getConnectionParameters(new PeerConnectionParameters(
-                            mStreamView,
-                            null,
-                            null,
-                            null,
-                            res_turn_urls,
-                            getString(R.string.janus_websocket_uri), activity,
-                            640,
-                            360,
-                            20,
-                            "VP9",
-                            20480000,
-                            PeerConnectionParameters.VideoCapturerType.UNDEFINED,
-                            128000,
-                            "opus",
-                            1.0f/10.0f,
-                            2000));
-                } catch (IllegalAccessException e) {
-                    return false;
-                }
-
-                _audio_manager = (AudioManager)activity.getSystemService(Context.AUDIO_SERVICE);
-                final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
-
-                if (_audio_manager != null) {
-                    _audio_manager.setMode(AudioManager.MODE_IN_CALL);
-                    _audio_manager.setSpeakerphoneOn(true);
-                }
-                else
-                    e_v.getInfoDisplay().add("Could not setup audio error");
+            else
+                e_v.getInfoDisplay().add("Could not setup audio error");
 
 
-                _drohub_handler = new DroHubHandler(
-                        _drone.getUid(),
-                        peerConnectionParameters,
-                        activity,
-                        e_v.getInfoDisplay()
-                        );
+            _drohub_handler = new DroHubHandler(
+                    _drone.getUid(),
+                    peerConnectionParameters,
+                    activity,
+                    e_v.getInfoDisplay()
+            );
 
-                setupTimer();
-                setupMuteMicrophoneButton(_drohub_handler);
+            setupTimer();
+            setupMuteMicrophoneButton(_drohub_handler);
 
-                _thrift_connection = new ThriftConnection();
-                try {
-                    _thrift_connection.onStart(_drone.getUid(),
-                            getString(R.string.drohub_ws_url),
-                            _drohub_handler, user_email, auth_token);
-                } catch (InterruptedException e) {
-                    e_v.getInfoDisplay().add(CONNECTION_ERROR);
-                    return false;
-                }
-                Log.w("COPTER", "Started thrift connection to " + getString(R.string.drohub_ws_url));
-                e_v.getInfoDisplay().remove(CONNECTION_ERROR);
-                return true;
+            _thrift_connection = new ThriftConnection();
+            try {
+                _thrift_connection.onStart(_drone.getUid(),
+                        getString(R.string.drohub_ws_url),
+                        _drohub_handler, user_email, auth_token);
+            } catch (InterruptedException e) {
+                e_v.getInfoDisplay().add(CONNECTION_ERROR);
+                return false;
             }
+            Log.w("COPTER", "Started thrift connection to " + getString(R.string.drohub_ws_url));
+            e_v.getInfoDisplay().remove(CONNECTION_ERROR);
+            return true;
         });
     }
 

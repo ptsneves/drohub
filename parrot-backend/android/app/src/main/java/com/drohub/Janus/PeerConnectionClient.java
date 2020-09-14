@@ -7,10 +7,7 @@ import android.media.projection.MediaProjection;
 import android.util.Log;
 
 import com.drohub.IInfoDisplay;
-import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParrotStreamParameters;
-import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
 
-import com.drohub.hud.GroundSDKVideoCapturer;
 import org.json.JSONObject;
 import org.webrtc.*;
 
@@ -62,11 +59,8 @@ public class PeerConnectionClient implements JanusRTCInterface {
       this.remote_video_sink = peerConnectionParameters.remoteView;
       this.context = context;
       EglBase rootEglBase = EglBase.create();
-      this.renderEGLContext =  rootEglBase.getEglBaseContext();
+      this.renderEGLContext = rootEglBase.getEglBaseContext();
       this.displayName = displayName;
-
-      Log.d(TAG, "Capturing format: " + peerConnectionParameters.videoWidth +
-              "x" + peerConnectionParameters.videoHeight + "@" + peerConnectionParameters.videoFps);
 
       isError = false;
 
@@ -136,7 +130,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
 
     local_webrtc_stream = factory.createLocalMediaStream("ARDAMS");
     VideoSource videoSource = factory.createVideoSource(false);
-    videoCapturer = createGroundSDKVideoCapturer(videoSource.getCapturerObserver());
+    videoCapturer = peerConnectionParameters.capturer_generator.getCapturer(renderEGLContext, videoSource.getCapturerObserver());
     local_webrtc_stream.addTrack(createVideoTrack(videoSource));
     if (isAudioEnabled()) {
       local_webrtc_stream.addTrack(createAudioTrack());
@@ -286,21 +280,5 @@ public class PeerConnectionClient implements JanusRTCInterface {
   @Override
   public void onLeaving(BigInteger handleId) {
 
-  }
-
-  private VideoCapturer createGroundSDKVideoCapturer(CapturerObserver capturerObserver) {
-    SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("VideoCapturerThread", renderEGLContext);
-
-    GroundSDKVideoCapturer capturer = new GroundSDKVideoCapturer(
-            ((PeerConnectionParrotStreamParameters)peerConnectionParameters).LiveVideoStreamServer,
-            renderEGLContext,
-            peerConnectionParameters.videoWidth,
-            peerConnectionParameters.videoHeight
-    );
-
-    capturer.initialize(surfaceTextureHelper, context, capturerObserver);
-    capturer.startCapture(peerConnectionParameters.videoWidth, peerConnectionParameters.videoHeight,
-            peerConnectionParameters.videoFps);
-    return capturer;
   }
 }
