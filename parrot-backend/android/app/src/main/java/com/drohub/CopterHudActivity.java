@@ -71,6 +71,7 @@ import com.parrot.drone.groundsdk.facility.UserLocation;
 import org.webrtc.SurfaceViewRenderer;
 
 import static com.drohub.DroHubHelper.*;
+import static java.lang.Double.NaN;
 
 
 /** Activity to pilot a copter. */
@@ -434,6 +435,16 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
                 setupTriggerPictureButton();
                 setupMultiTouchGestures();
                 return true;
+            }
+        });
+        _main_camera.setZoomLevelListener(new ParrotMainCamera.ZoomLevelListener() {
+            private double _last_value = NaN;
+            private String ZoomLevelFormat = "Zoom %.2f";
+            @Override
+            public void onChange(double new_zoom_level) {
+                if (_last_value != NaN)
+                    e_v.getInfoDisplay().remove(String.format(ZoomLevelFormat, _last_value));
+                e_v.getInfoDisplay().addTemporarily(String.format(ZoomLevelFormat, new_zoom_level), 1500);
             }
         });
     }

@@ -68,6 +68,9 @@ public class ParrotMainCamera implements IPeripheral<ParrotMainCamera> {
         _camera_state_listener = l;
     }
 
+    public void setZoomLevelListener(ZoomLevelListener l) {
+        _priv.setZoomLevelUpdateListener(l);
+    }
 
     @Override
     public void setPeripheralListener(IPeripheralListener<ParrotMainCamera> l) {
