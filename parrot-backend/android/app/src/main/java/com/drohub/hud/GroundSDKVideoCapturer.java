@@ -27,17 +27,16 @@ public class GroundSDKVideoCapturer implements GlRenderSink.Callback, VideoCaptu
 
     /** Rendering surface area. Also acts as ready indicator: when non-{@code null}, rendering may start. */
     @Nullable private Rect _gl_surface_rect;
-    private Rect _original_rect;
+    private final Rect _original_rect;
 
     private static final int FramesPerSecond = 30;
-    private final HandlerThread _render_thread;
     private final Handler _render_handler;
+    private final  EglBase.Context _egl_context;
     private final IParrotStreamServerControl _stream_control;
     private CapturerObserver _capturer_observer;
     private long elapsed_time_since_last_frame_ms;
     private GlTextureFrameBuffer textureFrameBuffer;
 
-    private EglBase.Context _egl_context;
     private EglBase _egl_base;
 
     public GroundSDKVideoCapturer(@NonNull IParrotStreamServerControl stream_control,
@@ -45,7 +44,7 @@ public class GroundSDKVideoCapturer implements GlRenderSink.Callback, VideoCaptu
 
 
         _stream_control = stream_control;
-        _render_thread = new HandlerThread("RenderingThread", THREAD_PRIORITY_LOWEST);
+        HandlerThread _render_thread = new HandlerThread("RenderingThread", THREAD_PRIORITY_LOWEST);
         _render_thread.start();
         _render_handler = new Handler(_render_thread.getLooper());
         _egl_context = egl_context;
@@ -78,7 +77,7 @@ public class GroundSDKVideoCapturer implements GlRenderSink.Callback, VideoCaptu
 
     @Override
     public void onRenderingMustStop(@NonNull GlRenderSink.Renderer parrot_renderer) {
-        ThreadUtils.invokeAtFrontUninterruptibly(_render_handler, () -> _stream_control.stopStream());
+        ThreadUtils.invokeAtFrontUninterruptibly(_render_handler, _stream_control::stopStream);
     }
 
     @Override
@@ -102,11 +101,10 @@ public class GroundSDKVideoCapturer implements GlRenderSink.Callback, VideoCaptu
     public void onContentZoneChange(@NonNull Rect new_live_video_dimensions) {
         _render_handler.post(() -> {
             _gl_surface_rect = new_live_video_dimensions;
-            _parrot_renderer.setRenderZone(_gl_surface_rect);
+            if (_parrot_renderer != null)
+                _parrot_renderer.setRenderZone(_gl_surface_rect);
         });
     }
-
-
 
     public TextureBuffer createRgbTextureBuffer() {
         return ThreadUtils.invokeAtFrontUninterruptibly(_render_handler, () -> {
@@ -129,9 +127,7 @@ public class GroundSDKVideoCapturer implements GlRenderSink.Callback, VideoCaptu
             return new TextureBufferImpl(_gl_surface_rect.width(), _gl_surface_rect.height(), VideoFrame.TextureBuffer.Type.RGB,
                     textureFrameBuffer.getTextureId(),
                     new Matrix(), _render_handler, yuvConverter,
-                    () -> _render_handler.post(() -> {
-                yuvConverter.release();
-            }));
+                    () -> _render_handler.post(yuvConverter::release));
         });
     }
 
