@@ -9,8 +9,6 @@ import android.os.HandlerThread;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.parrot.drone.groundsdk.device.peripheral.StreamServer;
-import com.parrot.drone.groundsdk.device.peripheral.stream.CameraLive;
 import com.parrot.drone.groundsdk.internal.stream.GlRenderSink;
 import org.webrtc.*;
 import org.webrtc.VideoFrame.TextureBuffer;
@@ -20,6 +18,10 @@ import java.util.concurrent.TimeUnit;
 import static android.os.Process.THREAD_PRIORITY_LOWEST;
 
 public class GroundSDKVideoCapturer implements GlRenderSink.Callback, VideoCapturer{
+    public interface IParrotStreamServerControl {
+        boolean startStream(GlRenderSink.Callback render_sink_cb);
+        boolean stopStream();
+    }
     /** Stream renderer. */
     @Nullable private GlRenderSink.Renderer _parrot_renderer;
 
@@ -30,7 +32,7 @@ public class GroundSDKVideoCapturer implements GlRenderSink.Callback, VideoCaptu
     private static final int FramesPerSecond = 30;
     private final HandlerThread _render_thread;
     private final Handler _render_handler;
-    private final StreamServer _stream_server;
+    private final IParrotStreamServerControl _stream_control;
     private CapturerObserver _capturer_observer;
     private long elapsed_time_since_last_frame_ms;
     private GlTextureFrameBuffer textureFrameBuffer;
@@ -38,11 +40,11 @@ public class GroundSDKVideoCapturer implements GlRenderSink.Callback, VideoCaptu
     private EglBase.Context _egl_context;
     private EglBase _egl_base;
 
-    public GroundSDKVideoCapturer(@NonNull StreamServer stream_server,
+    public GroundSDKVideoCapturer(@NonNull IParrotStreamServerControl stream_control,
                                   EglBase.Context egl_context, int width, int height) {
 
 
-        _stream_server = stream_server;
+        _stream_control = stream_control;
         _render_thread = new HandlerThread("RenderingThread", THREAD_PRIORITY_LOWEST);
         _render_thread.start();
         _render_handler = new Handler(_render_thread.getLooper());
@@ -50,32 +52,6 @@ public class GroundSDKVideoCapturer implements GlRenderSink.Callback, VideoCaptu
         _gl_surface_rect = new Rect(0, 0, width, height);
         _original_rect = new Rect(0, 0, width, height);
         elapsed_time_since_last_frame_ms = System.currentTimeMillis();
-    }
-
-    public final void stopStream() {
-        CameraLive camera_live = _stream_server.live(cameraLive -> {
-        }).get();
-        if (camera_live != null) {
-            camera_live.stop();
-        }
-        if(_stream_server!= null && _stream_server.streamingEnabled())
-            _stream_server.enableStreaming(false);
-        if (textureFrameBuffer != null) {
-            textureFrameBuffer.release();
-            textureFrameBuffer = null;
-        }
-    }
-
-    public final void startStream() {
-        _stream_server.enableStreaming(true);
-        CameraLive c = _stream_server.live(cameraLive -> {
-
-            }
-        ).get();
-        if (c != null) {
-            c.openSink(GlRenderSink.config(this));
-            c.play();
-        }
     }
 
     @Override
@@ -102,10 +78,7 @@ public class GroundSDKVideoCapturer implements GlRenderSink.Callback, VideoCaptu
 
     @Override
     public void onRenderingMustStop(@NonNull GlRenderSink.Renderer parrot_renderer) {
-        ThreadUtils.invokeAtFrontUninterruptibly(_render_handler, () -> {
-            stopStream();
-        });
-
+        ThreadUtils.invokeAtFrontUninterruptibly(_render_handler, () -> _stream_control.stopStream());
     }
 
     @Override
@@ -169,12 +142,16 @@ public class GroundSDKVideoCapturer implements GlRenderSink.Callback, VideoCaptu
 
     @Override
     public void startCapture(int i, int i1, int i2) {
-        startStream();
+        _stream_control.startStream(this);
     }
 
     @Override
-    public void stopCapture() throws InterruptedException {
-        stopStream();
+    public void stopCapture() {
+        _stream_control.stopStream();
+        if (textureFrameBuffer != null) {
+            textureFrameBuffer.release();
+            textureFrameBuffer = null;
+        }
     }
 
     @Override

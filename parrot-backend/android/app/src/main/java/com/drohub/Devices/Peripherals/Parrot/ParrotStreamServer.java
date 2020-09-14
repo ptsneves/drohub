@@ -6,8 +6,14 @@ import com.drohub.Janus.PeerConnectionParameters;
 import com.drohub.hud.GroundSDKVideoCapturer;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.peripheral.StreamServer;
+import com.parrot.drone.groundsdk.device.peripheral.stream.CameraLive;
+import com.parrot.drone.groundsdk.internal.stream.GlRenderSink;
+import com.parrot.drone.groundsdk.stream.Stream;
 import org.jetbrains.annotations.NotNull;
+import org.webrtc.CapturerObserver;
+import org.webrtc.EglBase;
 import org.webrtc.SurfaceTextureHelper;
+import org.webrtc.VideoCapturer;
 
 public class ParrotStreamServer implements IPeripheral<ParrotStreamServer>, IPeripheral.ICapturerProvider<ParrotStreamServer> {
     ParrotStreamServerPriv _priv;
@@ -52,32 +58,13 @@ public class ParrotStreamServer implements IPeripheral<ParrotStreamServer>, IPer
         };
     }
 
-    public void setCapturerListener(
+    synchronized public void setCapturerListener(
             int video_width,
             int video_height,
             int video_fps,
             IVideoCapturerListener<ParrotStreamServer> listener) {
 
         _capturer_l = new CapturerListenerPriv(listener, video_width, video_height, video_fps);
-        final ParrotStreamServer this_instance = this;
-        if (_peripheral_l == null) {
-            _priv.setPeripheralListener(new ParrotPeripheralManager.PeripheralListener<StreamServer>() {
-                @Override
-                public void onChange(@NonNull StreamServer streamServer) {
-                }
-
-                @Override
-                public boolean onFirstTimeAvailable(@NonNull StreamServer streamServer) {
-                    _capturer_l.listener.onCapturerAvailable(
-                            this_instance,
-                            _capturer_l.generateCapturer(streamServer));
-                    return true;
-
-                }
-            });
-        }
-        else
-            _priv.setPeripheralListener(_peripheral_l);
     }
 
     private static class CapturerListenerPriv {
@@ -98,23 +85,58 @@ public class ParrotStreamServer implements IPeripheral<ParrotStreamServer>, IPer
             this.video_fps = video_fps;
         }
 
+
         private PeerConnectionParameters.CapturerGenerator generateCapturer(StreamServer stream_server) {
+            return (egl_context, observer) -> getCapturer(stream_server, egl_context, observer);
+        }
 
-            return ((egl_context, observer) -> {
-                SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("VideoCapturerThread",
-                        egl_context);
+        private VideoCapturer getCapturer(StreamServer stream_server, EglBase.Context egl_context, CapturerObserver observer) {
+            SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("VideoCapturerThread",
+                    egl_context);
 
-                GroundSDKVideoCapturer capturer = new GroundSDKVideoCapturer(
-                        stream_server,
-                        egl_context,
-                        video_width,
-                        video_height
-                );
+            GroundSDKVideoCapturer capturer = new GroundSDKVideoCapturer(
+                    new GroundSDKVideoCapturer.IParrotStreamServerControl() {
+                        private Stream.Sink _sink;
+                        private CameraLive _camera_live;
+                        @Override
+                        public boolean startStream(GlRenderSink.Callback render_sink_cb) {
+                            if (_sink != null)
+                                return false;
+                            stream_server.enableStreaming(true);
 
-                capturer.initialize(surfaceTextureHelper, null, observer);
-                capturer.startCapture(video_width, video_height, video_fps);
-                return capturer;
-            });
+                            if (_camera_live != null)
+                                return false;
+
+                            _camera_live = stream_server.live(cam_live -> {
+                                if (cam_live == null)
+                                    System.out.println("WHAAA??");
+                            }).get();
+                            if (_camera_live == null)
+                                return false;
+
+                            _sink = _camera_live.openSink(GlRenderSink.config(render_sink_cb));
+                            return _camera_live.play();
+                        }
+
+                        @Override
+                        public boolean stopStream() {
+                            if (_camera_live == null || _camera_live.playState() != CameraLive.PlayState.PLAYING)
+                                return false;
+                            _camera_live.stop();
+                            _sink.close();
+                            if(stream_server.streamingEnabled())
+                                stream_server.enableStreaming(false);
+                            return true;
+                        }
+                    },
+                    egl_context,
+                    video_width,
+                    video_height
+            );
+
+            capturer.initialize(surfaceTextureHelper, null, observer);
+            capturer.startCapture(video_width, video_height, video_fps);
+            return capturer;
         }
     }
 
