@@ -3,7 +3,7 @@ package com.drohub.Devices.Peripherals.Parrot;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.peripheral.Peripheral;
 
-public abstract class ParrotPeripheralPrivBase<C extends Peripheral> implements ParrotPeripheralManager.PeripheralListener<C> {
+public abstract class ParrotPeripheralPrivBase<C extends Peripheral> implements ParrotPeripheralManager.PeripheralListener<C>, AutoCloseable {
     final protected ParrotPeripheralManager<C> _handle;
 
     protected ParrotPeripheralPrivBase(Drone drone, Class<C> peripheral_class) {
@@ -17,5 +17,10 @@ public abstract class ParrotPeripheralPrivBase<C extends Peripheral> implements 
 
     public C get() throws IllegalAccessException {
         return _handle.get();
+    }
+
+    @Override
+    public void close() {
+        _handle.close();
     }
 }

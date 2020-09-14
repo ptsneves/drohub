@@ -2,10 +2,11 @@ package com.drohub.Devices.Peripherals.Parrot;
 
 import androidx.annotation.NonNull;
 import com.drohub.Devices.Peripherals.IPeripheral;
+import com.parrot.drone.groundsdk.Ref;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.peripheral.Peripheral;
 
-class ParrotPeripheralManager<C extends Peripheral> {
+class ParrotPeripheralManager<C extends Peripheral> implements AutoCloseable {
     interface PeripheralListener<C> {
         void onChange(@NonNull C c); //Will be called after first time available
         boolean onFirstTimeAvailable(@NonNull C c);
@@ -26,46 +27,45 @@ class ParrotPeripheralManager<C extends Peripheral> {
     }
 
     private boolean _valid_handle;
-    private C _peripheral_handle;
-    private PeripheralListener _peripheral_listener;
+    final private Ref<C> _peripheral_handle;
 
-    void setPeripheralListener(PeripheralListener on_change_listener) {
-        _peripheral_listener = on_change_listener;
-    }
-
-    public ParrotPeripheralManager(Drone drone, Class<C> peripheral_class, PeripheralListener on_change_listener) {
-        setPeripheralListener(on_change_listener);
+    public ParrotPeripheralManager(final Drone drone, final Class<C> peripheral_class, final PeripheralListener<C> peripheral_listener) {
         _valid_handle = false;
         _peripheral_handle = drone.getPeripheral(peripheral_class, peripheral -> {
-            if (peripheral == null) {
-                _valid_handle = false;
+            if (peripheral == null)
                 return;
-            }
+            if (peripheral_listener != null) {
+                if (!_valid_handle) {
+                    _valid_handle = peripheral_listener.onFirstTimeAvailable(peripheral);
+                    if (!_valid_handle)
+                        return;
+                }
+                else
+                    _valid_handle = true;
 
-            if (!_valid_handle && _peripheral_listener != null) {
-                _valid_handle = _peripheral_listener.onFirstTimeAvailable(peripheral);
-                if (!_valid_handle)
-                    return;
+
+                peripheral_listener.onChange(peripheral);
             }
             else
                 _valid_handle = true;
+        });
+    }
 
-
-            _peripheral_handle = peripheral;
-            if (_peripheral_listener != null)
-                _peripheral_listener.onChange(peripheral);
-        }).get();
+    @Override
+    public void close() {
+        if (_peripheral_handle != null)
+            _peripheral_handle.close();
     }
 
     public C get() throws IllegalAccessException {
         if (_valid_handle)
-            return _peripheral_handle;
+            return _peripheral_handle.get();
         throw new IllegalAccessException("Handle is not valid");
     }
 
     public C get(long time_to_wait) throws IllegalAccessException {
         if (_valid_handle)
-            return _peripheral_handle;
+            return _peripheral_handle.get();
 
         long end_time = System.currentTimeMillis() + time_to_wait;
         do {
@@ -75,7 +75,7 @@ class ParrotPeripheralManager<C extends Peripheral> {
                 throw new IllegalAccessException("Sleep was interrupted. Giving up trying to get peripheral");
             }
             if (_valid_handle)
-                return _peripheral_handle;
+                return _peripheral_handle.get();
         } while (end_time > System.currentTimeMillis());
 
         throw new IllegalAccessException("Timeout waiting for peripheral handle");
