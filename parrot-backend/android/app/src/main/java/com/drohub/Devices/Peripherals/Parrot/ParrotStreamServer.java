@@ -13,56 +13,41 @@ public class ParrotStreamServer implements IPeripheral<ParrotStreamServer>, IPer
     ParrotStreamServerPriv _priv;
     private CapturerListenerPriv _capturer_l;
     ParrotPeripheralManager.PeripheralListener<StreamServer> _peripheral_l;
+    boolean _listener_first_time_success;
 
     public ParrotStreamServer(Drone drone) {
         _priv = new ParrotStreamServerPriv(drone);
+        _priv.setPeripheralListener(getParrotPeripheralListener());
+        _listener_first_time_success = false;
     }
 
     @Override
     public void setPeripheralListener(IPeripheralListener<ParrotStreamServer> l) {
-        final ParrotStreamServer this_instance = this;
         _peripheral_l = ParrotPeripheralManager.PeripheralListener.convert(l, this);
-
-        if (_capturer_l == null)
-            _priv.setPeripheralListener(_peripheral_l);
-        else {
-            _priv.setPeripheralListener(new ParrotPeripheralManager.PeripheralListener<StreamServer>() {
-                @Override
-                public void onChange(@NonNull StreamServer streamServer) {
-                    _peripheral_l.onChange(streamServer);
-                }
-
-                @Override
-                public boolean onFirstTimeAvailable(@NonNull StreamServer streamServer) {
-                    if (!_peripheral_l.onFirstTimeAvailable(streamServer))
-                        return false;
-
-                    if (_capturer_l != null) {
-                        _peripheral_l = getParrotPeripheralListenerAfterSuccessfulFirstTime();
-                        return _capturer_l.listener.onCapturerAvailable(
-                                this_instance,
-                                _capturer_l.generateCapturer(streamServer));
-                    }
-                    return true;
-                }
-            });
-        }
+        _listener_first_time_success = false;
     }
 
-    //AHAHAHHHAHAH BIIIGGG nameees
-    private ParrotPeripheralManager.PeripheralListener<StreamServer> getParrotPeripheralListenerAfterSuccessfulFirstTime() {
-        final ParrotStreamServer this_instance = this;
+    private ParrotPeripheralManager.PeripheralListener<StreamServer> getParrotPeripheralListener() {
+        final ParrotStreamServer instance = this;
         return new ParrotPeripheralManager.PeripheralListener<StreamServer>() {
             @Override
             public void onChange(@NonNull @NotNull StreamServer streamServer) {
-                _peripheral_l.onChange(streamServer);
+                if (_peripheral_l != null)
+                    _peripheral_l.onChange(streamServer);
             }
 
             @Override
             public boolean onFirstTimeAvailable(@NonNull @NotNull StreamServer streamServer) {
-                return _capturer_l.listener.onCapturerAvailable(
-                        this_instance,
-                        _capturer_l.generateCapturer(streamServer));
+                if (_peripheral_l != null && !_listener_first_time_success) {
+                    if (!_peripheral_l.onFirstTimeAvailable(streamServer))
+                        return false;
+                }
+                _listener_first_time_success = true;
+
+                if (_capturer_l != null) {
+                    return _capturer_l.listener.onCapturerAvailable(instance, _capturer_l.generateCapturer(streamServer));
+                }
+                return true;
             }
         };
     }
