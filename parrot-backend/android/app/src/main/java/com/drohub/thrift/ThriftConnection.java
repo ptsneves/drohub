@@ -56,11 +56,6 @@ public class ThriftConnection {
         }
     }
 
-    public void handleActivityResult(int requestCode, int resultCode, Intent data) {
-        if (_drohub_handler != null)
-            _drohub_handler.handleCapturePermissionCallback(requestCode, resultCode, data);
-    }
-
     public void onStop() {
         Log.w("ThriftConnection", "Stoping thrift connection");
         if (_server_engine != null) {

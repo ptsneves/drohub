@@ -175,12 +175,6 @@ public abstract class GroundSdkHelperActivity extends AppCompatActivity {
     protected abstract void onDroneConnected(Drone drone, RemoteControl rc);
     protected abstract void onDroneDisconnected();
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        System.out.println("Activity trigger");
-        _thrift_connection.handleActivityResult(requestCode, resultCode, data);
-    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,

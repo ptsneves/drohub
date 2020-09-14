@@ -1,15 +1,11 @@
 package com.drohub.thrift;
 
-import android.content.Context;
-import android.content.Intent;
 import android.location.Location;
-import android.media.projection.MediaProjectionManager;
 import android.util.Log;
 import com.drohub.GroundSdkHelperActivity;
 import com.drohub.IInfoDisplay;
 import com.drohub.Janus.PeerConnectionClient;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
-import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
 import com.drohub.Devices.Peripherals.Parrot.ParrotMainCamera;
 import com.drohub.thift.gen.*;
 import com.parrot.drone.groundsdk.device.instrument.BatteryInfo;
@@ -57,7 +53,6 @@ public class DroHubHandler implements Drone.Iface {
         }
     }
     private static final String TAG = "DroHubHandler";
-    private static final int _CAPTURE_PERMISSION_REQUEST_CODE = 1;
 
     private String _serial_number;
     final private IInfoDisplay _display;
@@ -225,14 +220,6 @@ public class DroHubHandler implements Drone.Iface {
         });
     }
 
-    void handleCapturePermissionCallback(int requestCode, int resultCode, Intent data) {
-        if (requestCode == _CAPTURE_PERMISSION_REQUEST_CODE && _video_state == DroneLiveVideoState.STOPPED) {
-            ((PeerConnectionScreenShareParameters)_peer_connection_parameters).setPermissionData(data);
-            ((PeerConnectionScreenShareParameters)_peer_connection_parameters).setPermissionResultCode(resultCode);
-            initVideo();
-        }
-    }
-
     private void initVideo() {
         try {
             _peerConnectionClient = new PeerConnectionClient(_room_id, _serial_number,
@@ -260,25 +247,6 @@ public class DroHubHandler implements Drone.Iface {
                 System.currentTimeMillis());
     }
 
-    private DroneLiveVideoStateResult setupScreenSharing() {
-        MediaProjectionManager mediaProjectionManager =
-                (MediaProjectionManager) _activity.getApplication().getSystemService(
-                        Context.MEDIA_PROJECTION_SERVICE);
-
-        if (mediaProjectionManager == null) {
-            _video_state = DroneLiveVideoState.INVALID_CONDITION;
-            return new DroneLiveVideoStateResult(_video_state, _serial_number,
-                    System.currentTimeMillis());
-        }
-        _activity.startActivityForResult(
-                mediaProjectionManager.createScreenCaptureIntent(), _CAPTURE_PERMISSION_REQUEST_CODE);
-
-        //TODO: We need to notify that if he does not accept the permissions he will not be
-        //able to broadcast the video...THis requirement may change if we stop using screen capture.
-        return new DroneLiveVideoStateResult(_video_state, _serial_number,
-                System.currentTimeMillis());
-    }
-
     @Override
     public DroneLiveVideoStateResult sendLiveVideoTo(DroneSendLiveVideoRequest request) throws TApplicationException {
         if (_video_state != DroneLiveVideoState.INVALID_CONDITION) {
@@ -287,18 +255,8 @@ public class DroHubHandler implements Drone.Iface {
         }
         _video_state = DroneLiveVideoState.STOPPED;
         _room_id = request.room_id;
-        if (_peer_connection_parameters.capturerType == PeerConnectionParameters.VideoCapturerType.SCREEN_SHARE)
-            return setupScreenSharing();
-        else if (_peer_connection_parameters.capturerType == PeerConnectionParameters.VideoCapturerType.GROUNDSDK_VIDEO_SHARE) {
-            initVideo();
-            return new DroneLiveVideoStateResult(_video_state, _serial_number, System.currentTimeMillis());
-        }
-        else if (_peer_connection_parameters.capturerType == PeerConnectionParameters.VideoCapturerType.CAMERA_FRONT) {
-            initVideo();
-            return new DroneLiveVideoStateResult(_video_state, _serial_number, System.currentTimeMillis());
-        }
-
-        throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "sendLiveVideoTo failed: No recognized video capturer");
+        initVideo();
+        return new DroneLiveVideoStateResult(_video_state, _serial_number, System.currentTimeMillis());
     }
 
     @Override

@@ -9,7 +9,6 @@ import android.util.Log;
 import com.drohub.IInfoDisplay;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParrotStreamParameters;
 import com.drohub.Janus.PeerConnectionParameters.PeerConnectionParameters;
-import com.drohub.Janus.PeerConnectionParameters.PeerConnectionScreenShareParameters;
 
 import com.drohub.hud.GroundSDKVideoCapturer;
 import org.json.JSONObject;
@@ -137,25 +136,7 @@ public class PeerConnectionClient implements JanusRTCInterface {
 
     local_webrtc_stream = factory.createLocalMediaStream("ARDAMS");
     VideoSource videoSource = factory.createVideoSource(false);
-
-    try {
-      switch (peerConnectionParameters.capturerType) {
-        case CAMERA_FRONT:
-          videoCapturer = createCamera2Capturer(videoSource.getCapturerObserver());
-          break;
-        case SCREEN_SHARE:
-          videoCapturer = createScreenCapturer(videoSource.getCapturerObserver(),
-                  ((PeerConnectionScreenShareParameters)peerConnectionParameters).getPermissionData(),
-                  ((PeerConnectionScreenShareParameters)peerConnectionParameters).getPermissionResultCode());
-          break;
-        case GROUNDSDK_VIDEO_SHARE:
-          videoCapturer = createGroundSDKVideoCapturer(videoSource.getCapturerObserver());
-      }
-      videoCapturerStopped = false;
-    } catch (InvalidObjectException | PeerConnectionScreenShareParameters.InvalidScreenPermissions e) {
-      Log.e(TAG, e.getMessage());
-      e.printStackTrace();
-    }
+    videoCapturer = createGroundSDKVideoCapturer(videoSource.getCapturerObserver());
     local_webrtc_stream.addTrack(createVideoTrack(videoSource));
     if (isAudioEnabled()) {
       local_webrtc_stream.addTrack(createAudioTrack());
@@ -321,41 +302,5 @@ public class PeerConnectionClient implements JanusRTCInterface {
     capturer.startCapture(peerConnectionParameters.videoWidth, peerConnectionParameters.videoHeight,
             peerConnectionParameters.videoFps);
     return capturer;
-  }
-
-  private VideoCapturer createCamera2Capturer(CapturerObserver capturerObserver) throws InvalidObjectException {
-    if (Camera2Enumerator.isSupported(context)) {
-      CameraEnumerator enumerator = new Camera2Enumerator(context);
-      final String[] deviceNames = enumerator.getDeviceNames();
-      for (String device_name : deviceNames) {
-        if (enumerator.isFrontFacing(device_name)) {
-          Log.d(TAG, "Creating capturer using camera2 API.");
-          SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("VideoCapturerThread", renderEGLContext);
-          Camera2Capturer camera2Capturer = new Camera2Capturer(context, device_name, null);
-          camera2Capturer.initialize(surfaceTextureHelper, context, capturerObserver);
-          camera2Capturer.startCapture(peerConnectionParameters.videoWidth, peerConnectionParameters.videoHeight,
-                  peerConnectionParameters.videoFps);
-          return camera2Capturer;
-        }
-      }
-    }
-    throw new InvalidObjectException("Could not find front camera or camera2enumerator is not supported");
-  }
-
-
-  private VideoCapturer createScreenCapturer(CapturerObserver capturerObserver, Intent data, int code) throws InvalidObjectException {
-    if (code != Activity.RESULT_OK) {
-      throw new InvalidObjectException("No permissions for screen sharing");
-    }
-    ScreenCapturerAndroid cap = new ScreenCapturerAndroid(data, new MediaProjection.Callback() {
-      @Override
-      public void onStop() {
-        super.onStop();
-      }
-    });
-    SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("VideoCapturerThread", renderEGLContext);
-    cap.initialize(surfaceTextureHelper, context, capturerObserver);
-    cap.startCapture(peerConnectionParameters.videoWidth, peerConnectionParameters.videoHeight, peerConnectionParameters.videoFps);
-    return cap;
   }
 }
