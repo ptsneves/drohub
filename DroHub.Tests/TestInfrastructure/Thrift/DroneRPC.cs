@@ -98,6 +98,10 @@ public class DroneRPC : Drone.IAsync, IDisposable
         return GetTelemetryItem<DroneReply>();
     }
 
+    public Task<CameraState> getCameraStateAsync(CancellationToken cancellationToken = default(CancellationToken)) {
+        return GetTelemetryItem<CameraState>();
+    }
+
     public Task<DroneLiveVideoStateResult> sendLiveVideoToAsync(DroneSendLiveVideoRequest request, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
@@ -130,6 +134,10 @@ public class DroneRPC : Drone.IAsync, IDisposable
 
     public Task<DroneReply> recordVideoAsync(DroneRecordVideoRequest request, CancellationToken cancellationToken = default)
     {
+        throw new NotImplementedException();
+    }
+
+    public Task<DroneReply> setCameraZoomAsync(double zoom_level, CancellationToken cancellationToken = default(CancellationToken)) {
         throw new NotImplementedException();
     }
 }

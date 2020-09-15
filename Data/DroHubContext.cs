@@ -33,6 +33,8 @@ namespace DroHub.Data
         public DbSet<DronePosition> Positions { get; set; }
         public DbSet<DroneBatteryLevel> DroneBatteryLevels { get; set; }
 
+        public DbSet<CameraState> CameraStates { get; set; }
+
         public DbSet<DroneRadioSignal> DroneRadioSignals { get; set; }
 
         public DbSet<DroneFlyingState> DroneFlyingStates { get; set; }
@@ -138,6 +140,10 @@ namespace DroHub.Data
                 .HasOne(p => p.Connection)
                 .WithMany(d => d.drone_replies);
 
+            builder.Entity<CameraState>()
+                .HasOne(p => p.Connection)
+                .WithMany(d => d.camera_states);
+
             builder.Entity<DroneLiveVideoStateResult>()
                 .HasOne(p => p.Connection)
                 .WithMany(d => d.drone_video_states);
@@ -152,6 +158,10 @@ namespace DroHub.Data
 
             builder.Entity<DeviceConnection>()
                 .HasMany(d => d.radio_signals)
+                .WithOne(p => p.Connection);
+
+            builder.Entity<DeviceConnection>()
+                .HasMany(d => d.camera_states)
                 .WithOne(p => p.Connection);
 
             builder.Entity<DeviceConnection>()

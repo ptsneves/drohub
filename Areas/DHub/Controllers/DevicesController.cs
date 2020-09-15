@@ -82,6 +82,17 @@ namespace DroHub.Areas.DHub.Controllers
             }
         }
 
+        public async Task<IActionResult> GetCameraStates([Required]long id) {
+            try {
+                var c = await _device_connection_api.getDeviceConnection(id,
+                    source => source.Include(d => d.camera_states));
+                return Json(c.camera_states);
+            }
+            catch (DeviceAuthorizationException) {
+                return Unauthorized();
+            }
+        }
+
         public async Task<IActionResult> GetDroneRadioSignals([Required]long id) {
             try {
                 var c = await _device_connection_api.getDeviceConnection(id,

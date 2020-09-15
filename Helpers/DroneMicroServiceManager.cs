@@ -101,6 +101,17 @@ namespace DroHub.Helpers
                 }),
                 Task.Run(async () => {
                     using var scope = _service_provider.CreateScope();
+                    using var t = new GatherDeviceCameraStateService(
+                        scope.ServiceProvider.GetService<ILogger<GatherDeviceCameraStateService>>(),
+                        scope.ServiceProvider.GetService<IHubContext<TelemetryHub>>(),
+                        scope.ServiceProvider.GetService<DeviceAPI>(),
+                        scope.ServiceProvider.GetService<DeviceConnectionAPI>(),
+                        _service_provider.GetRequiredService<ThriftMessageHandler>());
+
+                    await runTask(token_source, t);
+                }),
+                Task.Run(async () => {
+                    using var scope = _service_provider.CreateScope();
                     using var t = new GatherDeviceLiveVideoService(
                         scope.ServiceProvider.GetService<ILogger<GatherDeviceLiveVideoService>>(),
                         scope.ServiceProvider.GetService<IHubContext<TelemetryHub>>(),
@@ -321,6 +332,18 @@ namespace DroHub.Helpers
 
         protected override Task<DroneBatteryLevel> doAction(Drone.Client client, CancellationToken token) {
             return client.getBatteryLevelAsync(token);
+        }
+    }
+
+    internal class GatherDeviceCameraStateService : DeviceService<CameraState>, IDeviceServiceTask {
+        internal GatherDeviceCameraStateService(ILogger logger,
+            IHubContext<TelemetryHub> hub, DeviceAPI device_api,
+            DeviceConnectionAPI connection_api, ThriftMessageHandler thrift_message_handler) :
+            base(logger, hub, device_api, connection_api, thrift_message_handler) {
+        }
+
+        protected override Task<CameraState> doAction(Drone.Client client, CancellationToken token) {
+            return client.getCameraStateAsync(token);
         }
     }
 

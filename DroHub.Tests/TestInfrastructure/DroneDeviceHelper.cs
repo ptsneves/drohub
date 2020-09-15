@@ -143,6 +143,11 @@ namespace DroHub.Tests.TestInfrastructure
 
             AddTelemetryItem(
                 new DroneLiveVideoStateResult { State = DroneLiveVideoState.LIVE, Serial = _device_serial, Timestamp = timestamp });
+
+            AddTelemetryItem(
+                new CameraState { Mode = CameraMode.VIDEO, ZoomLevel = 1.0f, MinZoom = 1.0f, MaxZoom = 2.0f,
+                    Serial = _device_serial, Timestamp = timestamp}
+            );
         }
 
         public async Task WaitForServer() {
