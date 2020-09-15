@@ -175,6 +175,9 @@ namespace DroHub.Data.Migrations
                     b.Property<int>("AllowedUserCount")
                         .HasColumnType("int");
 
+                    b.Property<string>("BillingPlanName")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
+
                     b.HasKey("OrganizationName");
 
                     b.ToTable("Subscriptions");
@@ -195,12 +198,18 @@ namespace DroHub.Data.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("longtext CHARACTER SET utf8mb4");
 
+                    b.Property<DateTime>("CreationDate")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Email")
                         .HasColumnType("varchar(256) CHARACTER SET utf8mb4")
                         .HasMaxLength(256);
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("LastLogin")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("tinyint(1)");
