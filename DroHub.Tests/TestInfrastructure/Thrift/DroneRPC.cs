@@ -138,6 +138,8 @@ public class DroneRPC : Drone.IAsync, IDisposable
     }
 
     public Task<DroneReply> setCameraZoomAsync(double zoom_level, CancellationToken cancellationToken = default(CancellationToken)) {
-        throw new NotImplementedException();
+        return Task.FromResult(new DroneReply {
+            Result = true,
+        });
     }
 }

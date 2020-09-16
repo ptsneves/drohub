@@ -1,3 +1,9 @@
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+@functions{
+    private string GetAntiXsrfRequestToken() {
+        return Xsrf.GetAndStoreTokens(Context).RequestToken;
+    }
+}
 @{
     ViewData["Title"] = "MapDashboard";
     var move_to_position_box_id_prefix = "go-to-position-box-id-";
@@ -114,7 +120,7 @@
                                 <div class="embed-responsive embed-responsive-16by9" id="stream-@device.Id">
                                     <div class="device-video-overlay device-video-overlay-animation container ">
                                         <div class="video-overlay-top row vertical-align">
-                                            <div class="col-md-11" style="width: 100%;text-align: left;">
+                                            <div class="col-md-10" style="width: 100%;text-align: left;">
                                                 <div class="minimum-size" style="padding-right: 3%">
                                                     <radio-signal serial="@device.SerialNumber"></radio-signal>
                                                     <battery-level serial="@device.SerialNumber"></battery-level>
@@ -145,11 +151,16 @@
                                             @*         <i class="fas fa-home"></i> *@
                                             @*     </button> *@
                                             @* </div> *@
-                                            <div class="col-md-1 no-side-padding" style="text-align: right;">
+                                            <div class="col-md-2 no-side-padding" style="text-align: right;">
                                                 @* <button class="btn-transparent-bg" data-toggle="ajax-request" data-url="@return_to_home_action_url">
                                                             <i class="far fa-external-link-alt"></i>
                                                         </button> *@
-
+                                                <zoom-slider
+                                                    serial="@device.SerialNumber"
+                                                    v-bind:height="132"
+                                                    zoom-set-url="@Url.Action("SetCameraZoom", "Devices")"
+                                                    anti-forgery-token="@GetAntiXsrfRequestToken()"
+                                                ></zoom-slider>
                                                 <button class="btn-transparent-bg " data-serial="@device.SerialNumber" data-toggle="video-mute">
                                                     <i class="fas fa-microphone-slash"></i>
                                                 </button>

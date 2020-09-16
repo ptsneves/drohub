@@ -188,6 +188,24 @@ namespace DroHub.Areas.DHub.Controllers
             }
         }
 
+        public async Task<IActionResult> SetCameraZoom([Required] string serial, [Required]double zoom_level) {
+            if (!ModelState.IsValid)
+                return BadRequest();
+
+            try {
+                var device = await _device_api.getDeviceBySerial(new DeviceAPI.DeviceSerial(serial));
+                await _device_connection_api.doDeviceAction(device, async client =>
+                    await client.setCameraZoomAsync(zoom_level, CancellationToken.None));
+                return Ok();
+            }
+            catch (DeviceAuthorizationException e) {
+                return Unauthorized(e.Message);
+            }
+            catch (DeviceConnectionException e) {
+                return StatusCode(503, new { message = e.Message});
+            }
+        }
+
         public async Task<IActionResult> MoveToPosition([Required]int id, [Required]float latitude,
             [Required]float longitude, [Required]float altitude, [Required]double heading) {
             try {
