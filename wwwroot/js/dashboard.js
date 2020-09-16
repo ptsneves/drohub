@@ -599,59 +599,6 @@ $(function () {
                 flying_state_class_range.addClassToElement(element, flying_state.State);
         }
 
-        function _renderBatteryLevelIcon(_, element) {
-            element = $(element);
-            battery_level_class_range = ElementClassRangeClass();
-            battery_level_class_range.addRegularSteps(0, 101, [
-                'fa-battery-empty blinking text-strong-red blinking',
-                'fa-battery-quarter text-strong-yellow blinking',
-                'fa-battery-half text-strong-yellow',
-                'fa-battery-three-quarters text-strong-green',
-                'fa-battery-full text-strong-green',
-            ]);
-            battery_level = JSON.parse(element.attr('data-telemetry'));
-
-            if (!battery_level)
-                battery_level_class_range.addClassToElement(element);
-            else
-                battery_level_class_range.addClassToElement(element, battery_level.BatteryLevelPercent);
-        }
-
-        function _renderRadioSignalIcon(_, element) {
-            element = $(element);
-
-            let rssi_class_range = ElementClassRangeClass();
-            rssi_class_range.addRegularSteps(-96, -20, ["fa-signal-1", "fa-signal-2", "fa-signal-3", "fa-signal"]);
-
-            let signal_quality_class_range = ElementClassRangeClass();
-            signal_quality_class_range.addStep(-1, 2, "text-strong-red");
-            signal_quality_class_range.addStep(2, 3, "text-strong-yellow");
-            signal_quality_class_range.addStep(3, 6, "text-stong-green");
-
-            let radio_signal = JSON.parse(element.attr('data-telemetry'));
-            if (radio_signal == null) {
-                console.error("Trying to render a radio signal but no telemetry available");
-                return;
-            }
-
-            if (!radio_signal) {
-                rssi_class_range.addClassToElement(element);
-                signal_quality_class_range.addClassToElement(element);
-            }
-            else {
-                rssi_class_range.addClassToElement(element, radio_signal.Rssi);
-                signal_quality_class_range.addClassToElement(element, radio_signal.SignalQuality);
-            }
-        }
-
-        function _renderBatteryLevel(_, element) {
-            element = $(element);
-            battery_level = JSON.parse(element.attr('data-telemetry'));
-            if (battery_level == null)
-                return;
-            element.text(`${battery_level.BatteryLevelPercent}%`);
-        }
-
         function _renderPositionText(_, element) {
             element = $(element);
             drone_coords = JSON.parse(element.attr('data-telemetry'));
@@ -696,9 +643,6 @@ $(function () {
                 _telemetry_watchdog.addFunctionForWatchDogStart(_render_refresher.start);
                 _telemetry_watchdog.addFunctionForWatchDogTimeout(_render_refresher.stop);
 
-
-                _FunctionTable["renderBatteryLevel"] = _renderBatteryLevel;
-                _FunctionTable["renderBatteryLevelIcon"] = _renderBatteryLevelIcon;
                 _FunctionTable["renderRadioSignalIcon"] = _renderRadioSignalIcon;
                 _FunctionTable["renderFlyingState"] = _renderFlyingState;
                 _FunctionTable["renderPlaneIcon"] = _renderPlaneIcon;

@@ -20,6 +20,8 @@ module.exports = {
       Account: {
         entry: 'src/Account/account.js'
       },
-
+      Dashboard: {
+        entry: 'src/Dashboard/dashboard.js',
+      },
     }
 }

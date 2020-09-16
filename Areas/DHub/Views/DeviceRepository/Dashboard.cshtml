@@ -42,7 +42,7 @@
             display: none !important;
         }
         </style>
-<div class="container-fluid">
+<div id="app" class="container-fluid">
     @foreach (var device in @Model) {
         var get_device_flight_start_time_url = Url.Action("GetDeviceFlightStartTime", "Devices", new {id = device.Id});
         var takeoff_action_url = Url.Action("TakeOff", "Devices", new {id = device.Id});
@@ -117,9 +117,7 @@
                                             <div class="col-md-11" style="width: 100%;text-align: left;">
                                                 <div class="minimum-size" style="padding-right: 3%">
                                                     <i class="fad radio-signal" data-renderer="renderRadioSignalIcon" data-serial="@device.SerialNumber" data-telemetry='@radio_signals_initial'></i>
-                                                    <i class="battery-level fa" data-renderer="renderBatteryLevelIcon" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>
-                                                        <span class=" battery-level fa" data-renderer="renderBatteryLevel" data-serial="@device.SerialNumber" data-telemetry='@battery_level_initial'>No data</span>
-                                                    </i>
+                                                    <battery-level serial="@device.SerialNumber"></battery-level>
                                                 </div>
                                                 @* <div class="minimum-size" style="padding-right: 3%; padding-left: 3%;"> *@
                                                 @*     <img src="/images/assets/video-info-satelite.svg"> *@
@@ -292,6 +290,10 @@
     <script type="text/javascript" src="~/js/videoroomtest.js"></script>
     <script src='https://maps.googleapis.com/maps/api/js?@ViewData["GoogleAPIKey"]'></script>
     <script type="text/javascript" src="~/js/dashboard.js" ></script>
+    <script type="application/javascript">
+        window.signalr_url = "/telemetryhub";
+    </script>
+    <script type="text/javascript" src="~/vue/js/Dashboard.js"></script>
     <script>
 
     function onGoToPositionDeviceSelected() {

@@ -583,7 +583,8 @@ nav.drohub-navbar {
 }
 
 .minimum-size {
-    display: inline-block;
+    display: inline-flex;
+    vertical-align: middle;
 }
 
 .video-overlay-horizontal-centered {
