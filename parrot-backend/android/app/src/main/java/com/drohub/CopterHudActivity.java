@@ -493,7 +493,7 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
 
         e_v.getInfoDisplay().remove(ErrorMessage);
         mtg.setOnScaleListener(scale_factor -> {
-            ParrotMainCamera.ZoomResult zr = _main_camera.setZoom(scale_factor);
+            ParrotMainCamera.ZoomResult zr = _main_camera.setZoomRelative(scale_factor);
             if (zr == ParrotMainCamera.ZoomResult.BAD) {
                 e_v.getInfoDisplay().add(ErrorMessage);
                 retry_handler.postDelayed(() -> setupZoomGesture(mtg), 1000);

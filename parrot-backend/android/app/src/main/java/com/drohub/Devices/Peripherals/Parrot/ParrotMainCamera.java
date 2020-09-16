@@ -148,6 +148,25 @@ public class ParrotMainCamera implements IPeripheral<ParrotMainCamera> {
             if (System.currentTimeMillis() - last_zoom_set < 250)
                 return ZoomResult.TOO_FAST;
 
+            zoom_level = Math.max(zoom_level, 1.0f);// prevent our view from becoming too small //
+            zoom_level = Math.min(zoom_level, _priv.getZoom().getMaxLossyLevel());// prevent our view from becoming too big //
+            _priv.getZoom().control(CameraZoom.ControlMode.LEVEL, zoom_level);
+        }
+        catch (ParrotMainCameraPriv.ParrotMainCameraPrivException e) {
+            return ZoomResult.BAD;
+        }
+
+        last_zoom_set = System.currentTimeMillis();
+        return ZoomResult.GOOD;
+    }
+
+    public ZoomResult setZoomRelative(double zoom_level) {
+        try {
+            if (!_priv.getZoom().isAvailable())
+                return ZoomResult.BAD;
+            if (System.currentTimeMillis() - last_zoom_set < 250)
+                return ZoomResult.TOO_FAST;
+
             double _scale_factor = _priv.getZoom().getCurrentLevel() * zoom_level;
             _scale_factor = Math.max(_scale_factor, 1.0f);// prevent our view from becoming too small //
             _scale_factor = Math.min(_scale_factor, _priv.getZoom().getMaxLossyLevel());// prevent our view from becoming too big //
