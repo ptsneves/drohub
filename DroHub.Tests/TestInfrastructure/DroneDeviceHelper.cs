@@ -45,7 +45,7 @@ namespace DroHub.Tests.TestInfrastructure
     public class TelemetryMock
     {
 
-        public async Task<Dictionary<string, dynamic>> getRecordedTelemetry(DroHubFixture fixture) {
+        public async Task<Dictionary<string, dynamic>> getRecordedTelemetry() {
             var r = new Dictionary<string, dynamic>();
             foreach (var telemetry_item in TelemetryItems)
             {
@@ -55,7 +55,7 @@ namespace DroHub.Tests.TestInfrastructure
                     throw new InvalidProgramException("Could not get device telemetry object");
 
                 dynamic awaitable = get_device_telemetry
-                    .Invoke(null, new object[] { fixture, _device_serial, _user_name, _password});
+                    .Invoke(null, new object[] {_device_serial, _user_name, _password});
 
                 IEnumerable result_list = await awaitable;
                 try {

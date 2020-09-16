@@ -913,7 +913,7 @@ namespace DroHub.Tests
                         Assert.Equal((string) ds.Serial, telemetry_mock.SerialNumber);
                     }
 
-                    var r = await telemetry_mock.getRecordedTelemetry(_fixture);
+                    var r = await telemetry_mock.getRecordedTelemetry();
                     Assert.Equal(telemetry_mock.TelemetryItems.Count(), r.Count);
                     foreach (var key_value_pair in r) {
                         Assert.Equal(((IDroneTelemetry)(key_value_pair.Value)).Serial, telemetry_mock.SerialNumber);
