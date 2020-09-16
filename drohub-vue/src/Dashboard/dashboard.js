@@ -7,6 +7,7 @@ import TelemetryHub from '../plugins/telemetryhub'
 Vue.config.productionTip = false;
 Vue.use(TelemetryHub);
 Vue.component('battery-level', require('./components/BatteryLevel').default);
+Vue.component('radio-signal', require('./components/RadioSignal').default);
 
 window.Vue = Vue;
 window.Vuex = Vuex;

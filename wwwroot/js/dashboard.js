@@ -643,7 +643,6 @@ $(function () {
                 _telemetry_watchdog.addFunctionForWatchDogStart(_render_refresher.start);
                 _telemetry_watchdog.addFunctionForWatchDogTimeout(_render_refresher.stop);
 
-                _FunctionTable["renderRadioSignalIcon"] = _renderRadioSignalIcon;
                 _FunctionTable["renderFlyingState"] = _renderFlyingState;
                 _FunctionTable["renderPlaneIcon"] = _renderPlaneIcon;
                 _FunctionTable["renderPositionText"] = _renderPositionText;

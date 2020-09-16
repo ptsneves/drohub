@@ -18,6 +18,9 @@ export default {
                 connection.on("DroneBatteryLevel", message => {
                     telemetryHub.$emit('drone-battery-level-changed', JSON.parse(message));
                 });
+                connection.on("DroneRadioSignal", message => {
+                    telemetryHub.$emit('drone-radio-signal-changed', JSON.parse(message));
+                });
             }
 
             setupTelemetryListeners();
