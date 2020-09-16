@@ -24,7 +24,7 @@ namespace DroHub.Tests.TestInfrastructure
             var loggerFactory = new LoggerFactory();
             using var ws_transport = new TWebSocketClient(DroHubFixture.ThriftUri, WebSocketMessageType.Binary, false);
             using var reverse_tunnel_transport = new TReverseTunnelServer(ws_transport, 1);
-            ws_transport.WebSocketOptions.SetRequestHeader("User-Agent", "AirborneProjets");
+            ws_transport.WebSocketOptions.SetRequestHeader("User-Agent", "AirborneProjects");
             ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
             ws_transport.WebSocketOptions.SetRequestHeader("x-device-expected-serial", device_serial);
             ws_transport.WebSocketOptions.SetRequestHeader("x-drohub-user", user);
