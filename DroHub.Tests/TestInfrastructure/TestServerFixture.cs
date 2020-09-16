@@ -85,11 +85,18 @@ namespace DroHub.Tests.TestInfrastructure
 
         private void initializeConfiguration(IContainerService web_container) {
             var app_settings_result = web_container.Execute("cat /app/appsettings.json");
-            if (!app_settings_result.Success)
-                throw new InvalidProgramException("Cannot read appsettings file for tests. Exiting");
-
-            var appsettings_data = app_settings_result.Data;
-            var json_string = appsettings_data.Aggregate("", (current, item) => current + item);
+            string json_string;
+            if (!app_settings_result.Success) {
+                if (File.Exists(DroHubPath + "appsettings.Development.json")) {
+                    json_string = File.ReadAllText(DroHubPath + "appsettings.Development.json");
+                }
+                else
+                    throw new InvalidProgramException("Cannot read appsettings file for tests. Exiting");
+            }
+            else {
+                var appsettings_data = app_settings_result.Data;
+                json_string = appsettings_data.Aggregate("", (current, item) => current + item);
+            }
             var json_stream = new MemoryStream();
             json_stream.Write(Encoding.UTF8.GetBytes(json_string));
             json_stream.Seek(0, SeekOrigin.Begin);
