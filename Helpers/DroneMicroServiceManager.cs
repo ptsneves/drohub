@@ -159,6 +159,7 @@ namespace DroHub.Helpers
 
     internal abstract class DeviceService<TDroneAction> : ServiceBase, IDisposable where TDroneAction : IDroneTelemetry{
         private readonly IHubContext<TelemetryHub> _hub;
+        protected readonly TimeSpan _action_repeat_period;
         protected readonly DeviceConnectionAPI _connection_api;
         protected readonly DeviceAPI _device_api;
         protected readonly DeviceAPI.DeviceSerial _authenticated_serial;
@@ -171,11 +172,13 @@ namespace DroHub.Helpers
             IHubContext<TelemetryHub> hub,
             DeviceAPI device_api,
             DeviceConnectionAPI connection_api,
+            TimeSpan action_repeat_period,
             ThriftMessageHandler thrift_message_handler) :base(logger) {
             _logger.LogDebug("Constructed DroneMicroService");
             _hub = hub;
             _device_api = device_api;
             _connection_api = connection_api;
+            _action_repeat_period = action_repeat_period;
             _authenticated_serial = _device_api.getDeviceSerialNumberFromConnectionClaim();
             _client = thrift_message_handler.getClient<Drone.Client>(_logger).Client;
             _device_connection = _connection_api.getCurrentConnectionOrDefault();
@@ -222,7 +225,7 @@ namespace DroHub.Helpers
 
         public virtual Task getServiceTask(CancellationToken ct, DeadManSwitch toggle) {
             _logger.LogDebug($"Starting Service {GetType()} {_authenticated_serial.Value}");
-            return doDroneActionForEver(toggle, ct,TimeSpan.FromSeconds(5));
+            return doDroneActionForEver(toggle, ct,_action_repeat_period);
         }
 
         public void Dispose() {
@@ -278,7 +281,7 @@ namespace DroHub.Helpers
 
         internal PingConnectionDeviceService(ILogger<PingConnectionDeviceService> logger, IHubContext<TelemetryHub> hub,
             DeviceAPI device_api, DeviceConnectionAPI connection_api, ThriftMessageHandler thrift_message_handler) :
-            base(logger, hub, device_api, connection_api, thrift_message_handler) {
+            base(logger, hub, device_api, connection_api, TimeSpan.FromSeconds(5), thrift_message_handler) {
         }
 
         protected override async Task<DroneReply> doAction(Drone.Client client, CancellationToken token) {
@@ -291,7 +294,7 @@ namespace DroHub.Helpers
     internal class GatherDevicePositionService : DeviceService<DronePosition>, IDeviceServiceTask {
         internal GatherDevicePositionService(ILogger logger, IHubContext<TelemetryHub> hub,
             DeviceAPI device_api, DeviceConnectionAPI connection_api, ThriftMessageHandler thrift_message_handler) :
-            base(logger, hub, device_api, connection_api, thrift_message_handler) {
+            base(logger, hub, device_api, connection_api, TimeSpan.FromMilliseconds(1), thrift_message_handler) {
         }
 
         protected override Task<DronePosition> doAction(Drone.Client client, CancellationToken token) {
@@ -303,7 +306,7 @@ namespace DroHub.Helpers
         internal GatherDeviceRadioSignalService(ILogger logger,
             IHubContext<TelemetryHub> hub, DeviceAPI device_api, DeviceConnectionAPI connection_api,
             ThriftMessageHandler thrift_message_handler) :
-            base(logger, hub, device_api, connection_api, thrift_message_handler) {
+            base(logger, hub, device_api, connection_api,TimeSpan.FromMilliseconds(1), thrift_message_handler) {
         }
 
         protected override Task<DroneRadioSignal> doAction(Drone.Client client, CancellationToken token) {
@@ -315,7 +318,7 @@ namespace DroHub.Helpers
         internal GatherDeviceFlyingStateService(ILogger logger,
             IHubContext<TelemetryHub> hub, DeviceAPI device_api,
             DeviceConnectionAPI connection_api, ThriftMessageHandler thrift_message_handler) :
-            base(logger, hub, device_api, connection_api, thrift_message_handler) {
+            base(logger, hub, device_api, connection_api,TimeSpan.FromMilliseconds(1), thrift_message_handler) {
         }
 
         protected override Task<DroneFlyingState> doAction(Drone.Client client, CancellationToken token) {
@@ -327,7 +330,7 @@ namespace DroHub.Helpers
         internal GatherDeviceBatteryLevelService(ILogger logger,
             IHubContext<TelemetryHub> hub, DeviceAPI device_api,
             DeviceConnectionAPI connection_api, ThriftMessageHandler thrift_message_handler) :
-            base(logger, hub, device_api, connection_api, thrift_message_handler) {
+            base(logger, hub, device_api, connection_api,TimeSpan.FromMilliseconds(1), thrift_message_handler) {
         }
 
         protected override Task<DroneBatteryLevel> doAction(Drone.Client client, CancellationToken token) {
@@ -339,7 +342,7 @@ namespace DroHub.Helpers
         internal GatherDeviceCameraStateService(ILogger logger,
             IHubContext<TelemetryHub> hub, DeviceAPI device_api,
             DeviceConnectionAPI connection_api, ThriftMessageHandler thrift_message_handler) :
-            base(logger, hub, device_api, connection_api, thrift_message_handler) {
+            base(logger, hub, device_api, connection_api,TimeSpan.FromMilliseconds(1), thrift_message_handler) {
         }
 
         protected override Task<CameraState> doAction(Drone.Client client, CancellationToken token) {
@@ -358,7 +361,7 @@ namespace DroHub.Helpers
             ThriftMessageHandler thrift_message_handler,
             JanusService janus_service,
             MediaObjectAndTagAPI media_api) :
-            base(logger, hub, device_api, connection_api, thrift_message_handler) {
+            base(logger, hub, device_api, connection_api, TimeSpan.FromSeconds(2), thrift_message_handler) {
 
             _janus_service = janus_service;
             _media_api = media_api;
@@ -391,7 +394,7 @@ namespace DroHub.Helpers
                     RoomId = video_room.Id
                 };
 
-                await doDroneActionForEver(toggle, ct, TimeSpan.FromSeconds(5));
+                await doDroneActionForEver(toggle, ct, TimeSpan.FromSeconds(2));
                 _logger.LogInformation($"Finished live video {_authenticated_serial.Value}");
             }
             finally {
