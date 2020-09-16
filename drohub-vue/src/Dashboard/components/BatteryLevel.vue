@@ -1,5 +1,5 @@
 <template>
-    <div class="minimum-size">
+    <div class="minimum-size telemetry-element">
         <inline-svg
             v-bind:src="getBatteryIcon"
         ></inline-svg>
@@ -59,4 +59,5 @@
 </script>
 
 <style scoped>
+    @import "../css/telemetry.css";
 </style>
