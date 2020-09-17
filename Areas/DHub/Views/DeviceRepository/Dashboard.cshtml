@@ -35,7 +35,7 @@
 
         .google-map {
             margin:0;
-            padding-bottom: 109%;
+            padding-bottom: 174%;
             width: 100%;
             height: 100%;
         }
@@ -107,14 +107,11 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-4 small-gutter map-container">
-                        <span class="position-text marker main-marker" data-renderer="renderMapMarker" data-serial="@device.SerialNumber" data-device-type="drone" data-marker-svg-path="images/assets/device-pin/device-pin-red.svg" data-telemetry='@position_initial'></span>
-                        <div class="google-map" data-serial="@device.SerialNumber"></div>
-                        <select class="js-example-basic-single " style="width: 100%;">
-                            <option title="Move to Position">Move To Position</option>
-                        </select>
+                    <div class="col-md-3 small-gutter map-container">
+                        <span class="position-text marker main-marker" data-renderer="renderMapMarker" data-serial="@device.Serial" data-device-type="drone" data-marker-svg-path="images/assets/device-pin/device-pin-red.svg" data-telemetry='@position_initial'></span>
+                        <div class="google-map" data-serial="@device.Serial"></div>
                     </div>
-                    <div class="col-md-8 small-gutter">
+                    <div class="col-md-9 small-gutter">
                         <div id="box-body-@device.Id">
                             <div class="webrtc-video" data-serial="@device.SerialNumber">
                                 <div class="embed-responsive embed-responsive-16by9" id="stream-@device.Id">
@@ -241,58 +238,6 @@
         </div>
     }
 </div>
-    <div class="modal fade" id="modal-move-to-position">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                    <h4 class="modal-title">Go to Position</h4>
-                </div>
-                <div class="modal-body">
-                    <div class="container">
-                        <div class="row">
-                             <div class="col-md-4">
-                                Latitude
-                            </div>
-                            <div class="col-md-4" id="modal-latitude-value">
-                                Value
-                            </div>
-                        </div>
-                        <div class="row">
-                             <div class="col-md-4">
-                                Longitude
-                            </div>
-                            <div class="col-md-4" id="modal-longitude-value">
-                                Value
-                            </div>
-                        </div>
-                        <div class="row">
-                            @{
-                                var devices_select_list = new SelectList(Model, "Id", "Name");
-                            }
-                            <div class="col-md-4">
-                                Select which device should go to Position.
-                            </div>
-                            <div class="col-md-4">
-                                <select asp-items="devices_select_list" id="move-to-position-device-select"></select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" onclick="onGoToPositionDeviceSelected()" data-dismiss="modal" >
-                    Select
-                    </button>
-                </div>
-                </div>
-                <!-- /.modal-content -->
-            </div>
-            <!-- /.modal-dialog -->
-        </div>
-        <!-- /.modal -->
 
 </section>
 @section Scripts {
