@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
@@ -136,6 +137,43 @@ namespace DroHub.Areas.DHub.API {
             var r= await _authorization_service.AuthorizeAsync(
                 _subscription_api.getClaimsPrincipal(), device, op);
             return r.Succeeded;
+        }
+
+        private Task loadEntity(DeviceConnection session,
+            Expression<Func<DeviceConnection, IEnumerable<IDroneTelemetry>>> e) {
+            return _db_context.Entry(session)
+                .Collection(e)
+                .Query()
+                .OrderByDescending(p => p.Timestamp)
+                .Take(1)
+                .LoadAsync();
+        }
+
+        public async Task<IEnumerable<Device>> getSubscribedDevicesLastTelemetry(
+            List<Expression<Func<DeviceConnection, IEnumerable<IDroneTelemetry>>>> telemetry_to_load) {
+            var result = await _subscription_api
+                .querySubscribedDevices()
+                .Select(d => new {
+                    Device = d,
+                    DeviceConnection = d
+                        .DeviceConnections
+                        .OrderByDescending((dc => dc.Id))
+                        .FirstOrDefault()})
+                .Where(i => i.DeviceConnection != null)
+                .ToListAsync();
+
+            var return_value = new List<Device>();
+            foreach (var r in result) {
+                if (!await authorizeDeviceActions(r.Device, ResourceOperations.Read))
+                    continue;
+                foreach (var t in telemetry_to_load) {
+                    await loadEntity(r.DeviceConnection, t);
+                    r.Device.DeviceConnections = new List<DeviceConnection> {r.DeviceConnection};
+                }
+                return_value.Add(r.Device);
+            }
+
+            return return_value;
         }
 
         public Task<List<Device>> getSubscribedDevices() {

@@ -9,12 +9,12 @@
     var move_to_position_box_id_prefix = "go-to-position-box-id-";
     var drone_marker_id_prefix = "device-";
 }
-@using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers
-@model IEnumerable<DroHub.Areas.DHub.Models.Device>
+@using System.Text.Json;
+
+@model DroHub.Areas.DHub.Models.DashboardModel
 <!-- Content Header (Page header) -->
 <!-- Main content -->
-
-<section class="content janus-section" data-janus-url='@ViewData["FrontEndJanusUrl"]' data-stun-server-url='@ViewData["FrontEndStunServerUrl"]'>
+<section class="content janus-section" data-janus-url='@Model.FrontEndJanusURL' data-stun-server-url='@Model.FrontEndStunServerURL'>
     <style>
         .control-sidebar-open {
             width: 30%;
@@ -49,39 +49,38 @@
         }
         </style>
 <div id="app" class="container-fluid">
-    @foreach (var device in @Model) {
-        var get_device_flight_start_time_url = Url.Action("GetDeviceFlightStartTime", "Devices", new {id = device.Id});
-        var takeoff_action_url = Url.Action("TakeOff", "Devices", new {id = device.Id});
-        var landing_action_url = Url.Action("Land", "Devices", new {id = device.Id});
-        var toggle_record_video_action_url = Url.Action("RecordVideo", "Devices", new {id = device.Id});
-        var take_picture_action_url = Url.Action("TakePicture", "Devices", new {id = device.Id});
-        var return_to_home_action_url = Url.Action("ReturnToHome", "Devices", new {id = device.Id});
-        var move_to_position_action_url = Url.Action("MoveToPosition", "Devices", new {id = device.Id});
-        var move_to_position_box_id = move_to_position_box_id_prefix + device.Id;
+    @foreach (var device in @Model.InitialTelemetries) {
+        var get_device_flight_start_time_url = Url.Action("GetDeviceFlightStartTime", "Devices", new {id = device.DeviceId});
+        var takeoff_action_url = Url.Action("TakeOff", "Devices", new {id = device.DeviceId});
+        var landing_action_url = Url.Action("Land", "Devices", new {id = device.DeviceId});
+        var toggle_record_video_action_url = Url.Action("RecordVideo", "Devices", new {id = device.DeviceId});
+        var take_picture_action_url = Url.Action("TakePicture", "Devices", new {id = device.DeviceId});
+        var return_to_home_action_url = Url.Action("ReturnToHome", "Devices", new {id = device.DeviceId});
+        var move_to_position_action_url = Url.Action("MoveToPosition", "Devices", new {id = device.DeviceId});
+        var move_to_position_box_id = move_to_position_box_id_prefix + device.DeviceId;
         var radio_signals_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(null));
         var position_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(null));
         var battery_level_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(null));
         var flying_state_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(null));
         var video_state_initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(new DroneLiveVideoStateResult(){State = DroneLiveVideoState.INVALID_CONDITION}));
-
+        var camera_state_initial = device.CameraState != null ? Html.Raw(JsonSerializer.Serialize(device.CameraState)) : null;
         var ColourValues = new[]
         {
             "3c8dbc", "00c0ef", "dd4b39", "f39c12", "00a65a"
         };
-
-        <div class="box" style="border-top: 4px solid #@ColourValues[device.Id % ColourValues.Length]" id="devices-box-@device.Name">
+        <div class="box" style="border-top: 4px solid #@ColourValues[device.DeviceId % ColourValues.Length]" id="devices-box-@device.DeviceName">
             <div class="box-header with-border">
                 <h3 class="box-title">
-                    <i class="fas fa-drone-alt text-muted blinking flying-state-text" data-renderer="renderPlaneIcon" data-serial="@device.SerialNumber" data-telemetry='@flying_state_initial'></i>
-                    @device.Name</h3>
+                    <i class="fas fa-drone-alt text-muted blinking flying-state-text" data-renderer="renderPlaneIcon" data-serial="@device.DeviceSerial" data-telemetry='@flying_state_initial'></i>
+                    @device.DeviceName</h3>
                 <div class="box-tools pull-right">
-                    <span class="label label-primary" id="status-@device.Id"></span>
-                    <span class="label label-primary" id="curres-@device.Id"></span>
-                    <span class="label label-info" id="curbitrate-@device.Id"></span>
-                    <span class="label label-info" id="datarecv-@device.Id"></span>
+                    <span class="label label-primary" id="status-@device.DeviceId"></span>
+                    <span class="label label-primary" id="curres-@device.DeviceId"></span>
+                    <span class="label label-info" id="curbitrate-@device.DeviceId"></span>
+                    <span class="label label-info" id="datarecv-@device.DeviceId"></span>
                     <a href="#" class="btn btn-box-tool-drohub in-relocatable-box-move-down"><i class="fa fa-arrow-alt-down"></i></a>
                     <a href="#" class="btn btn-box-tool-drohub in-relocatable-box-move-up"><i class="fa fa-arrow-alt-up"></i></a>
-                    <a href="@Url.Action("Edit", "Devices", new {id = device.Id})" class="btn btn-box-tool-drohub"><i class="fa fa-cog"></i></a>
+                    <a href="@Url.Action("Edit", "Devices", new {id = device.DeviceId})" class="btn btn-box-tool-drohub"><i class="fa fa-cog"></i></a>
                     <button type="button" data-widget="collapse" class="btn btn-box-tool-drohub"><i class="fa fa-minus"></i></button>
                 </div>
             </div>
@@ -96,7 +95,7 @@
                     <div class="box-body">
                         <iframe name="fake-submit" style="display:none;"></iframe>
                         <form method="get" action="@move_to_position_action_url" target="fake-submit">
-                            <input type="hidden" name="Id" class="form-control" value="@device.Id">
+                            <input type="hidden" name="Id" class="form-control" value="@device.DeviceId">
                             <input type="text" name="Longitude" class="form-control" placeholder="Longitude in decimal">
                             <input type="text" name="Latitude" class="form-control" placeholder="Latitude in decimal">
                             <input type="text" name="Altitude" class="form-control" placeholder="Altitude in decimal">
@@ -108,32 +107,38 @@
 
                 <div class="row">
                     <div class="col-md-3 small-gutter map-container">
-                        <span class="position-text marker main-marker" data-renderer="renderMapMarker" data-serial="@device.Serial" data-device-type="drone" data-marker-svg-path="images/assets/device-pin/device-pin-red.svg" data-telemetry='@position_initial'></span>
-                        <div class="google-map" data-serial="@device.Serial"></div>
+                        <span class="position-text marker main-marker" data-renderer="renderMapMarker" data-serial="@device.DeviceSerial" data-device-type="drone" data-marker-svg-path="images/assets/device-pin/device-pin-red.svg" data-telemetry='@position_initial'></span>
+                        <div class="google-map" data-serial="@device.DeviceSerial"></div>
                     </div>
                     <div class="col-md-9 small-gutter">
-                        <div id="box-body-@device.Id">
-                            <div class="webrtc-video" data-serial="@device.SerialNumber">
-                                <div class="embed-responsive embed-responsive-16by9" id="stream-@device.Id">
+                        <div id="box-body-@device.DeviceId">
+                            <div class="webrtc-video" data-serial="@device.DeviceSerial">
+                                <div class="embed-responsive embed-responsive-16by9" id="stream-@device.DeviceId">
                                     <div class="device-video-overlay device-video-overlay-animation container ">
                                         <div class="video-overlay-top row vertical-align">
                                             <div class="col-md-10" style="width: 100%;text-align: left;">
                                                 <div class="minimum-size" style="padding-right: 3%">
-                                                    <radio-signal serial="@device.SerialNumber"></radio-signal>
-                                                    <battery-level serial="@device.SerialNumber"></battery-level>
+                                                    <radio-signal serial="@device.DeviceSerial"
+                                                                  v-bind:initial-quality="@device.RadioSignal?.SignalQuality"
+                                                                  v-bind:initial-rssi="@device.RadioSignal?.Rssi">
+                                                    </radio-signal>
+                                                    <battery-level
+                                                        v-bind:initial-level="@device.BatteryLevel?.BatteryLevelPercent"
+                                                        serial="@device.DeviceSerial"
+                                                    ></battery-level>
                                                 </div>
                                                 @* <div class="minimum-size" style="padding-right: 3%; padding-left: 3%;"> *@
                                                 @*     <img src="/images/assets/video-info-satelite.svg"> *@
-                                                @*     <span class="satellite-count" data-renderer="renderSatelliteCount" data-serial="@device.SerialNumber" data-telemetry='null'>-1</span> *@
+                                                @*     <span class="satellite-count" data-renderer="renderSatelliteCount" data-serial="@device.DeviceSerial" data-telemetry='null'>-1</span> *@
                                                 @*     <img src="/images/assets/video-info-controlsignal-good.svg"> *@
                                                 @*     <img src="/images/assets/video-info-height.svg"> *@
-                                                @*     <span class="position" data-renderer="renderAltitude" data-serial="@device.SerialNumber" data-telemetry='@position_initial'>-1</span> *@
+                                                @*     <span class="position" data-renderer="renderAltitude" data-serial="@device.DeviceSerial" data-telemetry='@position_initial'>-1</span> *@
                                                 @* </div> *@
                                                 @* <i>|</i> *@
                                                 <div class="minimum-size" style="padding-right: 3%; padding-left: 3%;">
-                                                    <span class="  " data-renderer="renderFlightTimeText" data-url="@get_device_flight_start_time_url" data-serial="@device.SerialNumber" data-telemetry='null'>00:00</span>
+                                                    <span class="  " data-renderer="renderFlightTimeText" data-url="@get_device_flight_start_time_url" data-serial="@device.DeviceSerial" data-telemetry='null'>00:00</span>
                                                     <i>-</i>
-                                                    <span class="flying-state-text" data-renderer="renderFlyingState" data-serial="@device.SerialNumber" data-telemetry='@flying_state_initial'>FlightState</span>
+                                                    <span class="flying-state-text" data-renderer="renderFlyingState" data-serial="@device.DeviceSerial" data-telemetry='@flying_state_initial'>FlightState</span>
                                                 </div>
                                             </div>
                                             @* <div class="container-action-overlay col-md-4" style="width: 100%; text-align: center;"> *@
@@ -153,15 +158,16 @@
                                                             <i class="far fa-external-link-alt"></i>
                                                         </button> *@
                                                 <zoom-slider
-                                                    serial="@device.SerialNumber"
+                                                    serial="@device.DeviceSerial"
                                                     v-bind:height="132"
                                                     zoom-set-url="@Url.Action("SetCameraZoom", "Devices")"
                                                     anti-forgery-token="@GetAntiXsrfRequestToken()"
+                                                    v-bind:initial-camera-state='@camera_state_initial'
                                                 ></zoom-slider>
-                                                <button class="btn-transparent-bg " data-serial="@device.SerialNumber" data-toggle="video-mute">
+                                                <button class="btn-transparent-bg " data-serial="@device.DeviceSerial" data-toggle="video-mute">
                                                     <i class="fas fa-microphone-slash"></i>
                                                 </button>
-                                                <button class="btn-transparent-bg " data-serial="@device.SerialNumber" data-toggle="video-fullscreen">
+                                                <button class="btn-transparent-bg " data-serial="@device.DeviceSerial" data-toggle="video-fullscreen">
                                                     <i class="fas fa-compress"></i>
                                                 </button>
                                             </div>
@@ -203,24 +209,24 @@
                                                 </div>
                                             </div>
                                             @* <div class="row video-overlay-centered">
-                                                <a href="#" data-toggle="drone-control-box" class="btn-transparent-bg link-unstyled video-overlay-controls-toggle plus-right" data-serial="@device.SerialNumber" >
+                                                <a href="#" data-toggle="drone-control-box" class="btn-transparent-bg link-unstyled video-overlay-controls-toggle plus-right" data-serial="@device.DeviceSerial" >
                                                         Open Controls
                                                 </a>
                                             </div> *@
                                         </div>
                                     </div>
-                                    <audio class="device-audio" data-room-id="@device.Id" data-serial="@device.SerialNumber"></audio>
+                                    <audio class="device-audio" data-room-id="@device.DeviceId" data-serial="@device.DeviceSerial"></audio>
                                     <video
                                            class="rounded centered embed-responsive-item controls janus-video device-video"
                                            data-telemetry='@video_state_initial'
                                            data-renderer="renderLiveVideo"
                                            data-render-state="stopped"
-                                           data-room-id="@device.Id"
-                                           data-serial="@device.SerialNumber"
+                                           data-room-id="@device.DeviceId"
+                                           data-serial="@device.DeviceSerial"
                                            autoplay playsinline>
                                     </video>
                                 </div>
-                                <div class="box collapsed-box drone-control-box" data-serial="@device.SerialNumber">
+                                <div class="box collapsed-box drone-control-box" data-serial="@device.DeviceSerial">
                                     <div class="box-body">
                                         <div class="row">
                                             <div class="col-md-3">1</div>

@@ -1,9 +1,11 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
@@ -40,34 +42,6 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> Index()
         {
             return await Dashboard();
-        }
-
-        private async Task<List<Device>> GetDeviceListInternal() {
-            var device_list = await _device_api.getSubscribedDevices();
-            // TODO: Add initial values
-            // foreach (var device in device_list)
-            // {
-            //     var battery_level = await _context.DroneBatteryLevels.OrderByDescending(l => l.Id).Where(b => b.Serial == device.SerialNumber).FirstOrDefaultAsync();
-            //     if (battery_level != null)
-            //         device.battery_levels.Add(battery_level);
-            //
-            //     var radio_signal = await _context.DroneRadioSignals.OrderByDescending(l => l.Id).Where(b => b.Serial == device.SerialNumber).FirstOrDefaultAsync();
-            //     if (radio_signal != null)
-            //         device.radio_signals.Add(radio_signal);
-            //
-            //     var flying_state = await _context.DroneFlyingStates.OrderByDescending(l => l.Id).Where(b => b.Serial == device.SerialNumber).FirstOrDefaultAsync();
-            //     if (flying_state != null)
-            //         device.flying_states.Add(flying_state);
-            //
-            //     var position = await _context.Positions.OrderByDescending(l => l.Id).Where(b => b.Serial == device.SerialNumber).FirstOrDefaultAsync();
-            //     if (position != null)
-            //     {
-            //         // _logger.LogDebug("Have positions");
-            //         device.positions.Add(position);
-            //     }
-            //
-            // }
-            return device_list;
         }
 
         public class GalleryPageModel {
@@ -288,17 +262,35 @@ namespace DroHub.Areas.DHub.Controllers
 
         public async Task<IActionResult> Dashboard() {
             var google_api_key = _repository_settings.GoogleMapsAPIKey;
-            if (!String.IsNullOrEmpty(google_api_key))
-            {
-                ViewData["GoogleAPIKey"] = $"key={google_api_key}";
-            }
-            else {
-                ViewData["GoogleAPIKey"] = "";
-            }
-            ViewData["FrontEndStunServerUrl"] = _repository_settings.FrontEndStunServerUrl;
-            ViewData["FrontEndJanusUrl"] = _repository_settings.FrontEndJanusUrl;
+            google_api_key = !String.IsNullOrEmpty(google_api_key) ? $"key={google_api_key}" : "";
 
-            return View(await GetDeviceListInternal());
+
+            var to_load = new List<Expression<Func<DeviceConnection, IEnumerable<IDroneTelemetry>>>>() {
+                (connection => connection.battery_levels),
+                (connection => connection.camera_states),
+                (connection => connection.flying_states),
+                (connection => connection.positions),
+                (connection => connection.radio_signals),
+            };
+            var telemetries = await _device_api.getSubscribedDevicesLastTelemetry(to_load);
+            var model = new DashboardModel() {
+                GoogleAPIKey =  google_api_key,
+                FrontEndStunServerURL = _repository_settings.FrontEndStunServerUrl,
+                FrontEndJanusURL = _repository_settings.FrontEndJanusUrl,
+                InitialTelemetries = telemetries
+                    .Select(t => new DashboardModel.InitialTelemetry {
+                        DeviceName = t.Name,
+                        DeviceSerial = t.SerialNumber,
+                        DeviceId = t.Id,
+                        Position = t.DeviceConnections.First().positions?.SingleOrDefault(),
+                        BatteryLevel = t.DeviceConnections.First().battery_levels?.SingleOrDefault(),
+                        CameraState = t.DeviceConnections.First().camera_states?.SingleOrDefault(),
+                        RadioSignal = t.DeviceConnections.First().radio_signals?.SingleOrDefault(),
+                        FlyingState = t.DeviceConnections.First().flying_states?.SingleOrDefault(),
+                }).ToList()
+            };
+
+            return View(model);
         }
     }
 }
