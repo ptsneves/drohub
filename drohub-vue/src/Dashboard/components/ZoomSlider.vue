@@ -51,6 +51,16 @@
             antiForgeryToken: {
                 type: String,
                 required: true,
+            },
+            initialCameraState: {
+                type: Object,
+                required: false,
+                default: () => ({
+                    Mode: 0,
+                    ZoomLevel: 1.0,
+                    MaxZoom: 1.0,
+                    MinZoom: 1.0,
+                })
             }
         },
         created() {
@@ -60,13 +70,16 @@
             return {
                 ZOOM_SET_URL: this.zoomSetUrl,
                 is_slider_visible: false,
-                zoom_level: 1.0,
-                max_zoom: 1.0,
-                min_zoom: 1.0,
-                interval: 1.0,
+                zoom_level: this.centimate(this.initialCameraState.ZoomLevel),
+                max_zoom: this.centimate(this.initialCameraState.MaxZoom),
+                min_zoom: this.centimate(this.initialCameraState.MinZoom),
+                interval: 0.01,
             };
         },
         methods: {
+            centimate(val) {
+                return Math.round(val * 100) / 100;
+            },
             getToolTipText(txt) {
                 return `x${txt}`;
             },
@@ -78,10 +91,9 @@
             onCameraStateChanged(msg) {
                 if (msg.Serial !== this.serial)
                     return;
-                this.min_zoom = Math.round(msg.MinZoom * 100) / 100;
-                this.max_zoom = Math.round(msg.MaxZoom * 100) / 100;
-                this.zoom_level = Math.round(msg.ZoomLevel * 100)/ 100;
-                this.interval = 0.01;
+                this.min_zoom = this.centimate(msg.MinZoom);
+                this.max_zoom = this.centimate(msg.MaxZoom);
+                this.zoom_level = this.centimate(msg.ZoomLevel);
             },
             onZoomSet(index) {
                 axios.post(this.ZOOM_SET_URL, qs.stringify({
