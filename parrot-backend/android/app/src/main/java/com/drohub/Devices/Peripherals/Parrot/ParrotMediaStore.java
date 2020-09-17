@@ -1,9 +1,10 @@
 package com.drohub.Devices.Peripherals.Parrot;
 
+import com.drohub.Devices.Peripherals.IPeripheral;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.peripheral.MediaStore;
 
-public class ParrotMediaStore {
+public class ParrotMediaStore implements IPeripheral<ParrotMediaStore> {
 
 
     public interface StoredPhotoCountListener {
@@ -26,6 +27,11 @@ public class ParrotMediaStore {
 
     public void setStoredVideoCountListener(StoredVideoCountListener l) {
         _media_store_priv.setStoredVideoCountListener(l);
+    }
+
+    @Override
+    public void setPeripheralListener(IPeripheralListener<ParrotMediaStore> l) {
+        _media_store_priv.setPeripheralListener(ParrotPeripheralManager.PeripheralListener.convert(l, this));
     }
 
     private class ParrotMediaStorePriv extends ParrotPeripheralPrivBase<MediaStore> {

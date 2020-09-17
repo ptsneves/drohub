@@ -542,13 +542,22 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
         e_v.getInfoDisplay().add(startup_warning);
 
         _media_store.setStoredPhotoCountListener(new_photo_count -> {
-            e_v.getInfoDisplay().remove(startup_warning);
             e_v.getInfoDisplay().addTemporarily(String.format("Photos: %d", new_photo_count), 5000);
         });
 
         _media_store.setStoredVideoCountListener(new_video_count -> {
-            e_v.getInfoDisplay().remove(startup_warning);
             e_v.getInfoDisplay().addTemporarily(String.format("Videos: %d", new_video_count), 5000);
+        });
+
+        _media_store.setPeripheralListener(new IPeripheral.IPeripheralListener<ParrotMediaStore>() {
+            @Override
+            public void onChange(@NonNull @NotNull ParrotMediaStore parrotMediaStore) {}
+
+            @Override
+            public boolean onFirstTimeAvailable(@NonNull @NotNull ParrotMediaStore parrotMediaStore) {
+                e_v.getInfoDisplay().remove(startup_warning);
+                return true;
+            }
         });
     }
 
