@@ -4,7 +4,7 @@ import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.peripheral.Peripheral;
 
 public abstract class ParrotPeripheralPrivBase<C extends Peripheral> implements ParrotPeripheralManager.PeripheralListener<C>, AutoCloseable {
-    final protected ParrotPeripheralManager<C> _handle;
+    final private ParrotPeripheralManager<C> _handle;
 
     protected ParrotPeripheralPrivBase(Drone drone, Class<C> peripheral_class) {
         _handle = new ParrotPeripheralManager<C>(drone, peripheral_class, this);
