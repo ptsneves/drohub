@@ -1,6 +1,5 @@
 package com.drohub.Devices.Peripherals.Parrot;
 
-import androidx.annotation.NonNull;
 import com.drohub.Devices.Peripherals.IPeripheral;
 import com.drohub.thift.gen.CameraMode;
 import com.drohub.thift.gen.CameraState;
@@ -10,7 +9,6 @@ import com.parrot.drone.groundsdk.device.peripheral.camera.Camera;
 import com.parrot.drone.groundsdk.device.peripheral.camera.CameraPhoto;
 import com.parrot.drone.groundsdk.device.peripheral.camera.CameraZoom;
 import com.parrot.drone.groundsdk.value.EnumSetting;
-import org.jetbrains.annotations.NotNull;
 
 public class ParrotMainCamera implements IPeripheral<ParrotMainCamera> {
     public interface ZoomLevelListener {
@@ -25,47 +23,15 @@ public class ParrotMainCamera implements IPeripheral<ParrotMainCamera> {
     final private String _serial;
 
     private long last_zoom_set = System.currentTimeMillis();
-    private CameraStateListener _camera_state_listener = null;
 
 
     public ParrotMainCamera(Drone drone) {
         _serial = drone.getUid();
         _priv = new ParrotMainCameraPriv(drone);
-        _priv.setPeripheralListener(new ParrotPeripheralManager.PeripheralListener<MainCamera>() {
-            @Override
-            public void onChange(@NonNull @NotNull MainCamera main_camera) {
-                if (_camera_state_listener == null)
-                    return;
-
-                CameraMode mode = CameraMode.ERROR;
-                switch (main_camera.mode().getValue()) {
-                    case PHOTO:
-                        mode = CameraMode.PICTURE;
-                        break;
-                    case RECORDING:
-                        mode = CameraMode.VIDEO;
-                        break;
-                }
-
-                _camera_state_listener.onChange(new CameraState(
-                        mode,
-                        main_camera.zoom().getCurrentLevel(),
-                        1.0f,
-                        main_camera.zoom().getMaxLossyLevel(),
-                        _serial,
-                        System.currentTimeMillis()
-                ));
-            }
-
-            @Override
-            public boolean onFirstTimeAvailable(@NonNull @NotNull MainCamera mainCamera) {
-                return true;
-            }
-        });
     }
 
     public void setCameraStateListener(CameraStateListener l) {
-        _camera_state_listener = l;
+        _priv._camera_state_listener = l;
     }
 
     public void setZoomLevelListener(ZoomLevelListener l) {
@@ -192,6 +158,7 @@ public class ParrotMainCamera implements IPeripheral<ParrotMainCamera> {
 
         private ZoomLevelListener _zoom_listener;
         private EnumSetting<Camera.Mode> _camera_mode;
+        private CameraStateListener _camera_state_listener;
         private double _last_recorded_zoom_level;
         
         ParrotMainCameraPriv(Drone drone) {
@@ -217,11 +184,31 @@ public class ParrotMainCamera implements IPeripheral<ParrotMainCamera> {
 
         @Override
         public void onChange(MainCamera mc) {
-            CameraZoom zoom = mc.zoom();
-            if (zoom == null)
+            if ((_camera_zoom = mc.zoom()) == null)
                 return;
+
+            CameraMode mode = CameraMode.ERROR;
+            switch (mc.mode().getValue()) {
+                case PHOTO:
+                    mode = CameraMode.PICTURE;
+                    break;
+                case RECORDING:
+                    mode = CameraMode.VIDEO;
+                    break;
+            }
+
+            if (_camera_state_listener != null) {
+                _camera_state_listener.onChange(new CameraState(
+                        mode,
+                        _camera_zoom.getCurrentLevel(),
+                        1.0f,
+                        _camera_zoom.getMaxLossyLevel(),
+                        _serial,
+                        System.currentTimeMillis()
+                ));
+            }
                 
-            double cur_zoom_level = zoom.getCurrentLevel();
+            double cur_zoom_level = _camera_zoom.getCurrentLevel();
             if (cur_zoom_level != _last_recorded_zoom_level) {
                 _last_recorded_zoom_level = cur_zoom_level;
                 if (_zoom_listener != null)
