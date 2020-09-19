@@ -29,25 +29,19 @@ class ParrotPeripheralManager<C extends Peripheral> implements AutoCloseable {
     private boolean _valid_handle;
     final private Ref<C> _peripheral_handle;
 
-    public ParrotPeripheralManager(final Drone drone, final Class<C> peripheral_class, final PeripheralListener<C> peripheral_listener) {
+    public ParrotPeripheralManager(final Drone drone, final Class<C> peripheral_class, @NonNull final PeripheralListener<C> peripheral_listener) {
         _valid_handle = false;
+        if (peripheral_listener == null)
+            throw new RuntimeException("Assertion of non null listener failed");
         _peripheral_handle = drone.getPeripheral(peripheral_class, peripheral -> {
             if (peripheral == null)
                 return;
-            if (peripheral_listener != null) {
-                if (!_valid_handle) {
-                    _valid_handle = peripheral_listener.onFirstTimeAvailable(peripheral);
-                    if (!_valid_handle)
-                        return;
-                }
-                else
-                    _valid_handle = true;
-
-
-                peripheral_listener.onChange(peripheral);
+            if (!_valid_handle) {
+                _valid_handle = peripheral_listener.onFirstTimeAvailable(peripheral);
+                if (!_valid_handle)
+                    return;
             }
-            else
-                _valid_handle = true;
+            peripheral_listener.onChange(peripheral);
         });
     }
 
