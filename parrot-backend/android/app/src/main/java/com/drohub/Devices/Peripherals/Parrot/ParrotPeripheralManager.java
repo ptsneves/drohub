@@ -36,13 +36,14 @@ class ParrotPeripheralManager<C extends Peripheral> implements AutoCloseable {
         _peripheral_handle = drone.getPeripheral(peripheral_class, peripheral -> {
             if (peripheral == null)
                 return;
-            if (!_valid_handle) {
-                _valid_handle = peripheral_listener.onFirstTimeAvailable(peripheral);
-                if (!_valid_handle)
-                    return;
-            }
+
             peripheral_listener.onChange(peripheral);
         });
+        C i = _peripheral_handle.get();
+        if (i == null)
+            throw new RuntimeException("Failed to get the peripheral");
+        _valid_handle = true;
+        peripheral_listener.onFirstTimeAvailable(i);
     }
 
     @Override
