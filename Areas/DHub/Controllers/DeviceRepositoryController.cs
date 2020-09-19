@@ -268,6 +268,7 @@ namespace DroHub.Areas.DHub.Controllers
             var to_load = new List<Expression<Func<DeviceConnection, IEnumerable<IDroneTelemetry>>>>() {
                 (connection => connection.battery_levels),
                 (connection => connection.camera_states),
+                (connection => connection.gimbal_states),
                 (connection => connection.flying_states),
                 (connection => connection.positions),
                 (connection => connection.radio_signals),
@@ -287,6 +288,7 @@ namespace DroHub.Areas.DHub.Controllers
                         CameraState = t.DeviceConnections.First().camera_states?.SingleOrDefault(),
                         RadioSignal = t.DeviceConnections.First().radio_signals?.SingleOrDefault(),
                         FlyingState = t.DeviceConnections.First().flying_states?.SingleOrDefault(),
+                        GimbalState = t.DeviceConnections.First().gimbal_states?.SingleOrDefault(),
                 }).ToList()
             };
 

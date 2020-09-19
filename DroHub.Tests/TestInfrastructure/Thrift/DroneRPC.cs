@@ -98,8 +98,19 @@ public class DroneRPC : Drone.IAsync, IDisposable
         return GetTelemetryItem<DroneReply>();
     }
 
+    public Task<GimbalState> getGimbalStateAsync(CancellationToken cancellationToken = default(CancellationToken)) {
+        return GetTelemetryItem<GimbalState>();
+    }
+
     public Task<CameraState> getCameraStateAsync(CancellationToken cancellationToken = default(CancellationToken)) {
         return GetTelemetryItem<CameraState>();
+    }
+
+    public Task<DroneReply> setGimbalAttitudeAsync(double pitch, double roll, double yaw,
+        CancellationToken cancellationToken = default(CancellationToken)) {
+        return Task.FromResult(new DroneReply {
+            Result = true,
+        });
     }
 
     public Task<DroneLiveVideoStateResult> sendLiveVideoToAsync(DroneSendLiveVideoRequest request, CancellationToken cancellationToken = default)

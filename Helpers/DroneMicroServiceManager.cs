@@ -112,6 +112,17 @@ namespace DroHub.Helpers
                 }),
                 Task.Run(async () => {
                     using var scope = _service_provider.CreateScope();
+                    using var t = new GatherDeviceGimbalStateService(
+                        scope.ServiceProvider.GetService<ILogger<GatherDeviceGimbalStateService>>(),
+                        scope.ServiceProvider.GetService<IHubContext<TelemetryHub>>(),
+                        scope.ServiceProvider.GetService<DeviceAPI>(),
+                        scope.ServiceProvider.GetService<DeviceConnectionAPI>(),
+                        _service_provider.GetRequiredService<ThriftMessageHandler>());
+
+                    await runTask(token_source, t);
+                }),
+                Task.Run(async () => {
+                    using var scope = _service_provider.CreateScope();
                     using var t = new GatherDeviceLiveVideoService(
                         scope.ServiceProvider.GetService<ILogger<GatherDeviceLiveVideoService>>(),
                         scope.ServiceProvider.GetService<IHubContext<TelemetryHub>>(),
@@ -347,6 +358,18 @@ namespace DroHub.Helpers
 
         protected override Task<CameraState> doAction(Drone.Client client, CancellationToken token) {
             return client.getCameraStateAsync(token);
+        }
+    }
+
+    internal class GatherDeviceGimbalStateService : DeviceService<GimbalState>, IDeviceServiceTask {
+        internal GatherDeviceGimbalStateService(ILogger logger,
+            IHubContext<TelemetryHub> hub, DeviceAPI device_api,
+            DeviceConnectionAPI connection_api, ThriftMessageHandler thrift_message_handler) :
+            base(logger, hub, device_api, connection_api,TimeSpan.FromMilliseconds(1), thrift_message_handler) {
+        }
+
+        protected override Task<GimbalState> doAction(Drone.Client client, CancellationToken token) {
+            return client.getGimbalStateAsync(token);
         }
     }
 

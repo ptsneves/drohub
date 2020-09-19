@@ -4,6 +4,7 @@ import android.location.Location;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import com.drohub.Devices.Peripherals.IPeripheral;
+import com.drohub.Devices.Peripherals.Parrot.ParrotGimbal;
 import com.drohub.GroundSdkHelperActivity;
 import com.drohub.IInfoDisplay;
 import com.drohub.Janus.PeerConnectionClient;
@@ -64,7 +65,9 @@ public class DroHubHandler implements Drone.Iface {
     final private TelemetryContainer<DroneFlyingState> _drone_flying_state;
     final private TelemetryContainer<DroneRadioSignal> _drone_radio_signal;
     final private TelemetryContainer<CameraState> _camera_state;
+    final private TelemetryContainer<GimbalState> _gimbal_state;
     final private ParrotMainCamera _main_camera;
+    final private ParrotGimbal _gimbal;
 
     private GroundSdkHelperActivity _activity;
     private PeerConnectionClient _peerConnectionClient;
@@ -90,7 +93,9 @@ public class DroHubHandler implements Drone.Iface {
         _drone_flying_state = new TelemetryContainer<>();
         _drone_radio_signal = new TelemetryContainer<>();
         _camera_state = new TelemetryContainer<>();
+        _gimbal_state = new TelemetryContainer<>();
         _main_camera = new ParrotMainCamera(_drone_handle);
+        _gimbal = new ParrotGimbal(_drone_handle);
 
         _room_id = 0;
 
@@ -224,6 +229,15 @@ public class DroHubHandler implements Drone.Iface {
         });
         _main_camera.start();
 
+        _gimbal.setGimbalStateListener(state -> {
+            try {
+                _gimbal_state.push(state);
+            }
+            catch (TException e) {
+                ;
+            }
+        });
+        _gimbal.start();
     }
 
     private void initVideo() {
@@ -316,10 +330,14 @@ public class DroHubHandler implements Drone.Iface {
         return _drone_radio_signal.pop();
     }
 
-
     @Override
     public CameraState getCameraState() throws TException {
         return _camera_state.pop();
+    }
+
+    @Override
+    public GimbalState getGimbalState() throws TException {
+        return _gimbal_state.pop();
     }
 
     @Override
@@ -370,6 +388,12 @@ public class DroHubHandler implements Drone.Iface {
     public DroneReply setCameraZoom(double zoom_level) {
         ParrotMainCamera.ZoomResult zr = _main_camera.setZoom(zoom_level);
         boolean r = zr == ParrotMainCamera.ZoomResult.GOOD ? true : false;
+        return new DroneReply(r, _serial_number, System.currentTimeMillis());
+    }
+
+    @Override
+    public DroneReply setGimbalAttitude(double pitch, double roll, double yaw) {
+        boolean r =  _gimbal.setAttitude(pitch, roll, yaw);
         return new DroneReply(r, _serial_number, System.currentTimeMillis());
     }
 

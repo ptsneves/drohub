@@ -12,6 +12,7 @@ Vue.use(vClickOutside);
 Vue.component('battery-level', require('./components/BatteryLevel').default);
 Vue.component('radio-signal', require('./components/RadioSignal').default);
 Vue.component('zoom-slider', require('./components/ZoomSlider').default);
+Vue.component('gimbal-pitch-slider', require('./components/GimbalPitchSlider').default);
 
 window.Vue = Vue;
 window.Vuex = Vuex;

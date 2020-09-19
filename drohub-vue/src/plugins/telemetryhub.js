@@ -24,6 +24,9 @@ export default {
                 connection.on("CameraState", message => {
                     telemetryHub.$emit('camera-state-changed', JSON.parse(message));
                 });
+                connection.on("GimbalState", message => {
+                    telemetryHub.$emit('gimbal-state-changed', JSON.parse(message));
+                });
             }
 
             setupTelemetryListeners();

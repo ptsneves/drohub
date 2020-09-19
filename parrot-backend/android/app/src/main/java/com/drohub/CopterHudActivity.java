@@ -48,6 +48,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import com.drohub.Devices.Peripherals.IPeripheral;
+import com.drohub.Devices.Peripherals.Parrot.ParrotGimbal;
 import com.drohub.Janus.PeerConnectionParameters;
 import com.drohub.Devices.Peripherals.Parrot.ParrotMainCamera;
 import com.drohub.Devices.Peripherals.Parrot.ParrotMediaStore;
@@ -102,6 +103,7 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
 
     private ParrotMainCamera _main_camera;
     private ParrotMediaStore _media_store;
+    private ParrotGimbal _gimbal;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -510,21 +512,43 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
     private void setupGimbalPitchGesture(MultiTouchGestures mtg, View scrollable_view) {
         final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
         final String ErrorMessage = "Gimbal pitch control is not available";
-        final Handler retry_handler = new Handler(getMainLooper());
+        e_v.getInfoDisplay().add(ErrorMessage);
 
-        _drone.getPeripheral(Gimbal.class, gimbal -> {
-            if (gimbal == null || !gimbal.getSupportedAxes().contains(Gimbal.Axis.PITCH) ) {
-                e_v.getInfoDisplay().add(ErrorMessage);
-                return;
+        _gimbal = new ParrotGimbal(_drone);
+        _gimbal.setPeripheralListener(new IPeripheral.IPeripheralListener<ParrotGimbal>() {
+            @Override
+            public void onChange(@NonNull @NotNull ParrotGimbal parrot_gimbal) {
+
             }
 
-            e_v.getInfoDisplay().remove(ErrorMessage);
-            mtg.setOnScrollListener( (dx, dy) -> {
-                float adim_dy = -dy/ Math.abs(scrollable_view.getHeight());
-                return FlightActions.setVerticalGimbalPosition(_drone, adim_dy*10.0f);
-            });
+            @Override
+            public boolean onFirstTimeAvailable(@NonNull @NotNull ParrotGimbal parrot_gimbal) {
+                if (!parrot_gimbal.supportsPitch())
+                    return false;
+
+                mtg.setOnScrollListener( (dx, dy) -> {
+                    float adim_dy = -dy/ Math.abs(scrollable_view.getHeight());
+                    return parrot_gimbal.setAttitudeRelative( adim_dy*100.0f, 0.0f, 0.0f);
+                });
+
+                e_v.getInfoDisplay().remove(ErrorMessage);
+                return true;
+            }
         });
 
+        _gimbal.setPitchListener(new ParrotGimbal.AttitudeListener() {
+            private double old_value = NaN;
+            private String PitchFormat = "Camera Pitch: %.1f deg";
+            @Override
+            public void onChange(double degrees) {
+                if (degrees == old_value)
+                    return;
+                e_v.getInfoDisplay().remove(String.format(PitchFormat, old_value));
+                old_value = degrees;
+                e_v.getInfoDisplay().addTemporarily(String.format(PitchFormat, degrees), 1500);
+            }
+        });
+        _gimbal.start();
     }
 
     private void setupMultiTouchGestures() {

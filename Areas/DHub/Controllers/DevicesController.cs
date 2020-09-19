@@ -93,6 +93,17 @@ namespace DroHub.Areas.DHub.Controllers
             }
         }
 
+        public async Task<IActionResult> GetGimbalStates([Required]long id) {
+            try {
+                var c = await _device_connection_api.getDeviceConnection(id,
+                    source => source.Include(d => d.gimbal_states));
+                return Json(c.gimbal_states);
+            }
+            catch (DeviceAuthorizationException) {
+                return Unauthorized();
+            }
+        }
+
         public async Task<IActionResult> GetDroneRadioSignals([Required]long id) {
             try {
                 var c = await _device_connection_api.getDeviceConnection(id,
@@ -196,6 +207,24 @@ namespace DroHub.Areas.DHub.Controllers
                 var device = await _device_api.getDeviceBySerial(new DeviceAPI.DeviceSerial(serial));
                 await _device_connection_api.doDeviceAction(device, async client =>
                     await client.setCameraZoomAsync(zoom_level, CancellationToken.None));
+                return Ok();
+            }
+            catch (DeviceAuthorizationException e) {
+                return Unauthorized(e.Message);
+            }
+            catch (DeviceConnectionException e) {
+                return StatusCode(503, new { message = e.Message});
+            }
+        }
+
+        public async Task<IActionResult> SetGimbalPitch([Required] string serial, [Required]double pitch) {
+            if (!ModelState.IsValid)
+                return BadRequest();
+
+            try {
+                var device = await _device_api.getDeviceBySerial(new DeviceAPI.DeviceSerial(serial));
+                await _device_connection_api.doDeviceAction(device, async client =>
+                    await client.setGimbalAttitudeAsync(pitch, 0.0f, 0.0f, CancellationToken.None));
                 return Ok();
             }
             catch (DeviceAuthorizationException e) {

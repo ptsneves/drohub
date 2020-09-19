@@ -148,6 +148,26 @@ namespace DroHub.Tests.TestInfrastructure
                 new CameraState { Mode = CameraMode.VIDEO, ZoomLevel = 1.2f, MinZoom = 1.0f, MaxZoom = 2.0f,
                     Serial = _device_serial, Timestamp = timestamp}
             );
+
+            AddTelemetryItem(
+                new GimbalState {
+                    Pitch = 1.2f,
+                    Roll = 1.3f,
+                    Yaw = 1.4f,
+                    MaxPitch = 180f,
+                    MaxRoll = 180f,
+                    MaxYaw = 90f,
+                    MinPitch = 0,
+                    MinRoll = -90f,
+                    MinYaw = -180f,
+                    CalibrationState = GimbalCalibrationState.CALIBRATED,
+                    IsPitchStabilized = true,
+                    IsRollStastabilized = true,
+                    IsYawStabilized = false,
+                    Serial = _device_serial,
+                    Timestamp = timestamp
+                }
+            );
         }
 
         public async Task WaitForServer() {

@@ -14,6 +14,7 @@ namespace DroHub.Areas.DHub.Models {
             public DronePosition Position { get; set; }
             public DroneBatteryLevel BatteryLevel { get; set; }
             public CameraState CameraState { get; set; }
+            public GimbalState GimbalState { get; set; }
             public DroneRadioSignal RadioSignal { get; set; }
             public DroneFlyingState FlyingState { get; set; }
         }
