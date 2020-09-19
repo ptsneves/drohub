@@ -26,11 +26,9 @@ class ParrotPeripheralManager<C extends Peripheral> implements AutoCloseable {
         }
     }
 
-    private boolean _valid_handle;
     final private Ref<C> _peripheral_handle;
 
     public ParrotPeripheralManager(final Drone drone, final Class<C> peripheral_class, @NonNull final PeripheralListener<C> peripheral_listener) {
-        _valid_handle = false;
         if (peripheral_listener == null)
             throw new RuntimeException("Assertion of non null listener failed");
         _peripheral_handle = drone.getPeripheral(peripheral_class, peripheral -> {
@@ -42,7 +40,6 @@ class ParrotPeripheralManager<C extends Peripheral> implements AutoCloseable {
         C i = _peripheral_handle.get();
         if (i == null)
             throw new RuntimeException("Failed to get the peripheral");
-        _valid_handle = true;
         peripheral_listener.onFirstTimeAvailable(i);
     }
 
@@ -52,27 +49,7 @@ class ParrotPeripheralManager<C extends Peripheral> implements AutoCloseable {
             _peripheral_handle.close();
     }
 
-    public C get() throws IllegalAccessException {
-        if (_valid_handle)
-            return _peripheral_handle.get();
-        throw new IllegalAccessException("Handle is not valid");
-    }
-
-    public C get(long time_to_wait) throws IllegalAccessException {
-        if (_valid_handle)
-            return _peripheral_handle.get();
-
-        long end_time = System.currentTimeMillis() + time_to_wait;
-        do {
-            try {
-                Thread.sleep(300);
-            } catch (InterruptedException e) {
-                throw new IllegalAccessException("Sleep was interrupted. Giving up trying to get peripheral");
-            }
-            if (_valid_handle)
-                return _peripheral_handle.get();
-        } while (end_time > System.currentTimeMillis());
-
-        throw new IllegalAccessException("Timeout waiting for peripheral handle");
+    public C get(){
+        return _peripheral_handle.get();
     }
 }
