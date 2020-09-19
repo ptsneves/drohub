@@ -4,8 +4,9 @@ import androidx.annotation.NonNull;
 import com.drohub.Janus.PeerConnectionParameters;
 
 
-public interface IPeripheral<P> {
+public interface IPeripheral<P>{
     public void setPeripheralListener(IPeripheralListener<P> l);
+    public void start();
     public interface IPeripheralListener<C> {
         void onChange(@NonNull C c);
         boolean onFirstTimeAvailable(@NonNull C c);

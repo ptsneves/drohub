@@ -43,6 +43,11 @@ public class ParrotMainCamera implements IPeripheral<ParrotMainCamera> {
         _priv.setPeripheralListener(ParrotPeripheralManager.PeripheralListener.convert(l, this));
     }
 
+    @Override
+    public void start() {
+        _priv.start();
+    }
+
     public boolean triggerPhotoPicture(boolean start) {
         try {
             if (_priv.getCameraMode().getValue() != Camera.Mode.PHOTO)

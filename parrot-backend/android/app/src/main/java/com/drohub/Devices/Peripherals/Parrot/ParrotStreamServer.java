@@ -33,6 +33,11 @@ public class ParrotStreamServer implements IPeripheral<ParrotStreamServer>, IPer
         _listener_first_time_success = false;
     }
 
+    @Override
+    public void start() {
+        _priv.start();
+    }
+
     private ParrotPeripheralManager.PeripheralListener<StreamServer> getParrotPeripheralListener() {
         final ParrotStreamServer instance = this;
         return new ParrotPeripheralManager.PeripheralListener<StreamServer>() {

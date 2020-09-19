@@ -2,6 +2,8 @@ package com.drohub.thrift;
 
 import android.location.Location;
 import android.util.Log;
+import androidx.annotation.NonNull;
+import com.drohub.Devices.Peripherals.IPeripheral;
 import com.drohub.GroundSdkHelperActivity;
 import com.drohub.IInfoDisplay;
 import com.drohub.Janus.PeerConnectionClient;
@@ -17,6 +19,7 @@ import com.parrot.drone.groundsdk.device.peripheral.media.MediaItem;
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -216,8 +219,11 @@ public class DroHubHandler implements Drone.Iface {
             try {
                 _camera_state.push(camera_state);
             } catch (TException e) {
+                ;
             }
         });
+        _main_camera.start();
+
     }
 
     private void initVideo() {

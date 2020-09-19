@@ -34,6 +34,11 @@ public class ParrotMediaStore implements IPeripheral<ParrotMediaStore> {
         _media_store_priv.setPeripheralListener(ParrotPeripheralManager.PeripheralListener.convert(l, this));
     }
 
+    @Override
+    public void start() {
+        _media_store_priv.start();
+    }
+
     private class ParrotMediaStorePriv extends ParrotPeripheralPrivBase<MediaStore> {
         private int _photo_count;
         private int _video_count;

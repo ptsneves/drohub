@@ -68,6 +68,7 @@ import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf.Sma
 import com.parrot.drone.groundsdk.device.pilotingitf.ReturnHomePilotingItf;
 import com.parrot.drone.groundsdk.facility.AutoConnection;
 import com.parrot.drone.groundsdk.facility.UserLocation;
+import org.jetbrains.annotations.NotNull;
 import org.webrtc.SurfaceViewRenderer;
 
 import static com.drohub.DroHubHelper.*;
@@ -447,6 +448,7 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
                 e_v.getInfoDisplay().addTemporarily(String.format(ZoomLevelFormat, new_zoom_level), 1500);
             }
         });
+        _main_camera.start();
     }
 
     private void setupTriggerPictureButton() {
@@ -559,6 +561,7 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
                 return true;
             }
         });
+        _media_store.start();
     }
 
     private void setupLiveVideo(String user_email, String auth_token) {
@@ -617,6 +620,7 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
             e_v.getInfoDisplay().remove(CONNECTION_ERROR);
             return true;
         });
+        stream_server.start();
     }
 
     private void setupTimer() {
