@@ -25,6 +25,8 @@ namespace DroHub.Tests.TestInfrastructure
         public static Uri SiteUri => new Uri("https://localhost/");
         public static Uri ThriftUri => new Uri("wss://localhost/ws");
         public static Uri JanusUri => new Uri("https://localhost/janus");
+
+        public static Uri TelemetryHubUri => new Uri("https://localhost:443/telemetryhub");
         public string TargetLiveStreamStoragePath { get; }
         public string AdminPassword { get; private set; }
         private static string DroHubTestsPath => Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory + "../../../");

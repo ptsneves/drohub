@@ -882,7 +882,7 @@ namespace DroHub.Tests
             var password = (user_name == "admin@drohub.xyz") ? _fixture.AdminPassword : DEFAULT_PASSWORD;
             await telemetry_mock.startMock(_fixture, user_name, password, organization,
                 "ActingPilot", minutes, DEFAULT_ALLOWED_USER_COUNT,
-                "ws://localhost:5000/telemetryhub");
+                DroHubFixture.TelemetryHubUri.ToString());
 
             var drone_rpc = new DroneRPC(telemetry_mock, infinite);
 

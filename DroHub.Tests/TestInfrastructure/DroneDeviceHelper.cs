@@ -2,14 +2,18 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Security;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.Models;
 using DroHub.Helpers.Thrift;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Serilog;
 using Thrift.Protocol;
 using Thrift.Server;
 
@@ -202,13 +206,26 @@ namespace DroHub.Tests.TestInfrastructure
             http_helper = await HttpClientHelper.createLoggedInUser(user, password);
 
             _connection = new HubConnectionBuilder()
-                .WithUrl(new Uri(hub_uri), options => { options
-                    .Cookies
-                    .Add(http_helper.loginCookie);
+                .WithUrl(new Uri(hub_uri), options => {
+                    options
+                        .Cookies
+                        .Add(http_helper.loginCookie);
+
+                    var handler = new HttpClientHandler {
+                        ClientCertificateOptions = ClientCertificateOption.Manual,
+                        ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => true
+                    };
+                    options.HttpMessageHandlerFactory = _ => handler;
+                    options.WebSocketConfiguration = sockets =>
+                    {
+                        sockets.RemoteCertificateValidationCallback = (sender, certificate, chain, policyErrors) => true;
+                    };
                 })
                 .Build();
             generateTelemetry();
             await _connection.StartAsync();
+            if (_connection.State != HubConnectionState.Connected)
+                throw new InvalidOperationException("Cannot connect to signalR");
         }
 
         public async Task stopMock() {
