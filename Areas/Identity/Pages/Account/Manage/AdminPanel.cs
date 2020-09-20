@@ -199,7 +199,7 @@ namespace DroHub.Areas.Identity.Pages.Account
                 AllowedUserCount = (int) Input.AllowedUserCount,
                 BillingPlanName = "Custom"
             };
-            _db_context.Subscriptions.Add(subscription);
+            await _db_context.Subscriptions.AddAsync(subscription);
             await _db_context.SaveChangesAsync();
 
             return subscription;
@@ -251,12 +251,10 @@ namespace DroHub.Areas.Identity.Pages.Account
                 }
 
                 _logger.LogInformation("User created a new account with password.");
-
-                foreach (var claim in DroHubUser.UserClaims[Input.ActingType])
-                    await _user_manager.AddClaimAsync(user, claim);
-
-                await _user_manager.AddClaimAsync(user, new Claim(DroHubUser.SUBSCRIPTION_KEY_CLAIM, subscription
-                    .OrganizationName));
+                await _user_manager.AddClaimsAsync(user, new List<Claim>{
+                    new Claim(DroHubUser.SUBSCRIPTION_KEY_CLAIM, subscription
+                        .OrganizationName)}.Concat(DroHubUser.UserClaims[Input.ActingType])
+                );
 
                 await _signin_manager.SignInAsync(user, isPersistent: false);
 
