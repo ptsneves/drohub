@@ -14,6 +14,7 @@ using DroHub.Data;
 using Ductus.FluentDocker.Services.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using YamlDotNet.RepresentationModel;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace DroHub.Tests.TestInfrastructure
@@ -33,17 +34,18 @@ namespace DroHub.Tests.TestInfrastructure
         public static string DroHubPath => Path.GetFullPath(Path.Join(DroHubTestsPath, "../"));
         public static string TestAssetsPath => Path.Join(DroHubTestsPath, "TestAssets");
 
+        private static string PatchedDockerComposeFileName => Path.Join(DroHubPath, "docker-compose-test.yml");
+
         public IConfiguration Configuration { get; private set; }
 
         public DroHubContext DbContext { get; private set; }
 
         public DroHubFixture() {
-            var docker_compose_file = Path.Join(DroHubPath, "docker-compose.yml");
 
             DeployedContainers = new Builder()
                             .UseContainer()
                             .UseCompose()
-                            .FromFile(docker_compose_file)
+                            .FromFile(getPatchedDockerComposeFile())
                             .RemoveOrphans()
                             .Wait("nginx", (service, i) => {
 
@@ -83,6 +85,30 @@ namespace DroHub.Tests.TestInfrastructure
                 .Single(m => m.Source.Contains("live-video-storage"));
             TargetLiveStreamStoragePath = live_video_mount.Destination + Path.DirectorySeparatorChar;
             Console.WriteLine("Ready to start");
+        }
+
+        private string getPatchedDockerComposeFile() {
+            var docker_compose_file = Path.Join(DroHubPath, "docker-compose.yml");
+            var stream = new StringReader(File.OpenText(docker_compose_file).ReadToEnd());
+            var yaml = new YamlStream();
+            yaml.Load(stream);
+            var root_node = (YamlMappingNode)yaml.Documents[0].RootNode;
+
+            ((YamlMappingNode) root_node["services"]).Children.Remove("letsencrypt");
+            var nginx_node = (YamlMappingNode)(((YamlMappingNode) root_node["services"]).Children["nginx"]);
+            var privkey_mount_str = $"{TestAssetsPath}/privkey.pem:/etc/letsencrypt/live/drohub.xyz/privkey.pem";
+            var fullchain_mount_str = $"{TestAssetsPath}/fullchain.pem:/etc/letsencrypt/live/drohub.xyz/fullchain.pem";
+            var volumes_node = new YamlSequenceNode {
+                privkey_mount_str,
+                fullchain_mount_str
+            };
+            nginx_node.Children["volumes"] = volumes_node;
+
+            var patched_file = PatchedDockerComposeFileName;
+            using var o = new StreamWriter(patched_file);
+            yaml.Save(o, false);
+
+            return patched_file;
         }
 
         private void initializeConfiguration(IContainerService web_container) {
@@ -140,6 +166,7 @@ namespace DroHub.Tests.TestInfrastructure
         public void Dispose() {
             Docker.Dispose();
             Containers.Dispose();
+            File.Delete(PatchedDockerComposeFileName);
         }
     }
 }

@@ -7,7 +7,6 @@ services:
         network_mode: host
         ports:
             - "8088:8088"
-            - "20000-40000:20000-40000/udp"
         volumes:
             - live-video-storage:/var/live-video-storage
         logging:
@@ -63,5 +62,8 @@ services:
                  max-size: "100m"
 volumes:
     certificates-volume:
+        driver: local
     live-video-storage:
+        driver: local
     mysql-volume:
+        driver: local

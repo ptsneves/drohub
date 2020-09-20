@@ -14,6 +14,7 @@
     <PackageReference Include="coverlet.collector" Version="1.0.1" />
     <PackageReference Include="Ductus.FluentDocker" Version="2.7.3" />
     <PackageReference Include="ApacheThrift" Version="0.13.0.1" />
+    <PackageReference Include="YamlDotNet" Version="8.1.2" />
   </ItemGroup>
 
   <ItemGroup>
