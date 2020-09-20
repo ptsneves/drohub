@@ -12,6 +12,10 @@ using System.Threading;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
 using DroHub.Helpers;
+using Ductus.FluentDocker;
+using Ductus.FluentDocker.Builders;
+using Ductus.FluentDocker.Extensions;
+using Ductus.FluentDocker.Model.Builders;
 
 // ReSharper disable StringLiteralTypo
 
@@ -895,6 +899,20 @@ namespace DroHub.Tests
                 drone_rpc.Dispose();
                 await telemetry_mock.stopMock();
             }
+        }
+
+        [Fact]
+        public async void TestAndroidTests() {
+            using var test_containers = new Builder()
+                .UseContainer()
+                .UseImage("cirrusci/android-sdk:29")
+                .Mount(DroHubFixture.DroHubPath, "/home/cirrus", MountType.ReadWrite)
+                .UseWorkDir("/home/cirrus/parrot-backend/android/")
+                .Command("./gradlew test")
+                .Build()
+                .Start();
+            test_containers.WaitForStopped();
+            Assert.Equal(0, test_containers.GetConfiguration(false).State.ExitCode);
         }
 
         [Fact]

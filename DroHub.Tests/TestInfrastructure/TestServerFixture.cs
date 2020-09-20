@@ -20,7 +20,7 @@ namespace DroHub.Tests.TestInfrastructure
 {
     public class DroHubFixture : IDisposable
     {
-        public ICompositeService Containers { get; }
+        public ICompositeService DeployedContainers { get; }
         private IHostService Docker { get; }
         public static Uri SiteUri => new Uri("https://localhost/");
         public static Uri ThriftUri => new Uri("wss://localhost/ws");
@@ -30,7 +30,7 @@ namespace DroHub.Tests.TestInfrastructure
         public string TargetLiveStreamStoragePath { get; }
         public string AdminPassword { get; private set; }
         private static string DroHubTestsPath => Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory + "../../../");
-        private static string DroHubPath => Path.GetFullPath(Path.Join(DroHubTestsPath, "../"));
+        public static string DroHubPath => Path.GetFullPath(Path.Join(DroHubTestsPath, "../"));
         public static string TestAssetsPath => Path.Join(DroHubTestsPath, "TestAssets");
 
         public IConfiguration Configuration { get; private set; }
@@ -40,7 +40,7 @@ namespace DroHub.Tests.TestInfrastructure
         public DroHubFixture() {
             var docker_compose_file = Path.Join(DroHubPath, "docker-compose.yml");
 
-            Containers = new Builder()
+            DeployedContainers = new Builder()
                             .UseContainer()
                             .UseCompose()
                             .FromFile(docker_compose_file)
@@ -66,7 +66,7 @@ namespace DroHub.Tests.TestInfrastructure
 
             var hosts = new Hosts().Discover();
             Docker = hosts.First(x => x.IsNative);
-            var web_container = Containers.Containers.First(c => c.Name == "web");
+            var web_container = DeployedContainers.Containers.First(c => c.Name == "web");
             using (var logs = Docker.Host.Logs(web_container.Id))
             {
                 AdminPassword = logs
