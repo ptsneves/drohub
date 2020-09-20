@@ -71,7 +71,7 @@ public class TReverseTunnelServer : Thrift.Transport.TServerTransport, IDisposab
     internal bool _is_accepting;
     private bool _is_disposed;
 
-    public TReverseTunnelServer(TTransport transport, int acceptable_clients = 10)
+    public TReverseTunnelServer(TTransport transport, int acceptable_clients = 20)
     {
         _transport = transport;
         _accepted_workers = new BlockingCollection<object>(acceptable_clients);

@@ -103,7 +103,7 @@ namespace DroHub.Tests.TestInfrastructure
             private readonly CancellationTokenRegistration cts_callback;
             public TelemetryItem(T telemetry, HubConnection connection, string type_name)
             {
-                cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
                 cts_callback = cts.Token.Register(() => {
                     // this callback will be executed when token is cancelled
                     if (!TaskSource.Task.IsCompleted)

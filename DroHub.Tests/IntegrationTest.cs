@@ -918,7 +918,7 @@ namespace DroHub.Tests
         [Fact]
         public async void TestThriftDroneDataCorrectness() {
             var tasks = new List<Task>();
-            for (var i = 0; i < 100; i++) {
+            for (var i = 0; i < 1; i++) {
                 var t = stageThriftDrone(false, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_USER+i, DEFAULT_ORGANIZATION+i, DEFAULT_DEVICE_SERIAL+i,
                     async (drone_rpc, telemetry_mock, user_name, token) => {
                     await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
