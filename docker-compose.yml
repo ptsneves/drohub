@@ -44,6 +44,10 @@ services:
         # volumes:
             # mysql-volume:/var/lib/mysql
     letsencrypt:
+         environment:
+             - DOMAIN=beta.drohub.xyz
+             
+             
          build:
              context: ./docker/docker-letsencrypt
          image: ptsneves/airborneprojects:letsencrypt
