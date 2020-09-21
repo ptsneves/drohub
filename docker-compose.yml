@@ -64,6 +64,10 @@ services:
              options:
                  max-file: "5"
                  max-size: "100m"
+         environment:
+             - DOMAIN_NAME=drohub.xyz
+             - SSL_CERTIFICATE_PATH=/etc/letsencrypt/live/drohub.xyz/fullchain.pem
+             - SSL_CERTIFICATE_KEY_PATH=/etc/letsencrypt/live/drohub.xyz/privkey.pem
 volumes:
     certificates-volume:
         driver: local

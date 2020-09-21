@@ -5,18 +5,18 @@ server {
 }
 
 server {
-    server_name www.drohub.xyz;
-    ssl_certificate /etc/letsencrypt/live/drohub.xyz/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/drohub.xyz/privkey.pem; # managed by Certbot
+    server_name www.${DOMAIN_NAME};
+    ssl_certificate ${SSL_CERTIFICATE_PATH};
+    ssl_certificate_key ${SSL_CERTIFICATE_KEY_PATH}; # managed by Certbot
     return 301 $scheme://$host$request_uri;
 }
 
 server {
-    server_name drohub.xyz;
+    server_name ${DOMAIN_NAME};
 
     listen 443 ssl;
-    ssl_certificate /etc/letsencrypt/live/drohub.xyz/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/drohub.xyz/privkey.pem; # managed by Certbot
+    ssl_certificate ${SSL_CERTIFICATE_PATH};
+    ssl_certificate_key ${SSL_CERTIFICATE_KEY_PATH}; # managed by Certbot
 
     # This file contains important security parameters. If you modify this file
     # manually, Certbot will be unable to automatically provide future security

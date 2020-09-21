@@ -95,14 +95,6 @@ namespace DroHub.Tests.TestInfrastructure
             var root_node = (YamlMappingNode)yaml.Documents[0].RootNode;
 
             ((YamlMappingNode) root_node["services"]).Children.Remove("letsencrypt");
-            var nginx_node = (YamlMappingNode)(((YamlMappingNode) root_node["services"]).Children["nginx"]);
-            var privkey_mount_str = $"{TestAssetsPath}/privkey.pem:/etc/letsencrypt/live/drohub.xyz/privkey.pem";
-            var fullchain_mount_str = $"{TestAssetsPath}/fullchain.pem:/etc/letsencrypt/live/drohub.xyz/fullchain.pem";
-            var volumes_node = new YamlSequenceNode {
-                privkey_mount_str,
-                fullchain_mount_str
-            };
-            nginx_node.Children["volumes"] = volumes_node;
 
             var patched_file = PatchedDockerComposeFileName;
             using var o = new StreamWriter(patched_file);
