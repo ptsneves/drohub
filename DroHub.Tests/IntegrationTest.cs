@@ -935,6 +935,25 @@ namespace DroHub.Tests
         }
 
         [Fact]
+        public async void TestTelemetryWithEmptySerialFails() {
+            var t = TelemetryMock.stageThriftDrone(_fixture, false, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_USER,
+                DEFAULT_PASSWORD, DEFAULT_ALLOWED_USER_COUNT,
+                DEFAULT_ORGANIZATION, DEFAULT_DEVICE_SERIAL, async (drone_rpc, telemetry_mock, user_name, token) => {
+                    await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
+                        telemetry_mock.WaitForServer, user_name, token);
+
+                    var signal_r_tasks_telemetry = telemetry_mock.getSignalRTasksTelemetry().ToArray();
+                    Assert.Empty(signal_r_tasks_telemetry);
+
+                    var r = await telemetry_mock.getRecordedTelemetry();
+                    Assert.Empty(r.Keys);
+                },
+                () => DroneRPC.generateTelemetry(null,
+                    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await t);
+        }
+
+        [Fact]
         public async void TestSubscriptionEnd() {
             const int minutes = 1;
             var tasks = new List<Task>();

@@ -223,6 +223,8 @@ namespace DroHub.Helpers
             var t_name = typeof(TDroneAction).FullName;
             _logger.LogInformation($"Get {t_name} {_authenticated_serial.Value}");
             var telemetry = await doAction(client, token);
+            if (telemetry.Serial == null)
+                throw new InvalidDataException("Telemetry cannot have null serial");
             if (new DeviceAPI.DeviceSerial(telemetry.Serial) != _authenticated_serial)
                 throw new InvalidDataException("Received a different telemetry serial than the one registered.");
 
