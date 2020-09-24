@@ -6,11 +6,11 @@
         <div class="slider-container"
              v-click-outside="toggleVisible"
              v-if="is_slider_visible">
-            <span class="slider-label">-</span>
+            <button class="slider-button" v-on:click="increment">+</button>
             <vue-slider
                 ref="slider"
                 v-model="pitch_level"
-                direction="ttb"
+                direction="btt"
                 v-bind:height="height"
                 v-bind:min="min_pitch"
                 v-bind:max="max_pitch"
@@ -19,7 +19,7 @@
                 v-bind:lazy="true"
                 v-on:drag-end="onPitchSet"
             ></vue-slider>
-            <span class="slider-label">+</span>
+            <button class="slider-button" v-on:click="decrement">-</button>
         </div>
     </div>
 </template>
@@ -94,6 +94,20 @@
                 this.min_pitch = this.centimate(msg.MinPitch);
                 this.max_pitch = this.centimate(msg.MaxPitch);
                 this.pitch_level = this.centimate(msg.Pitch);
+            },
+            increment() {
+                axios.post(this.ATTITUDE_SET_URL, qs.stringify({
+                    'serial': this.serial,
+                    'pitch': this.pitch_level + 1.0,
+                    '__RequestVerificationToken': this.antiForgeryToken,
+                }));
+            },
+            decrement() {
+                axios.post(this.ATTITUDE_SET_URL, qs.stringify({
+                    'serial': this.serial,
+                    'pitch': this.pitch_level - 1.0,
+                    '__RequestVerificationToken': this.antiForgeryToken,
+                }));
             },
             onPitchSet(index) {
                 axios.post(this.ATTITUDE_SET_URL, qs.stringify({

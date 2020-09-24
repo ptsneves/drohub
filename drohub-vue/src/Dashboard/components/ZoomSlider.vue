@@ -6,11 +6,11 @@
         <div class="slider-container"
              v-click-outside="toggleVisible"
              v-if="is_slider_visible">
-            <span class="slider-label">-</span>
+            <button class="slider-button" v-on:click="increment">+</button>
             <vue-slider
                 ref="slider"
                 v-model="zoom_level"
-                direction="ttb"
+                direction="btt"
                 v-bind:height="height"
                 v-bind:min="min_zoom"
                 v-bind:max="max_zoom"
@@ -19,7 +19,7 @@
                 v-bind:lazy="true"
                 v-on:drag-end="onZoomSet"
             ></vue-slider>
-            <span class="slider-label">+</span>
+            <button class="slider-button" v-on:click="decrement">-</button>
         </div>
     </div>
 </template>
@@ -99,6 +99,20 @@
                 axios.post(this.ZOOM_SET_URL, qs.stringify({
                     'serial': this.serial,
                     'zoom_level': this.zoom_level,
+                    '__RequestVerificationToken': this.antiForgeryToken,
+                }));
+            },
+            increment() {
+                axios.post(this.ZOOM_SET_URL, qs.stringify({
+                    'serial': this.serial,
+                    'zoom_level': this.zoom_level + 10.0 * this.interval,
+                    '__RequestVerificationToken': this.antiForgeryToken,
+                }));
+            },
+            decrement() {
+                axios.post(this.ZOOM_SET_URL, qs.stringify({
+                    'serial': this.serial,
+                    'zoom_level': this.zoom_level - 10.0 * this.interval,
                     '__RequestVerificationToken': this.antiForgeryToken,
                 }));
             }
