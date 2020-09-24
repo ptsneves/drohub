@@ -126,52 +126,27 @@ namespace DroHub.Tests.TestInfrastructure
             TelemetryItems.Add(typeof(T), new TelemetryItem<IDroneTelemetry>(value, _connection, typeof(T).FullName));
         }
 
-        private void generateTelemetry() {
+        public static List<IDroneTelemetry> generateTelemetry(string device_serial) {
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            TelemetryItems = new Dictionary<Type, TelemetryItem<IDroneTelemetry>>();
-
-            AddTelemetryItem(
-                new DronePosition { Longitude = 0.0f, Latitude = 0.1f, Altitude = 10f, Serial = _device_serial, Timestamp = timestamp });
-
-            AddTelemetryItem(
-                new DroneReply { Result = true, Serial = _device_serial, Timestamp = timestamp });
-
-            AddTelemetryItem(
-                new DroneRadioSignal { SignalQuality = 2, Rssi = -23.0f, Serial = _device_serial, Timestamp = timestamp });
-
-            AddTelemetryItem(
-                new DroneFlyingState { State = FlyingState.LANDED, Serial = _device_serial, Timestamp = timestamp });
-
-            AddTelemetryItem(
-                new DroneBatteryLevel { BatteryLevelPercent = 100, Serial = _device_serial, Timestamp = timestamp });
-
-            AddTelemetryItem(
-                new DroneLiveVideoStateResult { State = DroneLiveVideoState.LIVE, Serial = _device_serial, Timestamp = timestamp });
-
-            AddTelemetryItem(
+            return new List<IDroneTelemetry> {
+                new DronePosition { Longitude = 0.0f, Latitude = 0.1f, Altitude = 10f, Serial = device_serial,
+                    Timestamp = timestamp },
+                new DroneReply { Result = true, Serial = device_serial, Timestamp = timestamp },
+                new DroneRadioSignal { SignalQuality = 2, Rssi = -23.0f, Serial = device_serial, Timestamp = timestamp },
+                new DroneFlyingState { State = FlyingState.LANDED, Serial = device_serial, Timestamp = timestamp },
+                new DroneBatteryLevel { BatteryLevelPercent = 100, Serial = device_serial, Timestamp = timestamp },
+                new DroneLiveVideoStateResult { State = DroneLiveVideoState.LIVE, Serial = device_serial,
+                    Timestamp = timestamp },
                 new CameraState { Mode = CameraMode.VIDEO, ZoomLevel = 1.2f, MinZoom = 1.0f, MaxZoom = 2.0f,
-                    Serial = _device_serial, Timestamp = timestamp}
-            );
+                    Serial = device_serial, Timestamp = timestamp}
+            };
+        }
 
-            AddTelemetryItem(
-                new GimbalState {
-                    Pitch = 1.2f,
-                    Roll = 1.3f,
-                    Yaw = 1.4f,
-                    MaxPitch = 180f,
-                    MaxRoll = 180f,
-                    MaxYaw = 90f,
-                    MinPitch = 0,
-                    MinRoll = -90f,
-                    MinYaw = -180f,
-                    CalibrationState = GimbalCalibrationState.CALIBRATED,
-                    IsPitchStabilized = true,
-                    IsRollStastabilized = true,
-                    IsYawStabilized = false,
-                    Serial = _device_serial,
-                    Timestamp = timestamp
-                }
-            );
+        private void generateTelemetryItems() {
+            TelemetryItems = new Dictionary<Type, TelemetryItem<IDroneTelemetry>>();
+            foreach (var t in generateTelemetry(_device_serial)) {
+                AddTelemetryItem(t);
+            }
         }
 
         public async Task WaitForServer() {
@@ -222,7 +197,7 @@ namespace DroHub.Tests.TestInfrastructure
                     };
                 })
                 .Build();
-            generateTelemetry();
+            generateTelemetryItems();
             await _connection.StartAsync();
             if (_connection.State != HubConnectionState.Connected)
                 throw new InvalidOperationException("Cannot connect to signalR");
