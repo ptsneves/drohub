@@ -51,11 +51,14 @@ namespace DroHub.Tests.TestInfrastructure
         public delegate Task StageThriftDroneTestDelegate(DroneRPC drone_rpc, TelemetryMock telemetry_mock,
             string user_name, string token);
 
+
+        public delegate Dictionary<Type, IDroneTelemetry> TelemetryGeneratorDelegate();
+
         public static async Task stageThriftDrone(DroHubFixture fixture, bool infinite, int minutes, string user_name,
             string password, int allowed_user_count, string organization, string serial_number,
-                StageThriftDroneTestDelegate del) {
+                StageThriftDroneTestDelegate del, TelemetryGeneratorDelegate telemetry_gen_del) {
 
-            var telemetry_mock = new TelemetryMock(serial_number);
+            var telemetry_mock = new TelemetryMock(serial_number, telemetry_gen_del);
 
             password = (user_name == "admin@drohub.xyz") ? fixture.AdminPassword : password;
             await telemetry_mock.startMock(fixture, user_name, password, organization,
@@ -129,7 +132,7 @@ namespace DroHub.Tests.TestInfrastructure
             private readonly CancellationTokenRegistration cts_callback;
             public TelemetryItem(T telemetry, HubConnection connection, string type_name)
             {
-                cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+                cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
                 cts_callback = cts.Token.Register(() => {
                     // this callback will be executed when token is cancelled
                     if (!TaskSource.Task.IsCompleted)
@@ -152,45 +155,9 @@ namespace DroHub.Tests.TestInfrastructure
             TelemetryItems.Add(type, new TelemetryItem<IDroneTelemetry>(value, _connection, type.FullName));
         }
 
-        public static Dictionary<Type, IDroneTelemetry> generateTelemetry(string device_serial) {
-            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            return new Dictionary<Type, IDroneTelemetry> {
-                [typeof(DronePosition)] = new DronePosition { Longitude = 0.0f, Latitude = 0.1f, Altitude = 10f,
-                    Serial = device_serial, Timestamp = timestamp },
-                [typeof(DroneReply)] = new DroneReply { Result = true, Serial = device_serial, Timestamp = timestamp },
-                [typeof(DroneRadioSignal)] = new DroneRadioSignal { SignalQuality = 2, Rssi = -23.0f, Serial = device_serial,
-                Timestamp = timestamp },
-                [typeof(DroneFlyingState)] = new DroneFlyingState { State = FlyingState.LANDED, Serial = device_serial,
-                    Timestamp = timestamp },
-                [typeof(DroneBatteryLevel)] = new DroneBatteryLevel { BatteryLevelPercent = 100, Serial = device_serial,
-                    Timestamp = timestamp },
-                [typeof(DroneLiveVideoStateResult)] = new DroneLiveVideoStateResult { State = DroneLiveVideoState.LIVE,
-                    Serial = device_serial, Timestamp = timestamp },
-                [typeof(CameraState)] = new CameraState { Mode = CameraMode.VIDEO, ZoomLevel = 1.2f, MinZoom = 1.0f,
-                    MaxZoom = 2.0f, Serial = device_serial, Timestamp = timestamp},
-                [typeof(GimbalState)] = new GimbalState {
-                    Pitch = 1.2f,
-                    Roll = 1.3f,
-                    Yaw = 1.4f,
-                    MaxPitch = 180f,
-                    MaxRoll = 180f,
-                    MaxYaw = 90f,
-                    MinPitch = 0,
-                    MinRoll = -90f,
-                    MinYaw = -180f,
-                    CalibrationState = GimbalCalibrationState.CALIBRATED,
-                    IsPitchStabilized = true,
-                    IsRollStastabilized = true,
-                    IsYawStabilized = false,
-                    Serial = device_serial,
-                    Timestamp = timestamp
-                }
-            };
-        }
-
         private void generateTelemetryItems() {
             TelemetryItems = new Dictionary<Type, TelemetryItem<IDroneTelemetry>>();
-            foreach (var (key, value) in generateTelemetry(SerialNumber)) {
+            foreach (var (key, value) in _telemetry_gen_del()) {
                 AddTelemetryItem(key, value);
             }
         }
@@ -270,10 +237,12 @@ namespace DroHub.Tests.TestInfrastructure
         private string _password;
         private HttpClientHelper.AddUserHelper _user;
         private HttpClientHelper.CreateDeviceHelper _device;
+        private TelemetryGeneratorDelegate _telemetry_gen_del;
 
-        private TelemetryMock(string device_serial)
+        private TelemetryMock(string device_serial, TelemetryGeneratorDelegate telemetry_gen_del)
         {
             SerialNumber = device_serial;
+            _telemetry_gen_del = telemetry_gen_del;
         }
     }
 }
