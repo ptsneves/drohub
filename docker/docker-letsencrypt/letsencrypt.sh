@@ -4,6 +4,11 @@ if [ -z ${DOMAIN} ]; then
     exit 1
 fi
 
+if [ ${DOMAIN} = "localhost" ]; then
+    echo "DOMAIN is localhost. Skipping"
+    exit 0
+fi
+
 if [ -z ${GANDI_USER} ]; then
     >&2 echo "Error: GANDI_USER env variable not set. Failing."
     exit 1

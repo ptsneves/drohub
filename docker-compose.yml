@@ -45,7 +45,7 @@ services:
             # mysql-volume:/var/lib/mysql
     letsencrypt:
          environment:
-             - DOMAIN=beta.drohub.xyz
+             - DOMAIN=localhost
              
              
          build:
