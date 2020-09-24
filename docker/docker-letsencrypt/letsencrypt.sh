@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 if [ -z ${DOMAIN} ]; then
     >&2 echo "Error: DOMAIN env variable not set. Failing."
     exit 1
@@ -21,7 +22,7 @@ fi
 
 umask 077
 echo "certbot_plugin_gandi:dns_api_key=${GANDI_KEY}" > gandi.ini
-
+echo "Creating certificates for ${DOMAIN} and www.${DOMAIN}"
 while true; do
     certbot certonly \
         -a certbot-plugin-gandi:dns \
