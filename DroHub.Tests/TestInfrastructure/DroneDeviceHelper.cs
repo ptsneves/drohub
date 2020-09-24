@@ -48,6 +48,32 @@ namespace DroHub.Tests.TestInfrastructure
 
     public class TelemetryMock
     {
+        public delegate Task StageThriftDroneTestDelegate(DroneRPC drone_rpc, TelemetryMock telemetry_mock,
+            string user_name, string token);
+
+        public static async Task stageThriftDrone(DroHubFixture fixture, bool infinite, int minutes, string user_name,
+            string password, int allowed_user_count, string organization, string serial_number,
+                StageThriftDroneTestDelegate del) {
+
+            var telemetry_mock = new TelemetryMock(serial_number);
+
+            password = (user_name == "admin@drohub.xyz") ? fixture.AdminPassword : password;
+            await telemetry_mock.startMock(fixture, user_name, password, organization,
+                "ActingPilot", minutes, allowed_user_count,
+                DroHubFixture.TelemetryHubUri.ToString());
+
+            var drone_rpc = new DroneRPC(telemetry_mock, infinite);
+
+            try {
+                var token = (await HttpClientHelper.getApplicationToken(user_name,
+                    password))["result"];
+                await del(drone_rpc, telemetry_mock, user_name, token);
+            }
+            finally {
+                drone_rpc.Dispose();
+                await telemetry_mock.stopMock();
+            }
+        }
 
         public async Task<Dictionary<string, dynamic>> getRecordedTelemetry() {
             var r = new Dictionary<string, dynamic>();
@@ -59,7 +85,7 @@ namespace DroHub.Tests.TestInfrastructure
                     throw new InvalidProgramException("Could not get device telemetry object");
 
                 dynamic awaitable = get_device_telemetry
-                    .Invoke(null, new object[] {_device_serial, _user_name, _password});
+                    .Invoke(null, new object[] {SerialNumber, UserName, _password});
 
                 IEnumerable result_list = await awaitable;
                 try {
@@ -164,7 +190,7 @@ namespace DroHub.Tests.TestInfrastructure
 
         private void generateTelemetryItems() {
             TelemetryItems = new Dictionary<Type, TelemetryItem<IDroneTelemetry>>();
-            foreach (var (key, value) in generateTelemetry(_device_serial)) {
+            foreach (var (key, value) in generateTelemetry(SerialNumber)) {
                 AddTelemetryItem(key, value);
             }
         }
@@ -186,17 +212,18 @@ namespace DroHub.Tests.TestInfrastructure
         }
 
         private HubConnection _connection;
-        public async Task startMock(DroHubFixture fixture, string user, string password, string organization_name,
+
+        private async Task startMock(DroHubFixture fixture, string user, string password, string organization_name,
             string user_base_type, int allowed_flight_time_minutes, int allowed_user_count, string hub_uri)
         {
             _fixture = fixture;
-            _user_name = user;
+            UserName = user;
             _password = password;
 
             _user = await HttpClientHelper.AddUserHelper.addUser(_fixture, user,
                 password, organization_name, user_base_type, allowed_flight_time_minutes, allowed_user_count);
             _device = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, user,
-                password, _device_serial, _device_serial);
+                password, SerialNumber, SerialNumber);
 
             http_helper = await HttpClientHelper.createLoggedInUser(user, password);
 
@@ -223,7 +250,7 @@ namespace DroHub.Tests.TestInfrastructure
                 throw new InvalidOperationException("Cannot connect to signalR");
         }
 
-        public async Task stopMock() {
+        private async Task stopMock() {
             if (_device != null)
                 await _device.DisposeAsync();
             if (_user != null)
@@ -234,19 +261,19 @@ namespace DroHub.Tests.TestInfrastructure
         }
 
         public Dictionary<Type, TelemetryItem<IDroneTelemetry>> TelemetryItems { get; private set; }
-        private readonly string _device_serial;
-        public string SerialNumber => _device_serial;
-        public string UserName => _user_name;
-        HttpClientHelper http_helper;
+        public string SerialNumber { get; }
+
+        public string UserName { get; private set; }
+
+        private HttpClientHelper http_helper;
         private DroHubFixture _fixture;
-        private string _user_name;
         private string _password;
         private HttpClientHelper.AddUserHelper _user;
         private HttpClientHelper.CreateDeviceHelper _device;
 
-        public TelemetryMock(string device_serial)
+        private TelemetryMock(string device_serial)
         {
-            _device_serial = device_serial;
+            SerialNumber = device_serial;
         }
     }
 }

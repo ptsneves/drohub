@@ -8,6 +8,41 @@ using DroHub.Areas.DHub.Models;
 
 public class DroneRPC : Drone.IAsync, IDisposable
 {
+       public static Dictionary<Type, IDroneTelemetry> generateTelemetry(string device_serial, long timestamp) {
+            return new Dictionary<Type, IDroneTelemetry> {
+                [typeof(DronePosition)] = new DronePosition { Longitude = 0.0f, Latitude = 0.1f, Altitude = 10f,
+                    Serial = device_serial, Timestamp = timestamp },
+                [typeof(DroneReply)] = new DroneReply { Result = true, Serial = device_serial, Timestamp = timestamp },
+                [typeof(DroneRadioSignal)] = new DroneRadioSignal { SignalQuality = 2, Rssi = -23.0f, Serial = device_serial,
+                Timestamp = timestamp },
+                [typeof(DroneFlyingState)] = new DroneFlyingState { State = FlyingState.LANDED, Serial = device_serial,
+                    Timestamp = timestamp },
+                [typeof(DroneBatteryLevel)] = new DroneBatteryLevel { BatteryLevelPercent = 100, Serial = device_serial,
+                    Timestamp = timestamp },
+                [typeof(DroneLiveVideoStateResult)] = new DroneLiveVideoStateResult { State = DroneLiveVideoState.LIVE,
+                    Serial = device_serial, Timestamp = timestamp },
+                [typeof(CameraState)] = new CameraState { Mode = CameraMode.VIDEO, ZoomLevel = 1.2f, MinZoom = 1.0f,
+                    MaxZoom = 2.0f, Serial = device_serial, Timestamp = timestamp},
+                [typeof(GimbalState)] = new GimbalState {
+                    Pitch = 1.2f,
+                    Roll = 1.3f,
+                    Yaw = 1.4f,
+                    MaxPitch = 180f,
+                    MaxRoll = 180f,
+                    MaxYaw = 90f,
+                    MinPitch = 0,
+                    MinRoll = -90f,
+                    MinYaw = -180f,
+                    CalibrationState = GimbalCalibrationState.CALIBRATED,
+                    IsPitchStabilized = true,
+                    IsRollStastabilized = true,
+                    IsYawStabilized = false,
+                    Serial = device_serial,
+                    Timestamp = timestamp
+                }
+            };
+        }
+
     private bool disposed = false;
     private Dictionary<Type, BlockingCollection<IDroneTelemetry>> collections;
     private bool _inifinte;
