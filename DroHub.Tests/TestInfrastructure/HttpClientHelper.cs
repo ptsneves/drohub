@@ -371,7 +371,7 @@ namespace DroHub.Tests.TestInfrastructure
             string user, string password) {
             var http_helper = await createLoggedInUser(user, password);
             var create_device_url = new Uri(DroHubFixture.SiteUri,
-                $"DHub/Devices/GetLastConnectionId/{device_id}");
+                $"DHub/Devices/GetLastDeviceConnectionId/{device_id}");
 
             http_helper.Response?.Dispose();
             http_helper.Response = await http_helper.Client.GetAsync(create_device_url);
@@ -390,7 +390,8 @@ namespace DroHub.Tests.TestInfrastructure
                 var data_dic = new Dictionary<string, string>();
                 var urlenc = new FormUrlEncodedContent(data_dic);
                 http_helper.Response = await http_helper.Client.PostAsync(create_device_url, urlenc);
-                return Newtonsoft.Json.JsonConvert.DeserializeObject<List<T>>(await http_helper.Response.Content.ReadAsStringAsync());
+                var r = await http_helper.Response.Content.ReadAsStringAsync();
+                return Newtonsoft.Json.JsonConvert.DeserializeObject<List<T>>(r);
             }
         }
 

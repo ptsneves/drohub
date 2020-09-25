@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading;
@@ -43,14 +44,23 @@ namespace DroHub.Areas.DHub.Controllers
             return Json(device_list);
         }
 
-        public async Task<IActionResult> GetLastConnectionId([Required]int id) {
+        [NonAction]
+        private async Task<IActionResult> GetTelemetry<TDroneTelemetry>([Required] int id,
+            DeviceSessionExtensions.IncludeTelemetryDelegate<TDroneTelemetry> include_delegate)
+            where TDroneTelemetry : IDroneTelemetry {
+            if (!ModelState.IsValid) {
+                return BadRequest();
+            }
             try {
-                var device = await _device_api.getDeviceById(id);
-                var last_connection = await _device_connection_api.getLastConnectionId(device);
+                var device_connection = await _device_connection_api.getDeviceConnection(id,
+                    include_delegate);
+                var r = device_connection
+                    .GetType()
+                    .GetProperties()
+                    .SingleOrDefault(d => d.PropertyType == typeof(ICollection<TDroneTelemetry>))
+                    ?.GetValue(device_connection, null) as ICollection<TDroneTelemetry>;
 
-                var c = await _device_connection_api.getDeviceConnection(last_connection.Id,
-                    source => source.Include(d => d.positions));
-                return Json(c.Id);
+                return Json(r);
             }
             catch (DeviceAuthorizationException) {
                 return Unauthorized();
@@ -60,92 +70,61 @@ namespace DroHub.Areas.DHub.Controllers
             }
         }
 
-        public async Task<IActionResult> GetDronePositions([Required]long id) {
+        public async Task<IActionResult> GetLastDeviceConnectionId([Required] int id){
+            if (!ModelState.IsValid) {
+                return BadRequest();
+            }
             try {
-                var c = await _device_connection_api.getDeviceConnection(id,
-                    source => source.Include(d => d.positions));
-                return Json(c.positions);
+                var device = await _device_api.getDeviceById(id);
+                var last_connection = await _device_connection_api.getLastConnectionId(device);
+                return Json(last_connection.Id);
             }
             catch (DeviceAuthorizationException) {
                 return Unauthorized();
             }
-        }
-
-        public async Task<IActionResult> GetDroneBatteryLevels([Required]long id) {
-            try {
-                var c = await _device_connection_api.getDeviceConnection(id,
-                    source => source.Include(d => d.battery_levels));
-                return Json(c.battery_levels);
-            }
-            catch (DeviceAuthorizationException) {
-                return Unauthorized();
+            catch (DeviceConnectionException e) {
+                return StatusCode(503, new { message = e.Message});
             }
         }
 
-        public async Task<IActionResult> GetCameraStates([Required]long id) {
-            try {
-                var c = await _device_connection_api.getDeviceConnection(id,
-                    source => source.Include(d => d.camera_states));
-                return Json(c.camera_states);
-            }
-            catch (DeviceAuthorizationException) {
-                return Unauthorized();
-            }
+        public async Task<IActionResult> GetDronePositions([Required]int id) {
+            return await GetTelemetry(id, source =>
+                source.Include(d => d.positions));
         }
 
-        public async Task<IActionResult> GetGimbalStates([Required]long id) {
-            try {
-                var c = await _device_connection_api.getDeviceConnection(id,
-                    source => source.Include(d => d.gimbal_states));
-                return Json(c.gimbal_states);
-            }
-            catch (DeviceAuthorizationException) {
-                return Unauthorized();
-            }
+        public async Task<IActionResult> GetDroneBatteryLevels([Required]int id) {
+            return await GetTelemetry(id,source =>
+                source.Include(d => d.battery_levels));
         }
 
-        public async Task<IActionResult> GetDroneRadioSignals([Required]long id) {
-            try {
-                var c = await _device_connection_api.getDeviceConnection(id,
-                    source => source.Include(d => d.radio_signals));
-                return Json(c.radio_signals);
-            }
-            catch (DeviceAuthorizationException) {
-                return Unauthorized();
-            }
+        public async Task<IActionResult> GetCameraStates([Required]int id) {
+            return await GetTelemetry(id, source =>
+                source.Include(d => d.camera_states));
         }
 
-        public async Task<IActionResult> GetDroneFlyingStates([Required]long id) {
-            try {
-                var c = await _device_connection_api.getDeviceConnection(id,
-                    source => source.Include(d => d.flying_states));
-                return Json(c.flying_states);
-            }
-            catch (DeviceAuthorizationException) {
-                return Unauthorized();
-            }
+        public async Task<IActionResult> GetGimbalStates([Required]int id) {
+            return await GetTelemetry(id, source =>
+                source.Include(d => d.gimbal_states));
         }
 
-        public async Task<IActionResult> GetDroneReplys([Required]long id) {
-            try {
-                var c = await _device_connection_api.getDeviceConnection(id,
-                    source => source.Include(d => d.drone_replies));
-                return Json(c.drone_replies);
-            }
-            catch (DeviceAuthorizationException) {
-                return Unauthorized();
-            }
+        public async Task<IActionResult> GetDroneRadioSignals([Required]int id) {
+            return await GetTelemetry(id, source =>
+                source.Include(d => d.radio_signals));
         }
 
-        public async Task<IActionResult> GetDroneLiveVideoStateResults([Required]long id) {
-            try {
-                var c = await _device_connection_api.getDeviceConnection(id,
-                    source => source.Include(d => d.drone_video_states));
-                return Json(c.drone_video_states);
-            }
-            catch (DeviceAuthorizationException e) {
-                return Unauthorized(e.Message);
-            }
+        public async Task<IActionResult> GetDroneFlyingStates([Required]int id) {
+            return await GetTelemetry(id, source =>
+                source.Include(d => d.flying_states));
+        }
+
+        public async Task<IActionResult> GetDroneReplys([Required]int id) {
+            return await GetTelemetry(id, source =>
+                source.Include(d => d.drone_replies));
+        }
+
+        public async Task<IActionResult> GetDroneLiveVideoStateResults([Required]int id) {
+            return await GetTelemetry(id, source =>
+                source.Include(d => d.drone_video_states));
         }
 
         // GET: DroHub/Devices/Data/5
