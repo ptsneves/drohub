@@ -13,7 +13,7 @@ namespace DroHub.Areas.Identity
         {
             builder.ConfigureServices((context, services) => {
                 services.AddDefaultIdentity<DroHubUser>()
-                    .AddTransientEntityFrameworkStores<DroHubContext>()
+                    .AddEntityFrameworkStores<DroHubContext>()
                     .AddDefaultTokenProviders();
 
                 // Passwords validation settings.
