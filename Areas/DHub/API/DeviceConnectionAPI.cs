@@ -177,6 +177,10 @@ namespace DroHub.Areas.DHub.API {
                 .Where(cd => cd.DeviceId == device.Id)
                 .OrderByDescending(cd => cd.Id)
                 .FirstOrDefaultAsync();
+
+            if (!await _device_api.authorizeDeviceActions(device, ResourceOperations.Read))
+                throw new DeviceAuthorizationException("Not authorized");
+
             if (r != null)
                 return r;
             throw new DeviceConnectionException($"Never had any active connection for the requested device {device.SerialNumber}");
