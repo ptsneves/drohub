@@ -878,16 +878,24 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestAndroidTests() {
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
+                _fixture.AdminPassword, DEFAULT_DEVICE_NAME, "DevSerial");
+
             using var test_containers = new Builder()
                 .UseContainer()
-                .UseImage("cirrusci/android-sdk:29")
+                .WithEnvironment(
+                    "UserName=admin@drohub.xyz",
+                    $"Password={_fixture.AdminPassword.Replace(" ", @"\ ")}",
+                    "AvailableDeviceName=DevSerial"
+                )
+                .IsPrivileged()
+                .UseImage("ptsneves/airborneprojects:android-test")
                 .Mount(DroHubFixture.DroHubPath, "/home/cirrus", MountType.ReadWrite)
                 .UseWorkDir("/home/cirrus/parrot-backend/android/")
-                .Command("./gradlew test")
                 .Build()
                 .Start();
             test_containers.WaitForStopped();
-            Assert.Equal(0, test_containers.GetConfiguration(false).State.ExitCode);
+            Assert.Equal(0, test_containers.GetConfiguration().State.ExitCode);
         }
 
         [Fact]

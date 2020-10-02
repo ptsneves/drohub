@@ -1,12 +1,14 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.quittle.android-emulator'
+
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion "29.0.2"
+    compileSdkVersion 30
+    buildToolsVersion "29.0.3"
     defaultConfig {
         applicationId "drohub.android"
         minSdkVersion 24
-        targetSdkVersion 29
+        targetSdkVersion 30
         versionCode 3
         versionName "1.0.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -41,6 +43,20 @@ android {
     }
 }
 
+androidEmulator {
+    emulator {
+        name 'my_avd_emulator_name' // Defaults to be dynamically based on the configuration of the AVD
+        device 'pixel_xl' // Defaults to exclude the device flag, using avdmanager default. For options, run avdmanager list device
+        sdkVersion 30 // Defaults to (Target SDK), then (Min SDK), then finally 10
+        abi 'x86_64' // Defaults to x86
+        includeGoogleApis true // Defaults to false
+    }
+
+    enableForAndroidTests true // Defaults to true
+    headless true // Defaults to false but should be set to true for most CI systems
+//    additionalEmulatorArguments '-no-snapshot', '-http-proxy=localhost:1234' // Additional arguments to pass to the emulator at startup. See https://developer.android.com/studio/run/emulator-commandline#startup-options for options
+    logEmulatorOutput true // Defaults to false but can be enabled to have emulator output logged for debugging.
+}
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])

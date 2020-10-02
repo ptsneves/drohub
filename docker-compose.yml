@@ -1,5 +1,11 @@
 version: "3"
 services:
+    android-test:
+        build:
+            context: docker/docker-android
+        image: "ptsneves/airborneprojects:android-test"
+        entrypoint: ["echo", "Service android-test disabled"]
+        restart: "no"
     janus:
         build:
             context: ./docker/docker-janus
