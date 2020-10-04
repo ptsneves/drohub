@@ -29,14 +29,10 @@ namespace Microsoft.AspNetCore.Hosting
                 var services = scope.ServiceProvider;
                 var db = services.GetRequiredService<T>();
                 var logger = services.GetRequiredService<ILogger<T>>();
-                var user_manager = services.GetRequiredService<UserManager<DroHubUser>>();
+                var signin_manager = services.GetRequiredService<SignInManager<DroHubUser>>();
 
                 foreach(var u in db.Users.ToList()) {
-                    await user_manager.RemoveClaimsAsync(u, DroHubUser.UserClaims[u.BaseActingType]);
-                    await user_manager.RemoveClaimsAsync(u, SubscriptionAPI.getSubscriptionClaims(u));
-
-                    await user_manager.AddClaimsAsync(u, DroHubUser.UserClaims[u.BaseActingType]);
-                    await user_manager.AddClaimsAsync(u, SubscriptionAPI.getSubscriptionClaims(u));
+                    await DroHubUser.refreshClaims(signin_manager, u);
                 };
                 logger.LogWarning("Ran user claims migration");
             }

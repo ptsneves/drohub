@@ -239,6 +239,7 @@ namespace DroHub.Areas.Identity.Pages.Account
                     UserName = Input.Email,
                     Email = Input.Email,
                     Subscription = subscription,
+                    SubscriptionOrganizationName = subscription.OrganizationName,
                     BaseActingType = Input.ActingType
                 };
 
@@ -251,10 +252,7 @@ namespace DroHub.Areas.Identity.Pages.Account
                 }
 
                 _logger.LogInformation("User created a new account with password.");
-                await _user_manager.AddClaimsAsync(user, new List<Claim>{
-                    new Claim(DroHubUser.SUBSCRIPTION_KEY_CLAIM, subscription
-                        .OrganizationName)}.Concat(DroHubUser.UserClaims[Input.ActingType])
-                );
+                await DroHubUser.refreshClaims(_signin_manager, user);
 
                 await _signin_manager.SignInAsync(user, isPersistent: false);
 

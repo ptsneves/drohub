@@ -165,6 +165,7 @@ namespace DroHub.Areas.Identity.Pages.Account {
                 UserName = Input.Email,
                 Email = Input.Email,
                 Subscription = subscription,
+                SubscriptionOrganizationName = subscription.OrganizationName,
                 BaseActingType = DroHubUser.SUBSCRIBER_POLICY_CLAIM,
                 EmailConfirmed = true
             };
@@ -179,12 +180,7 @@ namespace DroHub.Areas.Identity.Pages.Account {
 
             _logger.LogInformation("User created a new account with password.");
 
-            foreach (var claim in DroHubUser.UserClaims[DroHubUser.SUBSCRIBER_POLICY_CLAIM])
-                await _user_manager.AddClaimAsync(user, claim);
-
-            await _user_manager.AddClaimAsync(user, new Claim(DroHubUser.SUBSCRIPTION_KEY_CLAIM,
-                subscription.OrganizationName));
-
+            await DroHubUser.refreshClaims(_sigin_manager, user);
             await _sigin_manager.SignInAsync(user, true);
 
             return RedirectToAction("Index", "AccountManagement", new { area = "DHub" });

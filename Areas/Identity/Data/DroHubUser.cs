@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
@@ -26,42 +28,42 @@ namespace DroHub.Areas.Identity.Data
             return acting_type.Replace("Acting", "");
         }
 
-        private static readonly List<Claim> GuestPolicyClaims = new List<Claim>() {
+        private static readonly ReadOnlyCollection<Claim> GuestPolicyClaims = new List<Claim>() {
             new Claim(GUEST_POLICY_CLAIM, CLAIM_VALID_VALUE),
             DeviceAuthorizationHandler.DeviceResourceOperations.CameraActionsClaim,
             DeviceAuthorizationHandler.DeviceResourceOperations.ReadClaim,
             MediaObjectAuthorizationHandler.MediaObjectResourceOperations.ReadClaim,
-        };
+        }.AsReadOnly();
 
-        private static readonly List<Claim> PilotPolicyClaims = new List<Claim>(GuestPolicyClaims) {
+        private static readonly ReadOnlyCollection<Claim> PilotPolicyClaims = new List<Claim>(GuestPolicyClaims) {
             new Claim(PILOT_POLICY_CLAIM, CLAIM_VALID_VALUE),
             DeviceAuthorizationHandler.DeviceResourceOperations.FlightActionsClaim,
             DeviceAuthorizationHandler.DeviceResourceOperations.CreateClaim,
             DeviceAuthorizationHandler.DeviceResourceOperations.UpdateClaim,
             DeviceAuthorizationHandler.DeviceResourceOperations.DeleteClaim,
-        };
+        }.AsReadOnly();
 
-        private static readonly List<Claim> OwnerPolicyClaims = new List<Claim>(PilotPolicyClaims) {
+        private static readonly ReadOnlyCollection<Claim> OwnerPolicyClaims = new List<Claim>(PilotPolicyClaims) {
             new Claim(OWNER_POLICY_CLAIM, CLAIM_VALID_VALUE),
             new Claim(Subscription.CAN_SEE_OWN_SUBSCRIPTION, Subscription.CLAIM_VALID_VALUE),
             new Claim(Subscription.CAN_EDIT_USERS_IN_OWN_SUBSCRIPTION, Subscription.CLAIM_VALID_VALUE),
             MediaObjectAuthorizationHandler.MediaObjectResourceOperations.DeleteClaim,
-        };
+        }.AsReadOnly();
 
-        private static readonly List<Claim> SubscriberPolicyClaims = new List<Claim>(OwnerPolicyClaims) {
+        private static readonly ReadOnlyCollection<Claim> SubscriberPolicyClaims = new List<Claim>(OwnerPolicyClaims) {
             new Claim(SUBSCRIBER_POLICY_CLAIM, CLAIM_VALID_VALUE),
-        };
+        }.AsReadOnly();
 
-        private static readonly List<Claim> AdminPolicyClaims = new List<Claim>(SubscriberPolicyClaims) {
+        private static readonly ReadOnlyCollection<Claim> AdminPolicyClaims = new List<Claim>(SubscriberPolicyClaims) {
             new Claim(ADMIN_POLICY_CLAIM, CLAIM_VALID_VALUE),
             new Claim(Subscription.CAN_MODIFY_CLAIM, Subscription.CLAIM_VALID_VALUE),
             new Claim(Subscription.CAN_ADD_CLAIM, Subscription.CLAIM_VALID_VALUE),
             new Claim(Subscription.CAN_SEE_NOT_OWN_SUBSCRIPTION, Subscription.CLAIM_VALID_VALUE),
             new Claim(Subscription.CAN_EDIT_USERS_OUTSIDE_OWN_SUBSCRIPTION, Subscription.CLAIM_VALID_VALUE),
-        };
+        }.AsReadOnly();
 
-        public static readonly Dictionary<string, List<Claim>> UserClaims = new Dictionary<string, List<Claim>>
-        {
+        public static readonly IReadOnlyDictionary<string, IReadOnlyCollection<Claim>> UserClaims =
+            new Dictionary<string, IReadOnlyCollection<Claim>> {
             { ADMIN_POLICY_CLAIM, AdminPolicyClaims },
             { SUBSCRIBER_POLICY_CLAIM, SubscriberPolicyClaims },
             { OWNER_POLICY_CLAIM, OwnerPolicyClaims },
@@ -78,22 +80,32 @@ namespace DroHub.Areas.Identity.Data
         public string SubscriptionOrganizationName { get; set; }
 
         public static async Task<IdentityResult> refreshClaims(SignInManager<DroHubUser> sign_in_manager,
-            DroHubUser user, string acting_type) {
+            DroHubUser user) {
+            IdentityResult ret;
+            var user_manager = sign_in_manager.UserManager;
 
-            if (!UserClaims.ContainsKey(acting_type))
+            if (!UserClaims.ContainsKey(user.BaseActingType))
                 return IdentityResult.Failed(new IdentityError {Description = "Invalid acting type"});
 
-            var old_claims = await sign_in_manager.UserManager.GetClaimsAsync(user);
-            var remove_result = await sign_in_manager.UserManager.RemoveClaimsAsync(user, old_claims);
-            if (!remove_result.Succeeded)
-                return remove_result;
+            var old_claims = new ReadOnlyCollectionBuilder<Claim>(await user_manager.GetClaimsAsync(user))
+                    .ToReadOnlyCollection();
+            ret = await user_manager.RemoveClaimsAsync(user, old_claims);
+            if (ret == IdentityResult.Failed()) {
+                return ret;
+            }
 
-            var add_result = await sign_in_manager.UserManager.AddClaimsAsync(user, UserClaims[acting_type]);
-            var add_orgname_result = await sign_in_manager.UserManager.AddClaimAsync(user,
-                new Claim(SUBSCRIPTION_KEY_CLAIM, user.SubscriptionOrganizationName));
-            if (add_result == IdentityResult.Failed())
-                return add_result;
-            return add_orgname_result == IdentityResult.Failed() ? add_orgname_result : IdentityResult.Success;
+            var claims = new ReadOnlyCollectionBuilder<Claim>(UserClaims[user.BaseActingType]) {
+                new Claim(SUBSCRIPTION_KEY_CLAIM, user.SubscriptionOrganizationName)
+            }.ToReadOnlyCollection();
+
+            ret = await user_manager.AddClaimsAsync(user, claims);
+            if (ret == IdentityResult.Failed())
+                return ret;
+
+            await sign_in_manager.UserManager.UpdateSecurityStampAsync(user);
+
+
+            return IdentityResult.Success;
         }
     }
 }

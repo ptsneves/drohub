@@ -123,8 +123,7 @@ namespace DroHub.Areas.DHub.Controllers {
                         continue;
                     }
 
-                    var refresh_result = await DroHubUser.refreshClaims(_signin_manager, new_user,
-                        DroHubUser.GUEST_POLICY_CLAIM);
+                    var refresh_result = await DroHubUser.refreshClaims(_signin_manager, new_user);
                     if (refresh_result == IdentityResult.Failed())
                         _logger.LogError("Failed to refresh claims on creating a user.");
 
@@ -210,7 +209,7 @@ namespace DroHub.Areas.DHub.Controllers {
                 throw new InvalidOperationException($"Unexpected error updating the permissions of user ${user_email}");
 
 
-            if (await DroHubUser.refreshClaims(_signin_manager, user, sanitized_acting_type) == IdentityResult.Failed())
+            if (await DroHubUser.refreshClaims(_signin_manager, user) == IdentityResult.Failed())
                 _logger.LogError("Failed to refresh claims.");
 
             return RedirectToAction("Index");

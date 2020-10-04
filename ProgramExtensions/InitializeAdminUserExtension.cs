@@ -1,5 +1,4 @@
 using System;
-using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.Models;
@@ -22,8 +21,8 @@ namespace Microsoft.AspNetCore.Hosting
                 var services = scope.ServiceProvider;
                 var db = services.GetRequiredService<T>();
                 var logger = services.GetRequiredService<ILogger<T>>();
-                var user_manager = services.GetRequiredService<UserManager<DroHubUser>>();
-                await InitializeAdminUserHelper.createAdminUser(logger, user_manager, db);
+                var sign_in_manager = services.GetRequiredService<SignInManager<DroHubUser>>();
+                await InitializeAdminUserHelper.createAdminUser(logger, sign_in_manager, db);
             }
             return webHost;
         }
@@ -37,9 +36,9 @@ namespace DroHub.IdentityClaims
         private const string _ADMIN_USER_NAME = "admin@drohub.xyz";
         private const string _ADMIN_ORGANIZATION = "Administrators";
 
-        internal static async Task<string> createAdminUser(ILogger logger, UserManager<DroHubUser> user_manager,
+        internal static async Task<string> createAdminUser(ILogger logger, SignInManager<DroHubUser> signin_manager,
             DroHubContext db_context) {
-
+            var user_manager = signin_manager.UserManager;
             var new_user = false;
             var new_subscription = false;
 
@@ -90,11 +89,9 @@ namespace DroHub.IdentityClaims
                 await db_context.SaveChangesAsync();
             }
 
-            foreach (var claim in DroHubUser.UserClaims[DroHubUser.ADMIN_POLICY_CLAIM]) {
-                await user_manager.AddClaimAsync(user, claim);
-            };
-            await user_manager.AddClaimAsync(user, new Claim(DroHubUser.SUBSCRIPTION_KEY_CLAIM, subscription
-            .OrganizationName));
+            var refresh_result = await DroHubUser.refreshClaims(signin_manager, user);
+            if (refresh_result == IdentityResult.Failed())
+                throw new InvalidProgramException("Could not remove admin claims");
 
             return user.Id;
         }
