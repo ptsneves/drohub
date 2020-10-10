@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import com.drohub.api.APIHelper;
+import com.drohub.api.ValidateTokenHelper;
 import com.google.android.material.textfield.TextInputEditText;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,7 +27,7 @@ import java.util.Set;
 import static com.drohub.DroHubHelper.EXTRA_USER_AUTH_TOKEN;
 import static com.drohub.DroHubHelper.EXTRA_USER_EMAIL;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ValidateTokenHelper.Listener {
     public static final String USER_EMAIL_STORE_KEY = "USER_NAME";
     public static final String USER_AUTH_TOKEN_STORE_KEY = "USER_AUTH_TOKEN";
     private static final String ACCOUNTS = "com.drohub.accounts";
@@ -113,23 +114,34 @@ public class MainActivity extends AppCompatActivity {
 
     private void validateAndLaunchLobbyActivity() {
         hideLoginGroup();
-        APIHelper api_helper = new APIHelper(_error_display, _user_email, _user_auth_token);
-        api_helper.get(
+        ValidateTokenHelper helper = new ValidateTokenHelper(_error_display,
+                this,
                 _validate_token_url,
-                response -> {
-                    email_ctrl.setText(_user_email);
-                    Intent intent = new Intent(this, LobbyActivity.class);
-                    intent.putExtra(EXTRA_USER_EMAIL, _user_email);
-                    intent.putExtra(EXTRA_USER_AUTH_TOKEN, _user_auth_token);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    this.startActivity(intent);
-                    finish();
-                },
-                error -> {
-                    showLoginGroup();
-                    setStatusText(status_view, "Token is not valid. Re-log in", Color.RED);
-                },
-                null);
+                _user_email,
+                _user_auth_token,
+                Double.parseDouble(getString(R.string.rpc_api_version))
+        );
+        helper.validateToken();
+    }
+
+    public void onInvalidVersion() {
+        showLoginGroup();
+        setStatusText(status_view, "Your app is out of date. Please update", Color.RED);
+    }
+
+    public void onValidateTokenError(String error) {
+        showLoginGroup();
+        setStatusText(status_view, "Token is not valid. Re-log in", Color.RED);
+    }
+
+    public void onValidToken() {
+        this.email_ctrl.setText(_user_email);
+        Intent intent = new Intent(this, LobbyActivity.class);
+        intent.putExtra(EXTRA_USER_EMAIL, _user_email);
+        intent.putExtra(EXTRA_USER_AUTH_TOKEN, _user_auth_token);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        this.startActivity(intent);
+        this.finish();
     }
 
     protected void setStatusText(TextView status_view, String text, int color) {

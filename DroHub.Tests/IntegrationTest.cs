@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Threading;
+using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
 using DroHub.Helpers;
@@ -16,6 +17,7 @@ using Ductus.FluentDocker;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Model.Builders;
+using Microsoft.Extensions.Configuration;
 
 // ReSharper disable StringLiteralTypo
 
@@ -642,6 +644,28 @@ namespace DroHub.Tests
             Assert.Equal("Device does not exist.", error);
         }
 
+        [Fact]
+        public async void TestGetApplicationTokenWithInvalidUserFails() {
+            var deserialized_object = HttpClientHelper.getApplicationToken(DEFAULT_USER,
+                DEFAULT_PASSWORD);
+            await Assert.ThrowsAsync<InvalidCredentialException>(async () => await deserialized_object);
+        }
+
+        [InlineData(-1)]
+        [InlineData(0)]
+        [InlineData(null)]
+        [Theory]
+        public async void TestValidateTokenWithBadVersion(int? test_version) {
+            var token = (await HttpClientHelper.getApplicationToken("admin@drohub.xyz",
+                _fixture.AdminPassword))["result"];
+
+            var result = await HttpClientHelper.validateToken("admin@drohub.xyz", token, test_version);
+            Assert.False(result.TryGetValue("result", out var _));
+            Assert.True(result.TryGetValue("error", out var error));
+            Assert.Equal(error, AndroidApplicationController.WRONG_API_DESCRIPTION);
+        }
+
+
         [InlineData(DroHubUser.ADMIN_POLICY_CLAIM)]
         [InlineData(DroHubUser.SUBSCRIBER_POLICY_CLAIM)]
         [InlineData(DroHubUser.OWNER_POLICY_CLAIM)]
@@ -654,9 +678,10 @@ namespace DroHub.Tests
             var token = (await HttpClientHelper.getApplicationToken(DEFAULT_USER,
                 DEFAULT_PASSWORD))["result"];
 
-            var result = await HttpClientHelper.validateToken(DEFAULT_USER, token);
+            var result = await HttpClientHelper.validateToken(DEFAULT_USER, token,
+                _fixture.Configuration.GetValue<double>(AndroidApplicationController.APPSETTINGS_API_VERSION_KEY));
             Assert.True(result.TryGetValue("result", out var message));
-            Assert.Equal(message, "ok");
+            Assert.Equal("ok", message);
         }
 
         [Fact]
@@ -671,14 +696,6 @@ namespace DroHub.Tests
             await Assert.ThrowsAsync<InvalidDataException>(async () => {
                 await using var f = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
                     DEFAULT_PASSWORD, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
-            });
-        }
-
-        [Fact]
-        public async void TestGetApplicationToken() {
-            await Assert.ThrowsAsync<InvalidCredentialException>(async () => {
-                await HttpClientHelper.getApplicationToken(DEFAULT_USER,
-                    DEFAULT_PASSWORD);
             });
         }
 

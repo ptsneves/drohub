@@ -7,6 +7,7 @@ using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace DroHub.Areas.DHub.Controllers
 {
@@ -25,16 +26,26 @@ namespace DroHub.Areas.DHub.Controllers
             public Device Device { get; set; }
         }
 
+        public class ValidateTokenModel {
+            [Required]
+            public double Version { get; set; }
+        }
+
         private readonly DeviceAPI _device_api;
         private readonly SubscriptionAPI _subscription_api;
         private readonly IAuthorizationService _authorization_service;
+        private readonly double _rpc_api_version;
+
+        public const string APPSETTINGS_API_VERSION_KEY = "RPCAPIVersion";
+        public const string WRONG_API_DESCRIPTION = "Application needs update";
 
         public AndroidApplicationController(DeviceAPI device_api, IAuthorizationService authorizationService,
-            SubscriptionAPI subscriptionApi) {
+            SubscriptionAPI subscriptionApi, IConfiguration configuration) {
 
             _device_api = device_api;
             _authorization_service = authorizationService;
             _subscription_api = subscriptionApi;
+            _rpc_api_version = configuration.GetValue<double>(APPSETTINGS_API_VERSION_KEY);
         }
 
         [HttpPost]
@@ -54,7 +65,11 @@ namespace DroHub.Areas.DHub.Controllers
             return new JsonResult(new Dictionary<string, string>() {{"result", "ok"}});
         }
 
-        public IActionResult ValidateToken() {
+        public IActionResult ValidateToken([FromBody] ValidateTokenModel model) {
+            if (!ModelState.IsValid || model.Version < _rpc_api_version)
+                return new JsonResult(new Dictionary<string, string> {
+                    ["error"] = WRONG_API_DESCRIPTION,
+                });
             //If we got here it means the authentication middleware allowed
             return new JsonResult(new Dictionary<string, string>() {{"result", "ok"}});
         }

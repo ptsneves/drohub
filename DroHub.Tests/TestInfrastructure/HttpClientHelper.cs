@@ -11,6 +11,7 @@ using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Data.Migrations;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Configuration;
 
 namespace DroHub.Tests.TestInfrastructure
 {
@@ -417,10 +418,14 @@ namespace DroHub.Tests.TestInfrastructure
             throw new InvalidProgramException($"Unexpected Redirect... ");
         }
 
+        public static Uri getAndroidActionUrl(string action_name) {
+            return new Uri(DroHubFixture.SiteUri, $"api/AndroidApplication/{action_name}");;
+        }
+
         private static async ValueTask<string> retrieveFromAndroidApp(string user,
             string token, string action_name, object query) {
 
-            var auth_token_uri = new Uri(DroHubFixture.SiteUri, $"api/AndroidApplication/{action_name}");
+            var auth_token_uri = getAndroidActionUrl(action_name);
             var http_helper = new HttpClientHelper();
             http_helper.Client.DefaultRequestHeaders.Add("x-drohub-user", user);
             http_helper.Client.DefaultRequestHeaders.Add("x-drohub-token", token);
@@ -443,8 +448,19 @@ namespace DroHub.Tests.TestInfrastructure
             return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,dynamic>>(res);
         }
 
-        public static async ValueTask<Dictionary<string, dynamic>> validateToken(string user_name, string token) {
-            var res = await retrieveFromAndroidApp(user_name, token, "ValidateToken", null);
+        public static string ValidateTokenActionName => "ValidateToken";
+
+        public static async ValueTask<Dictionary<string, dynamic>> validateToken(string user_name, string token,
+        double? version = null) {
+            string res;
+            if (version == null)
+                res = await retrieveFromAndroidApp(user_name, token, ValidateTokenActionName, new object());
+            else {
+                res = await retrieveFromAndroidApp(user_name, token, ValidateTokenActionName,
+                    new AndroidApplicationController.ValidateTokenModel {
+                        Version = version.Value
+                    });
+            }
             return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,dynamic>>(res);
         }
 

@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using AngleSharp;
 using AngleSharp.Html.Parser;
+using DroHub.Areas.DHub.Controllers;
 using DroHub.Data;
 using Ductus.FluentDocker.Services.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -23,20 +24,24 @@ namespace DroHub.Tests.TestInfrastructure
     {
         public ICompositeService DeployedContainers { get; }
         private IHostService Docker { get; }
-        public static Uri SiteUri => new Uri("https://localhost/");
-        public static Uri ThriftUri => new Uri("wss://localhost/ws");
-        public static Uri JanusUri => new Uri("https://localhost/janus");
+        public static Uri SiteUri => new Uri("https://master/");
+        public static Uri ThriftUri => new Uri("wss://master/ws");
+        public static Uri JanusUri => new Uri("https://master/janus");
 
-        public static Uri TelemetryHubUri => new Uri("https://localhost:443/telemetryhub");
+        public static Uri TelemetryHubUri => new Uri("https://master:443/telemetryhub");
         public string TargetLiveStreamStoragePath { get; }
         public string AdminPassword { get; private set; }
         private static string DroHubTestsPath => Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory + "../../../");
         public static string DroHubPath => Path.GetFullPath(Path.Join(DroHubTestsPath, "../"));
+        public static string AppPathInRepo => "parrot-backend";
+        public static string RPCAPIPathInRepo => "RPCInterfaces";
         public static string TestAssetsPath => Path.Join(DroHubTestsPath, "TestAssets");
 
         private static string PatchedDockerComposeFileName => Path.Join(DroHubPath, "docker-compose-test.yml");
 
         public IConfiguration Configuration { get; private set; }
+
+        public double RPCAPIVersion { get; private set; }
 
         public DroHubContext DbContext { get; private set; }
 
@@ -124,6 +129,7 @@ namespace DroHub.Tests.TestInfrastructure
                 .AddJsonStream(json_stream);
 
             Configuration = builder.Build();
+            RPCAPIVersion = Configuration.GetValue<double>(AndroidApplicationController.APPSETTINGS_API_VERSION_KEY);
         }
 
         private void initializeDBContext() {
