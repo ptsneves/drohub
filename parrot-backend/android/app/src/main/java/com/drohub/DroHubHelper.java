@@ -9,7 +9,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.snackbar.Snackbar;
-import com.parrot.drone.sdkcore.ulog.ULogTag;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -27,7 +26,6 @@ public class DroHubHelper {
     public static final String EXTRA_USER_AUTH_TOKEN = withKey("USER_AUTH_TOKEN");
     public static final String EXTRA_USER_EMAIL = withKey("USER_EMAIL");
     /** Logging tag. */
-    protected static final ULogTag TAG = new ULogTag("DROHUB");
 
     public interface CredentialGetters {
         String getUserEmail();
