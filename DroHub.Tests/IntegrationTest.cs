@@ -878,20 +878,29 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestAndroidTests() {
+            const string DOCKER_REPO_MOUNT_PATH = "/home/cirrus";
             await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
                 _fixture.AdminPassword, DEFAULT_DEVICE_NAME, "DevSerial");
+
+            var token = await HttpClientHelper.getApplicationToken("admin@drohub.xyz", _fixture.AdminPassword);
 
             using var test_containers = new Builder()
                 .UseContainer()
                 .WithEnvironment(
-                    "UserName=admin@drohub.xyz",
-                    $"Password={_fixture.AdminPassword.Replace(" ", @"\ ")}",
-                    "AvailableDeviceName=DevSerial"
+                    $"CODE_DIR={DOCKER_REPO_MOUNT_PATH}",
+                    $"RPC_API_PATH={DroHubFixture.RPCAPIPathInRepo}",
+                    $"APP_PATH={DroHubFixture.AppPathInRepo}"
                 )
                 .IsPrivileged()
+                .KeepContainer()
+                .ReuseIfExists()
+                .AsUser("1000:1000")
                 .UseImage("ptsneves/airborneprojects:android-test")
-                .Mount(DroHubFixture.DroHubPath, "/home/cirrus", MountType.ReadWrite)
-                .UseWorkDir("/home/cirrus/parrot-backend/android/")
+                .Mount(DroHubFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
+                .Command(
+                    $"-Pandroid.testInstrumentationRunnerArguments.UserName=admin@drohub.xyz",
+                    $"-Pandroid.testInstrumentationRunnerArguments.Token={token["result"]}",
+                    $"-Pandroid.testInstrumentationRunnerArguments.ValidateTokenUrl={HttpClientHelper.getAndroidActionUrl(HttpClientHelper.ValidateTokenActionName)}")
                 .Build()
                 .Start();
             test_containers.WaitForStopped();
