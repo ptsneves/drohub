@@ -15,6 +15,8 @@ namespace DroHub.Tests {
             try {
                 await MJRPostProcessor.RunConvert(TestAssetsPath, true, null);
                 Assert.True(File.Exists(dst_path));
+                //Number of ticks of manually retrieved
+                Assert.Equal(new DateTime(637316971188390000), File.GetCreationTimeUtc(dst_path));
             }
             finally {
                 File.Delete(dst_path);
