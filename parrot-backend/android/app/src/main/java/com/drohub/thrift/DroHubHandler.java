@@ -73,7 +73,6 @@ public class DroHubHandler implements Drone.Iface {
     private PeerConnectionClient _peerConnectionClient;
     private DroneLiveVideoState _video_state;
 
-    private MediaStore _drone_media_store;
     PeerConnectionParameters _peer_connection_parameters;
     private long _room_id;
     private com.parrot.drone.groundsdk.device.Drone _drone_handle;
@@ -214,10 +213,6 @@ public class DroHubHandler implements Drone.Iface {
             }
         });
 
-        _drone_media_store = _drone_handle.getPeripheral(MediaStore.class, media_store -> {
-
-        }).get();
-
         _display = display;
 
         _main_camera.setCameraStateListener(camera_state -> {
@@ -343,39 +338,6 @@ public class DroHubHandler implements Drone.Iface {
     @Override
     public DroneReply moveToPosition(DroneRequestPosition request) {
         return null;
-    }
-
-    private static FileResourceType convertToFileResourceType(MediaItem.Type type) throws TException {
-        switch (type) {
-            case PHOTO:
-                return FileResourceType.IMAGE;
-            case VIDEO:
-                return FileResourceType.VIDEO;
-        }
-        throw new TException("Cannot convert to File Resource Type");
-    }
-
-    @Override
-    public DroneFileList getFileList() throws TException {
-        Log.e(TAG, "Start fle list");
-        List<MediaItem> media_items = _drone_media_store.browse(obj -> {}).get();
-
-        if (media_items == null)
-            throw new TException("An error occurred retrieving the file list");
-        Log.e(TAG, "No null");
-        DroneFileList list_to_send = new DroneFileList();
-
-        for (MediaItem item : media_items) {
-            FileEntry file = new FileEntry(item.getName(),
-                    convertToFileResourceType(item.getType()));
-
-            list_to_send.file_entries.add(file);
-
-        }
-        list_to_send.setFile_entriesIsSet(true);
-        list_to_send.setSerial(_serial_number);
-        list_to_send.setTimestamp(System.currentTimeMillis());
-        return list_to_send;
     }
 
     @Override

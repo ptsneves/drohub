@@ -271,20 +271,6 @@ namespace DroHub.Areas.DHub.Controllers
             }
         }
 
-        public async Task<IActionResult> GetFileList([Required]int id) {
-            try {
-                var device = await _device_api.getDeviceById(id);
-                return Json(await _device_connection_api.doDeviceAction(device, async client =>
-                    await client.getFileListAsync(CancellationToken.None)));
-            }
-            catch (DeviceAuthorizationException e) {
-                return Unauthorized(e.Message);
-            }
-            catch (DeviceConnectionException e) {
-                return StatusCode(503, new { message = e.Message});
-            }
-        }
-
         public async Task<IActionResult> GetDeviceFlightStartTime([Required] int id) {
             try {
                 var device = await _device_api.getDeviceByIdOrDefault(id);

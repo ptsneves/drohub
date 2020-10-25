@@ -102,12 +102,6 @@ public class DroneRPC : Drone.IAsync, IDisposable
         return GetTelemetryItem<DroneBatteryLevel>();
     }
 
-    Task<DroneFileList> Drone.IAsync.getFileListAsync(CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
-        // return Task.FromResult<IDroneTelemetry>(GetTelemetryItem<DroneFileList>().Take().Telemetry);
-    }
-
     Task<DroneFlyingState> Drone.IAsync.getFlyingStateAsync(CancellationToken cancellationToken)
     {
         return GetTelemetryItem<DroneFlyingState>();
