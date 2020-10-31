@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -29,36 +28,8 @@ namespace DroHub.Helpers {
         private const string _FFMPEG_BIN = "/usr/bin/ffmpeg";
         private const string _MJR_FILE_FILTER = "*.mjr";
 
-        private static Task<Process> runProcess(string executable_path, string arguments) {
-            var tcs = new TaskCompletionSource<Process>();
-            var process = new Process {
-                StartInfo = {
-                    UseShellExecute = false,
-                    FileName = executable_path,
-                    Arguments = arguments,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                },
-                EnableRaisingEvents = true
-            };
-
-            process.Exited += (sender, args) => {
-                if (process.ExitCode == 0) {
-                    tcs.SetResult(process);
-                }
-                else {
-                    tcs.SetException(new InvalidOperationException(
-                        $"{process.StartInfo.FileName} {process.StartInfo.Arguments} was not successful and exited with {process.ExitCode}. Stderr {( process.StandardError.ReadToEnd()).Trim()}"));
-                }
-            };
-            process.Start();
-
-            return tcs.Task;
-        }
-
         private static async Task<MJRHeader> getMJRHeader(string mjr_src) {
-            using var p = await runProcess(_JANUS_PP_REC_BIN, $"-j {mjr_src}");
+            using var p = await RunProcess.runProcess(_JANUS_PP_REC_BIN, $"-j {mjr_src}");
             var output = (await p.StandardOutput.ReadToEndAsync()).Trim();
             if (string.IsNullOrEmpty(output))
                 throw new InvalidDataException($"Janus did not provide any header output. Assuming {mjr_src} is corrupted");
@@ -106,7 +77,7 @@ namespace DroHub.Helpers {
             var tmp_dst = Path.Join(Path.GetTempPath(), dst_fn);
 
 
-            using var _ = await runProcess(_JANUS_PP_REC_BIN, $"{mjr_src} {tmp_dst}");
+            using var _ = await RunProcess.runProcess(_JANUS_PP_REC_BIN, $"{mjr_src} {tmp_dst}");
             if (!File.Exists(tmp_dst)) {
                 throw new InvalidDataException($"Expected {tmp_dst} but it does not exist. mjr file probably empty");
             }
@@ -180,7 +151,7 @@ namespace DroHub.Helpers {
             var ffmpeg_arguments =
                 $"{ffmpeg_input_args} -filter_complex {ffmpeg_adelay_args}{ffmpeg_amix_args} {ffmpeg_map_args} {final_dst}";
 
-            using var __ = await runProcess(_FFMPEG_BIN, ffmpeg_arguments);
+            using var __ = await RunProcess.runProcess(_FFMPEG_BIN, ffmpeg_arguments);
 
 
             if (!File.Exists(final_dst))
