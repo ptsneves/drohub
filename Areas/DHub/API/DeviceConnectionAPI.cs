@@ -148,6 +148,9 @@ namespace DroHub.Areas.DHub.API {
         }
 
         public async Task addRPCSessionHandler(ThriftMessageHandler rpc_handler) {
+            if (_connections.Any(r => r.Key.SerialNumber == rpc_handler.SerialNumber))
+                throw new InvalidDataException("Cannot have duplicate connections");
+
             var device = await _device_api.getDeviceBySerial(rpc_handler.SerialNumber);
             var connection = new DeviceConnection {
                 StartTime = DateTime.UtcNow,

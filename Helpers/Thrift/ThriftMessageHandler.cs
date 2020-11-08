@@ -127,11 +127,28 @@ namespace DroHub.Helpers.Thrift
             var device = await _connection_api.getDeviceFromCurrentConnectionClaim();
             SerialNumber = new DeviceAPI.DeviceSerial(device.SerialNumber);
 
-            var last_connection = DeviceConnectionAPI.getRPCSessionOrDefault(device);
-            if (last_connection != null && !last_connection._is_disposed) {
-                _logger.LogInformation($"Removing last connection {_device_api.getDeviceSerialNumberFromConnectionClaim()}");
-                last_connection._cancellation_token_src.Cancel();
+            var is_duplicate_connection = true;
+            var remove_duplicate_connection_attempt = 0;
+            while (is_duplicate_connection) {
+                var last_connection = DeviceConnectionAPI.getRPCSessionOrDefault(device);
+
+                if (remove_duplicate_connection_attempt > 3) {
+                    _logger.LogError("Could not remove connection after 3 attempts. Aborting.");
+                    context.Response.StatusCode = 400;
+                    return;
+                }
+
+                if (last_connection != null && !last_connection._is_disposed) {
+                    _logger.LogError($"Removing last connection {_device_api.getDeviceSerialNumberFromConnectionClaim()}");
+                    last_connection._cancellation_token_src.Cancel();
+                    remove_duplicate_connection_attempt++;
+                    Thread.Sleep(500);
+                }
+                else {
+                    is_duplicate_connection = false;
+                }
             }
+
 
             _cancellation_token_src = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
             try {
