@@ -70,23 +70,6 @@ namespace DroHub.Areas.DHub.Controllers
             }
         }
 
-        public async Task<IActionResult> GetLastDeviceConnectionId([Required] int id){
-            if (!ModelState.IsValid) {
-                return BadRequest();
-            }
-            try {
-                var device = await _device_api.getDeviceById(id);
-                var last_connection = await _device_connection_api.getLastConnectionId(device);
-                return Json(last_connection.Id);
-            }
-            catch (DeviceAuthorizationException) {
-                return Unauthorized();
-            }
-            catch (DeviceConnectionException e) {
-                return StatusCode(503, new { message = e.Message});
-            }
-        }
-
         public async Task<IActionResult> GetDronePositions([Required]int id) {
             return await GetTelemetry(id, source =>
                 source.Include(d => d.positions));

@@ -368,25 +368,25 @@ namespace DroHub.Tests.TestInfrastructure
             return Newtonsoft.Json.JsonConvert.DeserializeObject<long?>(s);
         }
 
-        public static async Task<long?> geLastConnectionId(int device_id,
-            string user, string password) {
-            var http_helper = await createLoggedInUser(user, password);
-            var create_device_url = new Uri(DroHubFixture.SiteUri,
-                $"DHub/Devices/GetLastDeviceConnectionId/{device_id}");
+        private static async Task<DeviceConnection> getLastConnection(DroHubFixture fixture, int device_id) {
+            var s = await fixture.DbContext.DeviceConnections
+                .Where(cd => cd.DeviceId == device_id)
+                .OrderByDescending(cd => cd.Id)
+                .FirstAsync();
 
-            http_helper.Response?.Dispose();
-            http_helper.Response = await http_helper.Client.GetAsync(create_device_url);
-            http_helper.Response.EnsureSuccessStatusCode();
-            var s = await http_helper.Response.Content.ReadAsStringAsync();
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<long?>(s);
+            if (s.EndTime < s.StartTime)
+                throw new InvalidDataException("DeviceConnection still ongoing");
+            return s;
         }
 
-        public static async ValueTask<List<T>> getDeviceTelemetry<T>(string serial_number, string user, string password) {
+        public static async ValueTask<List<T>> getDeviceTelemetry<T>(DroHubFixture fixture, string serial_number, string
+        user, string
+        password) {
             var device_id = await getDeviceId(serial_number, user, password);
-            var connection_id = await geLastConnectionId(device_id, user, password);
+            var connection = await getLastConnection(fixture, device_id);
             using (var http_helper = await createLoggedInUser(user, password)) {
                 var content = await http_helper.Response.Content.ReadAsStringAsync();
-                var create_device_url = new Uri(DroHubFixture.SiteUri, $"DHub/Devices/Get{typeof(T)}s/{connection_id}");
+                var create_device_url = new Uri(DroHubFixture.SiteUri, $"DHub/Devices/Get{typeof(T)}s/{connection.Id}");
                 http_helper.Response?.Dispose();
                 var data_dic = new Dictionary<string, string>();
                 var urlenc = new FormUrlEncodedContent(data_dic);

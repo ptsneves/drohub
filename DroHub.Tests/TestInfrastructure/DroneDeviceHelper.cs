@@ -88,7 +88,7 @@ namespace DroHub.Tests.TestInfrastructure
                     throw new InvalidProgramException("Could not get device telemetry object");
 
                 dynamic awaitable = get_device_telemetry
-                    .Invoke(null, new object[] {SerialNumber, UserName, _password});
+                    .Invoke(null, new object[] {_fixture, SerialNumber, UserName, _password});
 
                 IEnumerable result_list = await awaitable;
                 try {

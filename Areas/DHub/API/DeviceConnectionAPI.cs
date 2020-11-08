@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
@@ -173,20 +174,6 @@ namespace DroHub.Areas.DHub.API {
                 _db_context.DeviceConnections.Update(connection);
                 await _db_context.SaveChangesAsync();
             }
-        }
-
-        public async Task<DeviceConnection> getLastConnectionId(Device device) {
-            var r = await _db_context.DeviceConnections
-                .Where(cd => cd.DeviceId == device.Id)
-                .OrderByDescending(cd => cd.Id)
-                .FirstOrDefaultAsync();
-
-            if (!await _device_api.authorizeDeviceActions(device, ResourceOperations.Read))
-                throw new DeviceAuthorizationException("Not authorized");
-
-            if (r != null)
-                return r;
-            throw new DeviceConnectionException($"Never had any active connection for the requested device {device.SerialNumber}");
         }
 
         public async Task<DeviceConnection> getDeviceConnection<TDroneTelemetry>(long session_id,
