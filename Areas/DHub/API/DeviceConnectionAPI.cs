@@ -154,14 +154,14 @@ namespace DroHub.Areas.DHub.API {
                 DeviceId = device.Id,
                 SubscriptionOrganizationName = _subscription_api.getSubscriptionName().Value
             };
-            await _db_context.DeviceConnections.AddAsync(connection);
-            await _db_context.SaveChangesAsync();
 
             if (!_connections.TryAdd(rpc_handler, connection)) {
-                _db_context.Remove(connection);
-                await _db_context.SaveChangesAsync();
-                throw new InvalidProgramException("For some reason we tried to add an RPC handler which was already existing.");
+                throw new InvalidProgramException(
+                    "For some reason we tried to add an RPC handler which was already existing.");
             }
+
+            await _db_context.DeviceConnections.AddAsync(connection);
+            await _db_context.SaveChangesAsync();
         }
 
         public async Task removeRPCSessionHandler(ThriftMessageHandler rpc_handler) {
