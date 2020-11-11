@@ -201,6 +201,9 @@ namespace DroHub.Areas.DHub.API {
             if (authorize && !await authorizeDeviceActions(device, ResourceOperations.Delete))
                 throw new DeviceAuthorizationException("Unauthorized delete device");
 
+            if (DeviceConnectionAPI.getRPCSessionOrDefault(device) != null)
+                throw new DeviceConnectionException("Cannot delete device with flight session ongoing");
+
             _db_context.Devices.Remove(device);
             await _db_context.SaveChangesAsync();
         }

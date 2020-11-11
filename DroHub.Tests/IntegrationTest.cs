@@ -480,6 +480,21 @@ namespace DroHub.Tests
             );
         }
 
+        [Fact]
+        public async void TestDeleteDeviceWithOngoingFlightFails() {
+
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
+                _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+            var token = await HttpClientHelper.getApplicationToken("admin@drohub.xyz",
+                _fixture.AdminPassword);
+            var s = await HttpClientHelper.openWebSocket("admin@drohub.xyz", token["result"], DEFAULT_DEVICE_SERIAL);
+            await Assert.ThrowsAsync<InvalidDataException>(async () => await HttpClientHelper.CreateDeviceHelper
+                .deleteDevice(DEFAULT_DEVICE_SERIAL, "admin@drohub.xyz", _fixture.AdminPassword));
+
+            s.Close();
+        }
+
+
         [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_SUCCESS)]
         [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_SUCCESS)]
         [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_SUCCESS)]
