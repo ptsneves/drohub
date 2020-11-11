@@ -446,26 +446,4 @@ namespace DroHub.Helpers
             return result;
         }
     }
-    //protected async Task GatherFileList(CancellationToken stopping_token) {
-    //         // while (!stopping_token.IsCancellationRequested)
-    //         // {
-    //         //     try
-    //         //     {
-    //         //         using (var call = _client.getFileListStream(new DroneRequest { }, cancellationToken: stopping_token))
-    //         //         {
-    //         //             while (await call.ResponseStream.MoveNext(stopping_token)) {
-    //         //                 DroneFileList file_list = call.ResponseStream.Current;
-    //         //                 _logger.LogDebug("received file_list {file_list}", file_list);
-    //         //                 await _hub.Clients.All.SendAsync("file_list", JsonConvert.SerializeObject(file_list));
-    //         //             }
-    //         //         }
-    //         //     }
-    //         //     catch (RpcException e)
-    //         //     {
-    //         //         _logger.LogWarning(LoggingEvents.FileListTelemetry, e.ToString() + "\nWaiting 1 second before retrying");
-    //         //         await Task.Delay(1000);
-    //         //         _logger.LogDebug(LoggingEvents.FileListTelemetry, "Calling again");
-    //         //     }
-    //         // }
-    //     }
 }
