@@ -840,7 +840,8 @@ namespace DroHub.Tests
             var token = (await HttpClientHelper.getApplicationToken(DEFAULT_USER,
                 DEFAULT_PASSWORD))["result"];
 
-            await HttpClientHelper.openWebSocket(DEFAULT_USER, token, DEFAULT_DEVICE_SERIAL);
+            var o = await HttpClientHelper.openWebSocket(DEFAULT_USER, token, DEFAULT_DEVICE_SERIAL);
+            o.Close();
         }
 
         [Fact]

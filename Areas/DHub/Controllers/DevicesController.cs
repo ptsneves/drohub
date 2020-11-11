@@ -363,6 +363,10 @@ namespace DroHub.Areas.DHub.Controllers
                 ModelState.AddModelError("", e.Message);
                 return View();
             }
+            catch (DeviceConnectionException e) {
+                ModelState.AddModelError("", e.Message);
+                return View();
+            }
 
             return RedirectToAction("Dashboard", "DeviceRepository");
         }
