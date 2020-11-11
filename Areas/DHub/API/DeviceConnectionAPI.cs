@@ -171,8 +171,18 @@ namespace DroHub.Areas.DHub.API {
         public async Task removeRPCSessionHandler(ThriftMessageHandler rpc_handler) {
             if (_connections.TryRemove(rpc_handler, out var connection)) {
                 connection.EndTime = DateTime.UtcNow;
-                _db_context.DeviceConnections.Update(connection);
-                await _db_context.SaveChangesAsync();
+                try {
+                    _db_context.DeviceConnections.Update(connection);
+                    await _db_context.SaveChangesAsync();
+                    _logger.LogInformation("Flight session of {serial} ended", rpc_handler.SerialNumber.Value);
+                }
+                catch (DbUpdateException e) {
+                    foreach (var entry in e.Entries) {
+                        if (!(entry.Entity is DeviceConnection))
+                            throw;
+                        _logger.LogError("Could not close device connection. Or device was removed in the mean time?");
+                    }
+                }
             }
         }
 
