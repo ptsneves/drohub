@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace DroHub.Areas.DHub.API {
     public static class MediaObjectAndTagExtensions {
@@ -29,6 +30,7 @@ namespace DroHub.Areas.DHub.API {
         private const string AnonymousPlaceholder = "storage/";
         public const string PreviewFileNamePrefix = "preview-";
 
+        private static readonly string[] AllowedFileExtensions = {".webp", ".webm", ".mp4"};
         private readonly DroHubContext _db_context;
         private readonly SubscriptionAPI _subscription_api;
         private readonly IAuthorizationService _authorization_service;
@@ -242,23 +244,48 @@ namespace DroHub.Areas.DHub.API {
                 await _db_context.SaveChangesAsync();
         }
 
-        public async Task addMediaObject(string media_path, DateTime create_time, string org_name,
-            long device_connection_id, List<string> tags) {
+        public static bool isAcceptableExtension(string media_path) {
+            return AllowedFileExtensions.Contains(Path.GetExtension(media_path).ToLower());
+        }
 
-            if (!media_path.Contains(getConnectionDirectory(device_connection_id)))
-                throw new MediaObjectAndTagException("Cannot save media which is not in the connection directory");
-
-            var mo = new MediaObject {
+        public static MediaObject generateMediaObject(string media_path, DateTime create_time, string org_name,
+            long device_connection_id) {
+            return new MediaObject {
                 SubscriptionOrganizationName = org_name,
                 DeviceConnectionId = device_connection_id,
                 MediaPath = media_path,
                 CaptureDateTimeUTC = create_time.ToUniversalTime(),
             };
+        }
 
-            await _db_context.AddAsync(mo);
+        public async Task addMediaObject(MediaObject media_object, List<string> tags, bool is_preview) {
+
+            if (!media_object.MediaPath.Contains(getConnectionDirectory(media_object.DeviceConnectionId)))
+                throw new MediaObjectAndTagException("Cannot save media which is not in the connection directory");
+
+            if (!File.Exists(media_object.MediaPath))
+                throw new MediaObjectAndTagException("Media path is not a file.");
+
+            var file_name = Path.GetFileName(media_object.MediaPath);
+            if (file_name == null)
+                throw new MediaObjectAndTagException("Could not extract file name from media path?");
+
+            if (is_preview) {
+                if(!file_name.Contains(PreviewFileNamePrefix))
+                    throw new MediaObjectAndTagException("Is preview but file name does not have preview prefix");
+
+                media_object.MediaPath = media_object.MediaPath.Replace(PreviewFileNamePrefix, "");
+            }
+
+            if (await _db_context.MediaObjects
+                .Where(mo => mo.MediaPath == media_object.MediaPath)
+                .AnyAsync())
+                return;
+
+            await _db_context.AddAsync(media_object);
 
             if (tags != null)
-                await addTags(media_path, tags,  null, false, false);
+                await addTags(media_object.MediaPath, tags,  null, false, false);
 
             await _db_context.SaveChangesAsync();
         }

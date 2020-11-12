@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Threading;
+using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
@@ -17,6 +18,8 @@ using Ductus.FluentDocker;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Model.Builders;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 // ReSharper disable StringLiteralTypo
@@ -577,6 +580,163 @@ namespace DroHub.Tests
                 );
             }
 
+        }
+
+        private async Task testUpload(int half_duration_multiplier,
+            string session_user,
+            string session_password,
+            string upload_user,
+            string upload_password,
+            Action<Dictionary<string,dynamic>, int> test,
+            int runs = 1, string src = "video.webm") {
+            var half_duration_seconds = TimeSpan.FromMilliseconds(4000);
+            await HttpClientHelper.generateConnectionId(_fixture, 2 * half_duration_seconds, "Aserial0",
+                session_user,
+                session_password,
+                async con_id => {
+                    var device_connection = await _fixture.DbContext.DeviceConnections
+                        .Where(dc => dc.Id == con_id)
+                        .SingleAsync();
+
+                    //Otherwise the value is considered local time
+                    var date_time_in_range = DateTime.SpecifyKind(device_connection.StartTime, DateTimeKind.Utc) +
+                                             half_duration_multiplier * half_duration_seconds;
+
+                    for (var i = 0; i < runs; i++) {
+                        await using var stream = new FileStream($"{DroHubFixture.TestAssetsPath}/{src}", FileMode.Open);
+                        var r = await HttpClientHelper.uploadMedia(upload_user,
+                            upload_password,
+                            new AndroidApplicationController.UploadModel {
+                                File = new FormFile(stream, 0, stream.Length, src, $"{DroHubFixture.TestAssetsPath}/{src}"),
+                                IsPreview = true,
+                                DeviceSerialNumber = "Aserial0",
+                                UnixCreationTimeMS = ((DateTimeOffset)date_time_in_range).ToUnixTimeMilliseconds()
+                            });
+                        test(r, i);
+                    }
+                });
+        }
+
+        [Fact]
+        public async void TestUploadMediaSucceeds() {
+            var ran = false;
+            await testUpload(1,
+                "admin@drohub.xyz",
+                _fixture.AdminPassword,
+                "admin@drohub.xyz",
+                _fixture.AdminPassword,
+                (result, tries) => {
+                Assert.True(result.TryGetValue("result", out var v));
+                Assert.Equal(v, "ok");
+                ran = true;
+            });
+            Assert.True(ran);
+        }
+
+        [Fact]
+        public async void TestUploadMediaBadModelFails() {
+            await Assert.ThrowsAsync<HttpRequestException>(async () => await HttpClientHelper.uploadMedia("admin@drohub.xyz",
+                _fixture.AdminPassword,
+                new AndroidApplicationController.UploadModel {
+                }));
+        }
+
+        [Fact]
+        public async void TestUploadMediaOutOfDeviceConnectionFails() {
+            var ran = false;
+            await testUpload(4,
+                "admin@drohub.xyz",
+                _fixture.AdminPassword,
+                "admin@drohub.xyz",
+                _fixture.AdminPassword,
+                (result, tries) => {
+                Assert.True(result.TryGetValue("error", out var v));
+                Assert.Equal(v, "Media does not correspond to any known flight");
+                ran = true;
+            });
+            Assert.True(ran);
+        }
+
+        [Fact]
+        public async void TestUploadMediaNonExistentDeviceFoundFails() {
+            var src = "video.webm";
+            await using var stream = new FileStream($"{DroHubFixture.TestAssetsPath}/{src}", FileMode.Open);
+            var r = await HttpClientHelper.uploadMedia("admin@drohub.xyz",
+                _fixture.AdminPassword,
+                new AndroidApplicationController.UploadModel {
+                    File = new FormFile(stream, 0, stream.Length, src, $"{DroHubFixture.TestAssetsPath}/{src}"),
+                    IsPreview = true,
+                    DeviceSerialNumber = "Aserial0",
+                    UnixCreationTimeMS = DateTimeOffset.Now.ToUnixTimeMilliseconds()
+                });
+            Assert.True(r.TryGetValue("error", out var v));
+            Assert.Equal(v, "Device not found");
+        }
+
+        [Fact]
+        public async void TestUploadMediaNotSubscribedDeviceFails() {
+            await using var u = await HttpClientHelper.AddUserHelper.addUser(_fixture, "admin@drohub.xyz",
+                _fixture.AdminPassword,
+            DEFAULT_USER, DEFAULT_PASSWORD,
+                DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM, 99, 99);
+
+            await Assert.ThrowsAsync<HttpRequestException>(async () => await testUpload(1,
+                    DEFAULT_USER,
+                    DEFAULT_PASSWORD,
+                    "admin@drohub.xyz",
+                    _fixture.AdminPassword,
+                    (result, tries) => {
+                    },
+                    1
+                ));
+        }
+
+        [Fact]
+        public async void TestUploadMediaOverwriteFails() {
+            var ran1 = false;
+            var ran2 = false;
+            await testUpload(1,
+                "admin@drohub.xyz",
+                _fixture.AdminPassword,
+                "admin@drohub.xyz",
+                _fixture.AdminPassword,
+                (result, tries) => {
+                switch (tries) {
+                    case 0: {
+                        Assert.True(result.TryGetValue("result", out var v));
+                        Assert.Equal(v, "ok");
+                        ran1 = true;
+                        break;
+                    }
+                    case 1: {
+                        Assert.True(result.TryGetValue("error", out var v));
+                        Assert.Equal(v, "File already exists");
+                        ran2 = true;
+                        break;
+                    }
+                    default:
+                        Assert.True(false);
+                        break;
+                }
+            }, 2);
+            Assert.True(ran1);
+            Assert.True(ran2);
+        }
+
+        [Fact]
+        public async void TestNotAllowedFormatFails() {
+            var ran = false;
+            await testUpload(1,
+                "admin@drohub.xyz",
+                _fixture.AdminPassword,
+                "admin@drohub.xyz",
+                _fixture.AdminPassword,
+                (result, tries) => {
+                Assert.True(result.TryGetValue("error", out var v));
+                Assert.Equal(v, "Format not allowed");
+                ran = true;
+            }, 1, "video-janus.mjr");
+            Assert.True(ran);
         }
 
         [Fact]

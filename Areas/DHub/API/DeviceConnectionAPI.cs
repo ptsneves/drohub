@@ -204,6 +204,21 @@ namespace DroHub.Areas.DHub.API {
                 .Include(s => s.Device);
         }
 
+        public async Task<DeviceConnection> getDeviceConnectionByTime(Device device, DateTime time) {
+            try {
+                return await _db_context.DeviceConnections
+                    .Where(dc =>
+                        device.Id == dc.DeviceId
+                        && time >= dc.StartTime
+                        && time <= dc.EndTime
+                    )
+                    .SingleAsync();
+            }
+            catch (Exception e) {
+                throw new DeviceConnectionException(e.Message);
+            }
+        }
+
         public async Task deleteDeviceFlightSessions(Device device) {
             if (getRPCSessionOrDefault(device) != null)
                 throw new DeviceConnectionException("Cannot delete flight session that is ongoing");

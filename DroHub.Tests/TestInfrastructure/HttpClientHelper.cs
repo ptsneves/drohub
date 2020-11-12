@@ -5,13 +5,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http.Headers;
 using System.Security.Authentication;
-using AngleSharp;
+using System.Threading;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.DHub.Models;
-using DroHub.Data.Migrations;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 
 namespace DroHub.Tests.TestInfrastructure
 {
@@ -346,6 +345,48 @@ namespace DroHub.Tests.TestInfrastructure
             return ws_transport;
         }
 
+        public static async Task generateConnectionId(DroHubFixture fixture, TimeSpan duration, string serial,
+            string user,
+            string password,
+            Func<long, Task> connection_id_func) {
+
+            if (duration > TimeSpan.FromSeconds(30))
+                throw new InvalidProgramException("Cannot generate device connection longer than 30 seconds because there would be a timeout without telemetry.");
+
+            await using var d = await CreateDeviceHelper.createDevice(fixture, user,
+                password, "Aname", serial);
+
+            var token = (await getApplicationToken(user,
+                password))["result"];
+
+            using var tr = await openWebSocket(user, token, serial);
+            Thread.Sleep(duration);
+            tr.Close();
+            var device_id = await getDeviceId(serial, user, password);
+            var ret = await getLastConnection(fixture, device_id);
+
+            await connection_id_func(ret.Id);
+        }
+
+        public static async Task<Dictionary<string, dynamic>> uploadMedia(string user, string password,
+            AndroidApplicationController.UploadModel upload_model) {
+            var token =  (await getApplicationToken(user,
+                password))["result"];
+
+            using var form = new MultipartFormDataContent();
+            if (upload_model.DeviceSerialNumber != null) {
+                var fileContent = new StreamContent(upload_model.File.OpenReadStream());
+                fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data");
+                form.Add(fileContent, "File", upload_model.File?.FileName);
+                form.Add(new StringContent(upload_model.IsPreview ? "true" : "false"), "IsPreview");
+                form.Add(new StringContent(upload_model.DeviceSerialNumber), "DeviceSerialNumber");
+                form.Add(new StringContent(upload_model.UnixCreationTimeMS.ToString()), "UnixCreationTimeMS");
+            }
+
+            var res = await retrieveFromAndroidApp(user, token, "UploadMedia", form, false);
+            return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,dynamic>>(res);
+        }
+
         public static async Task<TWebSocketClient> openWebSocket(string user, string token, string
         device_serial) {
             var ws_transport = getTWebSocketClient(user, token, device_serial);
@@ -427,14 +468,19 @@ namespace DroHub.Tests.TestInfrastructure
         }
 
         private static async ValueTask<string> retrieveFromAndroidApp(string user,
-            string token, string action_name, object query) {
+            string token, string action_name, object query, bool post_json = true) {
 
             var auth_token_uri = getAndroidActionUrl(action_name);
             var http_helper = new HttpClientHelper();
             http_helper.Client.DefaultRequestHeaders.Add("x-drohub-user", user);
             http_helper.Client.DefaultRequestHeaders.Add("x-drohub-token", token);
-            if (query != null)
-                http_helper.Response = await http_helper.Client.PostAsJsonAsync(auth_token_uri, query);
+            if (query != null) {
+                if (post_json)
+                    http_helper.Response = await http_helper.Client.PostAsJsonAsync(auth_token_uri, query);
+                else {
+                    http_helper.Response = await http_helper.Client.PostAsync(auth_token_uri, query as HttpContent);
+                }
+            }
             else {
                 http_helper.Response = await http_helper.Client.GetAsync(auth_token_uri);
             }
