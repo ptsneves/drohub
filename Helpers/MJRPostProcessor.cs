@@ -29,11 +29,7 @@ namespace DroHub.Helpers {
         private const string _MJR_FILE_FILTER = "*.mjr";
 
         private static async Task<MJRHeader> getMJRHeader(string mjr_src) {
-            using var p = await RunProcess.runProcess(_JANUS_PP_REC_BIN, $"-j {mjr_src}");
-            var output = (await p.StandardOutput.ReadToEndAsync()).Trim();
-            if (string.IsNullOrEmpty(output))
-                throw new InvalidDataException($"Janus did not provide any header output. Assuming {mjr_src} is corrupted");
-
+            var output = await RunProcess.getProcessOutput(_JANUS_PP_REC_BIN, $"-j {mjr_src}");
             return JsonSerializer.Deserialize<MJRHeader>(output);
         }
 

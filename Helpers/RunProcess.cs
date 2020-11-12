@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace DroHub.Helpers {
@@ -30,6 +31,15 @@ namespace DroHub.Helpers {
             process.Start();
 
             return tcs.Task;
+        }
+
+        public static async Task<string> getProcessOutput(string executable_path, string arguments) {
+            using var p = await runProcess(executable_path, arguments);
+            var output = (await p.StandardOutput.ReadToEndAsync()).Trim();
+            if (string.IsNullOrEmpty(output))
+                throw new InvalidDataException($"No output from {executable_path} as would be expected");
+
+            return output;
         }
 
     }
