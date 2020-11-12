@@ -27,6 +27,7 @@ namespace DroHub.Areas.DHub.API {
     public class MediaObjectAndTagAPI {
         private const string ConnectionBaseDir = "/var/live-video-storage/";
         private const string AnonymousPlaceholder = "storage/";
+        public const string PreviewFileNamePrefix = "preview-";
 
         private readonly DroHubContext _db_context;
         private readonly SubscriptionAPI _subscription_api;

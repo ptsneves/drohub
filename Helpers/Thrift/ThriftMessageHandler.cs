@@ -179,6 +179,7 @@ namespace DroHub.Helpers.Thrift
                 return;
             if (_cancellation_token_src != null)
                 _logger.LogInformation($"Disposing {SerialNumber.Value} isCancelled = {_cancellation_token_src.Token.IsCancellationRequested}");
+
             _is_disposed = true;
             try {
                 await _connection_api.removeRPCSessionHandler(this);

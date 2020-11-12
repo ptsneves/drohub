@@ -425,7 +425,7 @@ namespace DroHub.Helpers
             finally {
                 await destroyMountPointForDevice(device);
                 try {
-                    var r = await MJRPostProcessor.RunConvert(media_dir, true, _logger);
+                    var r = await MJRPostProcessor.RunConvert(media_dir, true, MediaObjectAndTagAPI.PreviewFileNamePrefix, _logger);
                     const string tag = "live stream";
 
                     await _media_api.addMediaObject(r.result_path, r.creation_date_utc,

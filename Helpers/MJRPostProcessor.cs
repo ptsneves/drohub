@@ -63,6 +63,7 @@ namespace DroHub.Helpers {
             }
 
             public MediaType media_type;
+            public string preview_path;
         }
 
         private static async Task<ConvertResult> RunMJRConvert(string mjr_src, bool preserve_after_conversion) {
@@ -94,7 +95,7 @@ namespace DroHub.Helpers {
         }
 
         public static async Task<ConvertResult> RunConvert(string mjr_src_dir, bool preserve_after_conversion,
-            [CanBeNull] ILogger logger) {
+            string preview_prefix, [CanBeNull] ILogger logger) {
 
 
             var mjr_files = getMJRFiles(mjr_src_dir);
@@ -110,6 +111,7 @@ namespace DroHub.Helpers {
 
             var video_result = conversion_results.Single(c => c.media_type == ConvertResult.MediaType.VIDEO);
             var final_dst = Path.Join(mjr_src_dir, Path.GetFileName(video_result.result_path));
+            var final_dst_preview = Path.Join(mjr_src_dir, $"{preview_prefix}-{Path.GetFileName(video_result.result_path)}");
 
             var ffmpeg_input_args = "-err_detect ignore_err";
             var ffmpeg_adelay_args = "";
@@ -154,6 +156,8 @@ namespace DroHub.Helpers {
                 throw new InvalidDataException($"Expected {final_dst} but it does not exist.\n {__.StandardError}");
             File.SetCreationTime(final_dst, video_result.creation_date_utc);
             logger?.LogInformation($"Conversion result available at {final_dst}");
+
+            await VideoPreviewGenerator.generatePreview(final_dst, final_dst_preview);
 
             return new ConvertResult {
                 result_path = final_dst,

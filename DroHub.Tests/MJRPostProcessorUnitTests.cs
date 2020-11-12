@@ -10,11 +10,14 @@ namespace DroHub.Tests {
 
         [Fact]
         public async void TestMJRConverterSimple() {
-            var dst_path = Path.Join(TestAssetsPath, "video.webm");
+            var preview_dst_path = Path.Join(TestAssetsPath, "preview-video-janus.webm");
+            var dst_path = Path.Join(TestAssetsPath, "video-janus.webm");
             Assert.False(File.Exists(dst_path));
             try {
-                await MJRPostProcessor.RunConvert(TestAssetsPath, true, null);
+                var r = await MJRPostProcessor.RunConvert(TestAssetsPath, true, "preview", null);
+                Assert.Equal(r.result_path, dst_path);
                 Assert.True(File.Exists(dst_path));
+                Assert.True(File.Exists(preview_dst_path));
                 //Number of ticks of manually retrieved
                 Assert.Equal(new DateTime(637316971188390000), File.GetCreationTimeUtc(dst_path));
             }
