@@ -103,9 +103,19 @@ namespace DroHub.Areas.DHub.API {
         }
 
         public OrganizationName getSubscriptionName() {
-            return new OrganizationName(
-                getClaimsPrincipal()
-                    .Claims.Single(c => c.Type == DroHubUser.SUBSCRIPTION_KEY_CLAIM)?.Value);
+            try {
+                var claims = getClaimsPrincipal()
+                    .Claims
+                    .Where(c => c.Type == DroHubUser.SUBSCRIPTION_KEY_CLAIM)
+                    .ToList();
+                var first = claims.First();
+                if (claims.All(c => c.Value == first.Value))
+                    return new OrganizationName(first.Value);
+                throw new InvalidDataException("Ups");
+            }
+            catch (Exception) {
+                throw;
+            }
         }
 
         private IQueryable<Subscription> querySubscription(OrganizationName organization_name) {
