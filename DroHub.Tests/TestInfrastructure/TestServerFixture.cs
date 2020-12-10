@@ -25,6 +25,7 @@ namespace DroHub.Tests.TestInfrastructure
     {
         public ICompositeService DeployedContainers { get; }
         private IHostService Docker { get; }
+        public const string AdminUserEmail = "admin@drohub.xyz";
         public static Uri SiteUri => new Uri("https://master/");
         public static Uri ThriftUri => new Uri("wss://master/ws");
         public static Uri JanusUri => new Uri("https://master/janus");

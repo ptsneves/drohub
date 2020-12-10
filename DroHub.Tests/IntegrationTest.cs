@@ -73,7 +73,7 @@ namespace DroHub.Tests
         [InlineData("1", EXPECT_SUCCESS)]
         [Theory]
         public async void TestAdminAccount(string password, bool expect_login_fail) {
-            await testLogin("admin@drohub.xyz", password ?? _fixture.AdminPassword, expect_login_fail);
+            await testLogin(TestServerFixture.AdminUserEmail, password ?? _fixture.AdminPassword, expect_login_fail);
         }
 
         [Fact]
@@ -242,10 +242,10 @@ namespace DroHub.Tests
             //     }
             // };
             //
-            // await HttpClientHelper.sendInvitation(_fixture, "admin@drohub.xyz", _fixture.AdminPassword,
+            // await HttpClientHelper.sendInvitation(_fixture, TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
             //     new[] {"a@a@b.com"});
             //
-            // var t = HttpClientHelper.sendInvitation(_fixture, "admin@drohub.xyz", _fixture.AdminPassword,
+            // var t = HttpClientHelper.sendInvitation(_fixture, TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
             //     new[] {"a@a@b.com"});
             //
             // await Assert.ThrowsAsync<HttpRequestException>(async () => {
@@ -256,7 +256,7 @@ namespace DroHub.Tests
         [Fact]
         public async void TestSendInvitationInValidEmailFails() {
             await Assert.ThrowsAsync<HttpRequestException>(async () => {
-                await HttpClientHelper.sendInvitation("admin@drohub.xyz", _fixture.AdminPassword,
+                await HttpClientHelper.sendInvitation(TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
                     new[] {"a@a@b.com"});;
             });
         }
@@ -486,13 +486,13 @@ namespace DroHub.Tests
         [Fact]
         public async void TestDeleteDeviceWithOngoingFlightFails() {
 
-            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
-            var token = await HttpClientHelper.getApplicationToken("admin@drohub.xyz",
+            var token = await HttpClientHelper.getApplicationToken(TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword);
-            var s = await HttpClientHelper.openWebSocket("admin@drohub.xyz", token["result"], DEFAULT_DEVICE_SERIAL);
+            var s = await HttpClientHelper.openWebSocket(TestServerFixture.AdminUserEmail, token["result"], DEFAULT_DEVICE_SERIAL);
             await Assert.ThrowsAsync<InvalidDataException>(async () => await HttpClientHelper.CreateDeviceHelper
-                .deleteDevice(DEFAULT_DEVICE_SERIAL, "admin@drohub.xyz", _fixture.AdminPassword));
+                .deleteDevice(DEFAULT_DEVICE_SERIAL, TestServerFixture.AdminUserEmail, _fixture.AdminPassword));
 
             s.Close();
         }
@@ -659,9 +659,9 @@ namespace DroHub.Tests
             const int CHUNKS = 30;
 
             await testUpload(1,
-                "admin@drohub.xyz",
+                TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                "admin@drohub.xyz",
+                TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 (result, tries, chunk, sent_chunk_size) => {
                     Assert.Equal(last_chunk++, chunk);
@@ -728,9 +728,9 @@ namespace DroHub.Tests
         public async void TestUploadMediaLargeChunkFails() {
             var ran = false;
             await testUpload(1,
-                "admin@drohub.xyz",
+                TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                "admin@drohub.xyz",
+                TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 (result, tries, chunk, sent_chunk_size) => {
                     Assert.True(result.TryGetValue("error", out var value));
@@ -748,9 +748,9 @@ namespace DroHub.Tests
         public async void TestUploadTooSmallChunkFails() {
             var ran = false;
             await testUpload(1,
-                "admin@drohub.xyz",
+                TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                "admin@drohub.xyz",
+                TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 (result, tries, chunk, sent_chunk_size) => {
                     Assert.True(result.TryGetValue("error", out var v));
@@ -766,7 +766,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestUploadMediaBadModelFails() {
-            var result = await HttpClientHelper.uploadMedia("admin@drohub.xyz",
+            var result = await HttpClientHelper.uploadMedia(TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 new AndroidApplicationController.UploadModel());
             Assert.True(result.ContainsKey("error"));
@@ -776,9 +776,9 @@ namespace DroHub.Tests
         public async void TestUploadMediaOutOfDeviceConnectionFails() {
             var ran = false;
             await testUpload(4,
-                "admin@drohub.xyz",
+                TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                "admin@drohub.xyz",
+                TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 (result, tries, chunk, sent_chunk_size) => {
                 Assert.True(result.TryGetValue("error", out var v));
@@ -793,7 +793,7 @@ namespace DroHub.Tests
         public async void TestUploadMediaNonExistentDeviceFoundFails() {
             var src = "video.webm";
             await using var stream = new FileStream($"{TestServerFixture.TestAssetsPath}/{src}", FileMode.Open);
-            var r = await HttpClientHelper.uploadMedia("admin@drohub.xyz",
+            var r = await HttpClientHelper.uploadMedia(TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 new AndroidApplicationController.UploadModel {
                     File = new FormFile(stream, 0, 4096, src, $"{TestServerFixture.TestAssetsPath}/{src}"),
@@ -809,7 +809,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestUploadMediaNotSubscribedDeviceFails() {
-            await using var u = await HttpClientHelper.AddUserHelper.addUser(_fixture, "admin@drohub.xyz",
+            await using var u = await HttpClientHelper.AddUserHelper.addUser(_fixture, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
             DEFAULT_USER, DEFAULT_PASSWORD,
                 DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM, 99, 99);
@@ -818,7 +818,7 @@ namespace DroHub.Tests
             await testUpload(1,
                     DEFAULT_USER,
                     DEFAULT_PASSWORD,
-                    "admin@drohub.xyz",
+                    TestServerFixture.AdminUserEmail,
                     _fixture.AdminPassword,
                     (result, tries, chunk, sent_chunk_size) => {
                         Assert.True(result.TryGetValue("error", out var v));
@@ -835,9 +835,9 @@ namespace DroHub.Tests
             var ran1 = false;
             var ran2 = false;
             await testUpload(1,
-                "admin@drohub.xyz",
+                TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                "admin@drohub.xyz",
+                TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 (result, attempt, chunk, sent_chunk_size) => {
                     if (attempt == 0) {
@@ -862,9 +862,9 @@ namespace DroHub.Tests
             var ran1 = false;
             var ran2 = false;
             await testUpload(1,
-                "admin@drohub.xyz",
+                TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                "admin@drohub.xyz",
+                TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 (result, tries, chunk, sent_chunk_size) => {
                 switch (tries) {
@@ -893,9 +893,9 @@ namespace DroHub.Tests
         public async void TestNotAllowedFormatFails() {
             var ran = false;
             await testUpload(1,
-                "admin@drohub.xyz",
+                TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                "admin@drohub.xyz",
+                TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 (result, tries, chunk, sent_chunk_size) => {
                 Assert.True(result.TryGetValue("error", out var v));
@@ -966,7 +966,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestLogout() {
-            using var http_client_helper = await HttpClientHelper.createLoggedInUser("admin@drohub.xyz", _fixture.AdminPassword);
+            using var http_client_helper = await HttpClientHelper.createLoggedInUser(TestServerFixture.AdminUserEmail, _fixture.AdminPassword);
             var logout_url = new Uri(TestServerFixture.SiteUri, "Identity/Account/Logout");
 
             using var response = await http_client_helper.Client.GetAsync(logout_url);
@@ -976,9 +976,9 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestQueryDeviceInfoOnNonExistingDeviceIsEmpty() {
-            var token = (await HttpClientHelper.getApplicationToken("admin@drohub.xyz",
+            var token = (await HttpClientHelper.getApplicationToken(TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword))["result"];
-            var device_info = await HttpClientHelper.queryDeviceInfo("admin@drohub.xyz", token,
+            var device_info = await HttpClientHelper.queryDeviceInfo(TestServerFixture.AdminUserEmail, token,
                 DEFAULT_DEVICE_SERIAL);
 
             Assert.False(device_info.TryGetValue("result", out var _));
@@ -998,10 +998,10 @@ namespace DroHub.Tests
         [InlineData(null)]
         [Theory]
         public async void TestValidateTokenWithBadVersion(int? test_version) {
-            var token = (await HttpClientHelper.getApplicationToken("admin@drohub.xyz",
+            var token = (await HttpClientHelper.getApplicationToken(TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword))["result"];
 
-            var result = await HttpClientHelper.validateToken("admin@drohub.xyz", token, test_version);
+            var result = await HttpClientHelper.validateToken(TestServerFixture.AdminUserEmail, token, test_version);
             Assert.False(result.TryGetValue("result", out var _));
             Assert.True(result.TryGetValue("error", out var error));
             Assert.Equal(error, AndroidApplicationController.WRONG_API_DESCRIPTION);
@@ -1028,7 +1028,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestCreateExistingDeviceFails() {
-            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
             await using var s = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
@@ -1043,7 +1043,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestQueryDeviceInfoWhenDeviceIsInOtherSubscriptionFails() {
-            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
             await using var s = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
@@ -1073,7 +1073,7 @@ namespace DroHub.Tests
         [Theory]
         public async void TestIncompleteCreateDeviceModelFails(string device_name, string device_serial) {
                 await Assert.ThrowsAsync<HttpRequestException>(async () => {
-                    await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
+                    await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
                         _fixture.AdminPassword, device_name, device_serial);
                 });
         }
@@ -1081,7 +1081,7 @@ namespace DroHub.Tests
         [Fact]
         public async void TestNODEVICECreateDeviceFails() {
             await Assert.ThrowsAsync<InvalidDataException>(async () => {
-                await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
+                await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
                     _fixture.AdminPassword, DEFAULT_DEVICE_NAME, "NODEVICE");
             });
         }
@@ -1132,7 +1132,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestWebSocketWithNonExistingDevice() {
-            const string user = "admin@drohub.xyz";
+            const string user = TestServerFixture.AdminUserEmail;
             var password = _fixture.AdminPassword;
             var token = (await HttpClientHelper.getApplicationToken(user, password))["result"];
             await Assert.ThrowsAsync<WebSocketException>(async () =>
@@ -1141,7 +1141,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestWebSocketWithDeviceNotBelongingToSubscriptionFails() {
-            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
             await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
@@ -1157,7 +1157,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestWebSocketWithDeviceBelongingToSubscriptionSucceeds() {
-            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
             await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
@@ -1187,23 +1187,23 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestDeviceFlightStartTime() {
-            Assert.Null(await HttpClientHelper.getDeviceFlightStartTime(999999, "admin@drohub.xyz",
+            Assert.Null(await HttpClientHelper.getDeviceFlightStartTime(999999, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword));
-            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
 
-            var token = (await HttpClientHelper.getApplicationToken("admin@drohub.xyz",
+            var token = (await HttpClientHelper.getApplicationToken(TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword))["result"];
 
             var device_id = await HttpClientHelper.getDeviceId(DEFAULT_DEVICE_SERIAL,
-                "admin@drohub.xyz", _fixture.AdminPassword);
-            Assert.Null(await HttpClientHelper.getDeviceFlightStartTime(device_id, "admin@drohub.xyz",
+                TestServerFixture.AdminUserEmail, _fixture.AdminPassword);
+            Assert.Null(await HttpClientHelper.getDeviceFlightStartTime(device_id, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword));
 
             var time_start = DateTime.Now.ToUniversalTime();
-            using var f = await HttpClientHelper.openWebSocket("admin@drohub.xyz", token, DEFAULT_DEVICE_SERIAL);
+            using var f = await HttpClientHelper.openWebSocket(TestServerFixture.AdminUserEmail, token, DEFAULT_DEVICE_SERIAL);
             await Task.Delay(TimeSpan.FromSeconds(5));
-            var received = await HttpClientHelper.getDeviceFlightStartTime(device_id, "admin@drohub.xyz",
+            var received = await HttpClientHelper.getDeviceFlightStartTime(device_id, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword);
 
             Assert.True(received.HasValue);
@@ -1239,13 +1239,13 @@ namespace DroHub.Tests
         [Fact]
         public async void TestAndroidTests() {
             const string DOCKER_REPO_MOUNT_PATH = "/home/cirrus";
-            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword, DEFAULT_DEVICE_NAME, "DevSerial");
 
             var half_duration_seconds = TimeSpan.FromMilliseconds(4000);
-            var token = await HttpClientHelper.getApplicationToken("admin@drohub.xyz", _fixture.AdminPassword);
+            var token = await HttpClientHelper.getApplicationToken(TestServerFixture.AdminUserEmail, _fixture.AdminPassword);
             await HttpClientHelper.generateConnectionId(_fixture, 2 * half_duration_seconds, "Aserial0",
-                "admin@drohub.xyz", _fixture.AdminPassword, l => {
+                TestServerFixture.AdminUserEmail, _fixture.AdminPassword, l => {
 
                     var date_time_in_range = DateTime.SpecifyKind(l.StartTime, DateTimeKind.Utc) +
                                              2 * half_duration_seconds;
@@ -1264,7 +1264,7 @@ namespace DroHub.Tests
                         .UseImage("ptsneves/airborneprojects:android-test")
                         .Mount(TestServerFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
                         .Command(
-                            $"-Pandroid.testInstrumentationRunnerArguments.UserName=admin@drohub.xyz",
+                            $"-Pandroid.testInstrumentationRunnerArguments.UserName={TestServerFixture.AdminUserEmail}",
                             $"-Pandroid.testInstrumentationRunnerArguments.Token={token["result"]}",
                             $"-Pandroid.testInstrumentationRunnerArguments.ValidateTokenUrl={HttpClientHelper.getAndroidActionUrl(HttpClientHelper.ValidateTokenActionName)}",
                             $"-Pandroid.testInstrumentationRunnerArguments.UploadMediaURL={HttpClientHelper.getAndroidActionUrl(HttpClientHelper.UploadMediaActionName)}",
@@ -1383,7 +1383,7 @@ namespace DroHub.Tests
             const int minutes = 999;
             var tasks = new List<Task>();
             for (var i = 0; i < 1; i++) {
-                var t = TelemetryMock.stageThriftDrone(_fixture, true, minutes, "admin@drohub.xyz", _fixture.AdminPassword,
+                var t = TelemetryMock.stageThriftDrone(_fixture, true, minutes, TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
                 DEFAULT_ALLOWED_USER_COUNT, "administrators", DEFAULT_DEVICE_SERIAL+i, async (drone_rpc, telemetry_mock, user_name, token) => {
                         await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
                             async () => {

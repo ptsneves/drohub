@@ -73,7 +73,7 @@ namespace DroHub.Tests.TestInfrastructure
         public static async Task changePermissions(string agent_email, string agent_pass,
             string victim_email, string victim_target_permission) {
 
-            if (victim_email == "admin@drohub.xyz")
+            if (victim_email == TestServerFixture.AdminUserEmail)
                 return;
 
             var http_helper = await createLoggedInUser(agent_email, agent_pass);
@@ -109,7 +109,7 @@ namespace DroHub.Tests.TestInfrastructure
                 int allowed_user_count,
                 bool remove_on_dispose = true) {
 
-                if (user_email == "admin@drohub.xyz")
+                if (user_email == TestServerFixture.AdminUserEmail)
                     return new AddUserHelper(test_fixture, user_email, user_password, remove_on_dispose);
 
                 var http_helper = await createLoggedInUser(user_email_of_creator, password_of_creator);
@@ -154,14 +154,14 @@ namespace DroHub.Tests.TestInfrastructure
                 int allowed_user_count,
                 bool remove_on_dispose = true) {
 
-                return await addUser(test_fixture, "admin@drohub.xyz",
+                return await addUser(test_fixture, TestServerFixture.AdminUserEmail,
                     test_fixture.AdminPassword, user_email, user_password,
                     organization, user_base_type, allowed_flight_time_minutes, allowed_user_count, remove_on_dispose);
             }
 
             public static async Task excludeUser(string deleter_email, string deleter_password,
                     string user_email_to_delete) {
-                if (user_email_to_delete == "admin@drohub.xyz")
+                if (user_email_to_delete == TestServerFixture.AdminUserEmail)
                     return;
 
                 var http_helper = await createLoggedInUser(deleter_email, deleter_password);
@@ -185,7 +185,7 @@ namespace DroHub.Tests.TestInfrastructure
             }
 
             public static async Task excludeUser(TestServerFixture test_fixture, string user_email) {
-                await excludeUser("admin@drohub.xyz", test_fixture.AdminPassword, user_email);
+                await excludeUser(TestServerFixture.AdminUserEmail, test_fixture.AdminPassword, user_email);
             }
 
             private readonly TestServerFixture _fixture;
@@ -268,7 +268,7 @@ namespace DroHub.Tests.TestInfrastructure
 
             public static async ValueTask<CreateDeviceHelper> createDevice(TestServerFixture test_fixture, string user, string password,
                 string device_name, string device_serial, bool delete_flight_sessions = true) {
-                if (user == "admin@drohub.xyz")
+                if (user == TestServerFixture.AdminUserEmail)
                     password = test_fixture.AdminPassword;
 
                 var token_result = await getApplicationToken(user, password);
