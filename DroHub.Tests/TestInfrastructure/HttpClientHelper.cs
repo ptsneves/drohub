@@ -285,6 +285,8 @@ namespace DroHub.Tests.TestInfrastructure
                     "CreateDevice", m);
 
                 var json_obj = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,string>>(result);
+                if (!json_obj.ContainsKey("result"))
+                    throw new InvalidDataException(json_obj["error"]);
                 if (json_obj["result"] != "ok")
                     throw new InvalidDataException(json_obj["result"]);
 
@@ -348,7 +350,8 @@ namespace DroHub.Tests.TestInfrastructure
         public static async Task generateConnectionId(DroHubFixture fixture, TimeSpan duration, string serial,
             string user,
             string password,
-            Func<long, Task> connection_id_func) {
+            Func<DeviceConnection, Task> connection_id_func,
+            bool run_while_still_active = false) {
 
             if (duration > TimeSpan.FromSeconds(30))
                 throw new InvalidProgramException("Cannot generate device connection longer than 30 seconds because there would be a timeout without telemetry.");
@@ -360,12 +363,18 @@ namespace DroHub.Tests.TestInfrastructure
                 password))["result"];
 
             using var tr = await openWebSocket(user, token, serial);
+            if (!run_while_still_active) {
+                Thread.Sleep(duration);
+                tr.Close();
+            }
+
             Thread.Sleep(duration);
-            tr.Close();
             var device_id = await getDeviceId(serial, user, password);
             var ret = await getLastConnection(fixture, device_id);
 
-            await connection_id_func(ret.Id);
+            await connection_id_func(ret);
+            if (tr.IsOpen)
+                tr.Close();
         }
 
         public static async Task<Dictionary<string, dynamic>> uploadMedia(string user, string password,
@@ -381,6 +390,8 @@ namespace DroHub.Tests.TestInfrastructure
                 form.Add(new StringContent(upload_model.IsPreview ? "true" : "false"), "IsPreview");
                 form.Add(new StringContent(upload_model.DeviceSerialNumber), "DeviceSerialNumber");
                 form.Add(new StringContent(upload_model.UnixCreationTimeMS.ToString()), "UnixCreationTimeMS");
+                form.Add(new StringContent(upload_model.AssembledFileSize.ToString()), "AssembledFileSize");
+                form.Add(new StringContent(upload_model.RangeStartBytes.ToString()), "RangeStartBytes");
             }
 
             var res = await retrieveFromAndroidApp(user, token, "UploadMedia", form, false);
@@ -499,6 +510,7 @@ namespace DroHub.Tests.TestInfrastructure
         }
 
         public static string ValidateTokenActionName => "ValidateToken";
+        public static string UploadMediaActionName => "UploadMedia";
 
         public static async ValueTask<Dictionary<string, dynamic>> validateToken(string user_name, string token,
         double? version = null) {

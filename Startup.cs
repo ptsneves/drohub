@@ -1,6 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -63,6 +64,28 @@ namespace DroHub
                 {
                     o.Cookie.SameSite = SameSiteMode.None;
                 });
+            });
+
+            services.Configure<ApiBehaviorOptions>(o => {
+                o.InvalidModelStateResponseFactory = context => {
+                    //We do not want to disturb other APIs
+                    if (context.ActionDescriptor.RouteValues["action"] != "UploadMedia" ||
+                        context.ActionDescriptor.RouteValues["controller"] != "AndroidApplication")
+                        return new BadRequestResult();
+
+                    var model_error =
+                        context.ModelState.Values.SelectMany(v => v.Errors
+                            .Select(b => b.ErrorMessage)).FirstOrDefault();
+
+                    if (!string.IsNullOrEmpty(model_error)) {
+                        return new JsonResult(new {
+                            result = "nok",
+                            error = model_error
+                        });
+                    }
+
+                    return new BadRequestResult();
+                };
             });
 
             services.Configure<JanusServiceOptions>(Configuration.GetSection("JanusServiceOptions"));

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             xmlns:tools="http://schemas.android.com/tools"
+             android:layout_width="match_parent"
+             android:layout_height="300dp"
+             android:background="@drawable/slide_bg1_square"
+             android:orientation="vertical"
+             tools:context=".Fragments.SubscriptionInfoFragment">
+
+    <TextView
+            android:id="@+id/device_media_info_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Drone/Device Media"
+            android:textSize="25dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+    <TextView
+            android:id="@+id/device_media_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="N pics N videos N GB"
+            android:textSize="20dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+    <TextView
+            android:id="@+id/local_media_info_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Local Media"
+            android:textSize="25dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+    <TextView
+            android:id="@+id/local_media_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="N pics N videos N GB"
+            android:textSize="20dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+    <TextView
+            android:id="@+id/remote_media_info_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="DroHub Media"
+            android:textSize="25dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+    <TextView
+            android:id="@+id/remote_media_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="N pics N videos N GB"
+            android:textSize="20dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+    <TextView
+            android:id="@+id/total_media_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Total"
+            android:textSize="25dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+    <TextView
+            android:id="@+id/total_media"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="N pics N videos N GB"
+            android:textSize="20dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/noto_sans"
+            android:background="@color/overlay_background"
+    />
+</LinearLayout>

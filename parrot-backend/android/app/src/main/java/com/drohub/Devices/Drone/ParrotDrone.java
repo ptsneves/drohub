@@ -1,7 +1,8 @@
-package com.drohub.Devices;
+package com.drohub.Devices.Drone;
 
 import android.app.Activity;
 import androidx.annotation.NonNull;
+import com.drohub.Devices.Peripherals.IPeripheral;
 import com.drohub.IInfoDisplay;
 import com.drohub.Models.DroHubDevice;
 import com.drohub.api.QueryDeviceInfoHelper;
@@ -13,21 +14,18 @@ import com.parrot.drone.groundsdk.facility.AutoConnection;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class ParrotDroneObserver {
-    public interface Listener {
-        void onNewDrone(DroHubDevice drone);
-    }
+public class ParrotDrone implements IDrone{
 
     private final String PROVIDER_NAME = "ParrotDrone";
 
     private GroundSdk _parrot_sdk;
-    private Listener _listener;
+    private IDroneObserver _listener;
 
-    public ParrotDroneObserver(IInfoDisplay display,
-                               String query_device_info_url,
-                               String user_mail,
-                               String user_auth_token,
-                               Activity activity, @NonNull Listener listener) {
+    public ParrotDrone(IInfoDisplay display,
+                       String query_device_info_url,
+                       String user_mail,
+                       String user_auth_token,
+                       Activity activity, @NonNull IDroneObserver listener) {
         _listener = listener;
         _parrot_sdk = ManagedGroundSdk.obtainSession(activity);
 

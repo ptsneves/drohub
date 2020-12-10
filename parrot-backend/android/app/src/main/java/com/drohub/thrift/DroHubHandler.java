@@ -2,28 +2,23 @@ package com.drohub.thrift;
 
 import android.location.Location;
 import android.util.Log;
-import androidx.annotation.NonNull;
-import com.drohub.Devices.Peripherals.IPeripheral;
 import com.drohub.Devices.Peripherals.Parrot.ParrotGimbal;
+import com.drohub.Devices.Peripherals.Parrot.ParrotMainCamera;
+import com.drohub.Devices.Peripherals.Parrot.ParrotMediaStore;
 import com.drohub.GroundSdkHelperActivity;
 import com.drohub.IInfoDisplay;
 import com.drohub.Janus.PeerConnectionClient;
 import com.drohub.Janus.PeerConnectionParameters;
-import com.drohub.Devices.Peripherals.Parrot.ParrotMainCamera;
 import com.drohub.thift.gen.*;
 import com.parrot.drone.groundsdk.device.instrument.BatteryInfo;
 import com.parrot.drone.groundsdk.device.instrument.FlyingIndicators;
 import com.parrot.drone.groundsdk.device.instrument.Gps;
 import com.parrot.drone.groundsdk.device.instrument.Radio;
-import com.parrot.drone.groundsdk.device.peripheral.MediaStore;
-import com.parrot.drone.groundsdk.device.peripheral.media.MediaItem;
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -66,6 +61,7 @@ public class DroHubHandler implements Drone.Iface {
     final private TelemetryContainer<DroneRadioSignal> _drone_radio_signal;
     final private TelemetryContainer<CameraState> _camera_state;
     final private TelemetryContainer<GimbalState> _gimbal_state;
+
     final private ParrotMainCamera _main_camera;
     final private ParrotGimbal _gimbal;
 
@@ -93,6 +89,7 @@ public class DroHubHandler implements Drone.Iface {
         _drone_radio_signal = new TelemetryContainer<>();
         _camera_state = new TelemetryContainer<>();
         _gimbal_state = new TelemetryContainer<>();
+
         _main_camera = new ParrotMainCamera(_drone_handle);
         _gimbal = new ParrotGimbal(_drone_handle);
 

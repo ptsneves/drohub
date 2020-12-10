@@ -4,23 +4,28 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import com.drohub.Devices.Drone.IDrone;
+import com.drohub.Devices.Drone.IDroneObserver;
+import com.drohub.Devices.Peripherals.IPeripheral;
+import com.drohub.Devices.RC.IRC;
+import com.drohub.Devices.RC.IRCObserver;
 import com.drohub.DroHubHelper;
 import com.drohub.IInfoDisplay;
 import com.drohub.Models.DroHubDevice;
-import com.drohub.Devices.ParrotDroneObserver;
-import com.drohub.Devices.ParrotRCObserver;
+import com.drohub.Devices.Drone.ParrotDrone;
+import com.drohub.Devices.RC.ParrotRC;
 import com.drohub.R;
 import com.drohub.SnackBarInfoDisplay;
 
 import java.net.URISyntaxException;
 
-public class DeviceFragment extends BaseFragment {
+public class DeviceFragment extends BaseFragment implements IDroneObserver, IRCObserver {
     protected IInfoDisplay _error_display;
     protected DroHubDevice _connected_rc;
     protected DroHubDevice _connected_drone;
 
-    protected ParrotRCObserver _parrot_rc_helper;
-    protected ParrotDroneObserver _parrot_drone_helper;
+    protected IRC _parrot_rc_helper;
+    protected IDrone _parrot_drone_helper;
 
     public DeviceFragment(int fragment_id) {
         super(fragment_id);
@@ -43,14 +48,15 @@ public class DeviceFragment extends BaseFragment {
         View root_view = getActivity().getWindow().getDecorView().findViewById(android.R.id.content);
 
         _error_display = new SnackBarInfoDisplay(root_view, 5000);
-        _parrot_rc_helper = new ParrotRCObserver(this.getActivity(), this::onNewRC);
-        _parrot_drone_helper = new ParrotDroneObserver(
+        _parrot_rc_helper = new ParrotRC(this.getActivity(), this);
+        _parrot_drone_helper = new ParrotDrone(
                 _error_display,
                 query_device_info_url,
                 _user_email,
                 _user_auth_token,
                 this.getActivity(),
-                this::onNewDrone);
+                this
+                );
         return _view;
     }
 
@@ -63,13 +69,23 @@ public class DeviceFragment extends BaseFragment {
         super.onCreate(savedInstanceState);
     }
 
-    protected void onNewRC(DroHubDevice rc) {
+    @Override
+    public void onNewRC(DroHubDevice rc) {
         if (rc.connection_state == DroHubDevice.ConnectionState.CONNECTED)
             _connected_rc = rc;
+
     }
 
-    protected void onNewDrone(DroHubDevice drone) {
+    @Override
+    public void onNewDrone(DroHubDevice drone) {
         if (drone.connection_state == DroHubDevice.ConnectionState.CONNECTED)
             _connected_drone = drone;
+
+
+    }
+
+    @Override
+    public void onMediaStore(IPeripheral.IMediaStoreProvider media_store) {
+
     }
 }

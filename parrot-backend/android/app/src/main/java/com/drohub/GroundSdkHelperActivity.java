@@ -89,7 +89,6 @@ public abstract class GroundSdkHelperActivity extends AppCompatActivity {
     private GroundSdk mGroundSdk;
     protected ThriftConnection _thrift_connection;
     protected String _user_auth_token;
-    protected String _user_email;
 
     /**
      * Gets GroundSDK interface.

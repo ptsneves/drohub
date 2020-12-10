@@ -19,6 +19,8 @@ namespace DroHub.Areas.DHub.Controllers
     [Route("api/[controller]/[action]")]
     public class AndroidApplicationController : ControllerBase
     {
+        public const string CHUNK_TOO_SMALL = "Chunk too small";
+
         public class QueryDeviceModel {
             [Required]
             public string DeviceSerialNumber { get; set; }
@@ -34,20 +36,75 @@ namespace DroHub.Areas.DHub.Controllers
             public double Version { get; set; }
         }
 
+        [UploadModelValidator]
         public class UploadModel {
-            // [Required]
             [FromForm]
             public bool IsPreview { get; set; }
 
-            [FromForm]
-            // [Required]
+            [Required]
             public string DeviceSerialNumber { get; set; }
 
-            [FromForm]
             public IFormFile File { get; set; }
 
             [FromForm]
             public long UnixCreationTimeMS { get; set; }
+
+            [FromForm]
+            public long RangeStartBytes { get; set; }
+
+            [FromForm]
+            public long AssembledFileSize { get; set; }
+        }
+
+        private class UploadModelValidator : ValidationAttribute {
+            public override bool IsValid(object value) {
+                if (!(value is UploadModel))
+                    return false;
+                var o = (UploadModel) value;
+
+                if (o.File.Length <= 0 || o.AssembledFileSize <= 0) {
+                    ErrorMessage = "File length or assembled file size lt 0";
+                    return false;
+                }
+
+                if (o.File.Length > o.AssembledFileSize) {
+                    ErrorMessage = "Chunk or file bigger than the reported assembled file size";
+                    return false;
+                }
+
+                if (o.RangeStartBytes > o.AssembledFileSize) {
+                    ErrorMessage = "Range is bigger than Assembled file size";
+                    return false;
+                }
+
+                if (o.File.Length + o.RangeStartBytes > o.AssembledFileSize) {
+                    ErrorMessage = "Chunk would overflow assembled file size";
+                    return false;
+                }
+
+                if (o.UnixCreationTimeMS <= 0) {
+                    ErrorMessage = "CreationTime is invalid";
+                    return false;
+                }
+
+                if (string.IsNullOrEmpty(o.DeviceSerialNumber)) {
+                    ErrorMessage = "No device serial number found";
+                    return false;
+                }
+
+                if (!MediaObjectAndTagAPI.isAcceptableExtension(o.File.FileName)) {
+                    ErrorMessage = "Format not allowed";
+                    return false;
+                }
+
+                if (o.File.Length < MINIMUM_CHUNK_SIZE_IN_BYTES && o.AssembledFileSize > MINIMUM_CHUNK_SIZE_IN_BYTES) {
+                    ErrorMessage = CHUNK_TOO_SMALL;
+                    return false;
+                }
+
+                return true;
+
+            }
         }
 
         private readonly DeviceAPI _device_api;
@@ -60,6 +117,7 @@ namespace DroHub.Areas.DHub.Controllers
 
         public const string APPSETTINGS_API_VERSION_KEY = "RPCAPIVersion";
         public const string WRONG_API_DESCRIPTION = "Application needs update";
+        public const long MINIMUM_CHUNK_SIZE_IN_BYTES = 4096;
 
         public AndroidApplicationController(DeviceAPI device_api, IAuthorizationService authorizationService,
             SubscriptionAPI subscriptionApi, IConfiguration configuration,
@@ -116,14 +174,6 @@ namespace DroHub.Areas.DHub.Controllers
         [HttpPost]
         [DisableRequestSizeLimit]
         public async Task<IActionResult> UploadMedia([FromForm]UploadModel input) {
-            if (!ModelState.IsValid)
-                return BadRequest();
-
-            if (!MediaObjectAndTagAPI.isAcceptableExtension(input.File.FileName))
-                return new JsonResult(new Dictionary<string, string> {
-                    ["error"] = "Format not allowed"
-                });
-
             var device = await _device_api.getDeviceBySerialOrDefault(new DeviceAPI.DeviceSerial(
                 input.DeviceSerialNumber));
             if (device == null)
@@ -135,42 +185,62 @@ namespace DroHub.Areas.DHub.Controllers
                 return new UnauthorizedResult();
 
             var creation_time = DateTimeOffset.FromUnixTimeMilliseconds(input.UnixCreationTimeMS).UtcDateTime;
-            var file_name_on_host =
-                $"{(input.IsPreview ? MediaObjectAndTagAPI.PreviewFileNamePrefix : string.Empty)}drone-{input.DeviceSerialNumber}-{input.UnixCreationTimeMS}{Path.GetExtension(input.File.FileName)}";
 
             try {
                 var connection = await _connection_api.getDeviceConnectionByTime(device, creation_time);
+                var local_storage_helper = new MediaObjectAndTagAPI.LocalStorageHelper(
+                    connection.Id,
+                    input.RangeStartBytes,
+                    input.IsPreview,
+                    input.DeviceSerialNumber,
+                    input.UnixCreationTimeMS,
+                    Path.GetExtension(input.File.FileName));
 
+                local_storage_helper.createDirectory();
 
-                if (!Directory.Exists(MediaObjectAndTagAPI.getConnectionDirectory(connection.Id))) {
-                    Directory.CreateDirectory(MediaObjectAndTagAPI.getConnectionDirectory(connection.Id));
-                }
-                var path_on_host = Path.Join(
-                    MediaObjectAndTagAPI.getConnectionDirectory(connection.Id),
-                    file_name_on_host);
-
-
-                if (System.IO.File.Exists(path_on_host))
+                if (local_storage_helper.doesAssembledFileExist())
                     return new JsonResult(new Dictionary<string, string> {
                         ["error"] = "File already exists"
                     });
 
-                await using var filestream = new FileStream(path_on_host, FileMode.CreateNew);
-                await input.File.CopyToAsync(filestream);
-                System.IO.File.SetCreationTimeUtc(filestream.Name, creation_time);
+                if (local_storage_helper.shouldSendNext(input.RangeStartBytes + input.File.Length)) {
+                    return new JsonResult(new Dictionary<string, dynamic> {
+                        ["result"] = "send-next",
+                        ["begin"] = local_storage_helper.getNextChunkOffset()
+                    });
+                }
 
-                var mo = MediaObjectAndTagAPI.generateMediaObject(filestream.Name,
-                    creation_time,
-                    _subscription_api.getSubscriptionName().Value,
-                    connection.Id);
+                await using var chunked_file_stream = new FileStream(local_storage_helper.getChunkedFilePath(),
+                    FileMode.CreateNew);
 
-                await _media_object_and_tag_api.addMediaObject(
-                    mo,
-                    new List<string> {"onboard"},
-                    input.IsPreview);
+                await input.File.CopyToAsync(chunked_file_stream);
 
-                return new JsonResult(new Dictionary<string, string> {
-                    ["result"] = "ok"
+                if (input.RangeStartBytes + input.File.Length == input.AssembledFileSize) {
+                    var assembled_file_name = await local_storage_helper.generateAssembledFile();
+                    System.IO.File.SetCreationTimeUtc(assembled_file_name, creation_time);
+                    var mo = MediaObjectAndTagAPI.generateMediaObject(
+                        assembled_file_name,
+                        creation_time,
+                        _subscription_api.getSubscriptionName().Value,
+                        connection.Id);
+
+                    await _media_object_and_tag_api.addMediaObject(mo,
+                        new List<string> {"onboard"},
+                        input.IsPreview);
+
+                    return new JsonResult(new Dictionary<string, string> {
+                        ["result"] = "ok"
+                    });
+                }
+                else if (input.RangeStartBytes + input.File.Length > input.AssembledFileSize) {
+                    return new JsonResult(new Dictionary<string, string> {
+                        ["error"] = "Chunk is bigger than reported file size"
+                    });
+                }
+
+                return new JsonResult(new Dictionary<string, dynamic> {
+                    ["result"] = "send-next",
+                    ["begin"] = local_storage_helper.getNextChunkOffset()
                 });
             }
             catch (DeviceConnectionException e) {

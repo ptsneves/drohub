@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.android.volley.Request;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.drohub.api.DroHubJSONObjectRequest;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -120,7 +121,7 @@ public class CreateDeviceActivity extends AppCompatActivity {
         }
         disableInput();
         setStatusText(status_view, "Registering new device...Please wait", Color.BLACK);
-        JsonObjectRequest device_creation_request = new DroHubObjectRequest(
+        JsonObjectRequest device_creation_request = new DroHubJSONObjectRequest(
                 _user_email,
                 _user_token,
                 Request.Method.POST,

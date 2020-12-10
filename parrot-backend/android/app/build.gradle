@@ -47,6 +47,7 @@ android {
 
     sourceSets {
         main.java.srcDirs += '../../..//RPCInterfaces/gen-java'
+
     }
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'

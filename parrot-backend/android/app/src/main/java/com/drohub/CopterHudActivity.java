@@ -34,6 +34,7 @@ package com.drohub;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.graphics.Bitmap;
 import android.location.Location;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -53,16 +54,17 @@ import com.drohub.Janus.PeerConnectionParameters;
 import com.drohub.Devices.Peripherals.Parrot.ParrotMainCamera;
 import com.drohub.Devices.Peripherals.Parrot.ParrotMediaStore;
 import com.drohub.Devices.Peripherals.Parrot.ParrotStreamServer;
+import com.drohub.Models.FileEntry;
 import com.drohub.Views.DroHubMapView;
 import com.drohub.Views.ErrorTextView;
 import com.drohub.Views.TimerView;
 import com.drohub.Views.ToggleButtonExView;
+import com.drohub.api.UploadMediaHelper;
 import com.drohub.thrift.DroHubHandler;
 import com.drohub.thrift.ThriftConnection;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.RemoteControl;
 import com.parrot.drone.groundsdk.device.instrument.*;
-import com.parrot.drone.groundsdk.device.peripheral.Gimbal;
 import com.parrot.drone.groundsdk.device.pilotingitf.Activable;
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf;
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf.SmartTakeOffLandAction;
@@ -71,6 +73,9 @@ import com.parrot.drone.groundsdk.facility.AutoConnection;
 import com.parrot.drone.groundsdk.facility.UserLocation;
 import org.jetbrains.annotations.NotNull;
 import org.webrtc.SurfaceViewRenderer;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
 
 import static com.drohub.DroHubHelper.*;
 import static java.lang.Double.NaN;
@@ -344,7 +349,7 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
         });
 
         setupMainCameraComponents();
-        setupMediaStoreComponents();
+        setupMediaStoreComponents(user_email, auth_token);
         setupLiveVideo(user_email, auth_token);
     }
 
@@ -435,7 +440,7 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
             public boolean onFirstTimeAvailable(@NonNull ParrotMainCamera o) {
                 e_v.getInfoDisplay().remove(StartupErrorMessage);
                 setupRecordingButton();
-                setupTriggerPictureButton();
+                setupTriggerPictureButton(e_v);
                 setupMultiTouchGestures();
                 return true;
             }
@@ -453,7 +458,7 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
         _main_camera.start();
     }
 
-    private void setupTriggerPictureButton() {
+    private void setupTriggerPictureButton(ErrorTextView e_v) {
         Button _pic_trigger_btn = findViewById(R.id.pic_trigger_btn);
         _pic_trigger_btn.setOnClickListener(v -> {
             if (_main_camera.triggerPhotoPicture(true)) {
@@ -461,6 +466,9 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
                 blink_animation.setDuration(200); // duration
                 blink_animation.setInterpolator(new LinearInterpolator()); // do not alter animation rate
                 v.startAnimation(blink_animation);
+            }
+            else {
+                e_v.getInfoDisplay().addTemporarily("Error triggering a picture", 5000);
             }
         });
 
@@ -561,18 +569,51 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
     }
 
 
-    private void setupMediaStoreComponents() {
-        _media_store = new ParrotMediaStore(_drone);
+    private void setupMediaStoreComponents(String user_email, String token) {
+        _media_store = new ParrotMediaStore(_drone, 50, Bitmap.CompressFormat.JPEG);
         final ErrorTextView e_v = findViewById(R.id.info_warnings_errors);
         final String startup_warning = "Media store not available";
         e_v.getInfoDisplay().add(startup_warning);
 
-        _media_store.setStoredPhotoCountListener(new_photo_count -> {
-            e_v.getInfoDisplay().addTemporarily(String.format("Photos: %d", new_photo_count), 5000);
+        _media_store.setNewPhotosListener(new_photos -> {
+            e_v.getInfoDisplay().addTemporarily(String.format("New photos: %d", new_photos.size()), 5000);
+            for (FileEntry item : new_photos) {
+                try {
+                    UploadMediaHelper upload_media_helper = new UploadMediaHelper(e_v.getInfoDisplay(),
+                        new UploadMediaHelper.Listener()
+                                {
+                                    @Override
+                                    public void onSuccess() {
+                                        e_v.getInfoDisplay().addTemporarily("Thumbnail uploaded", 5000);
+                                    }
+
+                                    @Override
+                                    public void onUploadError(String error) {
+                                        e_v.getInfoDisplay().addTemporarily(error, 5000);
+                                    }
+
+                                    @Override
+                                    public boolean onProgress(int percent) {
+                                        return true;
+                                    }
+
+                                },
+                        user_email,
+                        token,
+                        DroHubHelper.getURL(getApplicationContext(), R.string.upload_media_url),
+                        item,
+                        true);
+
+                    upload_media_helper.upload();
+                }
+                catch (IllegalAccessException | URISyntaxException e) {
+                    e_v.getInfoDisplay().addTemporarily("Failed to upload photo thumbnail", 5000);
+                }
+            }
         });
 
-        _media_store.setStoredVideoCountListener(new_video_count -> {
-            e_v.getInfoDisplay().addTemporarily(String.format("Videos: %d", new_video_count), 5000);
+        _media_store.setNewVideosListener(new_videos -> {
+            e_v.getInfoDisplay().addTemporarily(String.format("New Videos: %d", new_videos.size()), 5000);
         });
 
         _media_store.setPeripheralListener(new IPeripheral.IPeripheralListener<ParrotMediaStore>() {

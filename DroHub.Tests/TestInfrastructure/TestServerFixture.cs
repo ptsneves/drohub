@@ -6,6 +6,7 @@ using Ductus.FluentDocker.Commands;
 using System.Linq;
 using System.IO;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using AngleSharp;
@@ -159,6 +160,11 @@ namespace DroHub.Tests.TestInfrastructure
                 .QuerySelectorAll(selector)
                 .First()
                 .GetAttribute(attribute);
+        }
+
+        public static string computeFileSHA256(string filePath) {
+            using var file_stream = File.OpenRead(filePath);
+            return Convert.ToBase64String(SHA256.Create().ComputeHash(file_stream));
         }
 
         public void Dispose() {

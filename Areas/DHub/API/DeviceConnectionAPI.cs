@@ -74,7 +74,16 @@ namespace DroHub.Areas.DHub.API {
         }
 
         public DeviceConnection getCurrentConnectionOrDefault() {
-            var handler = getRPCSessionOrDefault();
+            var handler = getRPCSessionOrDefault(getDeviceSerialNumberFromCurrentConnectionClaim());
+            if (handler != null) {
+                return _connections.TryGetValue(handler, out var result) ? result : null;
+            }
+
+            return null;
+        }
+
+        private static DeviceConnection getActiveDeviceConnection(Device device) {
+            var handler = getRPCSessionOrDefault(device);
             if (handler != null) {
                 return _connections.TryGetValue(handler, out var result) ? result : null;
             }
@@ -83,11 +92,8 @@ namespace DroHub.Areas.DHub.API {
         }
 
         public static DateTime? getConnectionStartTimeOrDefault(Device device) {
-            var handler = getRPCSessionOrDefault(device);
-            if (handler != null) {
-                return _connections.TryGetValue(handler, out var result) ? result?.StartTime : null;
-            }
-            return null;
+            var device_connection = getActiveDeviceConnection(device);
+            return device_connection?.StartTime;
         }
 
         public async Task<TTelemetry> doDeviceAction<TTelemetry>(Device device,
@@ -205,18 +211,23 @@ namespace DroHub.Areas.DHub.API {
         }
 
         public async Task<DeviceConnection> getDeviceConnectionByTime(Device device, DateTime time) {
-            try {
-                return await _db_context.DeviceConnections
-                    .Where(dc =>
-                        device.Id == dc.DeviceId
-                        && time >= dc.StartTime
-                        && time <= dc.EndTime
-                    )
-                    .SingleAsync();
+            var device_connection = getActiveDeviceConnection(device);
+            if (device_connection != null && device_connection.StartTime <= time)
+                return device_connection;
+
+            device_connection = await _db_context.DeviceConnections
+                .Where(dc =>
+                    device.Id == dc.DeviceId
+                    && time >= dc.StartTime
+                    && time <= dc.EndTime
+                )
+                .SingleOrDefaultAsync();
+
+            if (device_connection == null) {
+                throw new DeviceConnectionException("No device connection matching provided time");
             }
-            catch (Exception e) {
-                throw new DeviceConnectionException(e.Message);
-            }
+
+            return device_connection;
         }
 
         public async Task deleteDeviceFlightSessions(Device device) {

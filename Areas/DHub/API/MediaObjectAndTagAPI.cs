@@ -30,7 +30,7 @@ namespace DroHub.Areas.DHub.API {
         private const string AnonymousPlaceholder = "storage/";
         public const string PreviewFileNamePrefix = "preview-";
 
-        private static readonly string[] AllowedFileExtensions = {".webp", ".webm", ".mp4"};
+        private static readonly string[] AllowedFileExtensions = {".webp", ".webm", ".mp4", ".jpeg"};
         private readonly DroHubContext _db_context;
         private readonly SubscriptionAPI _subscription_api;
         private readonly IAuthorizationService _authorization_service;
@@ -41,10 +41,6 @@ namespace DroHub.Areas.DHub.API {
             _db_context = db_context;
             _authorization_service = authorization_service;
             _subscription_api = subscription_api;
-        }
-
-        public static string getConnectionDirectory(long connection_id) {
-            return Path.Join(ConnectionBaseDir,connection_id.ToString());
         }
 
         private static bool isFrontEndMediaObject(string file_path) {
@@ -72,6 +68,122 @@ namespace DroHub.Areas.DHub.API {
             // r = getTechnicalMediaPath(r);
             return r;
         }
+
+        public class LocalStorageHelper {
+            private const string _CHUNK_FN_BEGIN_MAGIC = "CHUNK_";
+            private const string _CHUNK_FN_END_MAGIC = "_CHUNK";
+
+            private readonly long _connection_id;
+            private readonly long _start_offset_bytes;
+            private readonly bool _is_preview;
+            private readonly string _device_serial;
+            private readonly long _unix_time_creation_ms;
+            private readonly string _extension;
+
+            public LocalStorageHelper(long connection_id, long start_offset_bytes, bool is_preview,
+                string device_serial, long unix_time_creation_ms, string extension) {
+
+                _connection_id = connection_id;
+                _start_offset_bytes = start_offset_bytes;
+                _is_preview = is_preview;
+                _device_serial = device_serial;
+                _unix_time_creation_ms = unix_time_creation_ms;
+                _extension = extension;
+            }
+
+
+            public static string getConnectionDirectory(long connection_id) {
+                return Path.Join(ConnectionBaseDir,connection_id.ToString());
+            }
+
+            private static string getConnectionFilePath(long connection_id, string file_name) {
+                return Path.Join(ConnectionBaseDir, connection_id.ToString(), file_name);
+            }
+
+            public bool doesAssembledFileExist() {
+                return File.Exists(getAssembledFilePath());
+            }
+
+            private bool doesChunkedFileExist() {
+                return File.Exists(getChunkedFilePath());
+            }
+
+            private string getChunkedFileNameOn() {
+                return $"{getChunkedFilePrefix()}{getFileNameOnHost()}";
+            }
+
+            public void createDirectory() {
+                if (!Directory.Exists(getConnectionDirectory(_connection_id))) {
+                    Directory.CreateDirectory(getConnectionDirectory(_connection_id));
+                }
+            }
+
+            private string getChunkedFilePrefix() {
+                return $"{_CHUNK_FN_BEGIN_MAGIC}{_start_offset_bytes}{_CHUNK_FN_END_MAGIC}";
+            }
+
+            public string getAssembledFilePath() {
+                return getConnectionFilePath(_connection_id, getFileNameOnHost());
+            }
+
+            public string getChunkedFilePath() {
+                return getConnectionFilePath(_connection_id, getChunkedFileNameOn());
+            }
+
+            private long getBytesOffsetFromFile(string file_name) {
+                return long.Parse(file_name
+                    .Replace(_CHUNK_FN_BEGIN_MAGIC, string.Empty)
+                    .Replace(_CHUNK_FN_END_MAGIC, string.Empty)
+                    .Replace(getFileNameOnHost(), string.Empty));
+            }
+
+            private string getFileNameOnHost() {
+                return $"{(_is_preview ? PreviewFileNamePrefix : string.Empty)}drone-{_device_serial}-{_unix_time_creation_ms}{_extension}";
+            }
+
+            public long getNextChunkOffset() {
+                var latest_chunk_file_name = getChunkedFilesList()
+                    .OrderByDescending(getBytesOffsetFromFile)
+                    .FirstOrDefault();
+
+                if (latest_chunk_file_name == null)
+                    return 0;
+
+                var latest_byte_offset = getBytesOffsetFromFile(latest_chunk_file_name) ;
+                var latest_chunk_file_path = getConnectionFilePath(_connection_id, latest_chunk_file_name);
+                return latest_byte_offset + new FileInfo(latest_chunk_file_path).Length;
+            }
+
+            public bool shouldSendNext(long file_end_offset) {
+                return doesChunkedFileExist() || file_end_offset < getNextChunkOffset();
+            }
+
+            private IEnumerable<string> getChunkedFilesList() {
+                return Directory.EnumerateFiles(getConnectionDirectory(_connection_id))
+                    .Where(f => f.Contains(_CHUNK_FN_BEGIN_MAGIC)
+                                && f.Contains(_CHUNK_FN_END_MAGIC)
+                                && f.Contains(getFileNameOnHost()))
+                    .Select(Path.GetFileName);
+            }
+
+            public async Task<string> generateAssembledFile(bool remove_chunk_files_afterwards = true) {
+                var chunk_files = getChunkedFilesList().OrderBy(getBytesOffsetFromFile).ToList();
+                await using (var assembled_stream = File.OpenWrite(getAssembledFilePath())) {
+                    foreach (var file_name in chunk_files) {
+                        var file_path = Path.Join(getConnectionDirectory(_connection_id), file_name);
+                        await using var file_stream = File.OpenRead(file_path);
+                        await file_stream.CopyToAsync(assembled_stream);
+                    }
+                }
+
+                if (remove_chunk_files_afterwards)
+                    chunk_files.ForEach(file_name =>
+                        File.Delete(Path.Join(getConnectionDirectory(_connection_id), file_name)));
+
+                return getAssembledFilePath();
+            }
+        }
+
 
         public static class FileNameTranslator {
             private static readonly string user_date_format = "yyyy-MM-dd 'at' HH:mm:ssZ";
@@ -260,7 +372,7 @@ namespace DroHub.Areas.DHub.API {
 
         public async Task addMediaObject(MediaObject media_object, List<string> tags, bool is_preview) {
 
-            if (!media_object.MediaPath.Contains(getConnectionDirectory(media_object.DeviceConnectionId)))
+            if (!media_object.MediaPath.Contains(LocalStorageHelper.getConnectionDirectory(media_object.DeviceConnectionId)))
                 throw new MediaObjectAndTagException("Cannot save media which is not in the connection directory");
 
             if (!File.Exists(media_object.MediaPath))

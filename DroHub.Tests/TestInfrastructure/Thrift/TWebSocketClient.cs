@@ -29,7 +29,12 @@ public class TWebSocketClient : Thrift.Transport.TTransport
 
     public override async void Close()
     {
-        await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Bye", CancellationToken.None);
+        try {
+            await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Bye", CancellationToken.None);
+        }
+        catch {
+            // ignored
+        }
     }
 
     public override Task FlushAsync(CancellationToken cancellationToken)

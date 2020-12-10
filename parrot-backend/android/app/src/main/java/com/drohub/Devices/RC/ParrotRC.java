@@ -1,21 +1,19 @@
-package com.drohub.Devices;
+package com.drohub.Devices.RC;
 
 import android.app.Activity;
 import androidx.annotation.NonNull;
+import com.drohub.Devices.Drone.ParrotDrone;
 import com.drohub.Models.DroHubDevice;
 import com.parrot.drone.groundsdk.GroundSdk;
 import com.parrot.drone.groundsdk.ManagedGroundSdk;
 import com.parrot.drone.groundsdk.device.RemoteControl;
 import com.parrot.drone.groundsdk.facility.AutoConnection;
 
-public class ParrotRCObserver {
-    public interface Listener {
-        void onNewRC(DroHubDevice rc);
-    }
+public class ParrotRC implements IRC {
 
     private GroundSdk _parrot_sdk;
 
-    public ParrotRCObserver(Activity activity, @NonNull Listener listener) {
+    public ParrotRC(Activity activity, @NonNull IRCObserver listener) {
         final String PROVIDER_NAME = "ParrotRC";
         assert activity != null;
 
@@ -42,7 +40,7 @@ public class ParrotRCObserver {
                     rc.getName(),
                     "",
                     PROVIDER_NAME,
-                    ParrotDroneObserver.getConnectionState(rc.getState().getConnectionState()),
+                    ParrotDrone.getConnectionState(rc.getState().getConnectionState()),
                     false
             );
 

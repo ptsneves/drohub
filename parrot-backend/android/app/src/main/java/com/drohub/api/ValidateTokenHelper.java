@@ -3,7 +3,6 @@ package com.drohub.api;
 import androidx.annotation.NonNull;
 import com.android.volley.Request;
 import com.android.volley.VolleyError;
-import com.drohub.DroHubObjectRequest;
 import com.drohub.IInfoDisplay;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,7 +44,7 @@ public class ValidateTokenHelper {
             return;
         }
 
-        DroHubObjectRequest req = new DroHubObjectRequest(
+        DroHubJSONObjectRequest req = new DroHubJSONObjectRequest(
                 _api_helper._user_email,
                 _api_helper._user_auth_token,
                 Request.Method.POST,

@@ -582,37 +582,73 @@ namespace DroHub.Tests
 
         }
 
+        private enum UploadTestReturnEnum {
+            CONTINUE,
+            SKIP_RUN,
+            STOP_UPLOAD
+        }
+
         private async Task testUpload(int half_duration_multiplier,
             string session_user,
             string session_password,
             string upload_user,
             string upload_password,
-            Action<Dictionary<string,dynamic>, int> test,
-            int runs = 1, string src = "video.webm") {
+            Func<Dictionary<string,dynamic>, int, int, long, UploadTestReturnEnum> test,
+            int runs = 1,
+            string src = "video.webm",
+            int chunks = 30) {
+
             var half_duration_seconds = TimeSpan.FromMilliseconds(4000);
             await HttpClientHelper.generateConnectionId(_fixture, 2 * half_duration_seconds, "Aserial0",
                 session_user,
                 session_password,
-                async con_id => {
-                    var device_connection = await _fixture.DbContext.DeviceConnections
-                        .Where(dc => dc.Id == con_id)
-                        .SingleAsync();
+                async connection => {
+
 
                     //Otherwise the value is considered local time
-                    var date_time_in_range = DateTime.SpecifyKind(device_connection.StartTime, DateTimeKind.Utc) +
+                    var date_time_in_range = DateTime.SpecifyKind(connection.StartTime, DateTimeKind.Utc) +
                                              half_duration_multiplier * half_duration_seconds;
 
                     for (var i = 0; i < runs; i++) {
                         await using var stream = new FileStream($"{DroHubFixture.TestAssetsPath}/{src}", FileMode.Open);
-                        var r = await HttpClientHelper.uploadMedia(upload_user,
-                            upload_password,
-                            new AndroidApplicationController.UploadModel {
-                                File = new FormFile(stream, 0, stream.Length, src, $"{DroHubFixture.TestAssetsPath}/{src}"),
-                                IsPreview = true,
-                                DeviceSerialNumber = "Aserial0",
-                                UnixCreationTimeMS = ((DateTimeOffset)date_time_in_range).ToUnixTimeMilliseconds()
-                            });
-                        test(r, i);
+                        for (var chunk = 0; chunk < chunks; chunk++) {
+                            try {
+                                var amount_send = stream.Length / chunks;
+                                if (chunk == chunks - 1)
+                                    amount_send = stream.Length - stream.Length/chunks * chunk;
+                                var r = await HttpClientHelper.uploadMedia(upload_user,
+                                    upload_password,
+                                    new AndroidApplicationController.UploadModel {
+                                        File = new FormFile(stream, stream.Length/chunks * chunk, amount_send, src,
+                                            $"{DroHubFixture.TestAssetsPath}/{src}"),
+                                        IsPreview = false, //needs to be because preview files have different paths
+                                        DeviceSerialNumber = "Aserial0",
+                                        UnixCreationTimeMS =
+                                            ((DateTimeOffset) date_time_in_range).ToUnixTimeMilliseconds(),
+                                        AssembledFileSize = stream.Length,
+                                        RangeStartBytes = stream.Length/chunks * chunk
+                                    });
+
+                                switch (test(r, i, chunk, stream.Length/chunks)) {
+                                    case UploadTestReturnEnum.CONTINUE:
+                                        continue;
+                                    case UploadTestReturnEnum.SKIP_RUN:
+                                        chunk = chunks; //short circuit
+                                        break;
+                                    case UploadTestReturnEnum.STOP_UPLOAD:
+                                        return;
+                                    default:
+                                        throw new ArgumentOutOfRangeException();
+                                }
+                            }
+                            catch (HttpRequestException e) {
+                                test(new Dictionary<string, dynamic> {
+                                        ["error"] = e.Message
+                                    },
+                                    i, chunk, stream.Length/chunks);
+                                return;
+                            }
+                        }
                     }
                 });
         }
@@ -620,25 +656,121 @@ namespace DroHub.Tests
         [Fact]
         public async void TestUploadMediaSucceeds() {
             var ran = false;
+            var last_chunk = 0;
+            const int CHUNKS = 30;
+
             await testUpload(1,
                 "admin@drohub.xyz",
                 _fixture.AdminPassword,
                 "admin@drohub.xyz",
                 _fixture.AdminPassword,
-                (result, tries) => {
-                Assert.True(result.TryGetValue("result", out var v));
-                Assert.Equal(v, "ok");
-                ran = true;
-            });
+                (result, tries, chunk, sent_chunk_size) => {
+                    Assert.Equal(last_chunk++, chunk);
+                    if (chunk < CHUNKS-1) {
+
+                        Assert.True(result.TryGetValue("result", out var v));
+                        Assert.Equal("send-next", v);
+                        Assert.True(result.TryGetValue("begin", out var r));
+                        Assert.Equal(sent_chunk_size*(chunk+1), r);
+                    }
+                    else {
+                        Assert.True(result.TryGetValue("result", out var v));
+                        Assert.Equal("ok", v);
+                        var last_media_path = _fixture.DbContext.MediaObjects.ToList().Last();
+                        var orig_sha256 = DroHubFixture.computeFileSHA256($"{DroHubFixture.TestAssetsPath}/video.webm");
+                        var uploaded_sha256 = DroHubFixture.computeFileSHA256(last_media_path.MediaPath);
+                        Assert.Equal(orig_sha256, uploaded_sha256);
+                        ran = true;
+                    }
+
+                    return UploadTestReturnEnum.CONTINUE;
+                });
+            Assert.Equal(CHUNKS, last_chunk);
+            Assert.True(ran);
+        }
+
+              [Fact]
+        public async void TestUploadPossibleWhileFlightStillOngoing() {
+            const int minutes = 1;
+            var ran = false;
+
+            await TelemetryMock.stageThriftDrone(_fixture, true, minutes, DEFAULT_USER, DEFAULT_PASSWORD,
+                DEFAULT_ALLOWED_USER_COUNT, DEFAULT_ORGANIZATION, DEFAULT_DEVICE_SERIAL,
+                async (drone_rpc, telemetry_mock, user_name, token) => {
+                    await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
+                        async () => {
+                            Thread.Sleep(2000);
+                            const string src = "video.webm";
+                            await using var stream = new FileStream($"{DroHubFixture.TestAssetsPath}/{src}", FileMode.Open);
+                            var r = await HttpClientHelper.uploadMedia(DEFAULT_USER,
+                                DEFAULT_PASSWORD,
+                                new AndroidApplicationController.UploadModel {
+                                    File = new FormFile(stream, 0, stream.Length / 30, src,
+                                        $"{DroHubFixture.TestAssetsPath}/{src}"),
+                                    IsPreview = false, //needs to be because preview files have different paths
+                                    DeviceSerialNumber = DEFAULT_DEVICE_SERIAL,
+                                    UnixCreationTimeMS =
+                                        ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeMilliseconds(),
+                                    AssembledFileSize = stream.Length,
+                                    RangeStartBytes = 0
+                                });
+                            Assert.True(r.TryGetValue("result", out var v));
+                            Assert.Equal("send-next", v);
+                            ran = true;
+
+                        }, user_name, token);
+                },
+                () => DroneRPC.generateTelemetry(DEFAULT_DEVICE_SERIAL,
+                    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
+            Assert.True(ran);
+        }
+
+        [Fact]
+        public async void TestUploadMediaLargeChunkFails() {
+            var ran = false;
+            await testUpload(1,
+                "admin@drohub.xyz",
+                _fixture.AdminPassword,
+                "admin@drohub.xyz",
+                _fixture.AdminPassword,
+                (result, tries, chunk, sent_chunk_size) => {
+                    Assert.True(result.TryGetValue("error", out var value));
+                    Assert.Equal("Response status code does not indicate success: 413 (Request Entity Too Large).", value);
+                    ran = true;
+                    return UploadTestReturnEnum.STOP_UPLOAD;
+                },
+                1,
+                "video.webm",
+                1);
+            Assert.True(ran);
+        }
+
+        [Fact]
+        public async void TestUploadTooSmallChunkFails() {
+            var ran = false;
+            await testUpload(1,
+                "admin@drohub.xyz",
+                _fixture.AdminPassword,
+                "admin@drohub.xyz",
+                _fixture.AdminPassword,
+                (result, tries, chunk, sent_chunk_size) => {
+                    Assert.True(result.TryGetValue("error", out var v));
+                    Assert.Equal(v, AndroidApplicationController.CHUNK_TOO_SMALL);
+                    ran = true;
+                    return UploadTestReturnEnum.STOP_UPLOAD;
+                },
+                1,
+                "video.webm",
+                6000000);
             Assert.True(ran);
         }
 
         [Fact]
         public async void TestUploadMediaBadModelFails() {
-            await Assert.ThrowsAsync<HttpRequestException>(async () => await HttpClientHelper.uploadMedia("admin@drohub.xyz",
+            var result = await HttpClientHelper.uploadMedia("admin@drohub.xyz",
                 _fixture.AdminPassword,
-                new AndroidApplicationController.UploadModel {
-                }));
+                new AndroidApplicationController.UploadModel());
+            Assert.True(result.ContainsKey("error"));
         }
 
         [Fact]
@@ -649,10 +781,11 @@ namespace DroHub.Tests
                 _fixture.AdminPassword,
                 "admin@drohub.xyz",
                 _fixture.AdminPassword,
-                (result, tries) => {
+                (result, tries, chunk, sent_chunk_size) => {
                 Assert.True(result.TryGetValue("error", out var v));
-                Assert.Equal(v, "Media does not correspond to any known flight");
+                Assert.Equal("Media does not correspond to any known flight", v);
                 ran = true;
+                return UploadTestReturnEnum.STOP_UPLOAD;
             });
             Assert.True(ran);
         }
@@ -664,10 +797,12 @@ namespace DroHub.Tests
             var r = await HttpClientHelper.uploadMedia("admin@drohub.xyz",
                 _fixture.AdminPassword,
                 new AndroidApplicationController.UploadModel {
-                    File = new FormFile(stream, 0, stream.Length, src, $"{DroHubFixture.TestAssetsPath}/{src}"),
+                    File = new FormFile(stream, 0, 4096, src, $"{DroHubFixture.TestAssetsPath}/{src}"),
                     IsPreview = true,
                     DeviceSerialNumber = "Aserial0",
-                    UnixCreationTimeMS = DateTimeOffset.Now.ToUnixTimeMilliseconds()
+                    UnixCreationTimeMS = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
+                    AssembledFileSize = 4096,
+                    RangeStartBytes = 0
                 });
             Assert.True(r.TryGetValue("error", out var v));
             Assert.Equal(v, "Device not found");
@@ -680,15 +815,47 @@ namespace DroHub.Tests
             DEFAULT_USER, DEFAULT_PASSWORD,
                 DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM, 99, 99);
 
-            await Assert.ThrowsAsync<HttpRequestException>(async () => await testUpload(1,
+            var ran = false;
+            await testUpload(1,
                     DEFAULT_USER,
                     DEFAULT_PASSWORD,
                     "admin@drohub.xyz",
                     _fixture.AdminPassword,
-                    (result, tries) => {
-                    },
-                    1
-                ));
+                    (result, tries, chunk, sent_chunk_size) => {
+                        Assert.True(result.TryGetValue("error", out var v));
+                        Assert.Equal(v, "Response status code does not indicate success: 401 (Unauthorized).");
+                        ran = true;
+                        return UploadTestReturnEnum.STOP_UPLOAD;
+                    }
+                );
+            Assert.True(ran);
+        }
+
+        [Fact]
+        public async void TestUploadMediaChunkOverwriteSkips() {
+            var ran1 = false;
+            var ran2 = false;
+            await testUpload(1,
+                "admin@drohub.xyz",
+                _fixture.AdminPassword,
+                "admin@drohub.xyz",
+                _fixture.AdminPassword,
+                (result, attempt, chunk, sent_chunk_size) => {
+                    if (attempt == 0) {
+                        ran1 = true;
+                        return UploadTestReturnEnum.SKIP_RUN;
+                    }
+
+                    ran2 = true;
+                    Assert.True(result.TryGetValue("result", out var v));
+                    Assert.Equal("send-next", v);
+                    Assert.True(result.TryGetValue("begin", out var r));
+                    Assert.Equal(sent_chunk_size*(chunk+1), r);
+                    return UploadTestReturnEnum.STOP_UPLOAD;
+                }, 2);
+
+            Assert.True(ran1);
+            Assert.True(ran2);
         }
 
         [Fact]
@@ -700,13 +867,11 @@ namespace DroHub.Tests
                 _fixture.AdminPassword,
                 "admin@drohub.xyz",
                 _fixture.AdminPassword,
-                (result, tries) => {
+                (result, tries, chunk, sent_chunk_size) => {
                 switch (tries) {
                     case 0: {
-                        Assert.True(result.TryGetValue("result", out var v));
-                        Assert.Equal(v, "ok");
                         ran1 = true;
-                        break;
+                        return UploadTestReturnEnum.CONTINUE;
                     }
                     case 1: {
                         Assert.True(result.TryGetValue("error", out var v));
@@ -718,6 +883,8 @@ namespace DroHub.Tests
                         Assert.True(false);
                         break;
                 }
+
+                return UploadTestReturnEnum.STOP_UPLOAD;
             }, 2);
             Assert.True(ran1);
             Assert.True(ran2);
@@ -731,10 +898,11 @@ namespace DroHub.Tests
                 _fixture.AdminPassword,
                 "admin@drohub.xyz",
                 _fixture.AdminPassword,
-                (result, tries) => {
+                (result, tries, chunk, sent_chunk_size) => {
                 Assert.True(result.TryGetValue("error", out var v));
                 Assert.Equal(v, "Format not allowed");
                 ran = true;
+                return UploadTestReturnEnum.STOP_UPLOAD;
             }, 1, "video-janus.mjr");
             Assert.True(ran);
         }
@@ -1075,29 +1243,42 @@ namespace DroHub.Tests
             await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, "admin@drohub.xyz",
                 _fixture.AdminPassword, DEFAULT_DEVICE_NAME, "DevSerial");
 
+            var half_duration_seconds = TimeSpan.FromMilliseconds(4000);
             var token = await HttpClientHelper.getApplicationToken("admin@drohub.xyz", _fixture.AdminPassword);
+            await HttpClientHelper.generateConnectionId(_fixture, 2 * half_duration_seconds, "Aserial0",
+                "admin@drohub.xyz", _fixture.AdminPassword, l => {
 
-            using var test_containers = new Builder()
-                .UseContainer()
-                .WithEnvironment(
-                    $"CODE_DIR={DOCKER_REPO_MOUNT_PATH}",
-                    $"RPC_API_PATH={DroHubFixture.RPCAPIPathInRepo}",
-                    $"APP_PATH={DroHubFixture.AppPathInRepo}"
-                )
-                .IsPrivileged()
-                .KeepContainer()
-                .ReuseIfExists()
-                .AsUser("1000:1000")
-                .UseImage("ptsneves/airborneprojects:android-test")
-                .Mount(DroHubFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
-                .Command(
-                    $"-Pandroid.testInstrumentationRunnerArguments.UserName=admin@drohub.xyz",
-                    $"-Pandroid.testInstrumentationRunnerArguments.Token={token["result"]}",
-                    $"-Pandroid.testInstrumentationRunnerArguments.ValidateTokenUrl={HttpClientHelper.getAndroidActionUrl(HttpClientHelper.ValidateTokenActionName)}")
-                .Build()
-                .Start();
-            test_containers.WaitForStopped();
-            Assert.Equal(0, test_containers.GetConfiguration().State.ExitCode);
+                    var date_time_in_range = DateTime.SpecifyKind(l.StartTime, DateTimeKind.Utc) +
+                                             2 * half_duration_seconds;
+
+                    using var test_containers = new Builder()
+                        .UseContainer()
+                        .WithEnvironment(
+                            $"CODE_DIR={DOCKER_REPO_MOUNT_PATH}",
+                            $"RPC_API_PATH={DroHubFixture.RPCAPIPathInRepo}",
+                            $"APP_PATH={DroHubFixture.AppPathInRepo}"
+                        )
+                        .IsPrivileged()
+                        .KeepContainer()
+                        .ReuseIfExists()
+                        .AsUser("1000:1000")
+                        .UseImage("ptsneves/airborneprojects:android-test")
+                        .Mount(DroHubFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
+                        .Command(
+                            $"-Pandroid.testInstrumentationRunnerArguments.UserName=admin@drohub.xyz",
+                            $"-Pandroid.testInstrumentationRunnerArguments.Token={token["result"]}",
+                            $"-Pandroid.testInstrumentationRunnerArguments.ValidateTokenUrl={HttpClientHelper.getAndroidActionUrl(HttpClientHelper.ValidateTokenActionName)}",
+                            $"-Pandroid.testInstrumentationRunnerArguments.UploadMediaURL={HttpClientHelper.getAndroidActionUrl(HttpClientHelper.UploadMediaActionName)}",
+                            $"-Pandroid.testInstrumentationRunnerArguments.FileTime={((DateTimeOffset) date_time_in_range).ToUnixTimeMilliseconds()}",
+                            "-Pandroid.testInstrumentationRunnerArguments.SerialNumber=Aserial0"
+                        )
+                        .Build()
+                        .Start();
+                    test_containers.WaitForStopped();
+                    Assert.Equal(0, test_containers.GetConfiguration().State.ExitCode);
+                    return Task.CompletedTask;
+                });
+
         }
 
         [Fact]

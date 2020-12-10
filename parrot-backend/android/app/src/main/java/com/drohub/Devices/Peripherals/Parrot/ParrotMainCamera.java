@@ -59,8 +59,13 @@ public class ParrotMainCamera implements IPeripheral<ParrotMainCamera> {
 
         try {
             if (start) {
-                _priv.get().startPhotoCapture();
-                return _priv.get().photoState().get() == CameraPhoto.State.FunctionState.STARTED;
+                if (_priv.get().canStartPhotoCapture()) {
+                    _priv.get().startPhotoCapture();
+                    return _priv.get().photoState().get() == CameraPhoto.State.FunctionState.STARTED;
+                }
+                else {
+                    return false;
+                }
             } else {
                 _priv.get().stopPhotoCapture();
                 switch (_priv.get().photoState().get()) {
