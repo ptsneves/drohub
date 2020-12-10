@@ -26,9 +26,9 @@ using Microsoft.Extensions.Configuration;
 
 namespace DroHub.Tests
 {
-    public class IntegrationTest : IClassFixture<DroHubFixture>
+    public class IntegrationTest : IClassFixture<TestServerFixture>
     {
-        private readonly DroHubFixture _fixture;
+        private readonly TestServerFixture _fixture;
 
         private const int ALLOWED_USER_COUNT = 999;
         private const string DEFAULT_ORGANIZATION = "UN";
@@ -40,14 +40,14 @@ namespace DroHub.Tests
         private const int DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES = 999;
         private const int DEFAULT_ALLOWED_USER_COUNT = 3;
 
-        public IntegrationTest(DroHubFixture fixture) {
+        public IntegrationTest(TestServerFixture fixture) {
             _fixture = fixture;
         }
 
         [Fact]
         public async void TestLoginIsNotHomePageAndAllowsAnonymous() {
-            using var http_helper = await HttpClientHelper.createHttpClient(DroHubFixture.SiteUri);
-            Assert.NotEqual(new Uri(DroHubFixture.SiteUri, "Identity/Account/Login?ReturnUrl=%2FIdentity%2FAccount%2FManage"),
+            using var http_helper = await HttpClientHelper.createHttpClient(TestServerFixture.SiteUri);
+            Assert.NotEqual(new Uri(TestServerFixture.SiteUri, "Identity/Account/Login?ReturnUrl=%2FIdentity%2FAccount%2FManage"),
                 http_helper.Response.RequestMessage.RequestUri);
         }
 
@@ -57,8 +57,8 @@ namespace DroHub.Tests
         [Theory]
         public async void TestPageRedirectedToLogin(string uri_path) {
             using var http_helper = await HttpClientHelper.createHttpClient(
-                new Uri(DroHubFixture.SiteUri + uri_path));
-            Assert.NotEqual(new Uri(DroHubFixture.SiteUri, uri_path),
+                new Uri(TestServerFixture.SiteUri + uri_path));
+            Assert.NotEqual(new Uri(TestServerFixture.SiteUri, uri_path),
                 http_helper.Response.RequestMessage.RequestUri);
         }
 
@@ -609,7 +609,7 @@ namespace DroHub.Tests
                                              half_duration_multiplier * half_duration_seconds;
 
                     for (var i = 0; i < runs; i++) {
-                        await using var stream = new FileStream($"{DroHubFixture.TestAssetsPath}/{src}", FileMode.Open);
+                        await using var stream = new FileStream($"{TestServerFixture.TestAssetsPath}/{src}", FileMode.Open);
                         for (var chunk = 0; chunk < chunks; chunk++) {
                             try {
                                 var amount_send = stream.Length / chunks;
@@ -619,7 +619,7 @@ namespace DroHub.Tests
                                     upload_password,
                                     new AndroidApplicationController.UploadModel {
                                         File = new FormFile(stream, stream.Length/chunks * chunk, amount_send, src,
-                                            $"{DroHubFixture.TestAssetsPath}/{src}"),
+                                            $"{TestServerFixture.TestAssetsPath}/{src}"),
                                         IsPreview = false, //needs to be because preview files have different paths
                                         DeviceSerialNumber = "Aserial0",
                                         UnixCreationTimeMS =
@@ -676,8 +676,8 @@ namespace DroHub.Tests
                         Assert.True(result.TryGetValue("result", out var v));
                         Assert.Equal("ok", v);
                         var last_media_path = _fixture.DbContext.MediaObjects.ToList().Last();
-                        var orig_sha256 = DroHubFixture.computeFileSHA256($"{DroHubFixture.TestAssetsPath}/video.webm");
-                        var uploaded_sha256 = DroHubFixture.computeFileSHA256(last_media_path.MediaPath);
+                        var orig_sha256 = TestServerFixture.computeFileSHA256($"{TestServerFixture.TestAssetsPath}/video.webm");
+                        var uploaded_sha256 = TestServerFixture.computeFileSHA256(last_media_path.MediaPath);
                         Assert.Equal(orig_sha256, uploaded_sha256);
                         ran = true;
                     }
@@ -700,12 +700,12 @@ namespace DroHub.Tests
                         async () => {
                             Thread.Sleep(2000);
                             const string src = "video.webm";
-                            await using var stream = new FileStream($"{DroHubFixture.TestAssetsPath}/{src}", FileMode.Open);
+                            await using var stream = new FileStream($"{TestServerFixture.TestAssetsPath}/{src}", FileMode.Open);
                             var r = await HttpClientHelper.uploadMedia(DEFAULT_USER,
                                 DEFAULT_PASSWORD,
                                 new AndroidApplicationController.UploadModel {
                                     File = new FormFile(stream, 0, stream.Length / 30, src,
-                                        $"{DroHubFixture.TestAssetsPath}/{src}"),
+                                        $"{TestServerFixture.TestAssetsPath}/{src}"),
                                     IsPreview = false, //needs to be because preview files have different paths
                                     DeviceSerialNumber = DEFAULT_DEVICE_SERIAL,
                                     UnixCreationTimeMS =
@@ -792,11 +792,11 @@ namespace DroHub.Tests
         [Fact]
         public async void TestUploadMediaNonExistentDeviceFoundFails() {
             var src = "video.webm";
-            await using var stream = new FileStream($"{DroHubFixture.TestAssetsPath}/{src}", FileMode.Open);
+            await using var stream = new FileStream($"{TestServerFixture.TestAssetsPath}/{src}", FileMode.Open);
             var r = await HttpClientHelper.uploadMedia("admin@drohub.xyz",
                 _fixture.AdminPassword,
                 new AndroidApplicationController.UploadModel {
-                    File = new FormFile(stream, 0, 4096, src, $"{DroHubFixture.TestAssetsPath}/{src}"),
+                    File = new FormFile(stream, 0, 4096, src, $"{TestServerFixture.TestAssetsPath}/{src}"),
                     IsPreview = true,
                     DeviceSerialNumber = "Aserial0",
                     UnixCreationTimeMS = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
@@ -967,11 +967,11 @@ namespace DroHub.Tests
         [Fact]
         public async void TestLogout() {
             using var http_client_helper = await HttpClientHelper.createLoggedInUser("admin@drohub.xyz", _fixture.AdminPassword);
-            var logout_url = new Uri(DroHubFixture.SiteUri, "Identity/Account/Logout");
+            var logout_url = new Uri(TestServerFixture.SiteUri, "Identity/Account/Logout");
 
             using var response = await http_client_helper.Client.GetAsync(logout_url);
             response.EnsureSuccessStatusCode();
-            Assert.Equal(new Uri(DroHubFixture.SiteUri, "/"), response.RequestMessage.RequestUri);
+            Assert.Equal(new Uri(TestServerFixture.SiteUri, "/"), response.RequestMessage.RequestUri);
         }
 
         [Fact]
@@ -1126,7 +1126,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestConnectionClosedOnNoSerial() {
-            using var ws_transport = new TWebSocketClient(DroHubFixture.ThriftUri, WebSocketMessageType.Text, false);
+            using var ws_transport = new TWebSocketClient(TestServerFixture.ThriftUri, WebSocketMessageType.Text, false);
             await Assert.ThrowsAsync<WebSocketException>(async () => await ws_transport.OpenAsync());
         }
 
@@ -1254,15 +1254,15 @@ namespace DroHub.Tests
                         .UseContainer()
                         .WithEnvironment(
                             $"CODE_DIR={DOCKER_REPO_MOUNT_PATH}",
-                            $"RPC_API_PATH={DroHubFixture.RPCAPIPathInRepo}",
-                            $"APP_PATH={DroHubFixture.AppPathInRepo}"
+                            $"RPC_API_PATH={TestServerFixture.RPCAPIPathInRepo}",
+                            $"APP_PATH={TestServerFixture.AppPathInRepo}"
                         )
                         .IsPrivileged()
                         .KeepContainer()
                         .ReuseIfExists()
                         .AsUser("1000:1000")
                         .UseImage("ptsneves/airborneprojects:android-test")
-                        .Mount(DroHubFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
+                        .Mount(TestServerFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
                         .Command(
                             $"-Pandroid.testInstrumentationRunnerArguments.UserName=admin@drohub.xyz",
                             $"-Pandroid.testInstrumentationRunnerArguments.Token={token["result"]}",

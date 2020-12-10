@@ -21,7 +21,7 @@ using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace DroHub.Tests.TestInfrastructure
 {
-    public class DroHubFixture : IDisposable
+    public class TestServerFixture : IDisposable
     {
         public ICompositeService DeployedContainers { get; }
         private IHostService Docker { get; }
@@ -46,7 +46,7 @@ namespace DroHub.Tests.TestInfrastructure
 
         public DroHubContext DbContext { get; private set; }
 
-        public DroHubFixture() {
+        public TestServerFixture() {
 
             DeployedContainers = new Builder()
                             .UseContainer()

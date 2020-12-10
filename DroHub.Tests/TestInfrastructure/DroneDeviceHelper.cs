@@ -22,11 +22,11 @@ namespace DroHub.Tests.TestInfrastructure
     internal static class DroneDeviceHelper
     {
         public delegate Task DroneTestDelegate();
-        public static async Task mockDrone(DroHubFixture fixture, DroneRPC drone_rpc, string device_serial, DroneTestDelegate test_delegate,
+        public static async Task mockDrone(TestServerFixture fixture, DroneRPC drone_rpc, string device_serial, DroneTestDelegate test_delegate,
                 string user, string token)
         {
             var loggerFactory = new LoggerFactory();
-            using var ws_transport = new TWebSocketClient(DroHubFixture.ThriftUri, WebSocketMessageType.Binary, false);
+            using var ws_transport = new TWebSocketClient(TestServerFixture.ThriftUri, WebSocketMessageType.Binary, false);
             using var reverse_tunnel_transport = new TReverseTunnelServer(ws_transport, 1);
             ws_transport.WebSocketOptions.SetRequestHeader("User-Agent", "AirborneProjects");
             ws_transport.WebSocketOptions.SetRequestHeader("Content-Type", "application/x-thrift");
@@ -54,7 +54,7 @@ namespace DroHub.Tests.TestInfrastructure
 
         public delegate Dictionary<Type, IDroneTelemetry> TelemetryGeneratorDelegate();
 
-        public static async Task stageThriftDrone(DroHubFixture fixture, bool infinite, int minutes, string user_name,
+        public static async Task stageThriftDrone(TestServerFixture fixture, bool infinite, int minutes, string user_name,
             string password, int allowed_user_count, string organization, string serial_number,
                 StageThriftDroneTestDelegate del, TelemetryGeneratorDelegate telemetry_gen_del) {
 
@@ -63,7 +63,7 @@ namespace DroHub.Tests.TestInfrastructure
             password = (user_name == "admin@drohub.xyz") ? fixture.AdminPassword : password;
             await telemetry_mock.startMock(fixture, user_name, password, organization,
                 "ActingPilot", minutes, allowed_user_count,
-                DroHubFixture.TelemetryHubUri.ToString());
+                TestServerFixture.TelemetryHubUri.ToString());
 
             var drone_rpc = new DroneRPC(telemetry_mock, infinite);
 
@@ -180,7 +180,7 @@ namespace DroHub.Tests.TestInfrastructure
 
         private HubConnection _connection;
 
-        private async Task startMock(DroHubFixture fixture, string user, string password, string organization_name,
+        private async Task startMock(TestServerFixture fixture, string user, string password, string organization_name,
             string user_base_type, int allowed_flight_time_minutes, int allowed_user_count, string hub_uri)
         {
             _fixture = fixture;
@@ -233,7 +233,7 @@ namespace DroHub.Tests.TestInfrastructure
         public string UserName { get; private set; }
 
         private HttpClientHelper http_helper;
-        private DroHubFixture _fixture;
+        private TestServerFixture _fixture;
         private string _password;
         private HttpClientHelper.AddUserHelper _user;
         private HttpClientHelper.CreateDeviceHelper _device;
