@@ -1239,12 +1239,10 @@ namespace DroHub.Tests
         [Fact]
         public async void TestAndroidTests() {
             const string DOCKER_REPO_MOUNT_PATH = "/home/cirrus";
-            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
-                _fixture.AdminPassword, DEFAULT_DEVICE_NAME, "DevSerial");
 
             var half_duration_seconds = TimeSpan.FromMilliseconds(4000);
             var token = await HttpClientHelper.getApplicationToken(TestServerFixture.AdminUserEmail, _fixture.AdminPassword);
-            await HttpClientHelper.generateConnectionId(_fixture, 2 * half_duration_seconds, "Aserial0",
+            await HttpClientHelper.generateConnectionId(_fixture, 2 * half_duration_seconds, DEFAULT_DEVICE_SERIAL,
                 TestServerFixture.AdminUserEmail, _fixture.AdminPassword, l => {
 
                     var date_time_in_range = DateTime.SpecifyKind(l.StartTime, DateTimeKind.Utc) +
@@ -1272,7 +1270,7 @@ namespace DroHub.Tests
                                   HttpClientHelper.getAndroidActionUrl(HttpClientHelper.UploadMediaActionName)),
                             TestServerFixture.getGradleArgument("FileTime",
                                 ((DateTimeOffset) date_time_in_range).ToUnixTimeMilliseconds().ToString()),
-                            TestServerFixture.getGradleArgument("SerialNumber","Aserial0")
+                            TestServerFixture.getGradleArgument("SerialNumber", DEFAULT_DEVICE_SERIAL)
                         )
                         .Build()
                         .Start();
