@@ -474,8 +474,8 @@ namespace DroHub.Tests.TestInfrastructure
             throw new InvalidProgramException($"Unexpected Redirect... ");
         }
 
-        public static Uri getAndroidActionUrl(string action_name) {
-            return new Uri(TestServerFixture.SiteUri, $"api/AndroidApplication/{action_name}");;
+        public static string getAndroidActionUrl(string action_name) {
+            return new Uri(TestServerFixture.SiteUri, $"api/AndroidApplication/{action_name}").ToString();
         }
 
         private static async ValueTask<string> retrieveFromAndroidApp(string user,

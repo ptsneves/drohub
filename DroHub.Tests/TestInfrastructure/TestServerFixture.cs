@@ -168,6 +168,10 @@ namespace DroHub.Tests.TestInfrastructure
             return Convert.ToBase64String(SHA256.Create().ComputeHash(file_stream));
         }
 
+        public static string getGradleArgument(string property_name, string value) {
+            return $"-Pandroid.testInstrumentationRunnerArguments.{property_name}={value}";
+        }
+
         public void Dispose() {
             Docker.Dispose();
             Containers.Dispose();

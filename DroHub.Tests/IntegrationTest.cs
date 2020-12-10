@@ -1264,12 +1264,15 @@ namespace DroHub.Tests
                         .UseImage("ptsneves/airborneprojects:android-test")
                         .Mount(TestServerFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
                         .Command(
-                            $"-Pandroid.testInstrumentationRunnerArguments.UserName={TestServerFixture.AdminUserEmail}",
-                            $"-Pandroid.testInstrumentationRunnerArguments.Token={token["result"]}",
-                            $"-Pandroid.testInstrumentationRunnerArguments.ValidateTokenUrl={HttpClientHelper.getAndroidActionUrl(HttpClientHelper.ValidateTokenActionName)}",
-                            $"-Pandroid.testInstrumentationRunnerArguments.UploadMediaURL={HttpClientHelper.getAndroidActionUrl(HttpClientHelper.UploadMediaActionName)}",
-                            $"-Pandroid.testInstrumentationRunnerArguments.FileTime={((DateTimeOffset) date_time_in_range).ToUnixTimeMilliseconds()}",
-                            "-Pandroid.testInstrumentationRunnerArguments.SerialNumber=Aserial0"
+                            TestServerFixture.getGradleArgument("UserName", TestServerFixture.AdminUserEmail),
+                              TestServerFixture.getGradleArgument("Token",token["result"]),
+                            TestServerFixture.getGradleArgument("ValidateTokenUrl",
+                                  HttpClientHelper.getAndroidActionUrl(HttpClientHelper.ValidateTokenActionName)),
+                            TestServerFixture.getGradleArgument("UploadMediaURL",
+                                  HttpClientHelper.getAndroidActionUrl(HttpClientHelper.UploadMediaActionName)),
+                            TestServerFixture.getGradleArgument("FileTime",
+                                ((DateTimeOffset) date_time_in_range).ToUnixTimeMilliseconds().ToString()),
+                            TestServerFixture.getGradleArgument("SerialNumber","Aserial0")
                         )
                         .Build()
                         .Start();
