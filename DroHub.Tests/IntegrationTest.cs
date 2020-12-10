@@ -502,7 +502,7 @@ namespace DroHub.Tests
         [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_SUCCESS)]
         [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_SUCCESS)]
         [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.PILOT_POLICY_CLAIM, EXPECT_SUCCESS)]
-        [InlineData(OTHER_ORG,DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_SUCCESS)]
+        [InlineData(OTHER_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.GUEST_POLICY_CLAIM, EXPECT_SUCCESS)]
         [InlineData(SAME_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.ADMIN_POLICY_CLAIM, EXPECT_SUCCESS)]
         [InlineData(SAME_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.SUBSCRIBER_POLICY_CLAIM, EXPECT_SUCCESS)]
         [InlineData(SAME_ORG, DroHubUser.ADMIN_POLICY_CLAIM, DroHubUser.OWNER_POLICY_CLAIM, EXPECT_SUCCESS)]
@@ -560,24 +560,23 @@ namespace DroHub.Tests
 
             var new_user_org = same_org ? DEFAULT_ORGANIZATION : DEFAULT_ORGANIZATION + "1";
             await using var to_be_excluded_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                DEFAULT_USER+"1", DEFAULT_PASSWORD,
+                DEFAULT_USER + "1", DEFAULT_PASSWORD,
                 new_user_org, victim_role, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT,
                 !expect_success);
 
-            var t = HttpClientHelper.AddUserHelper.excludeUser(DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_USER+"1");
+            var t = HttpClientHelper.AddUserHelper.excludeUser(DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_USER + "1");
             if (expect_success) {
                 try {
                     await t;
                 }
-                catch(Exception) {
+                catch (Exception) {
                     await HttpClientHelper.AddUserHelper.excludeUser(_fixture, DEFAULT_USER + "1");
                     throw;
                 }
             }
             else {
-                await Assert.ThrowsAsync<HttpRequestException>( async () =>
-                    await t
-                );
+                await Assert.ThrowsAsync<HttpRequestException>(async () =>
+                    await t);
             }
 
         }
@@ -1229,7 +1228,7 @@ namespace DroHub.Tests
             Assert.True(t_web_socket_client.IsOpen);
             await Task.Delay(DroneMicroServiceManager.ConnectionTimeout + TimeSpan.FromSeconds(1));
 
-            //For some reason the first one does not throw broken pipe. Probably some stupid internal in WebSocket.
+            //For some reason the first ogene does not throw broken pipe. Probably some stupid internal in WebSocket.
             //All the library is crap.
             await t_web_socket_client.WriteAsync(new byte[1]);
 
