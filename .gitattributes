@@ -6,3 +6,6 @@
 *.eps filter=lfs diff=lfs merge=lfs -text
 *.ai filter=lfs diff=lfs merge=lfs -text
 *.mjr filter=lfs diff=lfs merge=lfs -text
+*.webm filter=lfs diff=lfs merge=lfs -text
+DroHub.Tests/TestAssets filter=lfs diff=lfs merge=lfs -text
+parrot-backend/android/app/src/androidTest/assets/video.mp4 filter=lfs diff=lfs merge=lfs -text
