@@ -93,18 +93,15 @@
 <body class="hold-transition skin-drohub sidebar-mini">
 <div class="wrapper">
     @await Component.InvokeAsync("Notifications")
-    @await Component.InvokeAsync("Sidebar")
     <!-- Left side column. contains the logo and sidebar -->
     <!-- /.sidebar -->
     <!-- Content Wrapper. Contains page content -->
-    <div class="content-wrapper">
         <!-- Cookie Consent -->
-        <partial name="_CookieConsentPartial" />
-        <!-- Page body -->
-        @RenderBody()
-        <div id="modal-placeholder"></div>
-        <!-- /Page body -->
-    </div>
+    <partial name="_CookieConsentPartial" />
+    <!-- Page body -->
+    @RenderBody()
+    <div id="modal-placeholder"></div>
+    <!-- /Page body -->
     <!-- /.content-wrapper -->
 </div>
 </body>

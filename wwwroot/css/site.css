@@ -404,17 +404,13 @@ img.drohub-device-id-drone-blue {
 
 
 .skin-drohub {
-    background-color: #FFFFFF;
+    background-color: #B2BECC38;
 }
 
 .btn-box-tool-drohub {
     padding: 5px;
     font-size: 12px;
     color: black;
-}
-
-nav.drohub-navbar {
-    background: #e6eaef;
 }
 
 .btn-drohub {

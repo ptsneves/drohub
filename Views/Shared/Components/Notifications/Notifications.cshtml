@@ -1,24 +1,179 @@
-@using Newtonsoft.Json;
+@using DroHub.Areas.Identity.Data
+@using System.Net.Http
+@using DroHub.Areas.DHub.Controllers
+@using Microsoft.AspNetCore.Razor.TagHelpers
 @model IEnumerable<DroHub.Areas.DHub.Models.LogEntry>
-<header class="main-header">
+@{
+    static string getBackgroundColor(string name) {
+        var letter_index = (int) name[0];
+        var hue = (360 / 26) * letter_index;
+        return $"hsl({hue}, 68%, 48%)";
+    }
 
-    <!-- Logo -->
-    <a href="#" class="logo" style="padding: 0 20px;">
-        <!-- mini logo for sidebar mini 50x50 pixels -->
-        <span class="logo-mini" title="DroHub"><b>DH</b></span>
-        <!-- logo for regular state and mobile devices -->
-        <span class="drohub-logo" title="DroHub"><img alt="DROHUB" src="~/images/logo/drohub-small.png"/></span>
-    </a>
+    string getActionActiveClass(string controller_name, string action_name) {
+        if (!ViewContext.RouteData.Values.ContainsKey("Action") || !ViewContext.RouteData.Values.ContainsKey("Controller")) {
+            return "navbar-inactive";
+        }
+
+        return action_name == ViewContext.RouteData.Values["Action"].ToString()
+               && controller_name == ViewContext.RouteData.Values["Controller"].ToString()
+            ? "navbar-active"
+            : "navbar-inactive";
+    }
+}
+<style>
+    nav.drohub-navbar {
+        margin-left: 0 !important;
+        background: #FFFFFF80 !important;
+        border-bottom: thin solid #B2BECC82 !important;
+    }
+
+    .letter-avatar {
+        display: inline-block;
+        background: @getBackgroundColor(User.Identity.Name);
+        border-radius: 100%;
+        font-size: 39px;
+        width: 46px;
+        height: 46px;
+        text-align: center;
+        line-height: 46px;
+        text-transform: capitalize;
+        font-family: 'Lucida Console', Monaco, monospace;
+        margin-right: 16px;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .user-role {
+        font-weight: bolder;
+        text-transform: uppercase;
+        font-size: 1.4rem;
+    }
+
+    .identity {
+        color: #333333;
+        font-size: 1.6rem;
+    }
+
+    .nav.navbar-nav {
+        display: flex;
+        min-height: 72px;
+    }
+
+    .nav.navbar-nav > li {
+        border-right: #B2BECC82 thin solid;
+    }
+
+    .nav.navbar-nav > li.first-left {
+        border-right: #B2BECC82 thin solid;
+    }
+
+    .nav > li > a {
+        height: 100%;
+        justify-content: center;
+        display: inline-flex;
+    }
+
+    .nav > li.image-container {
+        width: 72px;
+        text-align: center;
+    }
+
+
+    .navbar-logo-right {
+        background: #B2BECC38;
+    }
+
+    .nav > li > a.navbar-logo-right > img {
+        max-height: 22px;
+        padding-left: 65px;
+        padding-right: 65px;
+    }
+
+    .navbar-nav > li > a {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        align-items: center;
+    }
+
+    .navbar-nav > li:hover > a {
+        background: white !important;
+    }
+
+    .navbar-nav > li:hover {
+        background: white !important;
+    }
+
+    .identity > div > p {
+        margin: 0 0 0 !important;
+    }
+
+    li.navbar-active {
+        background: white;
+    }
+
+    .dropdown-menu.feed {
+        min-width: 400px;
+    }
+
+    .dropdown-menu.feed > li {
+        min-height: 72px;
+    }
+
+
+
+</style>
+<header class="main-header" style="margin-bottom: 64px;">
     <!-- Header Navbar: style can be found in header.less -->
-    <nav class="navbar navbar-static-top drohub-navbar" >
-        <!-- Sidebar toggle button-->
-        <a href="#" class="sidebar-toggle" data-toggle="push-menu" role="button">
-            <span class="sr-only">Toggle navigation</span>
-        </a>
-        <div class="navbar-custom-menu">
-            <ul class="nav navbar-nav">
+    <nav class="navbar navbar-static-top drohub-navbar" style="margin-left: 0 !important; background: white">
+        <div class="">
+            <ul class="nav navbar-nav navbar-left" style="display: flex">
+                <li class="first-left @getActionActiveClass("AccountManagement", "Index")">
+                    <a asp-controller="AccountManagement" asp-action="Index"  class="identity">
+                        <div class="letter-avatar">
+                            @User.Identity.Name?[0]
+                        </div>
+                        <div class="pull-right">
+                            <p class="user-name">@User.Identity.Name</p>
+                            <p class="user-role">@DroHubUser.convertActingTypeToHumanFormat(User.Claims.Single(c => c.Type == DroHubUser.BASE_ACTING_TYPE_KEY_CLAIM).Value)</p>
+                        </div>
+                    </a>
+                </li>
+                <li class="image-container @getActionActiveClass("DeviceRepository", "Dashboard")">
+                    <a asp-action="Dashboard" asp-area="DHub" asp-controller="DeviceRepository">
+                        <img src="~/images/assets/interface-menu-dashboard.svg" alt="Dashboard"/>
+                    </a>
+                </li>
+                <li class="image-container @getActionActiveClass("DeviceRepository", "Gallery")">
+                    <a asp-action="Gallery" asp-area="DHub" asp-controller="DeviceRepository">
+                        <img src="~/images/assets/interface-menu-timeline.svg" alt="Gallery"/>
+                    </a>
+                </li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                @* <li class="image-container dropdown"> *@
+                @*     <a asp-action="Dashboard" asp-area="DHub" asp-controller="DeviceRepository" *@
+                @*        class="dropdown-toggle" data-toggle="dropdown"> *@
+                @*         <img src="~/images/assets/device-window-maximize.svg" alt="Dashboard"/> *@
+                @*         <span class="caret"></span> *@
+                @*     </a> *@
+                @*     <ul class="dropdown-menu feed" role="menu"> *@
+                @*         <li> *@
+                @*             <a href="#"> *@
+                @*                 No new notifications *@
+                @*             </a> *@
+                @*         </li> *@
+                @*       </ul> *@
+                @* </li> *@
+                <li class="image-container">
+                    <a asp-area="Identity" asp-page="/Account/Logout">
+                        <i class="fa fa-power-off"></i>
+                    </a>
+                </li>
                 <li>
-                    <a asp-area="Identity" asp-page="/Account/Logout"><i class="fa fa-power-off"></i></a>
+                    <a href="/" class="navbar-logo-right">
+                        <img src="~/LandingPage/images/BrandingLogo.png" alt="Back to landing page"/>
+                    </a>
                 </li>
             </ul>
         </div>
