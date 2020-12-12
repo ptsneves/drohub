@@ -106,19 +106,6 @@
         <!-- /Page body -->
     </div>
     <!-- /.content-wrapper -->
-    <footer class="main-footer">
-        <div class="pull-right @*hidden-xs*@">
-            <b>Version</b>
-            @{
-                var build_hash = Assembly.GetEntryAssembly()?
-                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "ups";
-            }
-            <!-- @build_hash -->
-            <strong>&copy; @DateTime.Now.Year <a href="https://www.drohub.xyz/">DROHUB</a> | </strong>
-            All rights reserved.
-        </div>
-        <strong>&nbsp;</strong>
-    </footer>
 </div>
 </body>
 </html>
