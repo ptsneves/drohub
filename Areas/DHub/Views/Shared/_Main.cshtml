@@ -91,18 +91,13 @@
     <script src="https://www.googleoptimize.com/optimize.js?id=OPT-TL897FQ"></script>
 </head>
 <body class="hold-transition skin-drohub sidebar-mini">
-<div class="wrapper">
-    @await Component.InvokeAsync("Notifications")
-    <!-- Left side column. contains the logo and sidebar -->
-    <!-- /.sidebar -->
-    <!-- Content Wrapper. Contains page content -->
-        <!-- Cookie Consent -->
-    <partial name="_CookieConsentPartial" />
-    <!-- Page body -->
-    @RenderBody()
-    <div id="modal-placeholder"></div>
-    <!-- /Page body -->
-    <!-- /.content-wrapper -->
-</div>
+    <div class="wrapper">
+        @await Component.InvokeAsync("Notifications")
+        <partial name="_CookieConsentPartial" />
+        <div style="margin-left: 5%; margin-right: 5%;">
+            @RenderBody()
+            <div id="modal-placeholder"></div>
+        </div>
+    </div>
 </body>
 </html>
