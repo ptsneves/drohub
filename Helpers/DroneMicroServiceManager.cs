@@ -411,7 +411,7 @@ namespace DroHub.Helpers
         public override async Task getServiceTask(CancellationToken ct, DeadManSwitch toggle) {
             _logger.LogDebug($"Starting Service {GetType()} {_authenticated_serial.Value}");
             var device = await _device_api.getDeviceBySerial(_authenticated_serial);
-            var media_dir = MediaObjectAndTagAPI.LocalStorageHelper.getConnectionDirectory(_device_connection.Id);
+            var media_dir = MediaObjectAndTagAPI.LocalStorageHelper.calculateConnectionDirectory(_device_connection.Id);
             try {
                 var video_room = await createVideoRoomForDevice(device, media_dir);
                 _send_video_request = new DroneSendLiveVideoRequest {

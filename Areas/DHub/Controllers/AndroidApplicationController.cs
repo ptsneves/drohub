@@ -206,11 +206,11 @@ namespace DroHub.Areas.DHub.Controllers
                 if (local_storage_helper.shouldSendNext(input.RangeStartBytes + input.File.Length)) {
                     return new JsonResult(new Dictionary<string, dynamic> {
                         ["result"] = "send-next",
-                        ["begin"] = local_storage_helper.getNextChunkOffset()
+                        ["begin"] = local_storage_helper.calculateNextChunkOffset()
                     });
                 }
 
-                await using var chunked_file_stream = new FileStream(local_storage_helper.getChunkedFilePath(),
+                await using var chunked_file_stream = new FileStream(local_storage_helper.calculateChunkedFilePath(),
                     FileMode.CreateNew);
 
                 await input.File.CopyToAsync(chunked_file_stream);
@@ -240,7 +240,7 @@ namespace DroHub.Areas.DHub.Controllers
 
                 return new JsonResult(new Dictionary<string, dynamic> {
                     ["result"] = "send-next",
-                    ["begin"] = local_storage_helper.getNextChunkOffset()
+                    ["begin"] = local_storage_helper.calculateNextChunkOffset()
                 });
             }
             catch (DeviceConnectionException e) {

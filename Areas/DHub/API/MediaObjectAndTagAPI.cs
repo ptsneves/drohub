@@ -91,30 +91,29 @@ namespace DroHub.Areas.DHub.API {
                 _extension = extension;
             }
 
-
-            public static string getConnectionDirectory(long connection_id) {
+            public static string calculateConnectionDirectory(long connection_id) {
                 return Path.Join(ConnectionBaseDir,connection_id.ToString());
             }
 
-            private static string getConnectionFilePath(long connection_id, string file_name) {
+            private static string calculateConnectionFilePath(long connection_id, string file_name) {
                 return Path.Join(ConnectionBaseDir, connection_id.ToString(), file_name);
             }
 
             public bool doesAssembledFileExist() {
-                return File.Exists(getAssembledFilePath());
+                return File.Exists(calculateAssembledFilePath());
             }
 
             private bool doesChunkedFileExist() {
-                return File.Exists(getChunkedFilePath());
+                return File.Exists(calculateChunkedFilePath());
             }
 
             private string getChunkedFileNameOn() {
-                return $"{getChunkedFilePrefix()}{getFileNameOnHost()}";
+                return $"{getChunkedFilePrefix()}{calculateFileNameOnHost()}";
             }
 
             public void createDirectory() {
-                if (!Directory.Exists(getConnectionDirectory(_connection_id))) {
-                    Directory.CreateDirectory(getConnectionDirectory(_connection_id));
+                if (!Directory.Exists(calculateConnectionDirectory(_connection_id))) {
+                    Directory.CreateDirectory(calculateConnectionDirectory(_connection_id));
                 }
             }
 
@@ -122,55 +121,55 @@ namespace DroHub.Areas.DHub.API {
                 return $"{_CHUNK_FN_BEGIN_MAGIC}{_start_offset_bytes}{_CHUNK_FN_END_MAGIC}";
             }
 
-            public string getAssembledFilePath() {
-                return getConnectionFilePath(_connection_id, getFileNameOnHost());
+            private string calculateAssembledFilePath() {
+                return calculateConnectionFilePath(_connection_id, calculateFileNameOnHost());
             }
 
-            public string getChunkedFilePath() {
-                return getConnectionFilePath(_connection_id, getChunkedFileNameOn());
+            public string calculateChunkedFilePath() {
+                return calculateConnectionFilePath(_connection_id, getChunkedFileNameOn());
             }
 
-            private long getBytesOffsetFromFile(string file_name) {
+            private long calculateBytesOffsetFromFile(string file_name) {
                 return long.Parse(file_name
                     .Replace(_CHUNK_FN_BEGIN_MAGIC, string.Empty)
                     .Replace(_CHUNK_FN_END_MAGIC, string.Empty)
-                    .Replace(getFileNameOnHost(), string.Empty));
+                    .Replace(calculateFileNameOnHost(), string.Empty));
             }
 
-            private string getFileNameOnHost() {
+            private string calculateFileNameOnHost() {
                 return $"{(_is_preview ? PreviewFileNamePrefix : string.Empty)}drone-{_device_serial}-{_unix_time_creation_ms}{_extension}";
             }
 
-            public long getNextChunkOffset() {
+            public long calculateNextChunkOffset() {
                 var latest_chunk_file_name = getChunkedFilesList()
-                    .OrderByDescending(getBytesOffsetFromFile)
+                    .OrderByDescending(calculateBytesOffsetFromFile)
                     .FirstOrDefault();
 
                 if (latest_chunk_file_name == null)
                     return 0;
 
-                var latest_byte_offset = getBytesOffsetFromFile(latest_chunk_file_name) ;
-                var latest_chunk_file_path = getConnectionFilePath(_connection_id, latest_chunk_file_name);
+                var latest_byte_offset = calculateBytesOffsetFromFile(latest_chunk_file_name) ;
+                var latest_chunk_file_path = calculateConnectionFilePath(_connection_id, latest_chunk_file_name);
                 return latest_byte_offset + new FileInfo(latest_chunk_file_path).Length;
             }
 
             public bool shouldSendNext(long file_end_offset) {
-                return doesChunkedFileExist() || file_end_offset < getNextChunkOffset();
+                return doesChunkedFileExist() || file_end_offset < calculateNextChunkOffset();
             }
 
             private IEnumerable<string> getChunkedFilesList() {
-                return Directory.EnumerateFiles(getConnectionDirectory(_connection_id))
+                return Directory.EnumerateFiles(calculateConnectionDirectory(_connection_id))
                     .Where(f => f.Contains(_CHUNK_FN_BEGIN_MAGIC)
                                 && f.Contains(_CHUNK_FN_END_MAGIC)
-                                && f.Contains(getFileNameOnHost()))
+                                && f.Contains(calculateFileNameOnHost()))
                     .Select(Path.GetFileName);
             }
 
             public async Task<string> generateAssembledFile(bool remove_chunk_files_afterwards = true) {
-                var chunk_files = getChunkedFilesList().OrderBy(getBytesOffsetFromFile).ToList();
-                await using (var assembled_stream = File.OpenWrite(getAssembledFilePath())) {
+                var chunk_files = getChunkedFilesList().OrderBy(calculateBytesOffsetFromFile).ToList();
+                await using (var assembled_stream = File.OpenWrite(calculateAssembledFilePath())) {
                     foreach (var file_name in chunk_files) {
-                        var file_path = Path.Join(getConnectionDirectory(_connection_id), file_name);
+                        var file_path = Path.Join(calculateConnectionDirectory(_connection_id), file_name);
                         await using var file_stream = File.OpenRead(file_path);
                         await file_stream.CopyToAsync(assembled_stream);
                     }
@@ -178,9 +177,9 @@ namespace DroHub.Areas.DHub.API {
 
                 if (remove_chunk_files_afterwards)
                     chunk_files.ForEach(file_name =>
-                        File.Delete(Path.Join(getConnectionDirectory(_connection_id), file_name)));
+                        File.Delete(Path.Join(calculateConnectionDirectory(_connection_id), file_name)));
 
-                return getAssembledFilePath();
+                return calculateAssembledFilePath();
             }
         }
 
@@ -372,7 +371,7 @@ namespace DroHub.Areas.DHub.API {
 
         public async Task addMediaObject(MediaObject media_object, List<string> tags, bool is_preview) {
 
-            if (!media_object.MediaPath.Contains(LocalStorageHelper.getConnectionDirectory(media_object.DeviceConnectionId)))
+            if (!media_object.MediaPath.Contains(LocalStorageHelper.calculateConnectionDirectory(media_object.DeviceConnectionId)))
                 throw new MediaObjectAndTagException("Cannot save media which is not in the connection directory");
 
             if (!File.Exists(media_object.MediaPath))
