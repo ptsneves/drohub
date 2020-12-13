@@ -74,23 +74,23 @@
                                 class="col-lg-3 col-md-6 col-sm-12 gallery-item"
                                 v-bind:class="{'selectable-item': isSelectionOn}"
                                 v-for="(file, file_index) in device_files"
-                                v-bind:key="file.media_object.VideoPath"
+                                v-bind:key="file.media_object.MediaPath"
                             >
                                 <gallery-item-select
                                     v-on:update:selection-event="onGalleryItemSelected"
-                                    v-bind:item-id="file.media_object.VideoPath"
+                                    v-bind:item-id="file.media_object.MediaPath"
                                     v-bind:is-enabled="isSelectionOn"
-                                    v-bind:is-item-selected="isItemSelected(file.media_object.VideoPath)"
+                                    v-bind:is-item-selected="isItemSelected(file.media_object.MediaPath)"
                                 />
                                 <gallery-video-player
-                                    v-bind:videoSrc="file.media_object.VideoPath"
+                                    v-bind:videoSrc="file.media_object.MediaPath"
                                     v-bind:allow-settings="allowSettings"
                                 />
                                 <media-tag-label
                                     v-show="show_tags"
                                     v-for="tag in file.media_object.Tags"
                                     v-bind:key="tag"
-                                    v-bind:media-id="file.media_object.VideoPath"
+                                    v-bind:media-id="file.media_object.MediaPath"
                                     v-bind:allow-delete="allowSettings"
                                     v-bind:text="tag">
                                 </media-tag-label>

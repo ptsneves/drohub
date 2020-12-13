@@ -64,7 +64,7 @@ namespace DroHub.Data
                 .HasKey(m => m.MediaPath);
 
             builder.Entity<MediaObjectTag>()
-                .HasKey(m => new {m.TagName, VideoPath = m.MediaPath});
+                .HasKey(m => new {m.TagName, MediaPath = m.MediaPath});
 
             builder.Entity<DeviceConnection>()
                 .HasKey(d => d.Id);

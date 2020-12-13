@@ -46,7 +46,7 @@ namespace DroHub.Areas.DHub.Controllers
 
         public class GalleryPageModel {
             public class MediaInfo {
-                public string VideoPath { get; internal set; }
+                public string MediaPath { get; internal set; }
                 public long CaptureDateTime { get; internal set; }
                 public IEnumerable<string> Tags { get; internal set; }
             }
@@ -74,7 +74,7 @@ namespace DroHub.Areas.DHub.Controllers
 
                     var file_info_model = new GalleryPageModel.FileInfoModel() {
                         media_object = new GalleryPageModel.MediaInfo() {
-                            VideoPath = MediaObjectAndTagAPI.convertToFrontEndFilePath(media_file),
+                            MediaPath = MediaObjectAndTagAPI.convertToFrontEndFilePath(media_file),
                             CaptureDateTime = media_start_time.ToUnixTimeMilliseconds(),
                             Tags = media_file.MediaObjectTags.Select(s => s.TagName)
                         },
