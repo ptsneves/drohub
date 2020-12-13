@@ -123,22 +123,20 @@ namespace DroHub.Areas.DHub.API {
 
         public async Task<IEnumerable<DeviceConnection>> getSubscribedDeviceConnections() {
             var org_name = _subscription_api.getSubscriptionName();
-            var is_admin = _subscription_api.getCurrentUserClaims().SingleOrDefault(c =>
+            var is_admin = _subscription_api.getCurrentUserClaims().Any(c =>
                 c.Type == DroHubUser.ADMIN_POLICY_CLAIM && c.Value == DroHubUser.CLAIM_VALID_VALUE);
 
-            if (is_admin != null)
-                return await _db_context.DeviceConnections
-                    .Include(cd => cd.Device)
-                    .Include(cd => cd.MediaObjects)
-                    .ThenInclude(media => media.MediaObjectTags)
-                    .ToArrayAsync();
+            IQueryable<DeviceConnection> device_connections = _db_context.DeviceConnections;
+            if (!is_admin)
+                device_connections = device_connections
+                    .Where(cd => cd.SubscriptionOrganizationName == org_name.Value);
 
-            return await _db_context.DeviceConnections
-                .Where(cd => cd.SubscriptionOrganizationName == org_name.Value)
+            return await device_connections
                 .Include(cd => cd.Device)
                 .Include(cd => cd.MediaObjects)
                 .ThenInclude(media => media.MediaObjectTags)
                 .ToArrayAsync();
+
         }
 
         public static ThriftMessageHandler getRPCSessionOrDefault(Device device) {
