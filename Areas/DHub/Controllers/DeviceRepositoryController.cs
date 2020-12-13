@@ -108,7 +108,7 @@ namespace DroHub.Areas.DHub.Controllers
 
                 return RedirectToAction("Gallery");
             }
-            catch (MediaObjectAuthorizationException e) {
+            catch (MediaObjectAuthorizationException) {
                 return Unauthorized();
             }
             catch (MediaObjectAndTagException e) {
@@ -158,7 +158,7 @@ namespace DroHub.Areas.DHub.Controllers
                 res.EnableRangeProcessing = true;
                 return res;
             }
-            catch (MediaObjectAuthorizationException e) {
+            catch (MediaObjectAuthorizationException) {
                 return Unauthorized();
             }
             catch (MediaObjectAndTagException e) {
