@@ -111,7 +111,7 @@ namespace DroHub.Helpers {
 
             var video_result = conversion_results.Single(c => c.media_type == ConvertResult.MediaType.VIDEO);
             var final_dst = Path.Join(mjr_src_dir, Path.GetFileName(video_result.result_path));
-            var final_dst_preview = Path.Join(mjr_src_dir, $"{preview_prefix}-{Path.GetFileName(video_result.result_path)}");
+            var final_dst_preview = Path.Join(mjr_src_dir, $"{preview_prefix}{Path.GetFileName(video_result.result_path)}");
 
             var ffmpeg_input_args = "-err_detect ignore_err";
             var ffmpeg_adelay_args = "";

@@ -13,8 +13,9 @@ namespace DroHub.Tests {
             var preview_dst_path = Path.Join(TestAssetsPath, "preview-video-janus.webm");
             var dst_path = Path.Join(TestAssetsPath, "video-janus.webm");
             Assert.False(File.Exists(dst_path));
+            Assert.False(File.Exists(preview_dst_path));
             try {
-                var r = await MJRPostProcessor.RunConvert(TestAssetsPath, true, "preview", null);
+                var r = await MJRPostProcessor.RunConvert(TestAssetsPath, true, "preview-", null);
                 Assert.Equal(r.result_path, dst_path);
                 Assert.True(File.Exists(dst_path));
                 Assert.True(File.Exists(preview_dst_path));
@@ -23,6 +24,7 @@ namespace DroHub.Tests {
             }
             finally {
                 File.Delete(dst_path);
+                File.Delete(preview_dst_path);
             }
         }
     }
