@@ -1,5 +1,6 @@
 <template>
     <vue-player
+        v-if="videoId"
         ref="player"
         v-bind:src="getSrcURL"
         v-bind:show-volume="false"
@@ -47,12 +48,18 @@
                 />
             </p-button>
             <video-drop-up-menu
-                v-bind:video-src="videoSrc"
+                v-bind:video-src="videoId"
+                v-bind:download-video-url="downloadVideoUrl"
                 ref="dropdown">
             </video-drop-up-menu>
         </template>
 
     </vue-player>
+    <img
+        v-else
+        alt="video preview"
+        v-bind:src="videoPreviewId"
+    />
 </template>
 
 <script>
@@ -69,12 +76,24 @@ export default {
         VideoDropUpMenu,
     },
     props: {
-        videoSrc: {
+        videoId: {
+            type: String,
+            required: true,
+        },
+        videoPreviewId: {
             type: String,
             required: true,
         },
         allowSettings: {
             type: Boolean,
+            required: true,
+        },
+        getLiveStreamRecordingVideoUrl: {
+            type: String,
+            required: true,
+        },
+        downloadVideoUrl: {
+            type: String,
             required: true,
         },
     },
@@ -86,7 +105,7 @@ export default {
     },
     computed: {
         getSrcURL() {
-            return "/DHub/DeviceRepository/GetLiveStreamRecordingVideo?video_id=" + this.videoSrc;
+            return this.getLiveStreamRecordingVideoUrl + this.videoId;
         },
     }
 }

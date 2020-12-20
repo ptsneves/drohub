@@ -20,6 +20,7 @@ namespace DroHub.Areas.DHub.Controllers
     public class AndroidApplicationController : ControllerBase
     {
         public const string CHUNK_TOO_SMALL = "Chunk too small";
+        public const string SIZE_TOO_SMALL = "File length or assembled file size lt 0";
 
         public class QueryDeviceModel {
             [Required]
@@ -63,7 +64,7 @@ namespace DroHub.Areas.DHub.Controllers
                 var o = (UploadModel) value;
 
                 if (o.File.Length <= 0 || o.AssembledFileSize <= 0) {
-                    ErrorMessage = "File length or assembled file size lt 0";
+                    ErrorMessage = SIZE_TOO_SMALL;
                     return false;
                 }
 

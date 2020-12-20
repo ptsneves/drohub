@@ -73,6 +73,9 @@
         else {
             <gallery-timeline
                 v-bind:allow-settings="@allow_settings.ToString().ToLower()"
+                get-live-stream-recording-video-url="@Url.Action("GetLiveStreamRecordingVideo", new { video_id="_VAL_" }).Replace("_VAL_", "")"
+                download-video-url="@Url.Action("DownloadVideo", new { video_id="_VAL_" }).Replace("_VAL_", "")"
+                get-photo-url="@Url.Action("GetPhoto", new {picture_id = "_VAL_"}).Replace("_VAL_", "")"
             >
             </gallery-timeline>
          }

@@ -765,6 +765,26 @@ namespace DroHub.Tests
         }
 
         [Fact]
+        public async void TestUploadTooSmallFails() {
+            var ran = false;
+            await testUpload(1,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                (result, tries, chunk, sent_chunk_size) => {
+                    Assert.True(result.TryGetValue("error", out var v));
+                    Assert.Equal(v, AndroidApplicationController.SIZE_TOO_SMALL);
+                    ran = true;
+                    return UploadTestReturnEnum.STOP_UPLOAD;
+                },
+                1,
+                "fake-0byte.webm",
+                1);
+            Assert.True(ran);
+        }
+
+        [Fact]
         public async void TestUploadMediaBadModelFails() {
             var result = await HttpClientHelper.uploadMedia(TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,

@@ -13,6 +13,7 @@ using DroHub.Areas.DHub.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using static DroHub.Areas.DHub.API.MediaObjectAndTagAPI.LocalStorageHelper;
 using JsonException = System.Text.Json.JsonException;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -47,6 +48,7 @@ namespace DroHub.Areas.DHub.Controllers
         public class GalleryPageModel {
             public class MediaInfo {
                 public string MediaPath { get; internal set; }
+                public string PreviewMediaPath { get; internal set; }
                 public long CaptureDateTime { get; internal set; }
                 public IEnumerable<string> Tags { get; internal set; }
             }
@@ -66,17 +68,20 @@ namespace DroHub.Areas.DHub.Controllers
 
                 foreach (var media_file in session.MediaObjects) {
                     var media_start_time = (DateTimeOffset)media_file.CaptureDateTimeUTC;
-                    if (!System.IO.File.Exists(media_file.MediaPath))
+
+
+                    if (!doesPreviewExist(media_file))
                         continue;
 
                     //This is the milliseconds of the UTC midnight of the day of the media
                     var video_timestamp_datetime = ((DateTimeOffset) media_start_time.Date).ToUnixTimeMilliseconds();
 
                     var file_info_model = new GalleryPageModel.FileInfoModel() {
-                        media_object = new GalleryPageModel.MediaInfo() {
-                            MediaPath = MediaObjectAndTagAPI.convertToFrontEndFilePath(media_file),
+                        media_object = new GalleryPageModel.MediaInfo {
+                            MediaPath = doesFileExist(media_file) ? convertToFrontEndFilePath(media_file) : string.Empty,
+                            PreviewMediaPath = convertToPreviewFrontEndFilePath(media_file),
                             CaptureDateTime = media_start_time.ToUnixTimeMilliseconds(),
-                            Tags = media_file.MediaObjectTags.Select(s => s.TagName)
+                            Tags = media_file.MediaObjectTags.Select(s => s.TagName),
                         },
                         device_name = session.Device.Name
                     };
@@ -102,7 +107,7 @@ namespace DroHub.Areas.DHub.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest();
                 foreach (var raw_media_path in MediaIdList) {
-                    var media_path = MediaObjectAndTagAPI.convertToBackEndFilePath(raw_media_path);
+                    var media_path = convertToBackEndFilePath(raw_media_path);
                     await _media_objectAnd_tag_api.deleteMediaObject(media_path);
                 }
 
@@ -116,9 +121,10 @@ namespace DroHub.Areas.DHub.Controllers
             }
         }
 
-        enum DownloadType {
-            STREAM,
+        private enum DownloadType {
+            VIDEO_STREAM,
             DOWNLOAD,
+            JPEG,
         }
 
         [NonAction]
@@ -143,7 +149,7 @@ namespace DroHub.Areas.DHub.Controllers
 
                 var file_list = new List<string>();
                 foreach (var media_id in media_ids) {
-                    var converted_media_id = MediaObjectAndTagAPI.convertToBackEndFilePath(media_id);
+                    var converted_media_id = convertToBackEndFilePath(media_id);
                     if (!await _media_objectAnd_tag_api.authorizeMediaObjectOperation(converted_media_id,
                             ResourceOperations.Read))
                         return Unauthorized();
@@ -152,7 +158,7 @@ namespace DroHub.Areas.DHub.Controllers
                 }
 
                 var res = File(generateZipArchive(file_list),
-                    "application/zip", "drohub-videos.zip");
+                    "application/zip", "drohub-media.zip");
 
 
                 res.EnableRangeProcessing = true;
@@ -171,10 +177,11 @@ namespace DroHub.Areas.DHub.Controllers
             try {
                 if (!ModelState.IsValid)
                     return BadRequest();
-                video_id = MediaObjectAndTagAPI.convertToBackEndFilePath(video_id);
+                video_id = convertToBackEndFilePath(video_id);
                 var stream = await _media_objectAnd_tag_api.getFileForStreaming(video_id);
                 var res = t switch {
-                    DownloadType.STREAM => File(stream, "video/webm"),
+                    DownloadType.VIDEO_STREAM => File(stream, "video/webm"),
+                    DownloadType.JPEG => File(stream, "image/jpeg"),
                     DownloadType.DOWNLOAD => File(stream, "application/octet-stream", Path.GetFileName(video_id)),
                     _ => throw new InvalidProgramException("Unreachable code")
                 };
@@ -189,16 +196,23 @@ namespace DroHub.Areas.DHub.Controllers
                 return NotFound(e.Message);
             }
         }
+
         public async Task<IActionResult> GetLiveStreamRecordingVideo([Required]string video_id) {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid && !(video_id.EndsWith(".webm") || video_id.EndsWith(".mp4")))
                 return BadRequest();
-            return await getFile(video_id, DownloadType.STREAM);
+            return await getFile(video_id, DownloadType.VIDEO_STREAM);
         }
 
         public async Task<IActionResult> DownloadVideo([Required]string video_id) {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid && !(video_id.EndsWith(".webm") || video_id.EndsWith(".mp4")))
                 return BadRequest();
             return await getFile(video_id, DownloadType.DOWNLOAD);
+        }
+
+        public async Task<IActionResult> GetPhoto([Required]string picture_id) {
+            if (!ModelState.IsValid || !picture_id.EndsWith(".jpeg"))
+                return BadRequest();
+            return await getFile(picture_id, DownloadType.JPEG);
         }
 
         public async Task<IActionResult> DownloadMedias([Required][FromQuery(Name="MediaIdList")]string[] MediaIdList) {
@@ -231,7 +245,7 @@ namespace DroHub.Areas.DHub.Controllers
                 }
 
                 foreach (var media_id in tags.MediaIdList) {
-                    var converted_media_id = MediaObjectAndTagAPI.convertToBackEndFilePath(media_id);
+                    var converted_media_id = convertToBackEndFilePath(media_id);
                     await _media_objectAnd_tag_api.addTags(converted_media_id, tags.TagList, null,
                         media_id == tags.MediaIdList.Last());
                 }
@@ -248,7 +262,7 @@ namespace DroHub.Areas.DHub.Controllers
             if (!ModelState.IsValid)
                 return BadRequest();
             try {
-                var converted_media_id = MediaObjectAndTagAPI.convertToBackEndFilePath(media_id);
+                var converted_media_id = convertToBackEndFilePath(media_id);
                 await _media_objectAnd_tag_api.removeTag(tag_name, converted_media_id);
                 return Ok();
             }

@@ -74,7 +74,7 @@
                                 class="col-lg-3 col-md-6 col-sm-12 gallery-item"
                                 v-bind:class="{'selectable-item': isSelectionOn}"
                                 v-for="(file, file_index) in device_files"
-                                v-bind:key="file.media_object.MediaPath"
+                                v-bind:key="file.media_object.PreviewMediaPath"
                             >
                                 <gallery-item-select
                                     v-on:update:selection-event="onGalleryItemSelected"
@@ -83,8 +83,17 @@
                                     v-bind:is-item-selected="isItemSelected(file.media_object.MediaPath)"
                                 />
                                 <gallery-video-player
-                                    v-bind:videoSrc="file.media_object.MediaPath"
+                                    v-if="isVideo(file.media_object.PreviewMediaPath)"
+                                    v-bind:get-live-stream-recording-video-url="getLiveStreamRecordingVideoUrl"
+                                    v-bind:download-video-url="downloadVideoUrl"
+                                    v-bind:video-preview-id="file.media_object.PreviewMediaPath"
                                     v-bind:allow-settings="allowSettings"
+                                    v-bind:video-id="file.media_object.MediaPath"
+                                />
+                                <img
+                                    v-else-if="isImage(file.media_object.PreviewMediaPath)"
+                                    v-bind:src="getImageSrcURL(file.media_object.PreviewMediaPath)"
+                                    alt="Captured picture"
                                 />
                                 <media-tag-label
                                     v-show="show_tags"
@@ -131,6 +140,18 @@
         props: {
             allowSettings: {
                 type: Boolean,
+                required: true,
+            },
+            getLiveStreamRecordingVideoUrl: {
+                type: String,
+                required: true,
+            },
+            downloadVideoUrl: {
+                type: String,
+                required: true,
+            },
+            getPhotoUrl: {
+                type: String,
                 required: true,
             },
         },
@@ -221,6 +242,15 @@
             isItemSelected(item_id) {
                 return this.isSelectionOn && this.selection_model.selected_medias.indexOf(item_id) > -1;
             },
+            isVideo(file_path) {
+                return file_path.endsWith('.webm') || file_path.endsWith('.mp4');
+            },
+            isImage(file_path) {
+                return file_path.endsWith('.jpeg') || file_path.endsWith('.png');
+            },
+            getImageSrcURL(photo_id) {
+                return this.getPhotoUrl + photo_id;
+            },
         },
         computed: {
             getDownloadsURL() {
@@ -278,7 +308,7 @@
                     return Number(a) - Number(b);
                 }).reverse();
             },
-        }
+        },
     }
 
     function hasInterSection(set, super_set) {

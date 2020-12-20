@@ -52,10 +52,14 @@
                 type: String,
                 required: true,
             },
+            downloadVideoUrl: {
+                type: String,
+                required: true,
+            },
         },
         computed: {
             getDownloadURL() {
-                return "/DHub/DeviceRepository/DownloadVideo?video_id=" + this.videoSrc;
+                return `${this.downloadVideoUrl}${this.videoSrc}`;
             },
         },
         methods: {

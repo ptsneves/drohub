@@ -43,32 +43,6 @@ namespace DroHub.Areas.DHub.API {
             _subscription_api = subscription_api;
         }
 
-        private static bool isFrontEndMediaObject(string file_path) {
-            if (file_path.StartsWith(AnonymousPlaceholder))
-                return true;
-
-            if (file_path.StartsWith(ConnectionBaseDir))
-                return false;
-
-            throw new MediaObjectAndTagException($"file path {file_path} does not follow any recognizable pattern");
-        }
-
-        public static string convertToFrontEndFilePath(MediaObject media_object) {
-            if (isFrontEndMediaObject(media_object.MediaPath))
-                throw new MediaObjectAndTagException($"Cannot convert {media_object.MediaPath} to front end file path if already a frontend file path");
-            var r = anonymizeConnectionDirectory(media_object);
-            // r = FileNameTranslator.getUserFriendlyMediaPath(r, media_object.CaptureDateTimeUTC);
-            return r;
-        }
-
-        public static string convertToBackEndFilePath(string media_path) {
-            if (!isFrontEndMediaObject(media_path))
-                throw new MediaObjectAndTagException($"Cannot convert to backend file path if not a frontend file path {media_path}");
-            var r = deAnonymizeConnectionDirectory(media_path);
-            // r = getTechnicalMediaPath(r);
-            return r;
-        }
-
         public class LocalStorageHelper {
             private const string _CHUNK_FN_BEGIN_MAGIC = "CHUNK_";
             private const string _CHUNK_FN_END_MAGIC = "_CHUNK";
@@ -93,6 +67,58 @@ namespace DroHub.Areas.DHub.API {
 
             public static string calculateConnectionDirectory(long connection_id) {
                 return Path.Join(ConnectionBaseDir,connection_id.ToString());
+            }
+
+            private static bool isFrontEndMediaObjectFilePath(string file_path) {
+                if (file_path.StartsWith(AnonymousPlaceholder))
+                    return true;
+
+                if (file_path.StartsWith(ConnectionBaseDir))
+                    return false;
+
+                throw new MediaObjectAndTagException($"file path {file_path} does not follow any recognizable pattern");
+            }
+
+            public static string convertToFrontEndFilePath(MediaObject media_object) {
+                if (isFrontEndMediaObjectFilePath(media_object.MediaPath))
+                    throw new MediaObjectAndTagException($"Cannot convert {media_object.MediaPath} to front end file path if already a frontend file path");
+                var r = anonymizeConnectionDirectory(media_object);
+                // r = FileNameTranslator.getUserFriendlyMediaPath(r, media_object.CaptureDateTimeUTC);
+                return r;
+            }
+
+            public static string convertToPreviewFrontEndFilePath(MediaObject media_object) {
+                if (isFrontEndMediaObjectFilePath(media_object.MediaPath))
+                    throw new MediaObjectAndTagException($"Cannot convert {media_object.MediaPath} to front end file path if already a frontend file path");
+                var r = anonymizeConnectionDirectory(media_object);
+                r = calculatePreviewFilePathOnHost(r);
+                // r = FileNameTranslator.getUserFriendlyMediaPath(r, media_object.CaptureDateTimeUTC);
+                return r;
+            }
+
+            public static string convertToBackEndFilePath(string media_path) {
+                if (!isFrontEndMediaObjectFilePath(media_path))
+                    throw new MediaObjectAndTagException($"Cannot convert to backend file path if not a frontend file path {media_path}");
+                var r = deAnonymizeConnectionDirectory(media_path);
+                // r = getTechnicalMediaPath(r);
+                return r;
+            }
+
+            public static bool doesPreviewExist(MediaObject mo) {
+                return File.Exists(calculatePreviewFilePathOnHost(mo.MediaPath));
+            }
+
+            public static bool doesFileExist(MediaObject mo) {
+                return File.Exists(mo.MediaPath);
+            }
+
+            private static string calculatePreviewFilePathOnHost(string file_path) {
+                var file_dir = Path.GetDirectoryName(file_path);
+                var file_name = Path.GetFileName(file_path);
+
+                return !file_name.Contains(PreviewFileNamePrefix)
+                    ? Path.Join(file_dir, $"{PreviewFileNamePrefix}{file_name}")
+                    : file_path;
             }
 
             private static string calculateConnectionFilePath(long connection_id, string file_name) {
@@ -256,8 +282,7 @@ namespace DroHub.Areas.DHub.API {
             return file_path.Replace(AnonymousPlaceholder, ConnectionBaseDir);
         }
 
-
-        public async Task<MediaObject> getMediaObject(string media_path) {
+        private async Task<MediaObject> getMediaObject(string media_path) {
             var r = await _db_context.MediaObjects
                     .Where(mo => mo.MediaPath == media_path)
                     .SingleOrDefaultAsync();
@@ -301,7 +326,8 @@ namespace DroHub.Areas.DHub.API {
             if (!File.Exists(media_path))
                 return false;
 
-            var media_object = await getMediaObject(media_path);
+            //For authorization purposes the preview is the same as the actual file
+            var media_object = await getMediaObject(media_path.Replace(PreviewFileNamePrefix, ""));
 
             return await authorizeMediaObjectOperation(media_object, op);
         }
