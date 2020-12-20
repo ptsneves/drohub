@@ -193,6 +193,12 @@ namespace DroHub.Areas.DHub.API {
 
             public async Task<string> generateAssembledFile(bool remove_chunk_files_afterwards = true) {
                 var chunk_files = getChunkedFilesList().OrderBy(calculateBytesOffsetFromFile).ToList();
+                if (chunk_files.Count == 1) {
+                    var file_path = Path.Join(calculateConnectionDirectory(_connection_id), chunk_files.Last());
+                    File.Move(file_path, calculateAssembledFilePath());
+                    return calculateAssembledFilePath();
+                }
+
                 await using (var assembled_stream = File.OpenWrite(calculateAssembledFilePath())) {
                     foreach (var file_name in chunk_files) {
                         var file_path = Path.Join(calculateConnectionDirectory(_connection_id), file_name);

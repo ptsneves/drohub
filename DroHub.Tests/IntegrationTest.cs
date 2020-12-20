@@ -688,7 +688,38 @@ namespace DroHub.Tests
             Assert.True(ran);
         }
 
-              [Fact]
+        [Fact]
+        public async void TestUploadJPEGSingleChunkSucceeds() {
+            var ran = false;
+            var last_chunk = 0;
+            const int CHUNKS = 1;
+
+            await testUpload(1,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                (result, tries, chunk, sent_chunk_size) => {
+                    Assert.Equal(last_chunk++, chunk);
+                    Assert.True(result.TryGetValue("result", out var v));
+                    Assert.Equal("ok", v);
+                    var last_media_path = _fixture.DbContext.MediaObjects.ToList().Last();
+                    var orig_sha256 = TestServerFixture.computeFileSHA256(
+                        $"{TestServerFixture.TestAssetsPath}/preview-drone-PI040416DA9H110281-1608225545000.jpeg");
+                    var uploaded_sha256 = TestServerFixture.computeFileSHA256(last_media_path.MediaPath);
+                    Assert.Equal(orig_sha256, uploaded_sha256);
+                    ran = true;
+
+                    return UploadTestReturnEnum.CONTINUE;
+                },
+                1,
+                "preview-drone-PI040416DA9H110281-1608225545000.jpeg",
+                1);
+            Assert.Equal(CHUNKS, last_chunk);
+            Assert.True(ran);
+        }
+
+        [Fact]
         public async void TestUploadPossibleWhileFlightStillOngoing() {
             const int minutes = 1;
             var ran = false;
