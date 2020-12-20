@@ -360,19 +360,6 @@ img.gallery-image {
     border-radius: 4px;
 }
 
-.timeline > li > .drohub-glyphicon{
-    width: 52px;
-    height: 52px;
-    font-size: 25px;
-    line-height: 50px;
-    position: absolute;
-    color: #666;
-    border-radius: 50%;
-    text-align: center;
-    left: 7px;
-    top: 0;
-}
-
 .timeline > li > .timeline-item > .drohub-timeline-header {
     margin: 0;
     color: #555;
