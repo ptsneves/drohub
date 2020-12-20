@@ -10,7 +10,7 @@ namespace DroHub.Tests {
 
         [Fact]
         public async void TestMJRConverterSimple() {
-            var preview_dst_path = Path.Join(TestAssetsPath, "preview-video-janus.webm");
+            var preview_dst_path = Path.Join(TestAssetsPath, "preview-video-janus.webp");
             var dst_path = Path.Join(TestAssetsPath, "video-janus.webm");
             Assert.False(File.Exists(dst_path));
             Assert.False(File.Exists(preview_dst_path));

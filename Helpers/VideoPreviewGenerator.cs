@@ -46,6 +46,8 @@ namespace DroHub.Helpers {
         public static async Task generatePreview(string src, string dst) {
             if (!File.Exists(src))
                 throw new InvalidDataException($"{src} is not a valid video path");
+            if (Path.GetExtension(dst) != ".webp")
+                throw new InvalidDataException("Provided destination extension must be .webp");
             var generator = new VideoPreviewGenerator();
             await generator.generateVideoStills(src);
             await generator.generateWebPAnimation(dst);
