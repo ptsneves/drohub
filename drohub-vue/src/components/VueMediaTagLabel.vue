@@ -65,7 +65,7 @@
         border-radius: 20px;
         padding-left: 11px;
         padding-right: 11px;
-        margin: 1px;
+        margin: 8px 3px 8px 3px;
         color:white;
         background: #758093;
         display: inline-block;
