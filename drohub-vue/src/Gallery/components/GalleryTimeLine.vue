@@ -91,6 +91,7 @@
                                     v-bind:video-id="file.media_object.MediaPath"
                                 />
                                 <img
+                                    class="gallery-image"
                                     v-else-if="isImage(file.media_object.PreviewMediaPath)"
                                     v-bind:src="getImageSrcURL(file.media_object.PreviewMediaPath)"
                                     alt="Captured picture"
@@ -352,6 +353,11 @@
     z-index: 9998;
     background: #1099ff;
     text-align: center;
+}
+
+img.gallery-image {
+    width: 100%;
+    border-radius: 4px;
 }
 
 </style>
