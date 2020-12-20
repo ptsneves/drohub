@@ -360,4 +360,40 @@ img.gallery-image {
     border-radius: 4px;
 }
 
+.timeline > li > .drohub-glyphicon{
+    width: 52px;
+    height: 52px;
+    font-size: 25px;
+    line-height: 50px;
+    position: absolute;
+    color: #666;
+    border-radius: 50%;
+    text-align: center;
+    left: 7px;
+    top: 0;
+}
+
+.timeline > li > .timeline-item > .drohub-timeline-header {
+    margin: 0;
+    color: #555;
+    border-bottom: 2px solid #d7d7d7;
+    padding: 10px;
+    font-size: 20px;
+    line-height: 1.1;
+    border-top: 3px solid;;
+    border-top-right-radius: 4px;
+    border-top-left-radius: 4px;
+    border-top-color: #1099ff;
+}
+
+.timeline > .drohub-time-label > span {
+    font-weight: 400;
+    padding: 2px 4px 2px 4px;
+    font-size: 18px;
+    display: inline-block;
+    background-color: #2d3c4a;
+    border-radius: 4px;
+    color: white;
+}
+
 </style>
