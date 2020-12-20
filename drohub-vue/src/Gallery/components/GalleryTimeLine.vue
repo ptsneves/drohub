@@ -367,7 +367,7 @@ img.gallery-image {
     padding: 10px;
     font-size: 20px;
     line-height: 1.1;
-    border-top: 3px solid;;
+    border-top: 4px solid;
     border-top-right-radius: 4px;
     border-top-left-radius: 4px;
     border-top-color: #1099ff;
