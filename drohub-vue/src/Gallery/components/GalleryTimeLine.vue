@@ -82,6 +82,16 @@
                                     v-bind:is-enabled="isSelectionOn"
                                     v-bind:is-item-selected="isItemSelected(file.media_object.MediaPath)"
                                 />
+                                <inline-svg
+                                    v-if="isImage(file.media_object.PreviewMediaPath)"
+                                    class="media-type-thumbnail"
+                                    v-bind:src="require('../../../../wwwroot/images/assets/timeline-thumbnail-photo.svg')"
+                                />
+                                <inline-svg
+                                    v-if="isVideo(file.media_object.PreviewMediaPath)"
+                                    class="media-type-thumbnail"
+                                    v-bind:src="require('../../../../wwwroot/images/assets/timeline-thumbnail-recording.svg')"
+                                />
                                 <gallery-video-player
                                     v-if="isVideo(file.media_object.PreviewMediaPath)"
                                     v-bind:get-live-stream-recording-video-url="getLiveStreamRecordingVideoUrl"
@@ -383,4 +393,11 @@ img.gallery-image {
     color: white;
 }
 
+.media-type-thumbnail {
+    position: absolute;
+    z-index: 10;
+    top: 5%;
+    left: 8%;
+    opacity: 80%;
+}
 </style>
