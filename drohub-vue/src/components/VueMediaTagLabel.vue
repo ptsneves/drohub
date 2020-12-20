@@ -70,5 +70,7 @@
         background: #758093;
         display: inline-block;
         border: 0;
+        text-transform: uppercase;
+        font-weight: bold;
     }
 </style>
