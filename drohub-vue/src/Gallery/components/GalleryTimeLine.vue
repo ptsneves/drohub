@@ -374,12 +374,12 @@ img.gallery-image {
 }
 
 .timeline > .drohub-time-label > span {
-    font-weight: 400;
-    padding: 2px 4px 2px 4px;
+    font-weight: 700;
+    padding: 7px 18px 7px 18px;
     font-size: 18px;
     display: inline-block;
-    background-color: #2d3c4a;
-    border-radius: 4px;
+    background-color: #384156;
+    border-radius: 19px;
     color: white;
 }
 
