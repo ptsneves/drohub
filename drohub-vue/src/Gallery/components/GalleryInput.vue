@@ -1,7 +1,12 @@
 <template>
-    <div>
+    <div class="gallery-input-container">
+        <inline-svg
+            v-bind:src="require('../../../../wwwroot/images/assets/timeline-search.svg')"
+            class="search-image-helper"
+        ></inline-svg>
         <vue-tags-input
             v-model="tag"
+            v-bind:placeholder="placeholder"
             v-bind:tags="getTags"
             v-bind:add-on-key="[13, ',', ';']"
             v-on:tags-changed="trackTagsChanged"
@@ -11,11 +16,19 @@
 
 <script>
 import VueTagsInput from '@johmun/vue-tags-input';
+import InlineSvg from 'vue-inline-svg';
 
 export default {
     name: 'GalleryInput',
+    props: {
+        placeholder: {
+            type: String,
+            required: true,
+        }
+    },
     components: {
         VueTagsInput,
+        InlineSvg,
     },
     computed: {
       getTags() {
@@ -49,4 +62,14 @@ export default {
 
 <style lang="css">
     @import "../../assets/vue-tags-input-custom.css";
+    .search-image-helper {
+        background: white;
+        height: auto;
+    }
+    .gallery-input-container {
+        display: flex;
+        background: white;
+        padding: 0 4px 0 7px;
+        border-radius: 2px;
+    }
 </style>

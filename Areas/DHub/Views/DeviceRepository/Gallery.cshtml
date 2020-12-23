@@ -19,50 +19,12 @@
 }
 
 <div id="app">
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-
+    <section class="gallery-top-bar">
         <div style="max-width: 624px; margin-right: 27px;" class="drohub-gallery-content-margin input-group-lg tag-input-container tag-selector">
-
-            @* <span class="drohub-input-group-addon"> *@
-            @*     <i class="far fa-search"></i> *@
-            @* </span> *@
-            <div class="form-group">
-                <div class="tag-list-input-group">
-                    @* <div class="tag-label-template tag-user-container icheckbox_tag-label"> *@
-                    @*     <a style="color:white;" href="#"><i class="fa tag-remove-container-on-click fa-times"></i></a> *@
-                    @*     <span class="tag-user-text"></span> *@
-                    @* </div> *@
-                    <gallery-input class=""
-                                   placeholder="Type a device name a tag or select media type!">
-
-                    </gallery-input>
-                    @* <gallery-input class="drohub-form-control" *@
-                    @* <input type="text" class="tag-comma-separated-text drohub-form-control" placeholder="Type a device name a tag or select media type!"/> *@
-                </div>
-            </div>
-            @* <span class="drohub-input-group-addon"> *@
-            @*     <input style="display: none" id="recording-tag-check" type="checkbox" class="tag-checkbox"/> *@
-            @*     <label for="recording-tag-check"> *@
-            @*         <img alt="filter by recording"  class="media-type-image" src="~/images/assets/timeline-thumbnail-recording.svg"/> *@
-            @*     </label> *@
-            @* </span> *@
-            @* *@
-            @* <span class="drohub-input-group-addon"> *@
-            @*     <input style="display: none" id="photo-tag-check" type="checkbox" class="tag-checkbox"/> *@
-            @*     <label for="photo-tag-check"> *@
-            @*         <img alt="drone gallery" class="media-type-image" src="~/images/assets/timeline-thumbnail-photo.svg"/> *@
-            @*     </label> *@
-            @* </span> *@
-            @* *@
-            @* <span class="drohub-input-group-addon"> *@
-            @*     <input style="display: none" id="video-tag-check" type="checkbox" class="tag-checkbox"/> *@
-            @*     <label for="video-tag-check"> *@
-            @*         <img alt="drone gallery" class="media-type-image" src="~/images/assets/timeline-thumbnail-video.svg"/> *@
-            @*     </label> *@
-            @* </span> *@
+            <gallery-input class=""
+                           placeholder="Search for tags">
+            </gallery-input>
         </div>
-
     </section>
     <!-- /Content Header (Page header) -->
     <!-- Main content -->
@@ -73,12 +35,11 @@
         else {
             <gallery-timeline
                 v-bind:allow-settings="@allow_settings.ToString().ToLower()"
-                get-live-stream-recording-video-url="@Url.Action("GetLiveStreamRecordingVideo", new { video_id="_VAL_" }).Replace("_VAL_", "")"
-                download-video-url="@Url.Action("DownloadVideo", new { video_id="_VAL_" }).Replace("_VAL_", "")"
-                get-photo-url="@Url.Action("GetPhoto", new {picture_id = "_VAL_"}).Replace("_VAL_", "")"
-            >
+                get-live-stream-recording-video-url="@Url.Action("GetLiveStreamRecordingVideo", new {video_id = "_VAL_"}).Replace("_VAL_", "")"
+                download-video-url="@Url.Action("DownloadVideo", new {video_id = "_VAL_"}).Replace("_VAL_", "")"
+                get-photo-url="@Url.Action("GetPhoto", new {picture_id = "_VAL_"}).Replace("_VAL_", "")">
             </gallery-timeline>
-         }
+        }
     </section>
 </div>
 @section Scripts {
@@ -91,4 +52,13 @@
 }
 
 @section head {
+<style>
+    .gallery-top-bar {
+        background: #DAE1E8;
+        padding-bottom: 0.5%;
+        padding-top: 0.5%;
+        display: inline-block;
+        width: 100%;
+    }
+</style>
 }

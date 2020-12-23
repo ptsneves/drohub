@@ -97,6 +97,9 @@ namespace DroHub.Areas.DHub.Controllers
                     files_per_timestamp[video_timestamp_datetime][session.Device.Name].Add(file_info_model);
                 }
             }
+
+            ViewBag.disable_normal_margin = true;
+            ViewBag.disable_bar_margin = true;
             return View(new GalleryPageModel(){FilesPerTimestamp = files_per_timestamp});
         }
 
@@ -150,6 +153,7 @@ namespace DroHub.Areas.DHub.Controllers
                 var file_list = new List<string>();
                 foreach (var media_id in media_ids) {
                     var converted_media_id = convertToBackEndFilePath(media_id);
+
                     if (!await _media_objectAnd_tag_api.authorizeMediaObjectOperation(converted_media_id,
                             ResourceOperations.Read))
                         return Unauthorized();

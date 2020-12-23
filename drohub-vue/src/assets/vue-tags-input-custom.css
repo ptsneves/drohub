@@ -2,6 +2,7 @@
 .vue-tags-input {
     width: 100%;
     max-width: 800px !important;
+    font-size: 1.4em;
 }
 
 /* some stylings for the autocomplete layer */

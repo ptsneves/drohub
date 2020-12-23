@@ -1,4 +1,11 @@
 @using System.Reflection;
+@{
+    var disable_render_body_margin = ViewBag.disable_normal_margin != null && ViewBag.disable_normal_margin is bool;
+    var margin_style = "margin-left: 5%; margin-right: 5%;";
+    if (disable_render_body_margin) {
+        margin_style = "";
+    }
+}
 <!DOCTYPE html>
 <html>
 <head>
@@ -94,7 +101,7 @@
     <div class="wrapper">
         @await Component.InvokeAsync("Notifications")
         <partial name="_CookieConsentPartial" />
-        <div style="margin-left: 5%; margin-right: 5%;">
+        <div style="@margin_style">
             @RenderBody()
             <div id="modal-placeholder"></div>
         </div>
