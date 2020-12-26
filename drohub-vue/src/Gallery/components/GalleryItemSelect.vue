@@ -31,6 +31,10 @@
                 type: String,
                 required: true,
             },
+            previewId: {
+                type: String,
+                required: true,
+            },
             isEnabled: {
                 type: Boolean,
                 default: false,
@@ -43,7 +47,7 @@
         methods: {
             toggleSelection() {
                 const state = {
-                    itemId: this.itemId,
+                    itemId: this.itemId ? this.itemId : this.previewId,
                     active: this.isItemSelected,
                 };
                 this.$emit('update:selection-event', state);

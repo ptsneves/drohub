@@ -79,8 +79,9 @@
                                 <gallery-item-select
                                     v-on:update:selection-event="onGalleryItemSelected"
                                     v-bind:item-id="file.media_object.MediaPath"
+                                    v-bind:preview-id="file.media_object.PreviewMediaPath"
                                     v-bind:is-enabled="isSelectionOn"
-                                    v-bind:is-item-selected="isItemSelected(file.media_object.MediaPath)"
+                                    v-bind:is-item-selected="isItemSelected(file.media_object.PreviewMediaPath, file.media_object.MediaPath)"
                                 />
                                 <inline-svg
                                     v-if="isImage(file.media_object.PreviewMediaPath)"
@@ -250,8 +251,10 @@
             onCancelSelection() {
                 this.resetSelectionModel();
             },
-            isItemSelected(item_id) {
-                return this.isSelectionOn && this.selection_model.selected_medias.indexOf(item_id) > -1;
+            isItemSelected(preview_item_id, item_id) {
+                return this.isSelectionOn
+                    && (this.selection_model.selected_medias.indexOf(preview_item_id) > -1
+                        || (item_id !== "" && this.selection_model.selected_medias.indexOf(item_id) > -1));
             },
             isVideo(file_path) {
                 return file_path.endsWith('.webm') || file_path.endsWith('.mp4');
