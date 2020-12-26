@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
@@ -12,10 +11,7 @@ using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using static DroHub.Areas.DHub.API.MediaObjectAndTagAPI.LocalStorageHelper;
-using JsonException = System.Text.Json.JsonException;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace DroHub.Areas.DHub.Controllers
 {
