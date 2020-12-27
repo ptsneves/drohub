@@ -7,7 +7,6 @@ import com.drohub.Models.FileEntry;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.peripheral.MediaStore;
 import com.parrot.drone.groundsdk.device.peripheral.media.MediaDestination;
-import com.parrot.drone.groundsdk.device.peripheral.media.MediaDownloader;
 import com.parrot.drone.groundsdk.device.peripheral.media.MediaItem;
 
 import java.io.*;
@@ -94,6 +93,8 @@ public class ParrotMediaStore implements IPeripheral<ParrotMediaStore>, IPeriphe
         ParrotMediaStorePriv(Drone drone, int thumbnail_quality, Bitmap.CompressFormat thumbnail_format) {
             super(drone, MediaStore.class);
             _serial_number = drone.getUid();
+            _video_items = new ArrayList<>();
+            _photo_items = new ArrayList<>();
             _thumbnail_quality = thumbnail_quality;
             _thumbnail_format = thumbnail_format;
             _media_destination = MediaDestination.platformMediaStore(IMediaStoreProvider.AlbumName);
@@ -152,7 +153,6 @@ public class ParrotMediaStore implements IPeripheral<ParrotMediaStore>, IPeriphe
                 try {
                     l.onAvailable(new FileInputStream(obj.getDownloadedFile()));
                 } catch (IllegalAccessException | FileNotFoundException e) {
-                    return;
                 }
             });
         }
@@ -209,17 +209,19 @@ public class ParrotMediaStore implements IPeripheral<ParrotMediaStore>, IPeriphe
                 case VIDEO:
                     old_list =_video_items;
                     _video_items = new_list;
-                    if (_new_video_listener != null && old_list != null) {
+                    if (_new_video_listener != null) {
                         diff_result.removeAll(new HashSet<>(old_list));
-                        _new_video_listener.onChange(toFileEntries(diff_result));
+                        if (!diff_result.isEmpty())
+                            _new_video_listener.onChange(toFileEntries(diff_result));
                     }
                     break;
                 case PHOTO:
                     old_list = _photo_items;
                     _photo_items = new_list;
-                    if (_new_photo_listener != null && old_list != null) {
+                    if (_new_photo_listener != null) {
                         diff_result.removeAll(new HashSet<>(old_list));
-                        _new_photo_listener.onChange(toFileEntries(diff_result));
+                        if (!diff_result.isEmpty())
+                            _new_photo_listener.onChange(toFileEntries(diff_result));
                     }
 
                     break;

@@ -76,6 +76,8 @@ import org.webrtc.SurfaceViewRenderer;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.drohub.DroHubHelper.*;
 import static java.lang.Double.NaN;
@@ -575,7 +577,13 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
         final String startup_warning = "Media store not available";
         e_v.getInfoDisplay().add(startup_warning);
 
+        final AtomicBoolean first_time_photos = new AtomicBoolean(true);
+        final AtomicBoolean first_time_videos = new AtomicBoolean(true);
         _media_store.setNewPhotosListener(new_photos -> {
+            if (first_time_photos.compareAndSet(true, false)) {
+                return;
+            }
+
             e_v.getInfoDisplay().addTemporarily(String.format("New photos: %d", new_photos.size()), 5000);
             for (FileEntry item : new_photos) {
                 try {
@@ -613,6 +621,9 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
         });
 
         _media_store.setNewVideosListener(new_videos -> {
+            if (first_time_videos.compareAndSet(true, false)) {
+                return;
+            }
             e_v.getInfoDisplay().addTemporarily(String.format("New Videos: %d", new_videos.size()), 5000);
         });
 
@@ -623,6 +634,8 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
             @Override
             public boolean onFirstTimeAvailable(@NonNull @NotNull ParrotMediaStore parrotMediaStore) {
                 e_v.getInfoDisplay().remove(startup_warning);
+                first_time_photos.set(true);
+                first_time_videos.set(true);
                 return true;
             }
         });
