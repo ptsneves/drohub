@@ -170,6 +170,8 @@ namespace DroHub.Areas.DHub.API {
 
             await _db_context.DeviceConnections.AddAsync(connection);
             await _db_context.SaveChangesAsync();
+            Directory.CreateDirectory(
+                MediaObjectAndTagAPI.LocalStorageHelper.calculateConnectionDirectory(connection.Id));
         }
 
         public async Task removeRPCSessionHandler(ThriftMessageHandler rpc_handler) {
