@@ -3,10 +3,6 @@ package com.drohub.Models;
 import androidx.annotation.NonNull;
 
 public class DroHubDevice {
-    public interface Provider {
-        DroHubDevice getDevice();
-    }
-
     public enum ConnectionState {
         CONNECTED,
         CONNECTING,

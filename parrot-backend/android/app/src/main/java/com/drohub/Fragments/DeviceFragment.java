@@ -80,12 +80,9 @@ public class DeviceFragment extends BaseFragment implements IDroneObserver, IRCO
     public void onNewDrone(DroHubDevice drone) {
         if (drone.connection_state == DroHubDevice.ConnectionState.CONNECTED)
             _connected_drone = drone;
-
-
     }
 
     @Override
-    public void onMediaStore(IPeripheral.IMediaStoreProvider media_store) {
-
+    public void onNewMediaStore(IPeripheral.IMediaStoreProvider media_store) {
     }
 }

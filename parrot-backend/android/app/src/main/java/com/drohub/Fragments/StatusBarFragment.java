@@ -41,8 +41,8 @@ public class StatusBarFragment extends DeviceFragment {
     }
 
     @Override
-    public void onMediaStore(IPeripheral.IMediaStoreProvider media_store) {
-        super.onMediaStore(media_store);
+    public void onNewMediaStore(IPeripheral.IMediaStoreProvider media_store) {
+        super.onNewMediaStore(media_store);
     }
 
     @Override

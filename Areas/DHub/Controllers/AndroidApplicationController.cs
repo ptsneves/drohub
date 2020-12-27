@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
@@ -109,6 +110,7 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         private readonly DeviceAPI _device_api;
+        private readonly DeviceConnectionAPI _device_connection_api;
         private readonly SubscriptionAPI _subscription_api;
         private readonly DeviceConnectionAPI _connection_api;
         private readonly MediaObjectAndTagAPI _media_object_and_tag_api;
@@ -122,7 +124,10 @@ namespace DroHub.Areas.DHub.Controllers
 
         public AndroidApplicationController(DeviceAPI device_api, IAuthorizationService authorizationService,
             SubscriptionAPI subscriptionApi, IConfiguration configuration,
-            DeviceConnectionAPI connection_api, MediaObjectAndTagAPI media_object_and_tag_api, ILogger<AndroidApplicationController> logger) {
+            DeviceConnectionAPI connection_api,
+            MediaObjectAndTagAPI media_object_and_tag_api,
+            DeviceConnectionAPI device_connection_api,
+            ILogger<AndroidApplicationController> logger) {
 
             _device_api = device_api;
             _authorization_service = authorizationService;
@@ -130,6 +135,7 @@ namespace DroHub.Areas.DHub.Controllers
             _connection_api = connection_api;
             _media_object_and_tag_api = media_object_and_tag_api;
             _logger = logger;
+            _device_connection_api = device_connection_api;
             _rpc_api_version = configuration.GetValue<double>(APPSETTINGS_API_VERSION_KEY);
         }
 
@@ -157,6 +163,12 @@ namespace DroHub.Areas.DHub.Controllers
                 });
             //If we got here it means the authentication middleware allowed
             return new JsonResult(new Dictionary<string, string>() {{"result", "ok"}});
+        }
+
+        public async Task<IActionResult> GetSubscriptionMediaInfo() {
+            return new JsonResult(new Dictionary<string, Dictionary<string, Dictionary<string, List<GalleryModel.FileInfoModel>>>> {
+                ["result"] = (await MediaObjectAndTagAPI.getGalleryModel(_device_connection_api)).FilesPerTimestamp,
+            }, new JsonSerializerOptions { PropertyNamingPolicy = null });
         }
 
         public async Task<IActionResult> GetSubscriptionInfo() {

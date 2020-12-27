@@ -9,12 +9,16 @@ import android.widget.TextView;
 import com.drohub.Devices.Peripherals.IPeripheral;
 import com.drohub.DroHubHelper;
 import com.drohub.IInfoDisplay;
+import com.drohub.Models.FileEntry;
 import com.drohub.R;
 import com.drohub.SnackBarInfoDisplay;
 import com.drohub.api.GetMediaSubscriptionInfoHelper;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
+import java.util.Iterator;
+import java.util.List;
 
 
 public class MediaInfoCardFragment extends DeviceFragment {
@@ -22,20 +26,18 @@ public class MediaInfoCardFragment extends DeviceFragment {
     private int _device_photos_count;
     private int _device_video_count;
 
-    private int _local_photos_count;
-    private int _local_video_count;
-    private int _local_storage_usage_gb;
+//    private int _local_photos_count;
+//    private int _local_video_count;
 
     private int _remote_photos_count;
     private int _remote_video_count;
-    private int _remote_storage_usage_gb;
 
     public MediaInfoCardFragment() {
         super(R.layout.fragment_media_info_card);
         _device_photos_count = _INVALID_VALUE;
         _device_video_count = _INVALID_VALUE;
-        _local_photos_count = _INVALID_VALUE;
-        _local_video_count = _INVALID_VALUE;
+//        _local_photos_count = _INVALID_VALUE;
+//        _local_video_count = _INVALID_VALUE;
         _remote_photos_count = _INVALID_VALUE;
         _remote_video_count = _INVALID_VALUE;
     }
@@ -74,38 +76,39 @@ public class MediaInfoCardFragment extends DeviceFragment {
         );
         _view.setOnClickListener(v -> {
             error_display.addTemporarily("Media Info Refreshed.", 2000);
+            showData();
             media_info_helper.get();
         });
 
+        media_info_helper.get();
         showData();
 
         return _view;
     }
 
-    private void showData() {
+    private synchronized void showData() {
         TextView device_media_info_text_view = getFragmentViewById(R.id.device_media_info);
-        TextView local_media_info_text_view = getFragmentViewById(R.id.local_media_info);
+//        TextView local_media_info_text_view = getFragmentViewById(R.id.local_media_info);
         TextView remote_media_info_text_view = getFragmentViewById(R.id.remote_media_info);
 
-        if (_device_photos_count == _INVALID_VALUE || _device_video_count == -1)
+        if (_device_photos_count == _INVALID_VALUE || _device_video_count == _INVALID_VALUE)
             device_media_info_text_view.setText("No info available");
         else {
             device_media_info_text_view.setText(String.format("%d Pictures and %d Videos",
                     _device_photos_count, _device_video_count));
         }
 
-        if (_local_photos_count == _INVALID_VALUE || _local_storage_usage_gb == _INVALID_VALUE
-                || _local_video_count == _INVALID_VALUE) {
+//        if (_local_photos_count == _INVALID_VALUE || _local_storage_usage_gb == _INVALID_VALUE
+//                || _local_video_count == _INVALID_VALUE) {
+//
+//            local_media_info_text_view.setText("No info available");
+//        }
+//        else{
+//            local_media_info_text_view.setText(String.format("%d Pictures and %d Videos",
+//                    _local_photos_count, _local_video_count));
+//        }
 
-            local_media_info_text_view.setText("No info available");
-        }
-        else{
-            local_media_info_text_view.setText(String.format("%d Pictures and %d Videos",
-                    _local_photos_count, _local_video_count));
-        }
-
-        if (_remote_photos_count == _INVALID_VALUE || _remote_storage_usage_gb == _INVALID_VALUE
-                ||_remote_video_count == _INVALID_VALUE) {
+        if (_remote_photos_count == _INVALID_VALUE || _remote_video_count == _INVALID_VALUE) {
             remote_media_info_text_view.setText("No info available");
         }
         else {
@@ -114,21 +117,72 @@ public class MediaInfoCardFragment extends DeviceFragment {
         }
     }
 
-    public void onRemoteData(JSONObject response) {
-        JSONObject result = response.optJSONObject("result");
-        if (result == null)
-            return;
+    private void onRemoteData(JSONObject response) {
+        int remote_photos = 0;
+        int remote_videos = 0;
 
-        _remote_photos_count = result.optInt("image_count", _INVALID_VALUE);
-        _remote_video_count = result.optInt("video_count", _INVALID_VALUE);
-        _remote_storage_usage_gb = result.optInt("storage_in_gb", _INVALID_VALUE);
+        JSONObject result = response.optJSONObject("result");
+        if (result == null) {
+            _error_display.addTemporarily("Unexpected gallery data", 2000);
+            return;
+        }
+
+        Iterator<String> timestamp_keys = result.keys();
+        while (timestamp_keys.hasNext()) {
+            String timestamp_key = timestamp_keys.next();
+            JSONObject device_files = result.optJSONObject(timestamp_key);
+            Iterator<String> device_serial_keys = device_files.keys();
+
+            while (device_serial_keys.hasNext()){
+                String device_serial = device_serial_keys.next();
+                JSONArray file_info_model_list = device_files.optJSONArray(device_serial);
+                if (file_info_model_list instanceof JSONArray) {
+                    int size = file_info_model_list.length();
+                    for (int i = 0; i < size; i++) {
+                        JSONObject file_info_model = file_info_model_list.optJSONObject(i);
+                        if (!(file_info_model instanceof JSONObject))
+                            continue;
+
+                        JSONObject media_info_model = file_info_model.optJSONObject("media_object");
+                        if (!(media_info_model instanceof JSONObject))
+                            continue;
+
+                        String media_path = media_info_model.optString("MediaPath");
+                        if (!(media_path instanceof String))
+                            continue;
+
+                        if (!media_path.isEmpty())
+                            System.out.println("sda");
+
+                        if (media_path.endsWith(".jpeg"))
+                            remote_photos++;
+                        else if (media_path.endsWith(".webm") || media_path.endsWith(".mp4"))
+                            remote_videos++;
+                    }
+                }
+            }
+
+        }
+        _remote_photos_count = remote_photos;
+        _remote_video_count = remote_videos;
+        showData();
+    }
+
+    private void onNewPhotos(List<FileEntry> photos) {
+        _device_photos_count = photos.size();
+        showData();
+    }
+
+    private void onNewVideos(List<FileEntry> videos) {
+        _device_video_count = videos.size();
         showData();
     }
 
     @Override
-    public void onMediaStore(IPeripheral.IMediaStoreProvider media_store) {
-        _device_video_count = media_store.getVideos().size();
-        _device_photos_count = media_store.getPhotos().size();
+    public void onNewMediaStore(IPeripheral.IMediaStoreProvider media_store) {
+        super.onNewMediaStore(media_store);
+        media_store.setNewPhotosListener(this::onNewPhotos);
+        media_store.setNewVideosListener(this::onNewVideos);
     }
 }
 

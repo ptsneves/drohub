@@ -5,5 +5,5 @@ import com.drohub.Models.DroHubDevice;
 
 public interface IDroneObserver {
     void onNewDrone(DroHubDevice drone);
-    void onMediaStore(IPeripheral.IMediaStoreProvider media_store);
+    void onNewMediaStore(IPeripheral.IMediaStoreProvider media_store);
 }

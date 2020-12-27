@@ -41,62 +41,10 @@ namespace DroHub.Areas.DHub.Controllers
             return await Dashboard();
         }
 
-        public class GalleryPageModel {
-            public class MediaInfo {
-                public string MediaPath { get; internal set; }
-                public string PreviewMediaPath { get; internal set; }
-                public long CaptureDateTime { get; internal set; }
-                public IEnumerable<string> Tags { get; internal set; }
-            }
-            public class FileInfoModel {
-                public String device_name { get; internal set; }
-                public MediaInfo media_object { get; internal set; }
-            }
-
-            public Dictionary<long, Dictionary<string, List<FileInfoModel>>> FilesPerTimestamp { get; set; }
-        }
-
         public async Task<IActionResult> Gallery() {
-            var sessions = await _device_connection_api.getSubscribedDeviceConnections();
-
-            var files_per_timestamp = new Dictionary<long, Dictionary<string, List<GalleryPageModel.FileInfoModel>>>();
-            foreach (var session in sessions) {
-
-                foreach (var media_file in session.MediaObjects) {
-                    var media_start_time = (DateTimeOffset)media_file.CaptureDateTimeUTC;
-
-
-                    if (!doesPreviewExist(media_file))
-                        continue;
-
-                    //This is the milliseconds of the UTC midnight of the day of the media
-                    var video_timestamp_datetime = ((DateTimeOffset) media_start_time.Date).ToUnixTimeMilliseconds();
-
-                    var file_info_model = new GalleryPageModel.FileInfoModel() {
-                        media_object = new GalleryPageModel.MediaInfo {
-                            MediaPath = doesFileExist(media_file) ? convertToFrontEndFilePath(media_file) : string.Empty,
-                            PreviewMediaPath = convertToPreviewFrontEndFilePath(media_file),
-                            CaptureDateTime = media_start_time.ToUnixTimeMilliseconds(),
-                            Tags = media_file.MediaObjectTags.Select(s => s.TagName),
-                        },
-                        device_name = session.Device.Name
-                    };
-
-                    if (!files_per_timestamp.ContainsKey(video_timestamp_datetime)) {
-                        files_per_timestamp[video_timestamp_datetime] =
-                            new Dictionary<string, List<GalleryPageModel.FileInfoModel>>();
-                    }
-
-                    if (!files_per_timestamp[video_timestamp_datetime].ContainsKey(session.Device.Name)) {
-                        files_per_timestamp[video_timestamp_datetime][session.Device.Name] = new List<GalleryPageModel.FileInfoModel>();
-                    }
-                    files_per_timestamp[video_timestamp_datetime][session.Device.Name].Add(file_info_model);
-                }
-            }
-
             ViewBag.disable_normal_margin = true;
             ViewBag.disable_bar_margin = true;
-            return View(new GalleryPageModel(){FilesPerTimestamp = files_per_timestamp});
+            return View(await MediaObjectAndTagAPI.getGalleryModel(_device_connection_api));
         }
 
         [HttpPost]

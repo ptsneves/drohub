@@ -1,8 +1,9 @@
 package com.drohub.Devices.Drone;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
 import androidx.annotation.NonNull;
-import com.drohub.Devices.Peripherals.IPeripheral;
+import com.drohub.Devices.Peripherals.Parrot.ParrotMediaStore;
 import com.drohub.IInfoDisplay;
 import com.drohub.Models.DroHubDevice;
 import com.drohub.api.QueryDeviceInfoHelper;
@@ -81,6 +82,14 @@ public class ParrotDrone implements IDrone{
                                     true
                             );
                             _listener.onNewDrone(device);
+                            if (device.connection_state == DroHubDevice.ConnectionState.CONNECTED) {
+
+                                ParrotMediaStore media_store =
+                                        new ParrotMediaStore(drone, 50, Bitmap.CompressFormat.JPEG);
+                                _listener.onNewMediaStore(media_store);
+                                media_store.start();
+                            }
+
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -98,6 +107,7 @@ public class ParrotDrone implements IDrone{
                                 false
                         );
                         _listener.onNewDrone(device);
+                        _listener.onNewMediaStore(new ParrotMediaStore(drone, 50, Bitmap.CompressFormat.JPEG));
                     }
                 },
                 query_device_info_url,

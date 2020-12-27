@@ -8,10 +8,8 @@ using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Data;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace DroHub.Areas.DHub.API {
     public static class MediaObjectAndTagExtensions {
@@ -336,6 +334,49 @@ namespace DroHub.Areas.DHub.API {
             var media_object = await getMediaObject(media_path.Replace(PreviewFileNamePrefix, ""));
 
             return await authorizeMediaObjectOperation(media_object, op);
+        }
+
+        public static async Task<GalleryModel> getGalleryModel(DeviceConnectionAPI device_connection_api) {
+               var sessions = await device_connection_api.getSubscribedDeviceConnections();
+
+            var files_per_timestamp = new Dictionary<string, Dictionary<string, List<GalleryModel.FileInfoModel>>>();
+            foreach (var session in sessions) {
+
+                foreach (var media_file in session.MediaObjects) {
+                    var media_start_time = (DateTimeOffset)media_file.CaptureDateTimeUTC;
+
+
+                    if (!LocalStorageHelper.doesPreviewExist(media_file))
+                        continue;
+
+                    //This is the milliseconds of the UTC midnight of the day of the media
+                    var video_timestamp_datetime = ((DateTimeOffset) media_start_time.Date).ToUnixTimeMilliseconds().ToString();
+
+                    var file_info_model = new GalleryModel.FileInfoModel() {
+                        media_object = new GalleryModel.MediaInfo {
+                            MediaPath = LocalStorageHelper.doesFileExist(media_file)
+                                ? LocalStorageHelper.convertToFrontEndFilePath(media_file) : string.Empty,
+
+                            PreviewMediaPath = LocalStorageHelper.convertToPreviewFrontEndFilePath(media_file),
+                            CaptureDateTime = media_start_time.ToUnixTimeMilliseconds(),
+                            Tags = media_file.MediaObjectTags.Select(s => s.TagName),
+                        },
+                        device_name = session.Device.Name
+                    };
+
+                    if (!files_per_timestamp.ContainsKey(video_timestamp_datetime)) {
+                        files_per_timestamp[video_timestamp_datetime] =
+                            new Dictionary<string, List<GalleryModel.FileInfoModel>>();
+                    }
+
+                    if (!files_per_timestamp[video_timestamp_datetime].ContainsKey(session.Device.Name)) {
+                        files_per_timestamp[video_timestamp_datetime][session.Device.Name] = new List<GalleryModel.FileInfoModel>();
+                    }
+                    files_per_timestamp[video_timestamp_datetime][session.Device.Name].Add(file_info_model);
+                }
+            }
+
+            return new GalleryModel {FilesPerTimestamp = files_per_timestamp};
         }
 
         private async Task<bool> authorizeMediaObjectOperation(MediaObject media, IAuthorizationRequirement op) {
