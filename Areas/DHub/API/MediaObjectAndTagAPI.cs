@@ -353,7 +353,7 @@ namespace DroHub.Areas.DHub.API {
                     var video_timestamp_datetime = ((DateTimeOffset) media_start_time.Date).ToUnixTimeMilliseconds().ToString();
 
                     var file_info_model = new GalleryModel.FileInfoModel() {
-                        media_object = new GalleryModel.MediaInfo {
+                        MediaObject = new GalleryModel.MediaInfo {
                             MediaPath = LocalStorageHelper.doesFileExist(media_file)
                                 ? LocalStorageHelper.convertToFrontEndFilePath(media_file) : string.Empty,
 
@@ -361,7 +361,7 @@ namespace DroHub.Areas.DHub.API {
                             CaptureDateTime = media_start_time.ToUnixTimeMilliseconds(),
                             Tags = media_file.MediaObjectTags.Select(s => s.TagName),
                         },
-                        device_name = session.Device.Name
+                        DeviceName = session.Device.Name
                     };
 
                     if (!files_per_timestamp.ContainsKey(video_timestamp_datetime)) {

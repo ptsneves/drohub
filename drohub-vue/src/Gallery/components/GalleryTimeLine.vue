@@ -74,44 +74,44 @@
                                 class="col-lg-3 col-md-6 col-sm-12 gallery-item"
                                 v-bind:class="{'selectable-item': isSelectionOn}"
                                 v-for="(file, file_index) in device_files"
-                                v-bind:key="file.media_object.PreviewMediaPath"
+                                v-bind:key="file.MediaObject.PreviewMediaPath"
                             >
                                 <gallery-item-select
                                     v-on:update:selection-event="onGalleryItemSelected"
-                                    v-bind:item-id="file.media_object.MediaPath"
-                                    v-bind:preview-id="file.media_object.PreviewMediaPath"
+                                    v-bind:item-id="file.MediaObject.MediaPath"
+                                    v-bind:preview-id="file.MediaObject.PreviewMediaPath"
                                     v-bind:is-enabled="isSelectionOn"
-                                    v-bind:is-item-selected="isItemSelected(file.media_object.PreviewMediaPath, file.media_object.MediaPath)"
+                                    v-bind:is-item-selected="isItemSelected(file.MediaObject.PreviewMediaPath, file.MediaObject.MediaPath)"
                                 />
                                 <inline-svg
-                                    v-if="isImage(file.media_object.PreviewMediaPath)"
+                                    v-if="isImage(file.MediaObject.PreviewMediaPath)"
                                     class="media-type-thumbnail"
                                     v-bind:src="require('../../../../wwwroot/images/assets/timeline-thumbnail-photo.svg')"
                                 />
                                 <inline-svg
-                                    v-if="isVideo(file.media_object.PreviewMediaPath)"
+                                    v-if="isVideo(file.MediaObject.PreviewMediaPath)"
                                     class="media-type-thumbnail"
                                     v-bind:src="require('../../../../wwwroot/images/assets/timeline-thumbnail-recording.svg')"
                                 />
                                 <gallery-video-player
-                                    v-if="isVideo(file.media_object.PreviewMediaPath)"
+                                    v-if="isVideo(file.MediaObject.PreviewMediaPath)"
                                     v-bind:get-live-stream-recording-video-url="getLiveStreamRecordingVideoUrl"
                                     v-bind:download-video-url="downloadVideoUrl"
-                                    v-bind:video-preview-id="file.media_object.PreviewMediaPath"
+                                    v-bind:video-preview-id="file.MediaObject.PreviewMediaPath"
                                     v-bind:allow-settings="allowSettings"
-                                    v-bind:video-id="file.media_object.MediaPath"
+                                    v-bind:video-id="file.MediaObject.MediaPath"
                                 />
                                 <img
                                     class="gallery-image"
-                                    v-else-if="isImage(file.media_object.PreviewMediaPath)"
-                                    v-bind:src="getImageSrcURL(file.media_object.PreviewMediaPath)"
+                                    v-else-if="isImage(file.MediaObject.PreviewMediaPath)"
+                                    v-bind:src="getImageSrcURL(file.MediaObject.PreviewMediaPath)"
                                     alt="Captured picture"
                                 />
                                 <media-tag-label
                                     v-show="show_tags"
-                                    v-for="tag in file.media_object.Tags"
+                                    v-for="tag in file.MediaObject.Tags"
                                     v-bind:key="tag"
-                                    v-bind:media-id="file.media_object.MediaPath"
+                                    v-bind:media-id="file.MediaObject.MediaPath"
                                     v-bind:allow-delete="allowSettings"
                                     v-bind:text="tag">
                                 </media-tag-label>
@@ -299,7 +299,7 @@
                         for (let file_index = 0; file_index < this.gallery_model[unix_date][device_name].length; file_index++) {
                             this.entries_available++;
                             if (this.entries_visible < this.max_entries_visible &&
-                                    hasInterSection(selected_tags, this.gallery_model[unix_date][device_name][file_index]["media_object"]["Tags"]) === true) {
+                                    hasInterSection(selected_tags, this.gallery_model[unix_date][device_name][file_index]["MediaObject"]["Tags"]) === true) {
 
                                 new_device_file_list.push(this.gallery_model[unix_date][device_name][file_index]);
                                 this.entries_visible++;

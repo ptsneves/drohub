@@ -10,8 +10,8 @@ namespace DroHub.Areas.DHub.Models {
             public IEnumerable<string> Tags { get; internal set; }
         }
         public class FileInfoModel {
-            public string device_name { get; internal set; }
-            public MediaInfo media_object { get; internal set; }
+            public string DeviceName { get; internal set; }
+            public MediaInfo MediaObject { get; internal set; }
         }
 
         public Dictionary<string, Dictionary<string, List<FileInfoModel>>> FilesPerTimestamp { get; set; }

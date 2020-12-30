@@ -143,7 +143,7 @@ public class MediaInfoCardFragment extends DeviceFragment {
                         if (!(file_info_model instanceof JSONObject))
                             continue;
 
-                        JSONObject media_info_model = file_info_model.optJSONObject("media_object");
+                        JSONObject media_info_model = file_info_model.optJSONObject("MediaObject");
                         if (!(media_info_model instanceof JSONObject))
                             continue;
 
