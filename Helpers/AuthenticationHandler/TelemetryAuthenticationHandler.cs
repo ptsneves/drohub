@@ -37,7 +37,7 @@ namespace DroHub.Helpers.AuthenticationHandler {
                 return AuthenticateResult.Fail(FAIL_MESSAGE);
             }
 
-            if (res.Ticket.Principal.Identity is ClaimsIdentity identity)
+            if (res.Ticket.Principal.Identity is ClaimsIdentity)
                 return res;
 
             _logger.LogInformation("Identity type different than claims identity are not supported");
