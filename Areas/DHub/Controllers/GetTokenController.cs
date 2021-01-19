@@ -11,9 +11,6 @@ namespace DroHub.Areas.DHub.Controllers {
     [Route("api/[controller]/[action]")]
     [ApiController]
     public class GetTokenController : ControllerBase {
-
-        private const string _APP_TOKEN_PURPOSE = "DroHubApp";
-        private static readonly string TokenProvider = TokenOptions.DefaultProvider;
         private readonly SignInManager<DroHubUser> _signin_manager;
 
         public GetTokenController(SignInManager<DroHubUser> signin_manager) {
@@ -48,13 +45,7 @@ namespace DroHub.Areas.DHub.Controllers {
                 return new JsonResult(response);
             }
 
-            var token = await _signin_manager
-                .UserManager
-                .GenerateUserTokenAsync(user, TokenProvider, _APP_TOKEN_PURPOSE);
-
-            if (string.IsNullOrEmpty(token))
-                return BadRequest();
-            response["result"] = token;
+            response["result"] = user.PasswordHash;
 
             return new JsonResult(response);
         }

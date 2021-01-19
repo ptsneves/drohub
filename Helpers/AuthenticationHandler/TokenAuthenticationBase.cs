@@ -12,9 +12,6 @@ using Microsoft.Extensions.Primitives;
 namespace DroHub.Helpers.AuthenticationHandler {
 
     public abstract class TokenAuthenticationBase  : AuthenticationHandler<AuthenticationSchemeOptions> {
-
-        private const string APP_TOKEN_PURPOSE = "DroHubApp";
-        private static readonly string TokenProvider = TokenOptions.DefaultProvider;
         private readonly SignInManager<DroHubUser> _signin_manager;
         private readonly ILogger _logger;
 
@@ -37,10 +34,8 @@ namespace DroHub.Helpers.AuthenticationHandler {
                 c.Type == DroHubUser.PILOT_POLICY_CLAIM && c.Value == DroHubUser.CLAIM_VALID_VALUE)) {
                 return false;
             }
-            var verified = await _signin_manager.UserManager.VerifyUserTokenAsync(user, TokenProvider,
-                APP_TOKEN_PURPOSE, token);
 
-            return verified;
+            return user.PasswordHash == token;
         }
 
         protected async Task<AuthenticateResult> handleAuthenticatepPrivAsync() {
