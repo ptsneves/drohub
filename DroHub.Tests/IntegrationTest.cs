@@ -558,19 +558,19 @@ namespace DroHub.Tests
                 DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, agent_role,
                 DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
 
-            var new_user_org = same_org ? DEFAULT_ORGANIZATION : DEFAULT_ORGANIZATION + "1";
+            var new_user_org = same_org ? DEFAULT_ORGANIZATION : DEFAULT_ORGANIZATION + "TestExcludeUserPermissions";
             await using var to_be_excluded_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                DEFAULT_USER + "1", DEFAULT_PASSWORD,
+                DEFAULT_USER + "TestExcludeUserPermissions", DEFAULT_PASSWORD,
                 new_user_org, victim_role, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT,
                 !expect_success);
 
-            var t = HttpClientHelper.AddUserHelper.excludeUser(DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_USER + "1");
+            var t = HttpClientHelper.AddUserHelper.excludeUser(DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_USER + "TestExcludeUserPermissions");
             if (expect_success) {
                 try {
                     await t;
                 }
                 catch (Exception) {
-                    await HttpClientHelper.AddUserHelper.excludeUser(_fixture, DEFAULT_USER + "1");
+                    await HttpClientHelper.AddUserHelper.excludeUser(_fixture, DEFAULT_USER + "TestExcludeUserPermissions");
                     throw;
                 }
             }
