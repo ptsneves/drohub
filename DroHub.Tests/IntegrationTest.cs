@@ -605,8 +605,7 @@ namespace DroHub.Tests
 
 
                     //Otherwise the value is considered local time
-                    var date_time_in_range = DateTime.SpecifyKind(connection.StartTime, DateTimeKind.Utc) +
-                                             half_duration_multiplier * half_duration_seconds;
+                    var date_time_in_range = connection.StartTime + half_duration_multiplier * half_duration_seconds;
 
                     for (var i = 0; i < runs; i++) {
                         await using var stream = new FileStream($"{TestServerFixture.TestAssetsPath}/{src}", FileMode.Open);
@@ -739,8 +738,7 @@ namespace DroHub.Tests
                                         $"{TestServerFixture.TestAssetsPath}/{src}"),
                                     IsPreview = false, //needs to be because preview files have different paths
                                     DeviceSerialNumber = DEFAULT_DEVICE_SERIAL,
-                                    UnixCreationTimeMS =
-                                        ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeMilliseconds(),
+                                    UnixCreationTimeMS = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                                     AssembledFileSize = stream.Length,
                                     RangeStartBytes = 0
                                 });
@@ -1251,14 +1249,14 @@ namespace DroHub.Tests
             Assert.Null(await HttpClientHelper.getDeviceFlightStartTime(device_id, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword));
 
-            var time_start = DateTime.Now.ToUniversalTime();
+            var time_start = DateTimeOffset.UtcNow;
             using var f = await HttpClientHelper.openWebSocket(TestServerFixture.AdminUserEmail, token, DEFAULT_DEVICE_SERIAL);
             await Task.Delay(TimeSpan.FromSeconds(5));
             var received = await HttpClientHelper.getDeviceFlightStartTime(device_id, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword);
 
             Assert.True(received.HasValue);
-            var time_diff = time_start - HttpClientHelper.UnixEpoch.AddMilliseconds(received.Value);
+            var time_diff = time_start - DateTimeOffset.UnixEpoch.AddMilliseconds(received.Value);
             Assert.True(time_diff < TimeSpan.FromSeconds(1));
         }
 
@@ -1296,8 +1294,7 @@ namespace DroHub.Tests
             await HttpClientHelper.generateConnectionId(_fixture, 2 * half_duration_seconds, DEFAULT_DEVICE_SERIAL,
                 TestServerFixture.AdminUserEmail, _fixture.AdminPassword, l => {
 
-                    var date_time_in_range = DateTime.SpecifyKind(l.StartTime, DateTimeKind.Utc) +
-                                             2 * half_duration_seconds;
+                    var date_time_in_range = l.StartTime + 2 * half_duration_seconds;
 
                     using var test_containers = new Builder()
                         .UseContainer()
@@ -1404,13 +1401,13 @@ namespace DroHub.Tests
                 var t = TelemetryMock.stageThriftDrone(_fixture, true, minutes, DEFAULT_USER+i, DEFAULT_PASSWORD,
                     DEFAULT_ALLOWED_USER_COUNT, DEFAULT_ORGANIZATION+i, serial,
                     async (drone_rpc, telemetry_mock, user_name, token) => {
-                        var timer_start = DateTime.Now;
+                        var timer_start = DateTimeOffset.UtcNow;
                         await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
                             async () => {
                                 var cts = new CancellationTokenSource(TimeSpan.FromMinutes(minutes + 0.5f * minutes));
                                 await drone_rpc.MonitorConnection(TimeSpan.FromSeconds(5), cts.Token);
                             }, user_name, token);
-                        var elapsed_time = DateTime.Now - timer_start;
+                        var elapsed_time = DateTimeOffset.UtcNow - timer_start;
                         if (elapsed_time < TimeSpan.FromMinutes(minutes))
                             throw new InvalidDataException($"{elapsed_time} > {TimeSpan.FromMinutes(minutes)} FAILED");
                         if (!(elapsed_time.TotalMinutes <

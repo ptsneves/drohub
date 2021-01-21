@@ -2,7 +2,7 @@ using System;
 
 namespace DroHub.Areas.DHub.Models {
     public class MediaObjectTag {
-        public DateTime? Timestamp { get; set; }
+        public DateTimeOffset? Timestamp { get; set; }
         public string MediaPath { get; set; }
         public MediaObject MediaObject { get; set; }
 

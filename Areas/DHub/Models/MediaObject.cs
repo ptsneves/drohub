@@ -11,7 +11,7 @@ namespace DroHub.Areas.DHub.Models {
             public DeviceConnection DeviceConnection { get; set; }
 
             public string MediaPath { get; set; }
-            public DateTime CaptureDateTimeUTC { get; internal set; }
+            public DateTimeOffset CaptureDateTimeUTC { get; internal set; }
             public ICollection<MediaObjectTag> MediaObjectTags { get; set; }
     }
 }

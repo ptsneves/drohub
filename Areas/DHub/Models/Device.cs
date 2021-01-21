@@ -23,7 +23,7 @@ namespace DroHub.Areas.DHub.Models
         public string FocusMode { get; set; }
 
         [Display(Name = "Registration Date")]
-        public DateTime CreationDate { get; set; }
+        public DateTimeOffset CreationDate { get; set; }
 
         public string SubscriptionOrganizationName { get; set; }
 

@@ -197,7 +197,7 @@ namespace DroHub.Areas.DHub.Controllers
             if (!await _device_api.authorizeDeviceActions(device, ResourceOperations.Update))
                 return new UnauthorizedResult();
 
-            var creation_time = DateTimeOffset.FromUnixTimeMilliseconds(input.UnixCreationTimeMS).UtcDateTime;
+            var creation_time = DateTimeOffset.FromUnixTimeMilliseconds(input.UnixCreationTimeMS);
 
             try {
                 var connection = await _connection_api.getDeviceConnectionByTime(device, creation_time);
@@ -230,7 +230,7 @@ namespace DroHub.Areas.DHub.Controllers
 
                 if (input.RangeStartBytes + input.File.Length == input.AssembledFileSize) {
                     var assembled_file_name = await local_storage_helper.generateAssembledFile();
-                    System.IO.File.SetCreationTimeUtc(assembled_file_name, creation_time);
+                    System.IO.File.SetCreationTimeUtc(assembled_file_name, creation_time.UtcDateTime);
                     var mo = MediaObjectAndTagAPI.generateMediaObject(
                         assembled_file_name,
                         creation_time,

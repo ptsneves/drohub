@@ -91,7 +91,7 @@ namespace DroHub.Areas.DHub.API {
             return null;
         }
 
-        public static DateTime? getConnectionStartTimeOrDefault(Device device) {
+        public static DateTimeOffset? getConnectionStartTimeOrDefault(Device device) {
             var device_connection = getActiveDeviceConnection(device);
             return device_connection?.StartTime;
         }
@@ -158,7 +158,7 @@ namespace DroHub.Areas.DHub.API {
 
             var device = await _device_api.getDeviceBySerial(rpc_handler.SerialNumber);
             var connection = new DeviceConnection {
-                StartTime = DateTime.UtcNow,
+                StartTime = DateTimeOffset.UtcNow,
                 DeviceId = device.Id,
                 SubscriptionOrganizationName = _subscription_api.getSubscriptionName().Value
             };
@@ -176,7 +176,7 @@ namespace DroHub.Areas.DHub.API {
 
         public async Task removeRPCSessionHandler(ThriftMessageHandler rpc_handler) {
             if (_connections.TryRemove(rpc_handler, out var connection)) {
-                connection.EndTime = DateTime.UtcNow;
+                connection.EndTime = DateTimeOffset.UtcNow;
                 try {
                     _db_context.DeviceConnections.Update(connection);
                     await _db_context.SaveChangesAsync();
@@ -210,7 +210,7 @@ namespace DroHub.Areas.DHub.API {
                 .Include(s => s.Device);
         }
 
-        public async Task<DeviceConnection> getDeviceConnectionByTime(Device device, DateTime time) {
+        public async Task<DeviceConnection> getDeviceConnectionByTime(Device device, DateTimeOffset time) {
             var device_connection = getActiveDeviceConnection(device);
             if (device_connection != null && device_connection.StartTime <= time)
                 return device_connection;

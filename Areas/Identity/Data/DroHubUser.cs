@@ -72,9 +72,9 @@ namespace DroHub.Areas.Identity.Data
         };
 
         public string BaseActingType { get; set; }
-        public DateTime LastLogin { get; set; }
+        public DateTimeOffset LastLogin { get; set; }
 
-        public DateTime CreationDate { get; set; }
+        public DateTimeOffset CreationDate { get; set; }
 
         public Subscription Subscription { get; set; }
         public string SubscriptionOrganizationName { get; set; }

@@ -78,7 +78,7 @@ namespace DroHub.Areas.Identity.Pages.Account
                 {
                     _logger.LogInformation("User {@user} logged in.", Input.Email);
                     var user = await _signInManager.UserManager.FindByNameAsync(Input.Email);
-                    user.LastLogin = DateTime.UtcNow;
+                    user.LastLogin = DateTimeOffset.UtcNow;
                     var r = await _signInManager.UserManager.UpdateAsync(user);
                     return LocalRedirect(returnUrl);
                 }

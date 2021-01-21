@@ -102,7 +102,7 @@ namespace DroHub.Areas.Identity.Pages.Account {
 
             await _signin_manager.SignInAsync(user, false);
 
-            user.LastLogin = DateTime.UtcNow;
+            user.LastLogin = DateTimeOffset.UtcNow;
             await _signin_manager.UserManager.UpdateAsync(user);
 
             _logger.LogInformation("User changed it's password successfully.");

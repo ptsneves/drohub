@@ -68,7 +68,7 @@ namespace DroHub.Areas.DHub.Controllers {
                     user_email = user.Email,
                     email_confirmed = user.EmailConfirmed,
                     user_type = user.BaseActingType.Replace("Acting", "").ToLower(),
-                    last_login = ((DateTimeOffset)user.LastLogin.ToUniversalTime()).ToUnixTimeMilliseconds(),
+                    last_login = user.LastLogin.ToUnixTimeMilliseconds(),
                     can_be_excluded = (await _authorization_service.AuthorizeAsync(_subscription_api.getClaimsPrincipal(), user,
                     ResourceOperations.Delete)).Succeeded,
                     can_have_permissions_managed =(await _authorization_service.AuthorizeAsync(_subscription_api.getClaimsPrincipal(), user,
@@ -113,7 +113,7 @@ namespace DroHub.Areas.DHub.Controllers {
                 try {
                     new_user.Email = email;
                     new_user.UserName = email;
-                    new_user.CreationDate = DateTime.UtcNow;
+                    new_user.CreationDate = DateTimeOffset.UtcNow;
 
                     var result = await _signin_manager.UserManager.CreateAsync(new_user);
                     if (!result.Succeeded) {

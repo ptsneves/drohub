@@ -246,9 +246,6 @@ namespace DroHub.Tests.TestInfrastructure
             return http_helper;
         }
 
-        public static readonly DateTime UnixEpoch =
-            new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
         public static async ValueTask<List<Device>> getDeviceList(string user, string
         password) {
             using (var http_helper = await createLoggedInUser(user, password)) {

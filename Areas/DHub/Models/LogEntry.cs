@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.ComponentModel.DataAnnotations;
 using DroHub.Helpers;
@@ -17,7 +18,7 @@ namespace DroHub.Areas.DHub.Models
         public string Level { get; set; }
 
         [Required]
-        public System.DateTime Timestamp { get; set; }
+        public DateTimeOffset Timestamp { get; set; }
         public string EventId { get; set; }
 
         public string Exception { get; set; }

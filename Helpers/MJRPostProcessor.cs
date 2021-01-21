@@ -55,7 +55,7 @@ namespace DroHub.Helpers {
 
         public struct ConvertResult {
             public string result_path;
-            public DateTime creation_date_utc;
+            public DateTimeOffset creation_date_utc;
             public enum MediaType {
                 VIDEO,
                 AUDIO,
@@ -69,7 +69,7 @@ namespace DroHub.Helpers {
         private static async Task<ConvertResult> RunMJRConvert(string mjr_src, bool preserve_after_conversion) {
             var mjr_src_fn = Path.GetFileName(mjr_src);
             var mjr_header = await getMJRHeader(mjr_src);
-            var first_frame_utc = DateTimeOffset.FromUnixTimeMilliseconds(mjr_header.FirstFrameTimeUsUnix/1000).UtcDateTime;
+            var first_frame_utc = DateTimeOffset.FromUnixTimeMilliseconds(mjr_header.FirstFrameTimeUsUnix/1000);
             var dst_fn = Path.ChangeExtension(mjr_src_fn, getMRJOutputContainer(mjr_header));
             var tmp_dst = Path.Join(Path.GetTempPath(), dst_fn);
 
@@ -156,7 +156,7 @@ namespace DroHub.Helpers {
 
             if (!File.Exists(final_dst))
                 throw new InvalidDataException($"Expected {final_dst} but it does not exist.\n {__.StandardError}");
-            File.SetCreationTime(final_dst, video_result.creation_date_utc);
+            File.SetCreationTime(final_dst, video_result.creation_date_utc.DateTime);
             logger?.LogInformation($"Conversion result available at {final_dst}");
 
             await VideoPreviewGenerator.generatePreview(final_dst, final_dst_preview);

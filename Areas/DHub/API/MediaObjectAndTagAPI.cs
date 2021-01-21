@@ -226,7 +226,7 @@ namespace DroHub.Areas.DHub.API {
             public struct MediaPathDescription {
                 public string extension;
                 public string directory;
-                public DateTime date_time;
+                public DateTimeOffset date_time;
                 public string date_time_string;
                 public string serial;
                 public string device_type;
@@ -246,7 +246,7 @@ namespace DroHub.Areas.DHub.API {
                     throw new MediaObjectAndTagException($"Cannot make file user friendly because it does not follow a known pattern");
 
                 var capture_time_utc = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(filename_split[(int)
-                    BACKEND_FILE_NAME_SPLIT_FIELDS.UNIX_TIME_MS])).UtcDateTime;
+                    BACKEND_FILE_NAME_SPLIT_FIELDS.UNIX_TIME_MS]));
 
                 var time = capture_time_utc.ToString(user_date_format);
                 return new MediaPathDescription {
@@ -268,13 +268,13 @@ namespace DroHub.Areas.DHub.API {
 
                 var date_time_index = file_name.Length - user_date_format.Length;
 
-                var date_time = DateTime.ParseExact(file_name.Substring(date_time_index, file_name.Length),
+                var date_time = DateTimeOffset.ParseExact(file_name.Substring(date_time_index, file_name.Length),
                     user_date_format, CultureInfo.InvariantCulture);
 
                 var filename_split = file_name.Substring(0, date_time_index).Split('-');
                 return Path.Join(directory, $"{filename_split[(int)BACKEND_FILE_NAME_SPLIT_FIELDS.DEVICE_TYPE]}" +
                                             $"-{filename_split[(int)BACKEND_FILE_NAME_SPLIT_FIELDS.SERIAL]}" +
-                                            $"{(DateTimeOffset)date_time}");
+                                            $"{date_time}");
             }
         }
 
@@ -343,14 +343,14 @@ namespace DroHub.Areas.DHub.API {
             foreach (var session in sessions) {
 
                 foreach (var media_file in session.MediaObjects) {
-                    var media_start_time = (DateTimeOffset)media_file.CaptureDateTimeUTC;
+                    var media_start_time = media_file.CaptureDateTimeUTC;
 
 
                     if (!LocalStorageHelper.doesPreviewExist(media_file))
                         continue;
 
                     //This is the milliseconds of the UTC midnight of the day of the media
-                    var video_timestamp_datetime = ((DateTimeOffset) media_start_time.Date).ToUnixTimeMilliseconds().ToString();
+                    var video_timestamp_datetime = media_start_time.Date.ToUnixTimeMilliseconds().ToString();
 
                     var file_info_model = new GalleryModel.FileInfoModel() {
                         MediaObject = new GalleryModel.MediaInfo {
@@ -404,7 +404,7 @@ namespace DroHub.Areas.DHub.API {
                 await _db_context.SaveChangesAsync();
         }
 
-        public async Task addTags(string media_path, IEnumerable<string> tags, DateTime? date_time,
+        public async Task addTags(string media_path, IEnumerable<string> tags, DateTimeOffset? date_time,
             bool save_changes = true, bool authorize = true) {
 
             if (authorize && ! await authorizeMediaObjectOperation(media_path, MediaObjectAuthorizationHandler.MediaObjectResourceOperations.ManipulateTags))
@@ -419,7 +419,7 @@ namespace DroHub.Areas.DHub.API {
                 };
 
                 if (date_time.HasValue)
-                    mot.Timestamp = date_time.Value.ToUniversalTime();
+                    mot.Timestamp = date_time;
 
                 await _db_context.MediaObjectTags.AddIfNotExists(mot,
                     m => m.TagName == tag && m.MediaPath == media_path);
@@ -432,13 +432,13 @@ namespace DroHub.Areas.DHub.API {
             return AllowedFileExtensions.Contains(Path.GetExtension(media_path).ToLower());
         }
 
-        public static MediaObject generateMediaObject(string media_path, DateTime create_time, string org_name,
+        public static MediaObject generateMediaObject(string media_path, DateTimeOffset create_time, string org_name,
             long device_connection_id) {
             return new MediaObject {
                 SubscriptionOrganizationName = org_name,
                 DeviceConnectionId = device_connection_id,
                 MediaPath = media_path,
-                CaptureDateTimeUTC = create_time.ToUniversalTime(),
+                CaptureDateTimeUTC = create_time,
             };
         }
 

@@ -261,12 +261,12 @@ namespace DroHub.Helpers
             var time_left = await _subscription_api.getSubscriptionTimeLeft();
             while(time_left > TimeSpan.Zero) {
                 var delay = time_left >= _subscription_update_interval ? _subscription_update_interval : time_left;
-                var delay_start = DateTime.Now;
+                var delay_start = DateTimeOffset.UtcNow;
                 try {
                     await Task.Delay(delay, ct);
                 }
                 finally {
-                    var elapsed_time = DateTime.Now - delay_start;
+                    var elapsed_time = DateTimeOffset.UtcNow - delay_start;
                     time_left = await _subscription_api.decrementAndGetSubscriptionTimeLeft(elapsed_time, ct);
                 }
             }
