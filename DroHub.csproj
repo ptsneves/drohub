@@ -27,6 +27,9 @@
     <None Remove="parrot-backend\**" />
     <Content Remove="parrot-backend\**" />
     <Compile Remove="wwwroot\vue\**" />
+    <EmbeddedResource Remove=".android\**" />
+    <None Remove=".android\**" />
+    <Content Remove=".android\**" />
     <EmbeddedResource Remove="wwwroot\vue\**" />
     <None Remove="wwwroot\vue\**" />
     <Content Remove="wwwroot\vue\**" />
