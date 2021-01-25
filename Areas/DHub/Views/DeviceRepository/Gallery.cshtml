@@ -1,6 +1,7 @@
 @using Microsoft.AspNetCore.Hosting
 @using Newtonsoft.Json
 @using DroHub.Areas.Identity.Data
+@using DroHub.Areas.DHub.API
 @model GalleryModel
 @inject IWebHostEnvironment _host_env
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
@@ -34,10 +35,15 @@
         }
         else {
             <gallery-timeline
+                add-tags-post-url="@Url.Action("AddTags")"
                 v-bind:allow-settings="@allow_settings.ToString().ToLower()"
-                get-live-stream-recording-video-url="@Url.Action("GetLiveStreamRecordingVideo", new {video_id = "_VAL_"}).Replace("_VAL_", "")"
+                delete-media-objects-post-url="@Url.Action("DeleteMediaObjects")"
+                delete-tags-post-url="@Url.Action("DeleteTag")"
+                download-medias-url="@Url.Action("DownloadMedias")"
                 download-video-url="@Url.Action("DownloadVideo", new {video_id = "_VAL_"}).Replace("_VAL_", "")"
-                get-photo-url="@Url.Action("GetPhoto", new {picture_id = "_VAL_"}).Replace("_VAL_", "")">
+                get-live-stream-recording-video-url="@Url.Action("GetLiveStreamRecordingVideo", new {video_id = "_VAL_"}).Replace("_VAL_", "")"
+                get-photo-url="@Url.Action("GetPhoto", new {picture_id = "_VAL_"}).Replace("_VAL_", "")"
+            >
             </gallery-timeline>
         }
     </section>

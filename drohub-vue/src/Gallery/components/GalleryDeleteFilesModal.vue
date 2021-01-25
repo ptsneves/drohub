@@ -41,10 +41,15 @@
 
     export default {
         name: "GalleryDeleteFilesModal",
+        props: {
+            deleteMediaObjectsPostUrl: {
+                type: String,
+                required: true,
+            },
+        },
         data() {
             return {
                 MODAL_TYPE: 'DELETE_FILES',
-                POST_LOCATION: '/DHub/DeviceRepository/DeleteMediaObjects',
             };
         },
         computed: {
@@ -64,7 +69,7 @@
                     console.error("Delete modal open but no item selected or modal inactive.");
 
                 axios
-                    .post(this.POST_LOCATION, qs.stringify({
+                    .post(this.deleteMediaObjectsPostUrl, qs.stringify({
                         'MediaIdList': this.selectedFiles,
                         '__RequestVerificationToken': this.$store.state.anti_forgery_token,
                     }))

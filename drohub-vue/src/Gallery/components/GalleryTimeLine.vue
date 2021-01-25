@@ -6,9 +6,11 @@
 
         <gallery-add-tag-modal
             v-if="allowSettings"
+            v-bind:add-tags-post-url="addTagsPostUrl"
         />
         <gallery-delete-files-modal
             v-if="allowSettings"
+            v-bind:delete-media-objects-post-url="deleteMediaObjectsPostUrl"
         />
         <div
             class="selection-confirmation-bar"
@@ -113,6 +115,7 @@
                                     v-bind:key="tag"
                                     v-bind:media-id="file.MediaObject.MediaPath"
                                     v-bind:allow-delete="allowSettings"
+                                    v-bind:delete-tags-post-url="deleteTagsPostUrl"
                                     v-bind:text="tag">
                                 </media-tag-label>
                             </div>
@@ -150,15 +153,31 @@
             TimeLabel,
         },
         props: {
+            addTagsPostUrl: {
+                type: String,
+                required: true,
+            },
             allowSettings: {
                 type: Boolean,
                 required: true,
             },
-            getLiveStreamRecordingVideoUrl: {
+            deleteMediaObjectsPostUrl: {
+                type: String,
+                required: true,
+            },
+            deleteTagsPostUrl: {
+                type: String,
+                required: true,
+            },
+            downloadMediasUrl: {
                 type: String,
                 required: true,
             },
             downloadVideoUrl: {
+                type: String,
+                required: true,
+            },
+            getLiveStreamRecordingVideoUrl: {
                 type: String,
                 required: true,
             },
@@ -169,7 +188,6 @@
         },
         data() {
             return {
-                DOWNLOADS_POST_LOCATION: "/DHub/DeviceRepository/DownloadMedias",
                 gallery_model: window.init_data,
                 last_filtered_model: {},
                 last_filtered_tags: [],
@@ -269,7 +287,7 @@
         computed: {
             getDownloadsURL() {
                 if (this.selection_model.type === 'DOWNLOAD' && this.hasMoreThan1Selection)
-                    return '/DHub/DeviceRepository/DownloadMedias?' + qs.stringify({
+                    return this.downloadMediasUrl + qs.stringify({
                         'MediaIdList': this.selection_model.selected_medias
                     });
                 else

@@ -51,13 +51,18 @@
 
     export default {
         name: "GalleryAddTagModal",
+        props: {
+            addTagsPostUrl: {
+                type: String,
+                required: true,
+            },
+        },
         components: {
             VueTagsInput,
         },
         data() {
             return {
                 MODAL_TYPE: 'ADD_TAGS',
-                POST_LOCATION: '/DHub/DeviceRepository/AddTags',
                 tag: '',
                 tags: [],
             };
@@ -79,7 +84,7 @@
                     return;
 
                 axios
-                    .post(this.POST_LOCATION, qs.stringify({
+                    .post(this.addTagsPostUrl, qs.stringify({
                         'TagList': this.tags.map(t => t.text),
                         'TimeStampInSeconds': this.$store.state.modal_model.TimeStampInSeconds,
                         '__RequestVerificationToken': this.$store.anti_forgery_token,

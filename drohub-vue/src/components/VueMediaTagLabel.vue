@@ -33,18 +33,21 @@
             allowDelete: {
                 type: Boolean,
                 required: true,
-            }
+            },
+            deleteTagsPostUrl: {
+                type: String,
+                required: true,
+            },
         },
         data() {
             return {
                 is_active: true,
-                POST_LOCATION: '/DHub/DeviceRepository/DeleteTag',
             }
         },
         methods: {
             deleteTag() {
                 axios
-                    .post(this.POST_LOCATION, qs.stringify({
+                    .post(this.deleteTagsPostUrl, qs.stringify({
                         'tag_name': this.text,
                         'media_id': this.mediaId,
                     }))
