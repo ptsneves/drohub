@@ -10,7 +10,10 @@
         />
         <gallery-delete-files-modal
             v-if="allowSettings"
+            v-bind:add-tags-post-url="addTagsPostUrl"
             v-bind:delete-media-objects-post-url="deleteMediaObjectsPostUrl"
+            v-bind:drone-media-removal-tag="droneMediaRemovalTag"
+            v-bind:delayed-media-removal-tag="delayedMediaRemovalTag"
         />
         <div
             class="selection-confirmation-bar"
@@ -167,6 +170,10 @@
                 type: Boolean,
                 required: true,
             },
+            delayedMediaRemovalTag: {
+                type: String,
+                required: true,
+            },
             deleteMediaObjectsPostUrl: {
                 type: String,
                 required: true,
@@ -180,6 +187,10 @@
                 required: true,
             },
             downloadVideoUrl: {
+                type: String,
+                required: true,
+            },
+            droneMediaRemovalTag: {
                 type: String,
                 required: true,
             },

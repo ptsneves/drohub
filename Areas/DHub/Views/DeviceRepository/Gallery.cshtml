@@ -37,10 +37,12 @@
             <gallery-timeline
                 add-tags-post-url="@Url.Action("AddTags")"
                 v-bind:allow-settings="@allow_settings.ToString().ToLower()"
+                delayed-media-removal-tag="@MediaObjectAndTagAPI.DelayedMediaRemovalTag"
                 delete-media-objects-post-url="@Url.Action("DeleteMediaObjects")"
                 delete-tags-post-url="@Url.Action("DeleteTag")"
                 download-medias-url="@Url.Action("DownloadMedias")"
                 download-video-url="@Url.Action("DownloadVideo", new {video_id = "_VAL_"}).Replace("_VAL_", "")"
+                drone-media-removal-tag="@MediaObjectAndTagAPI.DroneMediaRemovalTag"
                 get-live-stream-recording-video-url="@Url.Action("GetLiveStreamRecordingVideo", new {video_id = "_VAL_"}).Replace("_VAL_", "")"
                 get-photo-url="@Url.Action("GetPhoto", new {picture_id = "_VAL_"}).Replace("_VAL_", "")"
             >

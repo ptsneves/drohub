@@ -27,6 +27,8 @@ namespace DroHub.Areas.DHub.API {
         private const string ConnectionBaseDir = "/var/live-video-storage/";
         private const string AnonymousPlaceholder = "storage/";
         public const string PreviewFileNamePrefix = "preview-";
+        public const string DroneMediaRemovalTag = "Marked for Drone removal";
+        public const string DelayedMediaRemovalTag = "To Remove after Drone Removal";
 
         private static readonly string[] AllowedFileExtensions = {".webp", ".webm", ".mp4", ".jpeg"};
         private readonly DroHubContext _db_context;
