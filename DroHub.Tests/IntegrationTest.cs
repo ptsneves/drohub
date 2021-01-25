@@ -8,6 +8,7 @@ using System.IO;
 using System.Net.Http;
 using System.Net.WebSockets;
 using System.Security.Authentication;
+using System.Text.Json;
 using System.Threading;
 using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Controllers;
@@ -453,6 +454,31 @@ namespace DroHub.Tests
 
                 //The other +1 is the subscription name
                 Assert.Equal(victim_claims.Count, DroHubUser.UserClaims[victim_original_role].Count + 1);
+            }
+        }
+
+        [Fact]
+        public async void TestGalleryTestDataIsCorrect() {
+            await using var test_data_stream = File.OpenRead(
+                Path.Join(TestServerFixture.DroHubPath, TestServerFixture.FrontEndPathInRepo, "tests", "test-data.json"));
+
+            JsonElement test_data = await JsonSerializer.DeserializeAsync<dynamic>(test_data_stream);
+            var props_data = test_data.GetProperty("GalleryTimeLine").GetProperty("propsData");
+
+            var r = await HttpClientHelper.getGalleryPage(TestServerFixture.AdminUserEmail, _fixture.AdminPassword);
+            var gallery_dom = TestServerFixture.getHtmlDOM(r);
+
+            var gallery_timeline_query = gallery_dom.QuerySelectorAll("gallery-timeline");
+            Assert.Equal(1, gallery_timeline_query.Length);
+            var attrs = gallery_timeline_query.SelectMany(e => e.Attributes).ToList();
+
+            Assert.Equal(attrs.Count(), props_data.EnumerateObject().Count());
+            foreach (var attr in attrs) {
+                var vue_property_name = TestServerFixture.toCamelCase(attr.Name
+                    .Replace("v-bind", ""));
+
+                Assert.Contains(props_data.EnumerateObject(), p => p.NameEquals(vue_property_name));
+                Assert.Equal(attr.Value, props_data.GetProperty(vue_property_name).GetString());
             }
         }
 

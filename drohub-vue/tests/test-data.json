@@ -1,0 +1,16 @@
+{
+    "GalleryTimeLine": {
+        "propsData": {
+            "addTagsPostUrl": "/DHub/DeviceRepository/AddTags",
+            "allowSettings": true,
+            "delayedMediaRemovalTag": "To Remove after Drone Removal",
+            "deleteMediaObjectsPostUrl": "/DHub/DeviceRepository/DeleteMediaObjects",
+            "deleteTagsPostUrl": "/DHub/DeviceRepository/DeleteTag",
+            "downloadMediasUrl": "/DHub/DeviceRepository/DownloadMedias",
+            "downloadVideoUrl": "/DHub/DeviceRepository/DownloadVideo?video_id=",
+            "droneMediaRemovalTag": "Marked for Drone removal",
+            "getLiveStreamRecordingVideoUrl": "/DHub/DeviceRepository/GetLiveStreamRecordingVideo?video_id=",
+            "getPhotoUrl": "/DHub/DeviceRepository/GetPhoto?picture_id="
+        }
+    }
+}

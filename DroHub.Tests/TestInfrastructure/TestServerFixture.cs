@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Services;
 using Ductus.FluentDocker.Extensions;
@@ -8,6 +9,7 @@ using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using AngleSharp;
 using AngleSharp.Html.Parser;
@@ -35,6 +37,7 @@ namespace DroHub.Tests.TestInfrastructure
         public string AdminPassword { get; private set; }
         private static string DroHubTestsPath => Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory + "../../../");
         public static string DroHubPath => Path.GetFullPath(Path.Join(DroHubTestsPath, "../"));
+        public static string FrontEndPathInRepo => "drohub-vue";
         public static string AppPathInRepo => "parrot-backend";
         public static string RPCAPIPathInRepo => "RPCInterfaces";
         public static string TestAssetsPath => Path.Join(DroHubTestsPath, "TestAssets");
@@ -150,6 +153,21 @@ namespace DroHub.Tests.TestInfrastructure
             var context = BrowsingContext.New(AngleSharp.Configuration.Default);
             var parser = context.GetService<IHtmlParser>();
             return parser.ParseDocument(responseBody);
+        }
+
+        public static string toCamelCase(string str)
+        {
+            var pattern = new Regex(@"[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+");
+            return new string(
+                new CultureInfo("en-US", false)
+                    .TextInfo
+                    .ToTitleCase(
+                        string.Join(" ", pattern.Matches(str)).ToLower()
+                    )
+                    .Replace(@" ", "")
+                    .Select((x, i) => i == 0 ? char.ToLower(x) : x)
+                    .ToArray()
+            );
         }
 
         public static string getVerificationToken(string responseBody,

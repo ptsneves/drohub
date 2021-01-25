@@ -69,6 +69,13 @@ namespace DroHub.Tests.TestInfrastructure
             http_helper.Dispose();
         }
 
+        public static async Task<string> getGalleryPage(string user, string password) {
+            var http_helper = await createLoggedInUser(user, password);
+            var change_permission_url = new Uri(TestServerFixture.SiteUri, "DHub/DeviceRepository/Gallery");
+            using var create_page_response = await http_helper.Client.GetAsync(change_permission_url);
+            create_page_response.EnsureSuccessStatusCode();
+            return await create_page_response.Content.ReadAsStringAsync();
+        }
 
         public static async Task changePermissions(string agent_email, string agent_pass,
             string victim_email, string victim_target_permission) {
