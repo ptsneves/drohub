@@ -7,7 +7,6 @@ import VueWaypoint from 'vue-waypoint'
 Vue.config.productionTip = false;
 Vue.component('gallery-input', require('./components/GalleryInput.vue').default);
 Vue.component('gallery-timeline', require('./components/GalleryTimeLine.vue').default);
-Vue.component('media-tag-label', require('../components/VueMediaTagLabel').default)
 
 Vue.use(Vuex);
 Vue.use(vClickOutside)

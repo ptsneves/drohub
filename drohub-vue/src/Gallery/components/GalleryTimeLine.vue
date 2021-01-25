@@ -147,6 +147,7 @@
     import GalleryItemSelect from "./GalleryItemSelect";
     import GalleryAddTagModal from "./GalleryAddTagModal";
     import GalleryDeleteFilesModal from "./GalleryDeleteFilesModal";
+    import MediaTagLabel from "@/components/MediaTagLabel";
     import qs from 'qs';
     import Timestamp from './../../components/mixins/timestamp-mixin';
 
@@ -160,6 +161,7 @@
             GalleryVideoPlayer,
             GallerySettingsDropDown,
             TimeLabel,
+            MediaTagLabel,
         },
         props: {
             addTagsPostUrl: {
