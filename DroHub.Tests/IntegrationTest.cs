@@ -10,17 +10,14 @@ using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Text.Json;
 using System.Threading;
-using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
 using DroHub.Helpers;
-using Ductus.FluentDocker;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Model.Builders;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 // ReSharper disable StringLiteralTypo
