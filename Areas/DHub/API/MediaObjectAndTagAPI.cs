@@ -98,16 +98,27 @@ namespace DroHub.Areas.DHub.API {
                 if (!isFrontEndMediaObjectFilePath(media_path))
                     throw new MediaObjectAndTagException($"Cannot convert to backend file path if not a frontend file path {media_path}");
                 var r = deAnonymizeConnectionDirectory(media_path);
+                var real_file_r = calculateFilePathOnHost(r);
+                return File.Exists(real_file_r) ? real_file_r : r;
                 // r = getTechnicalMediaPath(r);
-                return r;
+            }
+
+            private static bool doesPreviewFileExist(string media_path) {
+                return Directory
+                    .EnumerateFiles(Path.GetDirectoryName(media_path))
+                    .Any(f => f.Contains(Path.GetFileNameWithoutExtension(media_path)));
             }
 
             public static bool doesPreviewExist(MediaObject mo) {
-                return File.Exists(calculatePreviewFilePathOnHost(mo.MediaPath));
+                return doesPreviewFileExist(mo.MediaPath);
+            }
+
+            public static bool doesFileExist(string file_path) {
+                return (doesPreviewFileExist(file_path) || File.Exists(file_path)) && file_path.StartsWith(ConnectionBaseDir);
             }
 
             public static bool doesFileExist(MediaObject mo) {
-                return File.Exists(mo.MediaPath);
+                return File.Exists(calculateFilePathOnHost(mo.MediaPath));
             }
 
             private static string calculatePreviewFilePathOnHost(string file_path) {
@@ -117,6 +128,10 @@ namespace DroHub.Areas.DHub.API {
                 return !file_name.Contains(PreviewFileNamePrefix)
                     ? Path.Join(file_dir, $"{PreviewFileNamePrefix}{file_name}")
                     : file_path;
+            }
+
+            private static string calculateFilePathOnHost(string file_path) {
+                return file_path.Replace(PreviewFileNamePrefix, "");
             }
 
             private static string calculateConnectionFilePath(long connection_id, string file_name) {
@@ -327,7 +342,7 @@ namespace DroHub.Areas.DHub.API {
             if (op == ResourceOperations.Create)
                 return true;
 
-            if (!File.Exists(media_path))
+            if (!LocalStorageHelper.doesFileExist(media_path))
                 return false;
 
             //For authorization purposes the preview is the same as the actual file
@@ -337,42 +352,67 @@ namespace DroHub.Areas.DHub.API {
         }
 
         public static async Task<GalleryModel> getGalleryModel(DeviceConnectionAPI device_connection_api) {
-               var sessions = await device_connection_api.getSubscribedDeviceConnections();
+            var sessions = (await device_connection_api
+                .getSubscribedDeviceConnections())
+                .ToList();
 
-            var files_per_timestamp = new Dictionary<string, Dictionary<string, List<GalleryModel.FileInfoModel>>>();
+            var files_per_timestamp = new Dictionary<string, Dictionary<string, GalleryModel.Session>>();
             foreach (var session in sessions) {
+                //This is the milliseconds of the UTC midnight of the day of the media
+                var session_day_timestamp_datetime = ((DateTimeOffset) session.StartTime.Date)
+                    .ToUnixTimeMilliseconds()
+                    .ToString();
+
+                var session_start_timestamp = session.StartTime.ToUnixTimeMilliseconds();
+
+                //We can allow sessions that have not finished yet?
+                long session_end_timestamp;
+                if (session.EndTime < session.StartTime) {
+                    if (sessions.Last() == session)
+                        session_end_timestamp =
+                            DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                    else {
+                        continue; //We have an unclosed device connection, skip it.
+                    }
+                }
+                else {
+                    session_end_timestamp = session.EndTime.ToUnixTimeMilliseconds();
+                }
+
+                if (!files_per_timestamp.ContainsKey(session_day_timestamp_datetime)) {
+                    files_per_timestamp[session_day_timestamp_datetime] = new Dictionary<string, GalleryModel.Session>();
+                }
+
+                if (!files_per_timestamp[session_day_timestamp_datetime].ContainsKey(session_start_timestamp.ToString())) {
+                    files_per_timestamp[session_day_timestamp_datetime][session_start_timestamp.ToString()] =
+                        new GalleryModel.Session() {
+                            DeviceName = session.Device.Name,
+                            DeviceSerial = session.Device.SerialNumber,
+                            EndTime = session_end_timestamp,
+                            StartTime = session_start_timestamp,
+                            SessionMedia = new List<GalleryModel.MediaInfo>()
+                        };
+                }
 
                 foreach (var media_file in session.MediaObjects) {
+
                     var media_start_time = media_file.CaptureDateTimeUTC;
-
-
                     if (!LocalStorageHelper.doesPreviewExist(media_file))
                         continue;
 
-                    //This is the milliseconds of the UTC midnight of the day of the media
-                    var video_timestamp_datetime = media_start_time.Date.ToUnixTimeMilliseconds().ToString();
 
-                    var file_info_model = new GalleryModel.FileInfoModel() {
-                        MediaObject = new GalleryModel.MediaInfo {
+                    var media_info_model = new GalleryModel.MediaInfo() {
                             MediaPath = LocalStorageHelper.doesFileExist(media_file)
                                 ? LocalStorageHelper.convertToFrontEndFilePath(media_file) : string.Empty,
 
                             PreviewMediaPath = LocalStorageHelper.convertToPreviewFrontEndFilePath(media_file),
                             CaptureDateTime = media_start_time.ToUnixTimeMilliseconds(),
                             Tags = media_file.MediaObjectTags.Select(s => s.TagName),
-                        },
-                        DeviceName = session.Device.Name
                     };
 
-                    if (!files_per_timestamp.ContainsKey(video_timestamp_datetime)) {
-                        files_per_timestamp[video_timestamp_datetime] =
-                            new Dictionary<string, List<GalleryModel.FileInfoModel>>();
-                    }
-
-                    if (!files_per_timestamp[video_timestamp_datetime].ContainsKey(session.Device.Name)) {
-                        files_per_timestamp[video_timestamp_datetime][session.Device.Name] = new List<GalleryModel.FileInfoModel>();
-                    }
-                    files_per_timestamp[video_timestamp_datetime][session.Device.Name].Add(file_info_model);
+                    files_per_timestamp[session_day_timestamp_datetime][session_start_timestamp.ToString()]
+                        .SessionMedia
+                        .Add(media_info_model);
                 }
             }
 
@@ -392,6 +432,7 @@ namespace DroHub.Areas.DHub.API {
         }
 
         public async Task removeTag(string tag_name, string media_path, bool save_changes = true) {
+            media_path = media_path.Replace(PreviewFileNamePrefix, "");
             if (! await authorizeMediaObjectOperation(media_path, MediaObjectAuthorizationHandler.MediaObjectResourceOperations.ManipulateTags))
                 throw new MediaObjectAuthorizationException("User is not authorized to read this media");
 
@@ -407,6 +448,7 @@ namespace DroHub.Areas.DHub.API {
         public async Task addTags(string media_path, IEnumerable<string> tags, DateTimeOffset? date_time,
             bool save_changes = true, bool authorize = true) {
 
+            media_path = media_path.Replace(PreviewFileNamePrefix, "");
             if (authorize && ! await authorizeMediaObjectOperation(media_path, MediaObjectAuthorizationHandler.MediaObjectResourceOperations.ManipulateTags))
                 throw new MediaObjectAuthorizationException("User is not authorized to read this media");
             var unique_tags = tags.Select(x => x.ToLower()).Distinct().ToList();

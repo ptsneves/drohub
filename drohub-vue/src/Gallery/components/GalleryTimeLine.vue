@@ -26,16 +26,16 @@
                     v-on:click="onCancelSelection"
             ><i class="fa fa-times"></i></a>
         </div>
-        <ul class="timeline" v-for="unix_timestamp in getEventList" v-bind:key="unix_timestamp" >
+        <ul class="timeline" v-for="unix_day_timestamp in getEventList" v-bind:key="unix_day_timestamp" >
             <li class="drohub-time-label">
                 <time-label class='time'
-                            v-bind:unix-time-stamp="unix_timestamp"
+                            v-bind:unix-time-stamp="unix_day_timestamp"
                             unix-time-stamp-units="ms"
                             v-bind:show-only-date="true">
                 </time-label>
             </li>
 
-            <li v-for="(device_files, device_name, index) in last_filtered_model[unix_timestamp]" v-bind:key="index">
+            <li v-for="(session, session_start_timestamp, index) in last_filtered_model[unix_day_timestamp]" v-bind:key="index">
 
                 <span class="drohub-glyphicon">
                     <inline-svg
@@ -44,7 +44,7 @@
                 </span>
                 <div class="drohub-gallery-content-margin timeline-item">
                     <h3 class="drohub-timeline-header">
-                        {{ device_name }}
+                        {{ session.DeviceName }}  [{{ _MIXIN_TIMESTAMP_getTimeText(session.StartTime, 'ms', false) }} - {{ _MIXIN_TIMESTAMP_getTimeText(session.EndTime, 'ms', false) }}]
                         <span class="pull-right">
                             <button
                                 v-on:click="toggleTags"
@@ -75,45 +75,50 @@
                             <div
                                 class="col-lg-3 col-md-6 col-sm-12 gallery-item"
                                 v-bind:class="{'selectable-item': isSelectionOn}"
-                                v-for="(file, file_index) in device_files"
-                                v-bind:key="file.MediaObject.PreviewMediaPath"
+                                v-for="(file, _) in session.SessionMedia"
+                                v-bind:key="file.PreviewMediaPath"
                             >
                                 <gallery-item-select
                                     v-on:update:selection-event="onGalleryItemSelected"
-                                    v-bind:item-id="file.MediaObject.MediaPath"
-                                    v-bind:preview-id="file.MediaObject.PreviewMediaPath"
+                                    v-bind:item-id="file.MediaPath"
+                                    v-bind:preview-id="file.PreviewMediaPath"
                                     v-bind:is-enabled="isSelectionOn"
-                                    v-bind:is-item-selected="isItemSelected(file.MediaObject.PreviewMediaPath, file.MediaObject.MediaPath)"
+                                    v-bind:is-item-selected="isItemSelected(file.PreviewMediaPath, file.MediaPath)"
                                 />
                                 <inline-svg
-                                    v-if="isImage(file.MediaObject.PreviewMediaPath)"
+                                    v-if="isImage(file.PreviewMediaPath)"
                                     class="media-type-thumbnail"
+                                    title="Photo"
                                     v-bind:src="require('../../../../wwwroot/images/assets/timeline-thumbnail-photo.svg')"
+
                                 />
                                 <inline-svg
-                                    v-if="isVideo(file.MediaObject.PreviewMediaPath)"
+                                    v-if="isVideo(file.PreviewMediaPath)"
+                                    title="Recording"
                                     class="media-type-thumbnail"
                                     v-bind:src="require('../../../../wwwroot/images/assets/timeline-thumbnail-recording.svg')"
+                                    v-bind:transform-source="transform"
                                 />
+
                                 <gallery-video-player
-                                    v-if="isVideo(file.MediaObject.PreviewMediaPath)"
+                                    v-if="isVideo(file.PreviewMediaPath)"
                                     v-bind:get-live-stream-recording-video-url="getLiveStreamRecordingVideoUrl"
                                     v-bind:download-video-url="downloadVideoUrl"
-                                    v-bind:video-preview-id="file.MediaObject.PreviewMediaPath"
+                                    v-bind:video-preview-id="file.PreviewMediaPath"
                                     v-bind:allow-settings="allowSettings"
-                                    v-bind:video-id="file.MediaObject.MediaPath"
+                                    v-bind:video-id="file.MediaPath"
                                 />
                                 <img
                                     class="gallery-image"
-                                    v-else-if="isImage(file.MediaObject.PreviewMediaPath)"
-                                    v-bind:src="getImageSrcURL(file.MediaObject.PreviewMediaPath)"
+                                    v-else-if="isImage(file.PreviewMediaPath)"
+                                    v-bind:src="getImageSrcURL(file.PreviewMediaPath)"
                                     alt="Captured picture"
                                 />
                                 <media-tag-label
                                     v-show="show_tags"
-                                    v-for="tag in file.MediaObject.Tags"
+                                    v-for="tag in file.Tags"
                                     v-bind:key="tag"
-                                    v-bind:media-id="file.MediaObject.MediaPath"
+                                    v-bind:media-id="file.PreviewMediaPath"
                                     v-bind:allow-delete="allowSettings"
                                     v-bind:delete-tags-post-url="deleteTagsPostUrl"
                                     v-bind:text="tag">
@@ -140,6 +145,7 @@
     import GalleryAddTagModal from "./GalleryAddTagModal";
     import GalleryDeleteFilesModal from "./GalleryDeleteFilesModal";
     import qs from 'qs';
+    import Timestamp from './../../components/mixins/timestamp-mixin';
 
     export default {
         name: "GalleryTimeLine",
@@ -202,6 +208,18 @@
             };
         },
         methods: {
+            transform(svg) {
+                let ids = svg.querySelectorAll('[id]');
+
+                Array.prototype.forEach.call( ids, function( el, _ ) {
+                    let classes = el.id;
+                    if (el.class !== undefined)
+                        classes = el.class + " " + classes;
+                    el.removeAttributeNS(null, 'id')
+                    el.setAttributeNS(null, 'class', classes);
+                });
+                return svg;
+            },
             getResetSelectionModel() {
                 return {
                     type: "INACTIVE",
@@ -306,28 +324,27 @@
 
                 let new_model = JSON.parse(JSON.stringify(this.gallery_model));
 
-                const unix_times = Object.keys(this.gallery_model).sort(function(a,b) {
+                const unix_days = Object.keys(this.gallery_model).sort(function(a,b) {
                     return Number(a) - Number(b);
                 }).reverse();
 
-                for (let unix_date of unix_times) {
-                    for(let device_name in this.gallery_model[unix_date]) {
-                        let new_device_file_list = [];
-
-                        for (let file_index = 0; file_index < this.gallery_model[unix_date][device_name].length; file_index++) {
+                for (let unix_date of unix_days) {
+                    for(let session_timestamp in this.gallery_model[unix_date]) {
+                        let new_session_file_list = [];
+                        for (let media_index = 0; media_index < this.gallery_model[unix_date][session_timestamp]["SessionMedia"].length; media_index++) {
                             this.entries_available++;
-                            if (this.entries_visible < this.max_entries_visible &&
-                                    hasInterSection(selected_tags, this.gallery_model[unix_date][device_name][file_index]["MediaObject"]["Tags"]) === true) {
+                            if (this.entries_visible < this.max_entries_visible
+                                && hasInterSection(selected_tags, this.gallery_model[unix_date][session_timestamp]["SessionMedia"][media_index]["Tags"]) === true) {
 
-                                new_device_file_list.push(this.gallery_model[unix_date][device_name][file_index]);
+                                new_session_file_list.push(this.gallery_model[unix_date][session_timestamp]["SessionMedia"][media_index]);
                                 this.entries_visible++;
                             }
                         }
 
-                        if (new_device_file_list.length === 0)
-                            delete new_model[unix_date][device_name];
+                        if (new_session_file_list.length === 0)
+                            delete new_model[unix_date][session_timestamp];
                         else
-                            new_model[unix_date][device_name] = new_device_file_list;
+                            new_model[unix_date][session_timestamp]["SessionMedia"] = new_session_file_list;
                     }
                     if (Object.keys(new_model[unix_date]).length === 0)
                         delete new_model[unix_date];
@@ -341,6 +358,7 @@
                 }).reverse();
             },
         },
+        mixins: [Timestamp],
     }
 
     function hasInterSection(set, super_set) {

@@ -166,7 +166,7 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         public async Task<IActionResult> GetSubscriptionMediaInfo() {
-            return new JsonResult(new Dictionary<string, Dictionary<string, Dictionary<string, List<GalleryModel.FileInfoModel>>>> {
+            return new JsonResult(new Dictionary<string, Dictionary<string, Dictionary<string, GalleryModel.Session>>> {
                 ["result"] = (await MediaObjectAndTagAPI.getGalleryModel(_device_connection_api)).FilesPerTimestamp,
             }, new JsonSerializerOptions { PropertyNamingPolicy = null });
         }
