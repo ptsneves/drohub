@@ -1,36 +1,32 @@
 package com.drohub.Fragments;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import com.drohub.*;
 import com.drohub.Devices.Peripherals.IPeripheral;
-import com.drohub.DroHubHelper;
-import com.drohub.IInfoDisplay;
 import com.drohub.Models.FileEntry;
-import com.drohub.R;
-import com.drohub.SnackBarInfoDisplay;
-import com.drohub.api.GetMediaSubscriptionInfoHelper;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.drohub.api.GetSubscriptionMediaInfoHelper;
 
 import java.net.URISyntaxException;
-import java.util.Iterator;
 import java.util.List;
 
+import static com.drohub.DroHubHelper.*;
 
 public class MediaInfoCardFragment extends DeviceFragment {
     private final int _INVALID_VALUE = -1;
-    private int _device_photos_count;
-    private int _device_video_count;
+    private long _device_photos_count;
+    private long _device_video_count;
 
 //    private int _local_photos_count;
 //    private int _local_video_count;
 
-    private int _remote_photos_count;
-    private int _remote_video_count;
+    private long _remote_photos_count;
+    private long _remote_video_count;
 
     public MediaInfoCardFragment() {
         super(R.layout.fragment_media_info_card);
@@ -67,17 +63,19 @@ public class MediaInfoCardFragment extends DeviceFragment {
         }
 
 
-        final GetMediaSubscriptionInfoHelper media_info_helper = new GetMediaSubscriptionInfoHelper(
+        final GetSubscriptionMediaInfoHelper media_info_helper = new GetSubscriptionMediaInfoHelper(
                 error_display,
-                this::onRemoteData,
+                error_message -> error_display.addTemporarily(error_message, 2000),
                 _user_email,
                 _user_auth_token,
-                sub_info_url
+                sub_info_url,
+                media_store -> media_store.setNewMediaListener(this::onNewRemoteMedia)
         );
         _view.setOnClickListener(v -> {
-            error_display.addTemporarily("Media Info Refreshed.", 2000);
-            showData();
-            media_info_helper.get();
+            Intent intent = new Intent(this.getActivity(), GalleryActivity.class);
+            intent.putExtra(EXTRA_USER_EMAIL, _user_email);
+            intent.putExtra(EXTRA_USER_AUTH_TOKEN, _user_auth_token);
+            startActivity(intent);
         });
 
         media_info_helper.get();
@@ -117,72 +115,31 @@ public class MediaInfoCardFragment extends DeviceFragment {
         }
     }
 
-    private void onRemoteData(JSONObject response) {
-        int remote_photos = 0;
-        int remote_videos = 0;
-
-        JSONObject result = response.optJSONObject("result");
-        if (result == null) {
-            _error_display.addTemporarily("Unexpected gallery data", 2000);
-            return;
-        }
-
-        Iterator<String> timestamp_keys = result.keys();
-        while (timestamp_keys.hasNext()) {
-            String timestamp_key = timestamp_keys.next();
-            JSONObject device_files = result.optJSONObject(timestamp_key);
-            Iterator<String> device_serial_keys = device_files.keys();
-
-            while (device_serial_keys.hasNext()){
-                String device_serial = device_serial_keys.next();
-                JSONArray file_info_model_list = device_files.optJSONArray(device_serial);
-                if (file_info_model_list instanceof JSONArray) {
-                    int size = file_info_model_list.length();
-                    for (int i = 0; i < size; i++) {
-                        JSONObject file_info_model = file_info_model_list.optJSONObject(i);
-                        if (!(file_info_model instanceof JSONObject))
-                            continue;
-
-                        JSONObject media_info_model = file_info_model.optJSONObject("MediaObject");
-                        if (!(media_info_model instanceof JSONObject))
-                            continue;
-
-                        String media_path = media_info_model.optString("MediaPath");
-                        if (!(media_path instanceof String))
-                            continue;
-
-                        if (!media_path.isEmpty())
-                            System.out.println("sda");
-
-                        if (media_path.endsWith(".jpeg"))
-                            remote_photos++;
-                        else if (media_path.endsWith(".webm") || media_path.endsWith(".mp4"))
-                            remote_videos++;
-                    }
-                }
-            }
-
-        }
-        _remote_photos_count = remote_photos;
-        _remote_video_count = remote_videos;
+    private void onNewRemoteMedia(List<FileEntry> media_list) {
+        _remote_photos_count = media_list.stream()
+                .filter(media -> media.resource_type == FileEntry.FileResourceType.IMAGE)
+                .count();
+        _remote_video_count = media_list.stream()
+                .filter(media -> media.resource_type == FileEntry.FileResourceType.VIDEO)
+                .count();
         showData();
     }
 
-    private void onNewPhotos(List<FileEntry> photos) {
-        _device_photos_count = photos.size();
+    private void onNewDroneMedia(List<FileEntry> media_list) {
+        _device_photos_count = media_list.stream()
+            .filter(media -> media.resource_type == FileEntry.FileResourceType.IMAGE)
+            .count();
+        _device_video_count = media_list.stream()
+                .filter(media -> media.resource_type == FileEntry.FileResourceType.VIDEO)
+                .count();
         showData();
     }
 
-    private void onNewVideos(List<FileEntry> videos) {
-        _device_video_count = videos.size();
-        showData();
-    }
 
     @Override
     public void onNewMediaStore(IPeripheral.IMediaStoreProvider media_store) {
         super.onNewMediaStore(media_store);
-        media_store.setNewPhotosListener(this::onNewPhotos);
-        media_store.setNewVideosListener(this::onNewVideos);
+        media_store.setNewMediaListener(this::onNewDroneMedia);
     }
 }
 

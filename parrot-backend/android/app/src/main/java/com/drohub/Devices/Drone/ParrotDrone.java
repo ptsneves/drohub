@@ -3,6 +3,7 @@ package com.drohub.Devices.Drone;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import androidx.annotation.NonNull;
+import com.drohub.Devices.Peripherals.IPeripheral;
 import com.drohub.Devices.Peripherals.Parrot.ParrotMediaStore;
 import com.drohub.IInfoDisplay;
 import com.drohub.Models.DroHubDevice;
@@ -19,15 +20,19 @@ public class ParrotDrone implements IDrone{
 
     private final String PROVIDER_NAME = "ParrotDrone";
 
-    private GroundSdk _parrot_sdk;
-    private IDroneObserver _listener;
+    final private GroundSdk _parrot_sdk;
+    final private IDroneObserver _drone_observer;
+    final private IPeripheral.IMediaStoreProvider.ProviderListener _media_store_provider_listener;
 
     public ParrotDrone(IInfoDisplay display,
                        String query_device_info_url,
                        String user_mail,
                        String user_auth_token,
-                       Activity activity, @NonNull IDroneObserver listener) {
-        _listener = listener;
+                       Activity activity,
+                       @NonNull IDroneObserver listener,
+                       IPeripheral.IMediaStoreProvider.ProviderListener media_store_provider_listener) {
+        _drone_observer = listener;
+        _media_store_provider_listener = media_store_provider_listener;
         _parrot_sdk = ManagedGroundSdk.obtainSession(activity);
 
         if (_parrot_sdk == null) {
@@ -81,12 +86,11 @@ public class ParrotDrone implements IDrone{
                                     getConnectionState(drone.getState().getConnectionState()),
                                     true
                             );
-                            _listener.onNewDrone(device);
+                            _drone_observer.onNewDrone(device);
                             if (device.connection_state == DroHubDevice.ConnectionState.CONNECTED) {
-
                                 ParrotMediaStore media_store =
                                         new ParrotMediaStore(drone, 50, Bitmap.CompressFormat.JPEG);
-                                _listener.onNewMediaStore(media_store);
+                                _media_store_provider_listener.onNewMediaStore(media_store);
                                 media_store.start();
                             }
 
@@ -106,8 +110,13 @@ public class ParrotDrone implements IDrone{
                                 getConnectionState(drone.getState().getConnectionState()),
                                 false
                         );
-                        _listener.onNewDrone(device);
-                        _listener.onNewMediaStore(new ParrotMediaStore(drone, 50, Bitmap.CompressFormat.JPEG));
+                        _drone_observer.onNewDrone(device);
+                        if (device.connection_state == DroHubDevice.ConnectionState.CONNECTED) {
+                            ParrotMediaStore media_store =
+                                    new ParrotMediaStore(drone, 50, Bitmap.CompressFormat.JPEG);
+                            _media_store_provider_listener.onNewMediaStore(media_store);
+                            media_store.start();
+                        }
                     }
                 },
                 query_device_info_url,

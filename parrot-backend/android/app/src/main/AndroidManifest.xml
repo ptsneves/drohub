@@ -38,6 +38,8 @@
                 android:screenOrientation="sensorLandscape"/>
         <activity android:name=".CreateDeviceActivity"/>
 
+        <activity android:name=".GalleryActivity"/>
+
         <meta-data
                 android:name="preloaded_fonts"
                 android:resource="@array/preloaded_fonts"/>

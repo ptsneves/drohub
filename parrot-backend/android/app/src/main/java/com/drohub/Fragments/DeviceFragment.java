@@ -19,7 +19,8 @@ import com.drohub.SnackBarInfoDisplay;
 
 import java.net.URISyntaxException;
 
-public class DeviceFragment extends BaseFragment implements IDroneObserver, IRCObserver {
+public class DeviceFragment extends BaseFragment implements IDroneObserver, IRCObserver,
+        IPeripheral.IMediaStoreProvider.ProviderListener {
     protected IInfoDisplay _error_display;
     protected DroHubDevice _connected_rc;
     protected DroHubDevice _connected_drone;
@@ -55,7 +56,8 @@ public class DeviceFragment extends BaseFragment implements IDroneObserver, IRCO
                 _user_email,
                 _user_auth_token,
                 this.getActivity(),
-                this
+                this,
+                this::onNewMediaStore
                 );
         return _view;
     }

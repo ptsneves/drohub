@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import com.drohub.Models.FileEntry;
 import com.drohub.api.APIHelper;
+import com.drohub.api.GetSubscriptionMediaInfoHelper;
 import com.drohub.api.UploadMediaHelper;
 import com.drohub.mock.InfoDisplayMock;
 import com.drohub.mock.MediaStoreMock;
@@ -23,17 +24,22 @@ import java.util.concurrent.TimeoutException;
 
 @RunWith(AndroidJUnit4.class)
 public class UploadMediaTest {
-    private enum ValidateState {
+    private enum UploadState {
         UPLOAD_SUCCESSFUL,
         UPLOAD_HALTED,
         ERROR,
     }
 
-    private class ValidationStatus {
-        public final ValidateState state;
+    private enum GetMediaInfoState {
+        SUCCESS,
+        ERROR,
+    }
+
+    private static class ValidationStatus<StateEnum extends Enum<StateEnum>> {
+        public final StateEnum state;
         public final String error;
 
-        private ValidationStatus(ValidateState state, String error) {
+        private ValidationStatus(StateEnum state, String error) {
             this.state = state;
             this.error = error;
         }
@@ -41,7 +47,8 @@ public class UploadMediaTest {
 
     final private Context app_context;
     final private Context test_context;
-    final private String resource_url;
+    final private String upload_media_url;
+    final private String get_subscription_media_info_url;
     final private String serial_number;
     final private String user_name;
     final private String user_auth_token;
@@ -50,7 +57,8 @@ public class UploadMediaTest {
     public UploadMediaTest() throws URISyntaxException {
         app_context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         test_context = InstrumentationRegistry.getInstrumentation().getContext();
-        resource_url = DroHubHelper.getURL(app_context, R.string.upload_media_url);
+        upload_media_url = DroHubHelper.getURL(app_context, R.string.upload_media_url);
+        get_subscription_media_info_url = DroHubHelper.getURL(app_context, R.string.get_subscription_media_info_url);
         user_name = InstrumentationRegistry.getArguments().getString("UserName");
         user_auth_token = InstrumentationRegistry.getArguments().getString("Token");
         serial_number = InstrumentationRegistry.getArguments().getString("SerialNumber");
@@ -58,7 +66,7 @@ public class UploadMediaTest {
         APIHelper.ignoreSSLCerts();
 
         if (user_name == null
-                || resource_url == null
+                || upload_media_url.isEmpty()
                 || user_auth_token == null
                 || serial_number == null
                 || file_time_utc == -1)
@@ -71,7 +79,7 @@ public class UploadMediaTest {
         String validate_token_url =
                 InstrumentationRegistry.getArguments().getString("UploadMediaURL");
 
-        URI uri_in_app = new URI(resource_url);
+        URI uri_in_app = new URI(upload_media_url);
         URI uri_from_test = new URI(validate_token_url);
         Assert.assertEquals(uri_from_test.getPath(), uri_in_app.getPath());
     }
@@ -85,15 +93,15 @@ public class UploadMediaTest {
                 new UploadMediaHelper.Listener() {
                     @Override
                     public void onSuccess() {
-                        result_future.complete(new ValidationStatus(ValidateState.UPLOAD_SUCCESSFUL, ""));
+                        result_future.complete(new ValidationStatus(UploadState.UPLOAD_SUCCESSFUL, ""));
                     }
 
                     @Override
                     public void onUploadError(String error) {
                         if (halt_on_progress)
-                            result_future.complete(new ValidationStatus(ValidateState.UPLOAD_HALTED, ""));
+                            result_future.complete(new ValidationStatus(UploadState.UPLOAD_HALTED, ""));
                         else {
-                            result_future.complete(new ValidationStatus(ValidateState.ERROR, error));
+                            result_future.complete(new ValidationStatus(UploadState.ERROR, error));
                         }
                     }
 
@@ -105,11 +113,10 @@ public class UploadMediaTest {
                 },
                 user_name,
                 user_auth_token,
-                resource_url,
-                file_entry,
+                upload_media_url,
                 is_preview);
 
-        helper.upload();
+        helper.upload(file_entry);
 
         return result_future;
     }
@@ -124,17 +131,41 @@ public class UploadMediaTest {
                 file_time_utc,
                 serial_number);
 
-        CompletableFuture<ValidationStatus> haltable_future =
+        CompletableFuture<ValidationStatus> upload_media_haltable_future =
                 validateTest(media_store.getFileEntry(), true, true);
 
-        ValidationStatus r = haltable_future.get(1000000, TimeUnit.MILLISECONDS);
-        Assert.assertEquals(ValidateState.UPLOAD_HALTED, r.state);
+        ValidationStatus r = upload_media_haltable_future.get(100000, TimeUnit.MILLISECONDS);
+        Assert.assertEquals(UploadState.UPLOAD_HALTED, r.state);
 
         CompletableFuture<ValidationStatus> resume_future =
                 validateTest(media_store.getFileEntry(), true, false);
 
-        ValidationStatus r1 = resume_future.get(10000000, TimeUnit.MILLISECONDS);
+        ValidationStatus r1 = resume_future.get(100000, TimeUnit.MILLISECONDS);
         Assert.assertEquals("", r1.error);
-        Assert.assertEquals(ValidateState.UPLOAD_SUCCESSFUL, r1.state);
+        Assert.assertEquals(UploadState.UPLOAD_SUCCESSFUL, r1.state);
+
+        CompletableFuture<ValidationStatus> subscription_media_info_future = new CompletableFuture<>();
+        final InfoDisplayMock t = new InfoDisplayMock(100);
+        GetSubscriptionMediaInfoHelper subscription_media_info = new GetSubscriptionMediaInfoHelper(t,
+                error_message -> {
+                    subscription_media_info_future.complete(new ValidationStatus<>(GetMediaInfoState.ERROR, error_message));
+                },
+                user_name,
+                user_auth_token,
+                get_subscription_media_info_url,
+                drohub_media_store -> drohub_media_store.setNewMediaListener(media -> {
+                    boolean found = false;
+                    for (FileEntry fileEntry: media) {
+                        if (fileEntry.creation_time_unix_ms == file_time_utc)
+                            found =true;
+                    }
+                    subscription_media_info_future.complete(
+                            new ValidationStatus(found ? GetMediaInfoState.SUCCESS : GetMediaInfoState.ERROR, ""));
+                })
+        );
+
+        subscription_media_info.get();
+        ValidationStatus media_info_status = subscription_media_info_future.get(5000, TimeUnit.MILLISECONDS);
+        Assert.assertEquals(media_info_status.state, GetMediaInfoState.SUCCESS);
     }
 }

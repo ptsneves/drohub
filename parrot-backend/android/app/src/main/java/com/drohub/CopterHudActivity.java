@@ -577,54 +577,59 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
         final String startup_warning = "Media store not available";
         e_v.getInfoDisplay().add(startup_warning);
 
-        final AtomicBoolean first_time_photos = new AtomicBoolean(true);
-        final AtomicBoolean first_time_videos = new AtomicBoolean(true);
-        _media_store.setNewPhotosListener(new_photos -> {
-            if (first_time_photos.compareAndSet(true, false)) {
+        final AtomicBoolean first_time_media = new AtomicBoolean(true);
+        _media_store.setNewMediaListener(new_media -> {
+            if (first_time_media.compareAndSet(true, false)) {
                 return;
             }
 
-            e_v.getInfoDisplay().addTemporarily(String.format("New photos: %d", new_photos.size()), 5000);
-            for (FileEntry item : new_photos) {
+            long photo_count = new_media
+                    .stream()
+                    .filter(file_entry -> file_entry.resource_type != FileEntry.FileResourceType.IMAGE)
+                    .count();
+            if (photo_count > 0)
+                e_v.getInfoDisplay().addTemporarily(String.format("New photos: %d", photo_count), 5000);
+
+            long video_count = new_media
+                    .stream()
+                    .filter(file_entry -> file_entry.resource_type != FileEntry.FileResourceType.VIDEO)
+                    .count();
+            if (video_count > 0)
+                e_v.getInfoDisplay().addTemporarily(String.format("New videos: %d", photo_count), 5000);
+
+            new_media.forEach(file_entry -> {
                 try {
                     UploadMediaHelper upload_media_helper = new UploadMediaHelper(e_v.getInfoDisplay(),
-                        new UploadMediaHelper.Listener()
-                                {
-                                    @Override
-                                    public void onSuccess() {
-                                        e_v.getInfoDisplay().addTemporarily("Thumbnail uploaded", 5000);
-                                    }
+                            new UploadMediaHelper.Listener()
+                            {
+                                @Override
+                                public void onSuccess() {
+                                    e_v.getInfoDisplay().addTemporarily("Thumbnail uploaded", 5000);
+                                }
 
-                                    @Override
-                                    public void onUploadError(String error) {
-                                        e_v.getInfoDisplay().addTemporarily(error, 5000);
-                                    }
+                                @Override
+                                public void onUploadError(String error) {
+                                    e_v.getInfoDisplay().addTemporarily(error, 5000);
+                                }
 
-                                    @Override
-                                    public boolean onProgress(int percent) {
-                                        return true;
-                                    }
+                                @Override
+                                public boolean onProgress(int percent) {
+                                    return true;
+                                }
 
-                                },
-                        user_email,
-                        token,
-                        DroHubHelper.getURL(getApplicationContext(), R.string.upload_media_url),
-                        item,
-                        true);
+                            },
+                            user_email,
+                            token,
+                            DroHubHelper.getURL(getApplicationContext(), R.string.upload_media_url),
+                            true);
 
-                    upload_media_helper.upload();
+                    upload_media_helper.upload(
+                            file_entry);
                 }
                 catch (IllegalAccessException | URISyntaxException e) {
                     e_v.getInfoDisplay().addTemporarily("Failed to upload photo thumbnail", 5000);
                 }
-            }
-        });
-
-        _media_store.setNewVideosListener(new_videos -> {
-            if (first_time_videos.compareAndSet(true, false)) {
-                return;
-            }
-            e_v.getInfoDisplay().addTemporarily(String.format("New Videos: %d", new_videos.size()), 5000);
+            });
         });
 
         _media_store.setPeripheralListener(new IPeripheral.IPeripheralListener<ParrotMediaStore>() {
@@ -634,8 +639,7 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
             @Override
             public boolean onFirstTimeAvailable(@NonNull @NotNull ParrotMediaStore parrotMediaStore) {
                 e_v.getInfoDisplay().remove(startup_warning);
-                first_time_photos.set(true);
-                first_time_videos.set(true);
+                first_time_media.set(true);
                 return true;
             }
         });

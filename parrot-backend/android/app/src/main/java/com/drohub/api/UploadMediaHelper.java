@@ -31,7 +31,7 @@ public class UploadMediaHelper {
 
     private final APIHelper _api_helper;
     private final boolean _is_preview;
-    private final FileEntry _file_entry;
+    private FileEntry _file_entry;
     private final Listener _listener;
     private final String _upload_media_url;
 
@@ -44,20 +44,19 @@ public class UploadMediaHelper {
                              String user_email,
                              String user_auth_token,
                              String upload_media_url,
-                             FileEntry file_entry,
                              boolean is_preview) {
         _api_helper = new APIHelper(display, user_email, user_auth_token);
         _listener = listener;
-        _file_entry = file_entry;
         _upload_media_url = upload_media_url;
         _is_preview = is_preview;
         _sent_bytes = 0;
     }
 
-    public void upload() throws IllegalAccessException {
+    public void upload(@NonNull FileEntry file_entry) throws IllegalAccessException {
         if (_file_stream != null)
             throw new IllegalAccessError("Upload session underway or finished");
 
+        _file_entry = file_entry;
         if (_is_preview)
             _file_entry.media_provider.getThumbnail(_file_entry, this::uploadPriv);
         else
@@ -66,7 +65,7 @@ public class UploadMediaHelper {
 
     }
 
-    public void uploadPriv(InputStream stream) throws IllegalAccessException {
+    private void uploadPriv(InputStream stream) throws IllegalAccessException {
         _file_stream = stream;
         try {
             _file_size = _file_stream.available();
@@ -119,8 +118,8 @@ public class UploadMediaHelper {
 
             multipart_req.addPart(new MultiPartRequest.FilePart(
                     "File",
-                    _file_entry.media_provider.getMimeType(_file_entry),
-                    _file_entry.resource_id + _file_entry.media_provider.getExtension(_file_entry),
+                    IPeripheral.IMediaStoreProvider.getMimeType(_file_entry),
+                    _file_entry.resource_id + IPeripheral.IMediaStoreProvider.getExtension(_file_entry),
                     slice
             ));
             _sent_bytes += next_chunk_size;
@@ -130,10 +129,6 @@ public class UploadMediaHelper {
         catch (IOException e) {
             throw new IllegalAccessException(e.getMessage());
         }
-    }
-
-    void onUploadErrorPriv(String error) {
-
     }
 
     private void processResponse(NetworkResponse network_response) {
@@ -151,22 +146,17 @@ public class UploadMediaHelper {
                 }
                 else if (response.optString(_RESULT_KEY).equals(_SUCCESS_RESULT_VALUE))
                     _listener.onSuccess();
-                else if (response.optString(_RESULT_KEY).equals(_ERROR_RESULT_VALUE)) {
-                    if (response.has(_ERROR_KEY)) {
-                        String error = response.optString(_ERROR_KEY);
-                        _listener.onUploadError(error);
-                    }
-                    else {
-                        _listener.onUploadError("Error but no description");
-                    }
-                }
+            }
+            else if (response.has(_ERROR_KEY)) {
+                String error = response.optString(_ERROR_KEY);
+                _listener.onUploadError(error);
             }
             else {
-                _api_helper._display.addTemporarily("Unexpected answer uploading file", 5000);
+                _listener.onUploadError("Error but no description");
             }
         }
         catch (JSONException | UnsupportedEncodingException | IllegalAccessException e) {
-            _api_helper._display.addTemporarily("Unexpected answer uploading file", 5000);
+            _listener.onUploadError("Unexpected answer uploading file");
         }
     }
 }

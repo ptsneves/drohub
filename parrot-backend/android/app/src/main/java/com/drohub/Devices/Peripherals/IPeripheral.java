@@ -1,12 +1,9 @@
 package com.drohub.Devices.Peripherals;
 
-import android.graphics.Bitmap;
-import android.provider.ContactsContract;
 import androidx.annotation.NonNull;
 import com.drohub.Janus.PeerConnectionParameters;
 import com.drohub.Models.FileEntry;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -30,27 +27,39 @@ public interface IPeripheral<P>{
                 IVideoCapturerListener<S> listener);
     }
 
-    interface OnNewPhotoListener {
-        void onChange(List<FileEntry> photos);
-    }
-
-    interface OnNewVideosListener {
-        void onChange(List<FileEntry> videos);
+    interface OnNewMediaListener {
+        void onChange(List<FileEntry> media);
     }
 
     interface IMediaStoreProvider {
+        interface ProviderListener {
+            void onNewMediaStore(IPeripheral.IMediaStoreProvider media_store);
+        }
         String AlbumName = "DROHUB";
         String ThumbnailFormat = "JPEG";
         interface InputStreamListener {
             void onAvailable(InputStream stream) throws IllegalAccessException;
         }
 
-        void setNewPhotosListener(OnNewPhotoListener l);
-        void setNewVideosListener(OnNewVideosListener l);
-        String getMimeType(FileEntry file_entry);
-        String getExtension(FileEntry file_entry);
-        List<FileEntry> getPhotos();
-        List<FileEntry> getVideos();
+        void setNewMediaListener(OnNewMediaListener listener);
+
+        static String getMimeType(FileEntry file_entry) {
+            if (file_entry.resource_type == FileEntry.FileResourceType.IMAGE)
+                return "image/jpeg";
+            else if (file_entry.resource_type == FileEntry.FileResourceType.VIDEO)
+                return "video/mp4";
+            return  "application/octet-stream";
+        }
+
+        static String getExtension(FileEntry file_entry) {
+            if (file_entry.resource_type == FileEntry.FileResourceType.IMAGE)
+                return ".jpeg";
+            else if (file_entry.resource_type == FileEntry.FileResourceType.VIDEO)
+                return ".mp4";
+            return  "bin";
+        }
+
+        List<FileEntry> getAllMedia();
         void getThumbnail(FileEntry file, InputStreamListener listener) throws IllegalAccessException;
         void getMedia(FileEntry file, InputStreamListener listener) throws IllegalAccessException;
     }
