@@ -6,6 +6,12 @@ services:
         image: "ptsneves/airborneprojects:android-test"
         entrypoint: ["echo", "Service android-test disabled"]
         restart: "no"
+    vue-test:
+        build:
+            context: docker/docker-vue-test
+        image: "ptsneves/airborneprojects:vue-test"
+        entrypoint: [ "echo", "Service android-test disabled" ]
+        restart: "no"
     janus:
         build:
             context: ./docker/docker-janus

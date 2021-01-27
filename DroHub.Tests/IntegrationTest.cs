@@ -483,6 +483,24 @@ namespace DroHub.Tests
         }
 
         [Fact]
+        public async void TestVueFrontEnd() {
+            const string DOCKER_REPO_MOUNT_PATH = "/home/cirrus";
+            using var test_containers = new Builder()
+                .UseContainer()
+                .IsPrivileged()
+                .KeepContainer()
+                .ReuseIfExists()
+                .AsUser("1000:1000")
+                .UseImage("ptsneves/airborneprojects:vue-test")
+                .Mount(TestServerFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
+                .Build()
+                .Start();
+            test_containers.WaitForStopped();
+            Assert.Equal(0, test_containers.GetConfiguration().State.ExitCode);
+            test_containers.Remove((true));
+        }
+
+        [Fact]
         public async void TestExcludeSelfUserFails() {
             await using var agent_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
                 DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM,
