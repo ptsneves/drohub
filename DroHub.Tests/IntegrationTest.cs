@@ -471,11 +471,14 @@ namespace DroHub.Tests
 
             Assert.Equal(attrs.Count(), props_data.EnumerateObject().Count());
             foreach (var attr in attrs) {
+                var is_bind = attr.Name.Contains("v-bind");
                 var vue_property_name = TestServerFixture.toCamelCase(attr.Name
                     .Replace("v-bind", ""));
 
                 Assert.Contains(props_data.EnumerateObject(), p => p.NameEquals(vue_property_name));
-                Assert.Equal(attr.Value, props_data.GetProperty(vue_property_name).GetString());
+                Assert.Equal(attr.Value,
+                    is_bind ? props_data.GetProperty(vue_property_name).GetRawText() :
+                        props_data.GetProperty(vue_property_name).GetString());
             }
         }
 
