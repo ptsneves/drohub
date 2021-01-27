@@ -156,7 +156,7 @@ namespace DroHub.Helpers {
 
             if (!File.Exists(final_dst))
                 throw new InvalidDataException($"Expected {final_dst} but it does not exist.\n {__.StandardError}");
-            File.SetCreationTime(final_dst, video_result.creation_date_utc.DateTime);
+            File.SetCreationTime(final_dst, video_result.creation_date_utc.UtcDateTime);
             logger?.LogInformation($"Conversion result available at {final_dst}");
 
             await VideoPreviewGenerator.generatePreview(final_dst, final_dst_preview);
