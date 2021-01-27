@@ -1350,6 +1350,7 @@ namespace DroHub.Tests
                         .Start();
                     test_containers.WaitForStopped();
                     Assert.Equal(0, test_containers.GetConfiguration().State.ExitCode);
+                    test_containers.Remove((true));
                     return Task.CompletedTask;
                 });
 
