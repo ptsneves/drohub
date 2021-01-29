@@ -48,9 +48,6 @@ window.Vuex = Vuex;
 window.onload = function() {
     new Vue({
         el: '#app',
-        store,
-        mounted() {
-            store.commit('ANTI_FORGERY_TOKEN', window.anti_forgery_token);
-        }
+        store
     });
 };

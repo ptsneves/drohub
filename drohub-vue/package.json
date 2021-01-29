@@ -59,6 +59,7 @@
     },
     "moduleNameMapper": {
       "^(test-data.json)$": "<rootDir>/tests/$1",
+      "^(temporary-test-data.json)$": "<rootDir>/tests/$1",
       "^@/(.*)$": "<rootDir>/src/$1"
     },
     "setupFiles": [

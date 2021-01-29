@@ -3,6 +3,7 @@
         "propsData": {
             "addTagsPostUrl": "/DHub/DeviceRepository/AddTags",
             "allowSettings": true,
+            "antiForgeryToken": "@@TEMPORARY@@",
             "delayedMediaRemovalTag": "To Remove after Drone Removal",
             "deleteMediaObjectsPostUrl": "/DHub/DeviceRepository/DeleteMediaObjects",
             "deleteTagsPostUrl": "/DHub/DeviceRepository/DeleteTag",

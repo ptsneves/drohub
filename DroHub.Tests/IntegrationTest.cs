@@ -19,6 +19,8 @@ using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Model.Builders;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 // ReSharper disable StringLiteralTypo
 
@@ -476,14 +478,42 @@ namespace DroHub.Tests
                     .Replace("v-bind", ""));
 
                 Assert.Contains(props_data.EnumerateObject(), p => p.NameEquals(vue_property_name));
-                Assert.Equal(attr.Value,
-                    is_bind ? props_data.GetProperty(vue_property_name).GetRawText() :
-                        props_data.GetProperty(vue_property_name).GetString());
+
+                var prop = props_data.GetProperty(vue_property_name);
+
+                if (prop.ValueKind == JsonValueKind.String && prop.GetString() == "@@TEMPORARY@@")
+                    continue;
+
+                Assert.Equal(attr.Value, is_bind ? prop.GetRawText() : prop.GetString());
             }
         }
 
         [Fact]
         public async void TestVueFrontEnd() {
+            var r = await HttpClientHelper.getGalleryPage(TestServerFixture.AdminUserEmail, _fixture.AdminPassword);
+            var token = TestServerFixture
+                .getHtmlDOM(r)
+                .QuerySelectorAll("gallery-timeline")
+                .First()
+                .Attributes
+                .First(e => e.Name == "anti-forgery-token")
+                .Value;
+
+
+            var temp_data_path = Path.Join(TestServerFixture.DroHubPath, TestServerFixture.FrontEndPathInRepo,
+                "tests",
+                "temporary-test-data.json");
+
+            var temp_test_data_stream = await File.ReadAllTextAsync(temp_data_path);
+
+            dynamic temp_test_data = JsonConvert.DeserializeObject(temp_test_data_stream);
+            var cross_site_token_json = temp_test_data["GalleryTimeLine"]["propsData"];
+
+            cross_site_token_json["crossSiteForgeryToken"] = token;
+            var output = JsonConvert.SerializeObject(temp_test_data, Formatting.Indented);
+
+            await File.WriteAllTextAsync(temp_data_path, output);
+
             const string DOCKER_REPO_MOUNT_PATH = "/home/cirrus";
             using var test_containers = new Builder()
                 .UseContainer()

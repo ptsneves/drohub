@@ -17,8 +17,10 @@ describe('GalleryTimeLine.vue', () => {
     };
 
     const test_data = require('test-data.json').GalleryTimeLine;
+    const temp_test_data = require('temporary-test-data.json').GalleryTimeLine;
     const init_data = test_data.special.init_data;
-    const propsData = test_data.propsData;
+    let propsData = test_data.propsData;
+    propsData.antiForgeryToken = temp_test_data.propsData.crossSiteForgeryToken;
 
     beforeEach(() => {
         const observe = jest.fn();
@@ -31,12 +33,20 @@ describe('GalleryTimeLine.vue', () => {
             unobserve,
         }))
 
+
+    })
+    it('Correct interface', () => {
         store = new Vuex.Store({
             state: {
                 filtered_tags: [],
                 anti_forgery_token: "",
                 modal_model: {
                     type: 'INACTIVE',
+                },
+            },
+            mutations: {
+                ANTI_FORGERY_TOKEN(state, anti_forgery_token) {
+                    state.anti_forgery_token = anti_forgery_token;
                 },
             },
         })
@@ -48,9 +58,6 @@ describe('GalleryTimeLine.vue', () => {
                 value: init_data
             }
         );
-    })
-    it('Correct interface', () => {
-
         const wrapper = shallowMount(GalleryTimeLine, { store, localVue, propsData});
     });
 })

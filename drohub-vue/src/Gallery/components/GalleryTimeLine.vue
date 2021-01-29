@@ -172,6 +172,10 @@
                 type: Boolean,
                 required: true,
             },
+            antiForgeryToken: {
+                type: String,
+                required: true
+            },
             delayedMediaRemovalTag: {
                 type: String,
                 required: true,
@@ -372,6 +376,9 @@
             },
         },
         mixins: [Timestamp],
+        mounted() {
+            this.$store.commit('ANTI_FORGERY_TOKEN', this.antiForgeryToken);
+        }
     }
 
     function hasInterSection(set, super_set) {
