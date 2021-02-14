@@ -7,6 +7,7 @@
         <gallery-add-tag-modal
             v-if="allowSettings"
             v-bind:add-tags-post-url="addTagsPostUrl"
+            v-bind:anti-forgery-token="antiForgeryToken"
         />
         <gallery-delete-files-modal
             v-if="allowSettings"

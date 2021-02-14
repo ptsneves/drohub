@@ -7,7 +7,7 @@
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "prepare": "patch-package",
-    "test:unit": "vue-cli-service test:unit"
+    "test:unit": "export NODE_TLS_REJECT_UNAUTHORIZED=0 && vue-cli-service test:unit"
   },
   "dependencies": {
     "@algoz098/vue-player": "https://github.com/algoz098/vue-player.git#8c2a2fcca2312357836650a16f9f9b5da953c8e5",
@@ -67,7 +67,8 @@
     ],
     "transformIgnorePatterns": [
       "/node_modules/(?!@algoz098)"
-    ]
+    ],
+    "testURL": "https://master"
   },
   "eslintConfig": {
     "root": true,

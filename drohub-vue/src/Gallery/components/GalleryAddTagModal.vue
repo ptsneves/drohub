@@ -1,5 +1,5 @@
 <template>
-    <div v-if="isActiveModal">
+    <div class="gallery-add-tag-modal" v-if="isActiveModal">
         <transition name="modal">
             <div class="modal-mask">
                 <div class="modal-wrapper">
@@ -56,6 +56,10 @@
                 type: String,
                 required: true,
             },
+            antiForgeryToken: {
+                type: String,
+                required: true
+            },
         },
         components: {
             VueTagsInput,
@@ -80,20 +84,20 @@
         },
         methods: {
             submit() {
-                if (this.noTags === true && this.isActiveModal)
+                if (this.noTags === true || !this.isActiveModal)
                     return;
 
                 axios
                     .post(this.addTagsPostUrl, qs.stringify({
                         'TagList': this.tags.map(t => t.text),
                         'TimeStampInSeconds': this.$store.state.modal_model.TimeStampInSeconds,
-                        '__RequestVerificationToken': this.$store.anti_forgery_token,
+                        '__RequestVerificationToken': this.antiForgeryToken,
                         'MediaIdList': this.selectedFiles,
                         'UseTimeStamp': this.$store.state.modal_model.UseTimeStamp,
                     }))
-                .then(function() {
-                    window.location.reload(true);
-                });
+                    .then(function() {
+                        window.location.reload(true);
+                    });
             },
             hideModal() {
                 return this.$store.commit('SET_MODAL_MODEL', {type:'INACTIVE'});

@@ -22,6 +22,7 @@ namespace DroHub.Tests.TestInfrastructure
         public HttpResponseMessage Response { get; private set; }
         public CookieContainer cookieContainer {get; private set; }
         public string verificationToken { get; private set; }
+        public string loginCookies { get; private set; }
         public Cookie loginCookie { get; private set; }
 
         public HttpClientHelper() {
@@ -249,6 +250,7 @@ namespace DroHub.Tests.TestInfrastructure
                 Console.WriteLine(http_helper.verificationToken);
                 throw new InvalidProgramException($"Login failed. Instead we are in {http_helper.Response.RequestMessage.RequestUri}" );
             }
+            http_helper.loginCookies = http_helper.cookieContainer.GetCookieHeader(login_uri);
             http_helper.loginCookie = http_helper.cookieContainer.GetCookies(login_uri)[".AspNetCore.Identity.Application"];
             return http_helper;
         }
@@ -400,6 +402,17 @@ namespace DroHub.Tests.TestInfrastructure
 
             var res = await retrieveFromAndroidApp(user, token, "UploadMedia", form, false);
             return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,dynamic>>(res);
+        }
+
+        public static async Task<string> getCrossSiteAntiForgeryToken(string user_name, string password) {
+            var r = await getGalleryPage(user_name, password);
+            return TestServerFixture
+                .getHtmlDOM(r)
+                .QuerySelectorAll("gallery-timeline")
+                .First()
+                .Attributes
+                .First(e => e.Name == "anti-forgery-token")
+                .Value;
         }
 
         public static async Task<TWebSocketClient> openWebSocket(string user, string token, string

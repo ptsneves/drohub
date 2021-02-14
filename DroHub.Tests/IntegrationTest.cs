@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Xunit;
 using DroHub.Tests.TestInfrastructure;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Text.Json;
 using System.Threading;
+using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
@@ -20,6 +22,7 @@ using Ductus.FluentDocker.Model.Builders;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 // ReSharper disable StringLiteralTypo
@@ -490,14 +493,10 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestVueFrontEnd() {
-            var r = await HttpClientHelper.getGalleryPage(TestServerFixture.AdminUserEmail, _fixture.AdminPassword);
-            var token = TestServerFixture
-                .getHtmlDOM(r)
-                .QuerySelectorAll("gallery-timeline")
-                .First()
-                .Attributes
-                .First(e => e.Name == "anti-forgery-token")
-                .Value;
+            var tag_list_truth = new List<string> {"my new test tag", "tag2"};
+
+            var login_cookie = (await HttpClientHelper
+                .createLoggedInUser(TestServerFixture.AdminUserEmail, _fixture.AdminPassword)).loginCookies;
 
 
             var temp_data_path = Path.Join(TestServerFixture.DroHubPath, TestServerFixture.FrontEndPathInRepo,
@@ -506,28 +505,58 @@ namespace DroHub.Tests
 
             var temp_test_data_stream = await File.ReadAllTextAsync(temp_data_path);
 
-            dynamic temp_test_data = JsonConvert.DeserializeObject(temp_test_data_stream);
-            var cross_site_token_json = temp_test_data["GalleryTimeLine"]["propsData"];
+            var old_media_list = _fixture.DbContext
+                .MediaObjects
+                .ToList();
 
-            cross_site_token_json["crossSiteForgeryToken"] = token;
-            var output = JsonConvert.SerializeObject(temp_test_data, Formatting.Indented);
 
-            await File.WriteAllTextAsync(temp_data_path, output);
+            await testUpload(1, TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
+                TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
+                (objects, i, arg3, arg4) => {
+                    if (objects["result"] != "ok")
+                        return UploadTestReturnEnum.CONTINUE;
 
-            const string DOCKER_REPO_MOUNT_PATH = "/home/cirrus";
-            using var test_containers = new Builder()
-                .UseContainer()
-                .IsPrivileged()
-                .KeepContainer()
-                .ReuseIfExists()
-                .AsUser("1000:1000")
-                .UseImage("ptsneves/airborneprojects:vue-test")
-                .Mount(TestServerFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
-                .Build()
-                .Start();
-            test_containers.WaitForStopped();
-            Assert.Equal(0, test_containers.GetConfiguration().State.ExitCode);
-            test_containers.Remove((true));
+                    var media_list = _fixture.DbContext.MediaObjects
+                        .Select(m => MediaObjectAndTagAPI.LocalStorageHelper.convertToFrontEndFilePath(m))
+                        .ToList();
+                    media_list.Reverse();
+                    Assert.Equal(old_media_list.Count + 1 , media_list.Count);
+                    var token = HttpClientHelper.getCrossSiteAntiForgeryToken(TestServerFixture.AdminUserEmail,
+                        _fixture.AdminPassword).GetAwaiter().GetResult();
+
+
+                    dynamic temp_test_data = JsonConvert.DeserializeObject(temp_test_data_stream);
+                    temp_test_data.GalleryTimeLine.propsData.crossSiteForgeryToken = token;
+                    temp_test_data.GalleryAddTagModal.cookie = login_cookie;
+                    temp_test_data.GalleryAddTagModal.tagsToAdd = new JArray(tag_list_truth);
+                    temp_test_data.GalleryAddTagModal.mediaIdList = new JArray(media_list.First());
+                    temp_test_data.GalleryAddTagModal.useTimeStamp = false;
+                    temp_test_data.GalleryAddTagModal.propsData.crossSiteForgeryToken = token;
+
+                    var output = JsonConvert.SerializeObject(temp_test_data, Formatting.Indented);
+
+                    File.WriteAllText(temp_data_path, output);
+
+                    const string DOCKER_REPO_MOUNT_PATH = "/home/cirrus";
+                    using var test_containers = new Builder()
+                        .UseContainer()
+                        .IsPrivileged()
+                        .KeepContainer()
+                        .ReuseIfExists()
+                        .AsUser("1000:1000")
+                        .UseImage("ptsneves/airborneprojects:vue-test")
+                        .Mount(TestServerFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
+                        .Build()
+                        .Start();
+                    test_containers.WaitForStopped();
+                    Assert.Equal(0, test_containers.GetConfiguration().State.ExitCode);
+                    test_containers.Remove((true));
+                    Assert.Equal(1, _fixture.DbContext.MediaObjectTags.Count(
+                        t => t.TagName == tag_list_truth[0]
+                        && t.MediaPath == MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list.First())));
+
+                    return UploadTestReturnEnum.CONTINUE;
+                });
         }
 
         [Fact]

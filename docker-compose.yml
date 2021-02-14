@@ -6,6 +6,7 @@ services:
         image: "ptsneves/airborneprojects:android-test"
         entrypoint: ["echo", "Service android-test disabled"]
         restart: "no"
+        network_mode: host
     vue-test:
         build:
             context: docker/docker-vue-test
