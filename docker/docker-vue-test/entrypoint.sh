@@ -2,4 +2,4 @@
 set -eux
 
 cd drohub-vue
-yarn test:unit
+yarn test:unit $@

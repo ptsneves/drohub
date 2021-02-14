@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Services;
@@ -11,11 +12,14 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using AngleSharp;
 using AngleSharp.Html.Parser;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Data;
+using Ductus.FluentDocker.Model.Builders;
 using Ductus.FluentDocker.Services.Extensions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using YamlDotNet.RepresentationModel;
@@ -189,6 +193,93 @@ namespace DroHub.Tests.TestInfrastructure
         public static string getGradleArgument(string property_name, string value) {
             return $"-Pandroid.testInstrumentationRunnerArguments.{property_name}={value}";
         }
+
+        public IContainerService runVueTestContainer(string test_name) {
+            const string DOCKER_REPO_MOUNT_PATH = "/home/cirrus";
+            using var test_containers = new Builder()
+                .UseContainer()
+                .IsPrivileged()
+                .KeepContainer()
+                .ReuseIfExists()
+                .AsUser("1000:1000")
+                .Command(test_name)
+                .UseImage("ptsneves/airborneprojects:vue-test")
+                .Mount(TestServerFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
+                .Build()
+                .Start();
+            test_containers.WaitForStopped();
+            return test_containers;
+        }
+
+        public enum UploadTestReturnEnum {
+            CONTINUE,
+            SKIP_RUN,
+            STOP_UPLOAD
+        }
+
+        public async Task testUpload(int half_duration_multiplier,
+            string session_user,
+            string session_password,
+            string upload_user,
+            string upload_password,
+            Func<Dictionary<string,dynamic>, int, int, long, UploadTestReturnEnum> test,
+            int runs = 1,
+            string src = "video.webm",
+            int chunks = 30) {
+
+            var half_duration_seconds = TimeSpan.FromMilliseconds(4000);
+            await HttpClientHelper.generateConnectionId(this, 2 * half_duration_seconds, "Aserial0",
+                session_user,
+                session_password,
+                async connection => {
+
+
+                    //Otherwise the value is considered local time
+                    var date_time_in_range = connection.StartTime + half_duration_multiplier * half_duration_seconds;
+
+                    for (var i = 0; i < runs; i++) {
+                        await using var stream = new FileStream($"{TestServerFixture.TestAssetsPath}/{src}", FileMode.Open);
+                        for (var chunk = 0; chunk < chunks; chunk++) {
+                            try {
+                                var amount_send = stream.Length / chunks;
+                                if (chunk == chunks - 1)
+                                    amount_send = stream.Length - stream.Length/chunks * chunk;
+                                var r = await HttpClientHelper.uploadMedia(upload_user,
+                                    upload_password,
+                                    new AndroidApplicationController.UploadModel {
+                                        File = new FormFile(stream, stream.Length/chunks * chunk, amount_send, src,
+                                            $"{TestServerFixture.TestAssetsPath}/{src}"),
+                                        IsPreview = false, //needs to be because preview files have different paths
+                                        DeviceSerialNumber = "Aserial0",
+                                        UnixCreationTimeMS = date_time_in_range.ToUnixTimeMilliseconds(),
+                                        AssembledFileSize = stream.Length,
+                                        RangeStartBytes = stream.Length/chunks * chunk
+                                    });
+
+                                switch (test(r, i, chunk, stream.Length/chunks)) {
+                                    case UploadTestReturnEnum.CONTINUE:
+                                        continue;
+                                    case UploadTestReturnEnum.SKIP_RUN:
+                                        chunk = chunks; //short circuit
+                                        break;
+                                    case UploadTestReturnEnum.STOP_UPLOAD:
+                                        return;
+                                    default:
+                                        throw new ArgumentOutOfRangeException();
+                                }
+                            }
+                            catch (HttpRequestException e) {
+                                test(new Dictionary<string, dynamic> {
+                                        ["error"] = e.Message
+                                    },
+                                    i, chunk, stream.Length/chunks);
+                                return;
+                            }
+                        }
+                    }
+                });
+        }
+
 
         public void Dispose() {
             Docker.Dispose();

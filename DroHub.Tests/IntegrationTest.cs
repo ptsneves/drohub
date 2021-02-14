@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using Xunit;
 using DroHub.Tests.TestInfrastructure;
 using System.Threading.Tasks;
@@ -11,7 +10,6 @@ using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Text.Json;
 using System.Threading;
-using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
@@ -21,8 +19,6 @@ using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Model.Builders;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 // ReSharper disable StringLiteralTypo
@@ -492,74 +488,6 @@ namespace DroHub.Tests
         }
 
         [Fact]
-        public async void TestVueFrontEnd() {
-            var tag_list_truth = new List<string> {"my new test tag", "tag2"};
-
-            var login_cookie = (await HttpClientHelper
-                .createLoggedInUser(TestServerFixture.AdminUserEmail, _fixture.AdminPassword)).loginCookies;
-
-
-            var temp_data_path = Path.Join(TestServerFixture.DroHubPath, TestServerFixture.FrontEndPathInRepo,
-                "tests",
-                "temporary-test-data.json");
-
-            var temp_test_data_stream = await File.ReadAllTextAsync(temp_data_path);
-
-            var old_media_list = _fixture.DbContext
-                .MediaObjects
-                .ToList();
-
-
-            await testUpload(1, TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
-                TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
-                (objects, i, arg3, arg4) => {
-                    if (objects["result"] != "ok")
-                        return UploadTestReturnEnum.CONTINUE;
-
-                    var media_list = _fixture.DbContext.MediaObjects
-                        .Select(m => MediaObjectAndTagAPI.LocalStorageHelper.convertToFrontEndFilePath(m))
-                        .ToList();
-                    media_list.Reverse();
-                    Assert.Equal(old_media_list.Count + 1 , media_list.Count);
-                    var token = HttpClientHelper.getCrossSiteAntiForgeryToken(TestServerFixture.AdminUserEmail,
-                        _fixture.AdminPassword).GetAwaiter().GetResult();
-
-
-                    dynamic temp_test_data = JsonConvert.DeserializeObject(temp_test_data_stream);
-                    temp_test_data.GalleryTimeLine.propsData.crossSiteForgeryToken = token;
-                    temp_test_data.GalleryAddTagModal.cookie = login_cookie;
-                    temp_test_data.GalleryAddTagModal.tagsToAdd = new JArray(tag_list_truth);
-                    temp_test_data.GalleryAddTagModal.mediaIdList = new JArray(media_list.First());
-                    temp_test_data.GalleryAddTagModal.useTimeStamp = false;
-                    temp_test_data.GalleryAddTagModal.propsData.crossSiteForgeryToken = token;
-
-                    var output = JsonConvert.SerializeObject(temp_test_data, Formatting.Indented);
-
-                    File.WriteAllText(temp_data_path, output);
-
-                    const string DOCKER_REPO_MOUNT_PATH = "/home/cirrus";
-                    using var test_containers = new Builder()
-                        .UseContainer()
-                        .IsPrivileged()
-                        .KeepContainer()
-                        .ReuseIfExists()
-                        .AsUser("1000:1000")
-                        .UseImage("ptsneves/airborneprojects:vue-test")
-                        .Mount(TestServerFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
-                        .Build()
-                        .Start();
-                    test_containers.WaitForStopped();
-                    Assert.Equal(0, test_containers.GetConfiguration().State.ExitCode);
-                    test_containers.Remove((true));
-                    Assert.Equal(1, _fixture.DbContext.MediaObjectTags.Count(
-                        t => t.TagName == tag_list_truth[0]
-                        && t.MediaPath == MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list.First())));
-
-                    return UploadTestReturnEnum.CONTINUE;
-                });
-        }
-
-        [Fact]
         public async void TestExcludeSelfUserFails() {
             await using var agent_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
                 DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM,
@@ -684,83 +612,13 @@ namespace DroHub.Tests
 
         }
 
-        private enum UploadTestReturnEnum {
-            CONTINUE,
-            SKIP_RUN,
-            STOP_UPLOAD
-        }
-
-        private async Task testUpload(int half_duration_multiplier,
-            string session_user,
-            string session_password,
-            string upload_user,
-            string upload_password,
-            Func<Dictionary<string,dynamic>, int, int, long, UploadTestReturnEnum> test,
-            int runs = 1,
-            string src = "video.webm",
-            int chunks = 30) {
-
-            var half_duration_seconds = TimeSpan.FromMilliseconds(4000);
-            await HttpClientHelper.generateConnectionId(_fixture, 2 * half_duration_seconds, "Aserial0",
-                session_user,
-                session_password,
-                async connection => {
-
-
-                    //Otherwise the value is considered local time
-                    var date_time_in_range = connection.StartTime + half_duration_multiplier * half_duration_seconds;
-
-                    for (var i = 0; i < runs; i++) {
-                        await using var stream = new FileStream($"{TestServerFixture.TestAssetsPath}/{src}", FileMode.Open);
-                        for (var chunk = 0; chunk < chunks; chunk++) {
-                            try {
-                                var amount_send = stream.Length / chunks;
-                                if (chunk == chunks - 1)
-                                    amount_send = stream.Length - stream.Length/chunks * chunk;
-                                var r = await HttpClientHelper.uploadMedia(upload_user,
-                                    upload_password,
-                                    new AndroidApplicationController.UploadModel {
-                                        File = new FormFile(stream, stream.Length/chunks * chunk, amount_send, src,
-                                            $"{TestServerFixture.TestAssetsPath}/{src}"),
-                                        IsPreview = false, //needs to be because preview files have different paths
-                                        DeviceSerialNumber = "Aserial0",
-                                        UnixCreationTimeMS =
-                                            ((DateTimeOffset) date_time_in_range).ToUnixTimeMilliseconds(),
-                                        AssembledFileSize = stream.Length,
-                                        RangeStartBytes = stream.Length/chunks * chunk
-                                    });
-
-                                switch (test(r, i, chunk, stream.Length/chunks)) {
-                                    case UploadTestReturnEnum.CONTINUE:
-                                        continue;
-                                    case UploadTestReturnEnum.SKIP_RUN:
-                                        chunk = chunks; //short circuit
-                                        break;
-                                    case UploadTestReturnEnum.STOP_UPLOAD:
-                                        return;
-                                    default:
-                                        throw new ArgumentOutOfRangeException();
-                                }
-                            }
-                            catch (HttpRequestException e) {
-                                test(new Dictionary<string, dynamic> {
-                                        ["error"] = e.Message
-                                    },
-                                    i, chunk, stream.Length/chunks);
-                                return;
-                            }
-                        }
-                    }
-                });
-        }
-
         [Fact]
         public async void TestUploadMediaSucceeds() {
             var ran = false;
             var last_chunk = 0;
             const int CHUNKS = 30;
 
-            await testUpload(1,
+            await _fixture.testUpload(1,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
@@ -784,7 +642,7 @@ namespace DroHub.Tests
                         ran = true;
                     }
 
-                    return UploadTestReturnEnum.CONTINUE;
+                    return TestServerFixture.UploadTestReturnEnum.CONTINUE;
                 });
             Assert.Equal(CHUNKS, last_chunk);
             Assert.True(ran);
@@ -796,7 +654,7 @@ namespace DroHub.Tests
             var last_chunk = 0;
             const int CHUNKS = 1;
 
-            await testUpload(1,
+            await _fixture.testUpload(1,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
@@ -812,7 +670,7 @@ namespace DroHub.Tests
                     Assert.Equal(orig_sha256, uploaded_sha256);
                     ran = true;
 
-                    return UploadTestReturnEnum.CONTINUE;
+                    return TestServerFixture.UploadTestReturnEnum.CONTINUE;
                 },
                 1,
                 "preview-drone-PI040416DA9H110281-1608225545000.jpeg",
@@ -859,7 +717,7 @@ namespace DroHub.Tests
         [Fact]
         public async void TestUploadMediaLargeChunkFails() {
             var ran = false;
-            await testUpload(1,
+            await _fixture.testUpload(1,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
@@ -868,7 +726,7 @@ namespace DroHub.Tests
                     Assert.True(result.TryGetValue("error", out var value));
                     Assert.Equal("Response status code does not indicate success: 413 (Request Entity Too Large).", value);
                     ran = true;
-                    return UploadTestReturnEnum.STOP_UPLOAD;
+                    return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
                 },
                 1,
                 "video.webm",
@@ -879,7 +737,7 @@ namespace DroHub.Tests
         [Fact]
         public async void TestUploadTooSmallChunkFails() {
             var ran = false;
-            await testUpload(1,
+            await _fixture.testUpload(1,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
@@ -888,7 +746,7 @@ namespace DroHub.Tests
                     Assert.True(result.TryGetValue("error", out var v));
                     Assert.Equal(v, AndroidApplicationController.CHUNK_TOO_SMALL);
                     ran = true;
-                    return UploadTestReturnEnum.STOP_UPLOAD;
+                    return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
                 },
                 1,
                 "video.webm",
@@ -899,7 +757,7 @@ namespace DroHub.Tests
         [Fact]
         public async void TestUploadTooSmallFails() {
             var ran = false;
-            await testUpload(1,
+            await _fixture.testUpload(1,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
@@ -908,7 +766,7 @@ namespace DroHub.Tests
                     Assert.True(result.TryGetValue("error", out var v));
                     Assert.Equal(v, AndroidApplicationController.SIZE_TOO_SMALL);
                     ran = true;
-                    return UploadTestReturnEnum.STOP_UPLOAD;
+                    return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
                 },
                 1,
                 "fake-0byte.webm",
@@ -927,7 +785,7 @@ namespace DroHub.Tests
         [Fact]
         public async void TestUploadMediaOutOfDeviceConnectionFails() {
             var ran = false;
-            await testUpload(4,
+            await _fixture.testUpload(4,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
@@ -936,7 +794,7 @@ namespace DroHub.Tests
                 Assert.True(result.TryGetValue("error", out var v));
                 Assert.Equal("Media does not correspond to any known flight", v);
                 ran = true;
-                return UploadTestReturnEnum.STOP_UPLOAD;
+                return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
             });
             Assert.True(ran);
         }
@@ -967,7 +825,7 @@ namespace DroHub.Tests
                 DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM, 99, 99);
 
             var ran = false;
-            await testUpload(1,
+            await _fixture.testUpload(1,
                     DEFAULT_USER,
                     DEFAULT_PASSWORD,
                     TestServerFixture.AdminUserEmail,
@@ -976,7 +834,7 @@ namespace DroHub.Tests
                         Assert.True(result.TryGetValue("error", out var v));
                         Assert.Equal(v, "Response status code does not indicate success: 401 (Unauthorized).");
                         ran = true;
-                        return UploadTestReturnEnum.STOP_UPLOAD;
+                        return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
                     }
                 );
             Assert.True(ran);
@@ -986,7 +844,7 @@ namespace DroHub.Tests
         public async void TestUploadMediaChunkOverwriteSkips() {
             var ran1 = false;
             var ran2 = false;
-            await testUpload(1,
+            await _fixture.testUpload(1,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
@@ -994,7 +852,7 @@ namespace DroHub.Tests
                 (result, attempt, chunk, sent_chunk_size) => {
                     if (attempt == 0) {
                         ran1 = true;
-                        return UploadTestReturnEnum.SKIP_RUN;
+                        return TestServerFixture.UploadTestReturnEnum.SKIP_RUN;
                     }
 
                     ran2 = true;
@@ -1002,7 +860,7 @@ namespace DroHub.Tests
                     Assert.Equal("send-next", v);
                     Assert.True(result.TryGetValue("begin", out var r));
                     Assert.Equal(sent_chunk_size*(chunk+1), r);
-                    return UploadTestReturnEnum.STOP_UPLOAD;
+                    return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
                 }, 2);
 
             Assert.True(ran1);
@@ -1013,7 +871,7 @@ namespace DroHub.Tests
         public async void TestUploadMediaOverwriteFails() {
             var ran1 = false;
             var ran2 = false;
-            await testUpload(1,
+            await _fixture.testUpload(1,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
@@ -1022,7 +880,7 @@ namespace DroHub.Tests
                 switch (tries) {
                     case 0: {
                         ran1 = true;
-                        return UploadTestReturnEnum.CONTINUE;
+                        return TestServerFixture.UploadTestReturnEnum.CONTINUE;
                     }
                     case 1: {
                         Assert.True(result.TryGetValue("error", out var v));
@@ -1035,7 +893,7 @@ namespace DroHub.Tests
                         break;
                 }
 
-                return UploadTestReturnEnum.STOP_UPLOAD;
+                return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
             }, 2);
             Assert.True(ran1);
             Assert.True(ran2);
@@ -1044,7 +902,7 @@ namespace DroHub.Tests
         [Fact]
         public async void TestNotAllowedFormatFails() {
             var ran = false;
-            await testUpload(1,
+            await _fixture.testUpload(1,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
@@ -1053,7 +911,7 @@ namespace DroHub.Tests
                 Assert.True(result.TryGetValue("error", out var v));
                 Assert.Equal(v, "Format not allowed");
                 ran = true;
-                return UploadTestReturnEnum.STOP_UPLOAD;
+                return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
             }, 1, "video-janus.mjr");
             Assert.True(ran);
         }
