@@ -34,7 +34,6 @@ namespace DroHub.Tests {
                 .MediaObjects
                 .ToList();
 
-
             await _fixture.testUpload(1, TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
                 (objects, i, arg3, arg4) => {
@@ -59,10 +58,7 @@ namespace DroHub.Tests {
 
                     writeNewTempTestData(VUE_TEST_NAME, temp_test_data);
 
-                    var test_containers = _fixture.runVueTestContainer(VUE_TEST_NAME);
-
-                    Assert.Equal(0, test_containers.GetConfiguration().State.ExitCode);
-                    test_containers.Remove((true));
+                    TestServerFixture.runVueTestContainer(VUE_TEST_NAME, true, true);
                     Assert.Equal(1, _fixture.DbContext.MediaObjectTags.Count(
                         t => t.TagName == tag_list_truth[0]
                         && t.MediaPath == MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list.First())));
@@ -84,10 +80,7 @@ namespace DroHub.Tests {
 
         [Fact]
         public void TestTimeLabel() {
-            var test_container = _fixture.runVueTestContainer("TimeLabel");
-            test_container.WaitForStopped();
-            Assert.Equal(0, test_container.GetConfiguration().State.ExitCode);
-            test_container.Remove((true));
+            TestServerFixture.runVueTestContainer("TimeLabel", true, true);
         }
 
         [Fact]
@@ -100,9 +93,7 @@ namespace DroHub.Tests {
             temp_test_data.propsData.crossSiteForgeryToken = token;
             writeNewTempTestData(VUE_TEST_NAME, temp_test_data);
 
-            var test_container = _fixture.runVueTestContainer(VUE_TEST_NAME);
-            Assert.Equal(0, test_container.GetConfiguration().State.ExitCode);
-            test_container.Remove((true));
+            TestServerFixture.runVueTestContainer(VUE_TEST_NAME, true, true);
         }
     }
 }

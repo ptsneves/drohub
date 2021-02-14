@@ -194,7 +194,7 @@ namespace DroHub.Tests.TestInfrastructure
             return $"-Pandroid.testInstrumentationRunnerArguments.{property_name}={value}";
         }
 
-        public IContainerService runVueTestContainer(string test_name) {
+        public static IContainerService runVueTestContainer(string test_name, bool assert_exit_0, bool rm_on_success) {
             const string DOCKER_REPO_MOUNT_PATH = "/home/cirrus";
             using var test_containers = new Builder()
                 .UseContainer()
@@ -208,6 +208,13 @@ namespace DroHub.Tests.TestInfrastructure
                 .Build()
                 .Start();
             test_containers.WaitForStopped();
+
+            if (assert_exit_0)
+                Assert.Equal(0, test_containers.GetConfiguration().State.ExitCode);
+
+            if (rm_on_success)
+                test_containers.Remove((true));
+
             return test_containers;
         }
 
