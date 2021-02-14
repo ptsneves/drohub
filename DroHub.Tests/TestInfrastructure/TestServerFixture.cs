@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Services;
-using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Commands;
 using System.Linq;
 using System.IO;
@@ -17,8 +16,8 @@ using AngleSharp;
 using AngleSharp.Html.Parser;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Data;
-using Ductus.FluentDocker.Model.Builders;
 using Ductus.FluentDocker.Services.Extensions;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -192,30 +191,6 @@ namespace DroHub.Tests.TestInfrastructure
 
         public static string getGradleArgument(string property_name, string value) {
             return $"-Pandroid.testInstrumentationRunnerArguments.{property_name}={value}";
-        }
-
-        public static IContainerService runVueTestContainer(string test_name, bool assert_exit_0, bool rm_on_success) {
-            const string DOCKER_REPO_MOUNT_PATH = "/home/cirrus";
-            using var test_containers = new Builder()
-                .UseContainer()
-                .IsPrivileged()
-                .KeepContainer()
-                .ReuseIfExists()
-                .AsUser("1000:1000")
-                .Command(test_name)
-                .UseImage("ptsneves/airborneprojects:vue-test")
-                .Mount(TestServerFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
-                .Build()
-                .Start();
-            test_containers.WaitForStopped();
-
-            if (assert_exit_0)
-                Assert.Equal(0, test_containers.GetConfiguration().State.ExitCode);
-
-            if (rm_on_success)
-                test_containers.Remove((true));
-
-            return test_containers;
         }
 
         public enum UploadTestReturnEnum {

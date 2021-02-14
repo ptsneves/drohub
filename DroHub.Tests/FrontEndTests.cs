@@ -4,7 +4,10 @@ using System.IO;
 using System.Linq;
 using DroHub.Areas.DHub.API;
 using DroHub.Tests.TestInfrastructure;
+using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
+using Ductus.FluentDocker.Model.Builders;
+using Ductus.FluentDocker.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
@@ -17,6 +20,30 @@ namespace DroHub.Tests {
             TestServerFixture.FrontEndPathInRepo,
             "tests",
             "temporary-test-data.json");
+
+        public static IContainerService runVueTestContainer(string test_name, bool assert_exit_0, bool rm_on_success) {
+            const string DOCKER_REPO_MOUNT_PATH = "/home/cirrus";
+            using var test_containers = new Builder()
+                .UseContainer()
+                .IsPrivileged()
+                .KeepContainer()
+                .ReuseIfExists()
+                .AsUser("1000:1000")
+                .Command(test_name)
+                .UseImage("ptsneves/airborneprojects:vue-test")
+                .Mount(TestServerFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
+                .Build()
+                .Start();
+            test_containers.WaitForStopped();
+
+            if (assert_exit_0)
+                Assert.Equal(0, test_containers.GetConfiguration().State.ExitCode);
+
+            if (rm_on_success)
+                test_containers.Remove((true));
+
+            return test_containers;
+        }
 
         public FrontEndTests(TestServerFixture fixture) {
             _fixture = fixture;
@@ -58,7 +85,7 @@ namespace DroHub.Tests {
 
                     writeNewTempTestData(VUE_TEST_NAME, temp_test_data);
 
-                    TestServerFixture.runVueTestContainer(VUE_TEST_NAME, true, true);
+                    runVueTestContainer(VUE_TEST_NAME, true, true);
                     Assert.Equal(1, _fixture.DbContext.MediaObjectTags.Count(
                         t => t.TagName == tag_list_truth[0]
                         && t.MediaPath == MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list.First())));
@@ -80,7 +107,7 @@ namespace DroHub.Tests {
 
         [Fact]
         public void TestTimeLabel() {
-            TestServerFixture.runVueTestContainer("TimeLabel", true, true);
+            runVueTestContainer("TimeLabel", true, true);
         }
 
         [Fact]
@@ -93,7 +120,7 @@ namespace DroHub.Tests {
             temp_test_data.propsData.crossSiteForgeryToken = token;
             writeNewTempTestData(VUE_TEST_NAME, temp_test_data);
 
-            TestServerFixture.runVueTestContainer(VUE_TEST_NAME, true, true);
+            runVueTestContainer(VUE_TEST_NAME, true, true);
         }
     }
 }
