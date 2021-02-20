@@ -463,8 +463,8 @@ namespace DroHub.Tests
             JsonElement test_data = await JsonSerializer.DeserializeAsync<dynamic>(test_data_stream);
             var props_data = test_data.GetProperty("GalleryTimeLine").GetProperty("propsData");
 
-            var r = await HttpClientHelper.getGalleryPage(TestServerFixture.AdminUserEmail, _fixture.AdminPassword);
-            var gallery_dom = TestServerFixture.getHtmlDOM(r);
+            var r = await HttpClientHelper.getCrossSiteAntiForgeryToken(TestServerFixture.AdminUserEmail, _fixture.AdminPassword);
+            var gallery_dom = TestServerFixture.getHtmlDOM(r.Content);
 
             var gallery_timeline_query = gallery_dom.QuerySelectorAll("gallery-timeline");
             Assert.Equal(1, gallery_timeline_query.Length);

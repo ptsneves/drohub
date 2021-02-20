@@ -12,6 +12,7 @@
         <gallery-delete-files-modal
             v-if="allowSettings"
             v-bind:add-tags-post-url="addTagsPostUrl"
+            v-bind:anti-forgery-token="antiForgeryToken"
             v-bind:delete-media-objects-post-url="deleteMediaObjectsPostUrl"
             v-bind:drone-media-removal-tag="droneMediaRemovalTag"
             v-bind:delayed-media-removal-tag="delayedMediaRemovalTag"

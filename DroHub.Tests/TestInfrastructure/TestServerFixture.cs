@@ -26,6 +26,7 @@ using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace DroHub.Tests.TestInfrastructure
 {
+    [UsedImplicitly]
     public class TestServerFixture : IDisposable
     {
         public ICompositeService DeployedContainers { get; }
@@ -204,10 +205,26 @@ namespace DroHub.Tests.TestInfrastructure
             string session_password,
             string upload_user,
             string upload_password,
-            Func<Dictionary<string,dynamic>, int, int, long, UploadTestReturnEnum> test,
+            Func<Dictionary<string, dynamic>, int, int, long, UploadTestReturnEnum> test,
             int runs = 1,
             string src = "video.webm",
-            int chunks = 30) {
+            int chunks = 30,
+            int copies = 1) {
+            await testUpload(half_duration_multiplier, session_user, session_password, upload_user,
+                upload_password, test, () => { }, runs, src, chunks, copies);
+        }
+
+        public async Task testUpload(int half_duration_multiplier,
+            string session_user,
+            string session_password,
+            string upload_user,
+            string upload_password,
+            Func<Dictionary<string,dynamic>, int, int, long, UploadTestReturnEnum> test,
+            Action onConnectionClose,
+            int runs = 1,
+            string src = "video.webm",
+            int chunks = 30,
+            int copies = 1) {
 
             var half_duration_seconds = TimeSpan.FromMilliseconds(4000);
             await HttpClientHelper.generateConnectionId(this, 2 * half_duration_seconds, "Aserial0",
@@ -215,50 +232,56 @@ namespace DroHub.Tests.TestInfrastructure
                 session_password,
                 async connection => {
 
+                    for (var copy = 0; copy < copies; copy++) {
+                        //Otherwise the value is considered local time
+                        var date_time_in_range =
+                            connection.StartTime + half_duration_multiplier * half_duration_seconds * (copy+1);
 
-                    //Otherwise the value is considered local time
-                    var date_time_in_range = connection.StartTime + half_duration_multiplier * half_duration_seconds;
+                        for (var i = 0; i < runs; i++) {
+                            await using var stream = new FileStream($"{TestServerFixture.TestAssetsPath}/{src}",
+                                FileMode.Open);
+                            for (var chunk = 0; chunk < chunks; chunk++) {
+                                try {
+                                    var amount_send = stream.Length / chunks;
+                                    if (chunk == chunks - 1)
+                                        amount_send = stream.Length - stream.Length / chunks * chunk;
+                                    var r = await HttpClientHelper.uploadMedia(upload_user,
+                                        upload_password,
+                                        new AndroidApplicationController.UploadModel {
+                                            File = new FormFile(stream, stream.Length / chunks * chunk, amount_send,
+                                                src,
+                                                $"{TestAssetsPath}/{src}"),
+                                            IsPreview = false, //needs to be because preview files have different paths
+                                            DeviceSerialNumber = "Aserial0",
+                                            UnixCreationTimeMS = date_time_in_range.ToUnixTimeMilliseconds(),
+                                            AssembledFileSize = stream.Length,
+                                            RangeStartBytes = stream.Length / chunks * chunk
+                                        });
 
-                    for (var i = 0; i < runs; i++) {
-                        await using var stream = new FileStream($"{TestServerFixture.TestAssetsPath}/{src}", FileMode.Open);
-                        for (var chunk = 0; chunk < chunks; chunk++) {
-                            try {
-                                var amount_send = stream.Length / chunks;
-                                if (chunk == chunks - 1)
-                                    amount_send = stream.Length - stream.Length/chunks * chunk;
-                                var r = await HttpClientHelper.uploadMedia(upload_user,
-                                    upload_password,
-                                    new AndroidApplicationController.UploadModel {
-                                        File = new FormFile(stream, stream.Length/chunks * chunk, amount_send, src,
-                                            $"{TestServerFixture.TestAssetsPath}/{src}"),
-                                        IsPreview = false, //needs to be because preview files have different paths
-                                        DeviceSerialNumber = "Aserial0",
-                                        UnixCreationTimeMS = date_time_in_range.ToUnixTimeMilliseconds(),
-                                        AssembledFileSize = stream.Length,
-                                        RangeStartBytes = stream.Length/chunks * chunk
-                                    });
-
-                                switch (test(r, i, chunk, stream.Length/chunks)) {
-                                    case UploadTestReturnEnum.CONTINUE:
-                                        continue;
-                                    case UploadTestReturnEnum.SKIP_RUN:
-                                        chunk = chunks; //short circuit
-                                        break;
-                                    case UploadTestReturnEnum.STOP_UPLOAD:
-                                        return;
-                                    default:
-                                        throw new ArgumentOutOfRangeException();
+                                    switch (test(r, i, chunk, stream.Length / chunks)) {
+                                        case UploadTestReturnEnum.CONTINUE:
+                                            continue;
+                                        case UploadTestReturnEnum.SKIP_RUN:
+                                            chunk = chunks; //short circuit
+                                            break;
+                                        case UploadTestReturnEnum.STOP_UPLOAD:
+                                            return;
+                                        default:
+                                            throw new ArgumentOutOfRangeException();
+                                    }
                                 }
-                            }
-                            catch (HttpRequestException e) {
-                                test(new Dictionary<string, dynamic> {
-                                        ["error"] = e.Message
-                                    },
-                                    i, chunk, stream.Length/chunks);
-                                return;
+                                catch (HttpRequestException e) {
+                                    test(new Dictionary<string, dynamic> {
+                                            ["error"] = e.Message
+                                        },
+                                        i, chunk, stream.Length / chunks);
+                                    return;
+                                }
                             }
                         }
                     }
+
+                    onConnectionClose();
                 });
         }
 

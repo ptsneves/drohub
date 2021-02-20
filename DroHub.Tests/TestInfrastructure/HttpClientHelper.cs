@@ -70,12 +70,21 @@ namespace DroHub.Tests.TestInfrastructure
             http_helper.Dispose();
         }
 
-        public static async Task<string> getGalleryPage(string user, string password) {
+        public class GalleryPageData {
+            public string CrossSiteForgeryToken { get; set; }
+            public string Content { get; set; }
+            public string LoginCookie { get; set; }
+        }
+
+        private static async Task<GalleryPageData> getGalleryPage(string user, string password) {
             var http_helper = await createLoggedInUser(user, password);
             var change_permission_url = new Uri(TestServerFixture.SiteUri, "DHub/DeviceRepository/Gallery");
             using var create_page_response = await http_helper.Client.GetAsync(change_permission_url);
             create_page_response.EnsureSuccessStatusCode();
-            return await create_page_response.Content.ReadAsStringAsync();
+            return new GalleryPageData() {
+                Content = await create_page_response.Content.ReadAsStringAsync(),
+                LoginCookie = http_helper.loginCookies
+            };
         }
 
         public static async Task changePermissions(string agent_email, string agent_pass,
@@ -383,6 +392,26 @@ namespace DroHub.Tests.TestInfrastructure
                 tr.Close();
         }
 
+        public static async Task deleteMediaObjects(TestServerFixture fixture, string medial_id_list) {
+            var http_helper = await createLoggedInUser(TestServerFixture.AdminUserEmail, fixture.AdminPassword);
+            var content = await http_helper.Response.Content.ReadAsStringAsync();
+            var delete_media_objects_url = new Uri(TestServerFixture.SiteUri, $"DHub/DeviceRepository/DeleteMediaObjects");
+
+            using var create_page_response = await http_helper.Client.GetAsync(delete_media_objects_url);
+            create_page_response.EnsureSuccessStatusCode();
+            var gallery_data = await getCrossSiteAntiForgeryToken(TestServerFixture.AdminUserEmail, fixture.AdminPassword);
+            var data_dic = new Dictionary<string, string> {
+                ["MediaIdList"] = medial_id_list,
+                ["__RequestVerificationToken"] = gallery_data.CrossSiteForgeryToken
+            };
+            var urlenc = new FormUrlEncodedContent(data_dic);
+            http_helper.Response?.Dispose();
+            http_helper.Response = await http_helper.Client.PostAsync(delete_media_objects_url, urlenc);
+            http_helper.Response.EnsureSuccessStatusCode();
+
+            http_helper.Dispose();
+        }
+
         public static async Task<Dictionary<string, dynamic>> uploadMedia(string user, string password,
             AndroidApplicationController.UploadModel upload_model) {
             var token =  (await getApplicationToken(user,
@@ -404,15 +433,16 @@ namespace DroHub.Tests.TestInfrastructure
             return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,dynamic>>(res);
         }
 
-        public static async Task<string> getCrossSiteAntiForgeryToken(string user_name, string password) {
+        public static async Task<GalleryPageData> getCrossSiteAntiForgeryToken(string user_name, string password) {
             var r = await getGalleryPage(user_name, password);
-            return TestServerFixture
-                .getHtmlDOM(r)
+            r.CrossSiteForgeryToken = TestServerFixture
+                .getHtmlDOM(r.Content)
                 .QuerySelectorAll("gallery-timeline")
                 .First()
                 .Attributes
                 .First(e => e.Name == "anti-forgery-token")
                 .Value;
+            return r;
         }
 
         public static async Task<TWebSocketClient> openWebSocket(string user, string token, string

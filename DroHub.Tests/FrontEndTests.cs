@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
@@ -21,7 +22,7 @@ namespace DroHub.Tests {
             "tests",
             "temporary-test-data.json");
 
-        public static IContainerService runVueTestContainer(string test_name, bool assert_exit_0, bool rm_on_success) {
+        private static IContainerService runVueTestContainer(string command, bool assert_exit_0, bool rm_on_success) {
             const string DOCKER_REPO_MOUNT_PATH = "/home/cirrus";
             using var test_containers = new Builder()
                 .UseContainer()
@@ -29,7 +30,7 @@ namespace DroHub.Tests {
                 .KeepContainer()
                 .ReuseIfExists()
                 .AsUser("1000:1000")
-                .Command(test_name)
+                .Command(command)
                 .UseImage("ptsneves/airborneprojects:vue-test")
                 .Mount(TestServerFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
                 .Build()
@@ -49,7 +50,52 @@ namespace DroHub.Tests {
             _fixture = fixture;
         }
 
-         [Fact]
+        [Fact]
+        public async void TestGalleryDeleteFilesModal() {
+            const string VUE_TEST_NAME = "GalleryDeleteFilesModal";
+
+
+            var old_media_list = _fixture.DbContext
+                .MediaObjects
+                .ToList();
+
+            await _fixture.testUpload(1, TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
+                TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
+                (objects, i, arg3, arg4) => TestServerFixture.UploadTestReturnEnum.CONTINUE,
+                () => {
+                    var media_list = _fixture.DbContext.MediaObjects
+                        .Select(m => MediaObjectAndTagAPI.LocalStorageHelper.convertToFrontEndFilePath(m))
+                        .ToList();
+
+                    Assert.Equal(old_media_list.Count + 2, media_list.Count);
+
+                    media_list.Reverse();
+                    media_list = media_list.Take(2).ToList();
+
+                    var data = HttpClientHelper.getCrossSiteAntiForgeryToken(TestServerFixture.AdminUserEmail,
+                        _fixture.AdminPassword).GetAwaiter().GetResult();
+
+                    writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
+                        temp_test_data.cookie = data.LoginCookie;
+                        temp_test_data.mediaIdList = new JArray(media_list);
+                        temp_test_data.propsData.crossSiteForgeryToken = data.CrossSiteForgeryToken;
+                    });
+
+                    runVueTestContainer(VUE_TEST_NAME, true, true);
+
+                    Assert.Equal(1, _fixture.DbContext.MediaObjectTags.Count(t =>
+                        t.TagName == "Marked for Drone removal"
+                        && t.MediaPath ==
+                        MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list.First())));
+
+                    Assert.False(_fixture.DbContext.MediaObjects.Any(t =>
+                        t.MediaPath ==  MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list
+                        .Last())));
+                },
+                copies:2);
+        }
+
+        [Fact]
         public async void TestVueAddTags() {
             const string VUE_TEST_NAME = "GalleryAddTagModal";
             var tag_list_truth = new List<string> {"my new test tag", "tag2"};
@@ -76,14 +122,13 @@ namespace DroHub.Tests {
                         _fixture.AdminPassword).GetAwaiter().GetResult();
 
 
-                    dynamic temp_test_data = new ExpandoObject();
-                    temp_test_data.cookie = login_cookie;
-                    temp_test_data.tagsToAdd = new JArray(tag_list_truth);
-                    temp_test_data.mediaIdList = new JArray(media_list.First());
-                    temp_test_data.useTimeStamp = false;
-                    temp_test_data.propsData.crossSiteForgeryToken = token;
-
-                    writeNewTempTestData(VUE_TEST_NAME, temp_test_data);
+                    writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
+                        temp_test_data.cookie = login_cookie;
+                        temp_test_data.tagsToAdd = new JArray(tag_list_truth);
+                        temp_test_data.mediaIdList = new JArray(media_list.First());
+                        temp_test_data.useTimeStamp = false;
+                        temp_test_data.propsData.crossSiteForgeryToken = token;
+                    });
 
                     runVueTestContainer(VUE_TEST_NAME, true, true);
                     Assert.Equal(1, _fixture.DbContext.MediaObjectTags.Count(
@@ -94,13 +139,14 @@ namespace DroHub.Tests {
                 });
         }
 
-        private static void writeNewTempTestData(string test_name, dynamic data) {
+        private static void writeNewTempTestData(string test_name, Action<dynamic> temp_data_func) {
             if (File.Exists(TEMP_DATA_PATH))
                 File.Delete(TEMP_DATA_PATH);
 
-            dynamic temp_test_data = new ExpandoObject();
-            temp_test_data.propsData = new ExpandoObject();
-            temp_test_data[test_name] = data;
+            dynamic temp_test_data = new Dictionary<string,ExpandoObject>();
+            temp_test_data[test_name] = new ExpandoObject();
+            temp_test_data[test_name].propsData = new ExpandoObject();
+            temp_data_func(temp_test_data[test_name]);
             var output = JsonConvert.SerializeObject(temp_test_data, Formatting.Indented);
             File.WriteAllText(TEMP_DATA_PATH, output);
         }
@@ -116,9 +162,9 @@ namespace DroHub.Tests {
             var token = HttpClientHelper.getCrossSiteAntiForgeryToken(TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword).GetAwaiter().GetResult();
 
-            dynamic temp_test_data = new ExpandoObject();
-            temp_test_data.propsData.crossSiteForgeryToken = token;
-            writeNewTempTestData(VUE_TEST_NAME, temp_test_data);
+            writeNewTempTestData(VUE_TEST_NAME, o => {
+                o.propsData.crossSiteForgeryToken = token;
+            });
 
             runVueTestContainer(VUE_TEST_NAME, true, true);
         }

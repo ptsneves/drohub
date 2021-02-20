@@ -1,5 +1,5 @@
 <template>
-    <div v-if="isActiveModal">
+    <div class="gallery-delete-files-modal" v-if="isActiveModal">
         <transition name="modal">
             <div class="modal-mask">
                 <div class="modal-wrapper">
@@ -69,11 +69,15 @@
     export default {
         name: "GalleryDeleteFilesModal",
         props: {
-            deleteMediaObjectsPostUrl: {
+            addTagsPostUrl: {
                 type: String,
                 required: true,
             },
-            addTagsPostUrl: {
+            antiForgeryToken: {
+                type: String,
+                required: true
+            },
+            deleteMediaObjectsPostUrl: {
                 type: String,
                 required: true,
             },
@@ -111,23 +115,25 @@
             hideModal() {
                 return this.$store.commit('SET_MODAL_MODEL', {type:'INACTIVE'});
             },
+            markFilesForDeviceDelete(delete_metadata) {
+                axios.defaults.headers.post['RequestVerificationToken'] = this.antiForgeryToken;
+                axios
+                    .post(this.addTagsPostUrl, qs.stringify({
+                        'TagList': delete_metadata,
+                        'TimeStampInSeconds': 0,
+                        '__RequestVerificationToken': this.antiForgeryToken,
+                        'MediaIdList': this.selectedFiles,
+                        'UseTimeStamp': false,
+                    }))
+                    .then(function() {
+                        window.location.reload(true);
+                    });
+            },
             submit() {
-                function markFilesForDeviceDelete(selected_files, delete_metadata) {
-                    axios
-                        .post(this.addTagsPostUrl, qs.stringify({
-                            'TagList': delete_metadata,
-                            'TimeStampInSeconds': 0,
-                            '__RequestVerificationToken': this.$store.anti_forgery_token,
-                            'MediaIdList': selected_files,
-                            'UseTimeStamp': false,
-                        }))
-                        .then(function() {
-                            window.location.reload(true);
-                        });
-                }
 
-                if (this.selectedFiles.length === 0 || ! this.isActiveModal)
-                    console.error("Delete modal open but no item selected or modal inactive.");
+                if (this.selectedFiles.length === 0 || ! this.isActiveModal || this.isRemovingInBothPlaces) {
+                    return;
+                }
 
                 if (this.remove_in_device === true) {
                     let metadata_tags = [];
@@ -135,13 +141,13 @@
                     if (this.remove_in_drohub === true) {
                         metadata_tags.push(this.delayedMediaRemovalTag);
                     }
-                    markFilesForDeviceDelete(this.selectedFiles, metadata_tags);
+                    this.markFilesForDeviceDelete(metadata_tags);
                 }
                 else if (this.remove_in_drohub === true) {
                     axios
                         .post(this.deleteMediaObjectsPostUrl, qs.stringify({
                             'MediaIdList': this.selectedFiles,
-                            '__RequestVerificationToken': this.$store.state.anti_forgery_token,
+                            '__RequestVerificationToken': this.antiForgeryToken,
                         }))
                         .then(function() {
                             window.location.reload(true);

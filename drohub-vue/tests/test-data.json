@@ -24,5 +24,16 @@
         "special": {
             "expectedResultPage": "/DHub/DeviceRepository/Gallery"
         }
+    },
+    "GalleryDeleteFilesModal": {
+        "propsData": {
+            "addTagsPostUrl": "https://master/DHub/DeviceRepository/AddTags",
+            "deleteMediaObjectsPostUrl": "https://master/DHub/DeviceRepository/DeleteMediaObjects",
+            "droneMediaRemovalTag": "Marked for Drone removal",
+            "delayedMediaRemovalTag": "To Remove after Drone Removal"
+        },
+        "special": {
+            "expectedResultPage": "/DHub/DeviceRepository/Gallery"
+        }
     }
 }
