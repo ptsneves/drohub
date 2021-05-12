@@ -10,6 +10,7 @@ using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Text.Json;
 using System.Threading;
+using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
@@ -612,8 +613,10 @@ namespace DroHub.Tests
 
         }
 
-        [Fact]
-        public async void TestUploadMediaSucceeds() {
+        [InlineData("video.webm")]
+        [InlineData("sample.mp4")]
+        [Theory]
+        public async void TestUploadMediaSucceeds(string video_src) {
             var ran = false;
             var last_chunk = 0;
             const int CHUNKS = 30;
@@ -636,14 +639,19 @@ namespace DroHub.Tests
                         Assert.True(result.TryGetValue("result", out var v));
                         Assert.Equal("ok", v);
                         var last_media_path = _fixture.DbContext.MediaObjects.ToList().Last();
-                        var orig_sha256 = TestServerFixture.computeFileSHA256($"{TestServerFixture.TestAssetsPath}/video.webm");
+                        var orig_sha256 = TestServerFixture.computeFileSHA256($"{TestServerFixture.TestAssetsPath}/{video_src}");
                         var uploaded_sha256 = TestServerFixture.computeFileSHA256(last_media_path.MediaPath);
                         Assert.Equal(orig_sha256, uploaded_sha256);
+                        Assert.True(MediaObjectAndTagAPI
+                            .LocalStorageHelper
+                            .doesPreviewExist(last_media_path));
                         ran = true;
                     }
 
                     return TestServerFixture.UploadTestReturnEnum.CONTINUE;
-                });
+                },
+                1,
+                video_src);
             Assert.Equal(CHUNKS, last_chunk);
             Assert.True(ran);
         }

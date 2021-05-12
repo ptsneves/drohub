@@ -3,9 +3,11 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using System.IO;
 using System;
+using DroHub.Areas.DHub.API;
 using Serilog;
 using Microsoft.Extensions.Configuration;
 using DroHub.Data;
+using Serilog.Extensions.Logging;
 
 namespace DroHub
 {
@@ -30,6 +32,10 @@ namespace DroHub
                 .ReadFrom.Configuration(_config)
                 .Enrich.FromLogContext()
                 .CreateLogger();
+
+            await MediaObjectAndTagAPI.LocalStorageHelper.generateVideoPreviewForConnectionDir(
+                new SerilogLoggerProvider(Log.Logger).CreateLogger(nameof(Program)), true);
+
             try
             {
                 IWebHost web_host;

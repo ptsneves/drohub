@@ -7,9 +7,12 @@ using System.Threading.Tasks;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Data;
+using DroHub.Helpers;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace DroHub.Areas.DHub.API {
     public static class MediaObjectAndTagExtensions {
@@ -30,7 +33,8 @@ namespace DroHub.Areas.DHub.API {
         public const string DroneMediaRemovalTag = "Marked for Drone removal";
         public const string DelayedMediaRemovalTag = "To Remove after Drone Removal";
 
-        private static readonly string[] AllowedFileExtensions = {".webp", ".webm", ".mp4", ".jpeg"};
+        private static readonly string[] AllowedVideoFileExtensions = {".webm", ".mp4"};
+        private static readonly string[] AllowedFileExtensions = {".webm", ".mp4", ".jpeg"};
         private readonly DroHubContext _db_context;
         private readonly SubscriptionAPI _subscription_api;
         private readonly IAuthorizationService _authorization_service;
@@ -63,6 +67,53 @@ namespace DroHub.Areas.DHub.API {
                 _device_serial = device_serial;
                 _unix_time_creation_ms = unix_time_creation_ms;
                 _extension = extension;
+            }
+
+            public static async Task generateVideoPreview(string directory, ILogger logger,
+                bool continue_on_failures = false, string[] skip_filters = null) {
+
+                skip_filters ??= new string[] { };
+
+                Array.Resize(ref skip_filters, skip_filters.Length +1);
+                skip_filters[^1] = _CHUNK_FN_END_MAGIC;
+
+                foreach (var file_extension in AllowedVideoFileExtensions) {
+                    var paths = Directory.GetFiles(directory, $"*{file_extension}");
+                    foreach (var path in paths) {
+                        var expected_preview_path = calculatePreviewFilePathOnHost(path);
+                        if (skip_filters.Any(skip_filter => path.Contains(skip_filter))) {
+                            logger.LogInformation("Skipping preview generation for {Path} due to it containing one of {Filters}",
+                                path, skip_filters);
+
+                            continue;
+                        }
+
+                        try {
+                            logger.LogInformation("Generating preview {Path} to {PreviewPath}",
+                                path, expected_preview_path);
+
+                            await VideoPreviewGenerator.generatePreview(path, expected_preview_path);
+                            logger.LogInformation("Finished generating preview {Path} to {PreviewPath}",
+                                path, expected_preview_path);
+                        }
+                        catch {
+                            if (!continue_on_failures)
+                                throw;
+
+                            logger.LogError("Failed to generate preview {Path} to {PreviewPath}. Asked to continue",
+                            path, expected_preview_path);
+                        }
+                    }
+                }
+            }
+
+            public static async Task generateVideoPreviewForConnectionDir(ILogger logger,
+                    bool continue_on_failures = false, string[] skip_filters = null) {
+
+                var directories = Directory.GetDirectories(ConnectionBaseDir);
+                foreach (var directory in directories) {
+                    await generateVideoPreview(directory, logger, continue_on_failures, skip_filters);
+                }
             }
 
             public static string calculateConnectionDirectory(long connection_id) {
@@ -126,6 +177,10 @@ namespace DroHub.Areas.DHub.API {
             private static string calculatePreviewFilePathOnHost(string file_path) {
                 var file_dir = Path.GetDirectoryName(file_path);
                 var file_name = Path.GetFileName(file_path);
+
+                foreach (var extension in AllowedVideoFileExtensions) {
+                    file_name = file_name.Replace(extension, VideoPreviewGenerator.FILE_EXTENSION);
+                }
 
                 return !file_name.Contains(PreviewFileNamePrefix)
                     ? Path.Join(file_dir, $"{PreviewFileNamePrefix}{file_name}")
@@ -226,7 +281,16 @@ namespace DroHub.Areas.DHub.API {
                     chunk_files.ForEach(file_name =>
                         File.Delete(Path.Join(calculateConnectionDirectory(_connection_id), file_name)));
 
-                return calculateAssembledFilePath();
+                var generated_file_path = calculateAssembledFilePath();
+                var preview_file_path = calculatePreviewFilePathOnHost(generated_file_path);
+
+                if (!File.Exists(preview_file_path)
+                        && AllowedVideoFileExtensions.Any(extension => generated_file_path.Contains(extension))) {
+
+                    await VideoPreviewGenerator.generatePreview(generated_file_path, preview_file_path);
+                }
+
+                return generated_file_path;
             }
         }
 
@@ -317,11 +381,33 @@ namespace DroHub.Areas.DHub.API {
             await deleteMediaObject(media);
         }
 
-        public async Task<FileStream> getFileForStreaming(string media_path) {
+        private async Task<FileStream> getFileForStreaming(string media_path) {
             if (!await authorizeMediaObjectOperation(media_path, ResourceOperations.Read))
                 throw new MediaObjectAuthorizationException("User is not allowed to access this media");
 
             return File.OpenRead(media_path);
+        }
+
+        public enum DownloadType {
+            VIDEO_STREAM,
+            DOWNLOAD,
+            JPEG,
+        }
+
+        public async Task<FileStreamResult> getFileForDownload(string media_id, DownloadType t,
+            ControllerBase controller) {
+
+            media_id = LocalStorageHelper.convertToBackEndFilePath(media_id);
+            var stream = await getFileForStreaming(media_id);
+            var res = t switch {
+                DownloadType.VIDEO_STREAM => controller.File(stream, "video/webm"),
+                DownloadType.JPEG => controller.File(stream, "image/jpeg"),
+                DownloadType.DOWNLOAD => controller.File(stream, "application/octet-stream", Path.GetFileName(media_id)),
+                _ => throw new InvalidProgramException("Unreachable code")
+            };
+
+            res.EnableRangeProcessing = true;
+            return res;
         }
 
         private async Task deleteMediaObject(MediaObject media) {

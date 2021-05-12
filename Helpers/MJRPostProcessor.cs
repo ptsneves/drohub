@@ -113,7 +113,7 @@ namespace DroHub.Helpers {
             var final_dst = Path.Join(mjr_src_dir, Path.GetFileName(video_result.result_path));
 
             var final_dst_preview = Path.Join(mjr_src_dir, $"{preview_prefix}{Path.GetFileName(video_result.result_path)}")
-                .Replace("webm", "webp");;
+                .Replace("webm", "jpeg");;
 
             var ffmpeg_input_args = "-err_detect ignore_err";
             var ffmpeg_adelay_args = "";
@@ -121,7 +121,7 @@ namespace DroHub.Helpers {
             var ffmpeg_map_args = "";
             long i = 0;
             foreach (var conversion_result in conversion_results) {
-                ffmpeg_input_args += $" -i {conversion_result.result_path}";
+                ffmpeg_input_args += $" -i {conversion_result.result_path} -skip_frame nokey";
                 switch (conversion_result.media_type) {
                     case ConvertResult.MediaType.VIDEO:
                         ffmpeg_map_args += $" -map {i}:v -c:v copy ";

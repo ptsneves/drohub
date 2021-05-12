@@ -68,12 +68,6 @@ namespace DroHub.Areas.DHub.Controllers
             }
         }
 
-        private enum DownloadType {
-            VIDEO_STREAM,
-            DOWNLOAD,
-            JPEG,
-        }
-
         [NonAction]
         private static byte[] generateZipArchive(IEnumerable<string> files)
         {
@@ -121,21 +115,12 @@ namespace DroHub.Areas.DHub.Controllers
         }
 
         [NonAction]
-        private async Task<IActionResult> getFile(string video_id, DownloadType t) {
+        private async Task<IActionResult> getFile(string media_id, MediaObjectAndTagAPI.DownloadType t) {
             try {
                 if (!ModelState.IsValid)
                     return BadRequest();
-                video_id = convertToBackEndFilePath(video_id);
-                var stream = await _media_objectAnd_tag_api.getFileForStreaming(video_id);
-                var res = t switch {
-                    DownloadType.VIDEO_STREAM => File(stream, "video/webm"),
-                    DownloadType.JPEG => File(stream, "image/jpeg"),
-                    DownloadType.DOWNLOAD => File(stream, "application/octet-stream", Path.GetFileName(video_id)),
-                    _ => throw new InvalidProgramException("Unreachable code")
-                };
 
-                res.EnableRangeProcessing = true;
-                return res;
+                return await _media_objectAnd_tag_api.getFileForDownload(media_id, t, this);
             }
             catch (MediaObjectAuthorizationException e) {
                 return Unauthorized();
@@ -148,19 +133,19 @@ namespace DroHub.Areas.DHub.Controllers
         public async Task<IActionResult> GetLiveStreamRecordingVideo([Required]string video_id) {
             if (!ModelState.IsValid && !(video_id.EndsWith(".webm") || video_id.EndsWith(".mp4")))
                 return BadRequest();
-            return await getFile(video_id, DownloadType.VIDEO_STREAM);
+            return await getFile(video_id, MediaObjectAndTagAPI.DownloadType.VIDEO_STREAM);
         }
 
         public async Task<IActionResult> DownloadVideo([Required]string video_id) {
             if (!ModelState.IsValid && !(video_id.EndsWith(".webm") || video_id.EndsWith(".mp4")))
                 return BadRequest();
-            return await getFile(video_id, DownloadType.DOWNLOAD);
+            return await getFile(video_id, MediaObjectAndTagAPI.DownloadType.DOWNLOAD);
         }
 
         public async Task<IActionResult> GetPhoto([Required]string picture_id) {
             if (!ModelState.IsValid || !picture_id.EndsWith(".jpeg"))
                 return BadRequest();
-            return await getFile(picture_id, DownloadType.JPEG);
+            return await getFile(picture_id, MediaObjectAndTagAPI.DownloadType.JPEG);
         }
 
         public async Task<IActionResult> DownloadMedias([Required][FromQuery(Name="MediaIdList")]string[] MediaIdList) {

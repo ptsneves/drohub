@@ -6,17 +6,18 @@ using System.Threading.Tasks;
 
 namespace DroHub.Helpers {
     public class VideoPreviewGenerator : IDisposable {
+        public const string FILE_EXTENSION = ".jpeg";
         private const string _FFMPEG_BIN = "/usr/bin/ffmpeg";
         private const string _FFPROBE_BIN = "/usr/bin/ffprobe";
-        private const string _IMG2WEB_BIN = "/usr/bin/img2webp";
+        private const string _IMG2MAGICKCONVERT_BIN = "/usr/bin/convert";
 
         private readonly string _thumbnail_pattern;
         private readonly string _thumbnail_glob_pattern;
 
         private VideoPreviewGenerator() {
             var _guid = Guid.NewGuid();
-            _thumbnail_pattern = Path.Join(Path.GetTempPath(), $"{_guid.ToString()}-%d.png");
-            _thumbnail_glob_pattern = $"{_guid.ToString()}-*.png";
+            _thumbnail_pattern = Path.Join(Path.GetTempPath(), $"{_guid.ToString()}-%d{FILE_EXTENSION}");
+            _thumbnail_glob_pattern = $"{_guid.ToString()}-*{FILE_EXTENSION}";
         }
 
         private static async Task<TimeSpan> getVideoDuration(string src) {
@@ -34,9 +35,9 @@ namespace DroHub.Helpers {
             await RunProcess.runProcess(_FFMPEG_BIN, ffmpeg_args);
         }
 
-        private async Task generateWebPAnimation(string dst) {
-            var img2webp_args = $"-loop 0 -d 1000 -o {dst} {string.Join(" ", getStillsList())}";
-            await RunProcess.runProcess(_IMG2WEB_BIN, img2webp_args);
+        private async Task generatePreviewSprites(string dst) {
+            var convert_args = $"{string.Join(" ", getStillsList())} +append {dst}";
+            await RunProcess.runProcess(_IMG2MAGICKCONVERT_BIN, convert_args);
         }
 
         private List<string> getStillsList() {
@@ -46,11 +47,13 @@ namespace DroHub.Helpers {
         public static async Task generatePreview(string src, string dst) {
             if (!File.Exists(src))
                 throw new InvalidDataException($"{src} is not a valid video path");
-            if (Path.GetExtension(dst) != ".webp")
-                throw new InvalidDataException("Provided destination extension must be .webp");
+            if (File.Exists(dst))
+                throw new InvalidDataException($"{dst} already exists");
+            if (Path.GetExtension(dst) != FILE_EXTENSION)
+                throw new InvalidDataException($"Provided destination extension must be {FILE_EXTENSION}");
             var generator = new VideoPreviewGenerator();
             await generator.generateVideoStills(src);
-            await generator.generateWebPAnimation(dst);
+            await generator.generatePreviewSprites(dst);
             generator.Dispose();
         }
 
