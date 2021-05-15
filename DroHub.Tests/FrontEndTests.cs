@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
 using DroHub.Tests.TestInfrastructure;
 using Ductus.FluentDocker.Builders;
@@ -50,49 +51,32 @@ namespace DroHub.Tests {
             _fixture = fixture;
         }
 
+
         [Fact]
         public async void TestGalleryDeleteFilesModal() {
             const string VUE_TEST_NAME = "GalleryDeleteFilesModal";
 
+            await testWithFile((media_list, token_data, copy) => {
+                if (copy == 0)
+                    return;
 
-            var old_media_list = _fixture.DbContext
-                .MediaObjects
-                .ToList();
+                writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
+                    temp_test_data.cookie = token_data.LoginCookie;
+                    temp_test_data.mediaIdList = new JArray(media_list);
+                    temp_test_data.propsData.crossSiteForgeryToken = token_data.CrossSiteForgeryToken;
+                });
 
-            await _fixture.testUpload(1, TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
-                TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
-                (objects, i, arg3, arg4) => TestServerFixture.UploadTestReturnEnum.CONTINUE,
-                () => {
-                    var media_list = _fixture.DbContext.MediaObjects
-                        .Select(m => MediaObjectAndTagAPI.LocalStorageHelper.convertToFrontEndFilePath(m))
-                        .ToList();
+                runVueTestContainer(VUE_TEST_NAME, true, true);
 
-                    Assert.Equal(old_media_list.Count + 2, media_list.Count);
+                Assert.Equal(1, _fixture.DbContext.MediaObjectTags.Count(t =>
+                    t.TagName == "Marked for Drone removal"
+                    && t.MediaPath ==
+                    MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list.First())));
 
-                    media_list.Reverse();
-                    media_list = media_list.Take(2).ToList();
-
-                    var data = HttpClientHelper.getCrossSiteAntiForgeryToken(TestServerFixture.AdminUserEmail,
-                        _fixture.AdminPassword).GetAwaiter().GetResult();
-
-                    writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
-                        temp_test_data.cookie = data.LoginCookie;
-                        temp_test_data.mediaIdList = new JArray(media_list);
-                        temp_test_data.propsData.crossSiteForgeryToken = data.CrossSiteForgeryToken;
-                    });
-
-                    runVueTestContainer(VUE_TEST_NAME, true, true);
-
-                    Assert.Equal(1, _fixture.DbContext.MediaObjectTags.Count(t =>
-                        t.TagName == "Marked for Drone removal"
-                        && t.MediaPath ==
-                        MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list.First())));
-
-                    Assert.False(_fixture.DbContext.MediaObjects.Any(t =>
-                        t.MediaPath ==  MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list
+                Assert.False(_fixture.DbContext.MediaObjects.Any(t =>
+                    t.MediaPath ==  MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list
                         .Last())));
-                },
-                copies:2);
+            }, 1);
         }
 
         [Fact]
@@ -100,43 +84,52 @@ namespace DroHub.Tests {
             const string VUE_TEST_NAME = "GalleryAddTagModal";
             var tag_list_truth = new List<string> {"my new test tag", "tag2"};
 
-            var login_cookie = (await HttpClientHelper
-                .createLoggedInUser(TestServerFixture.AdminUserEmail, _fixture.AdminPassword)).loginCookies;
+            await testWithFile((media_list, token_data, copy) => {
+                writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
+                    temp_test_data.cookie = token_data.LoginCookie;
+                    temp_test_data.tagsToAdd = new JArray(tag_list_truth);
+                    temp_test_data.mediaIdList = new JArray(media_list.First());
+                    temp_test_data.useTimeStamp = false;
+                    temp_test_data.propsData.crossSiteForgeryToken = token_data.CrossSiteForgeryToken;
+                });
 
+                runVueTestContainer(VUE_TEST_NAME, true, true);
+                Assert.Equal(1, _fixture.DbContext.MediaObjectTags.Count(
+                    t => t.TagName == tag_list_truth[0]
+                         && t.MediaPath == MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list.First())));
+            });
+        }
+
+        private async Task testWithFile(Action<List<string>, HttpClientHelper.GalleryPageData, int> test, int
+        file_copies = 1) {
             var old_media_list = _fixture.DbContext
                 .MediaObjects
                 .ToList();
 
             await _fixture.testUpload(1, TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
-                (objects, i, arg3, arg4) => {
-                    if (objects["result"] != "ok")
+                (result, run, chunk, chunk_size, copy) => {
+                    if (result.ContainsKey("error"))
+                        throw new Exception(result["error"]);
+
+                    if (result["result"] != "ok")
                         return TestServerFixture.UploadTestReturnEnum.CONTINUE;
 
                     var media_list = _fixture.DbContext.MediaObjects
                         .Select(m => MediaObjectAndTagAPI.LocalStorageHelper.convertToFrontEndFilePath(m))
                         .ToList();
                     media_list.Reverse();
-                    Assert.Equal(old_media_list.Count + 1 , media_list.Count);
-                    var token = HttpClientHelper.getCrossSiteAntiForgeryToken(TestServerFixture.AdminUserEmail,
+
+
+                    Assert.Equal(old_media_list.Count + file_copies , media_list.Count);
+                    var token_data = HttpClientHelper.getCrossSiteAntiForgeryTokenData(TestServerFixture.AdminUserEmail,
                         _fixture.AdminPassword).GetAwaiter().GetResult();
 
-
-                    writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
-                        temp_test_data.cookie = login_cookie;
-                        temp_test_data.tagsToAdd = new JArray(tag_list_truth);
-                        temp_test_data.mediaIdList = new JArray(media_list.First());
-                        temp_test_data.useTimeStamp = false;
-                        temp_test_data.propsData.crossSiteForgeryToken = token;
-                    });
-
-                    runVueTestContainer(VUE_TEST_NAME, true, true);
-                    Assert.Equal(1, _fixture.DbContext.MediaObjectTags.Count(
-                        t => t.TagName == tag_list_truth[0]
-                        && t.MediaPath == MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list.First())));
+                    test(media_list, token_data, copy);
 
                     return TestServerFixture.UploadTestReturnEnum.CONTINUE;
-                });
+                },
+                copies: file_copies);
         }
 
         private static void writeNewTempTestData(string test_name, Action<dynamic> temp_data_func) {
@@ -159,11 +152,11 @@ namespace DroHub.Tests {
         [Fact]
         public void TestGalleryTimeLine() {
             const string VUE_TEST_NAME = "GalleryTimeLine";
-            var token = HttpClientHelper.getCrossSiteAntiForgeryToken(TestServerFixture.AdminUserEmail,
+            var token_data = HttpClientHelper.getCrossSiteAntiForgeryTokenData(TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword).GetAwaiter().GetResult();
 
             writeNewTempTestData(VUE_TEST_NAME, o => {
-                o.propsData.crossSiteForgeryToken = token;
+                o.propsData.crossSiteForgeryToken = token_data.CrossSiteForgeryToken;
             });
 
             runVueTestContainer(VUE_TEST_NAME, true, true);

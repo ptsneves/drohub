@@ -205,7 +205,7 @@ namespace DroHub.Tests.TestInfrastructure
             string session_password,
             string upload_user,
             string upload_password,
-            Func<Dictionary<string, dynamic>, int, int, long, UploadTestReturnEnum> test,
+            Func<Dictionary<string, dynamic>, int, int, long, int, UploadTestReturnEnum> test,
             int runs = 1,
             string src = "video.webm",
             int chunks = 30,
@@ -219,7 +219,7 @@ namespace DroHub.Tests.TestInfrastructure
             string session_password,
             string upload_user,
             string upload_password,
-            Func<Dictionary<string,dynamic>, int, int, long, UploadTestReturnEnum> test,
+            Func<Dictionary<string,dynamic>, int, int, long, int, UploadTestReturnEnum> test,
             Action onConnectionClose,
             int runs = 1,
             string src = "video.webm",
@@ -258,7 +258,7 @@ namespace DroHub.Tests.TestInfrastructure
                                             RangeStartBytes = stream.Length / chunks * chunk
                                         });
 
-                                    switch (test(r, i, chunk, stream.Length / chunks)) {
+                                    switch (test(r, i, chunk, stream.Length / chunks, copy)) {
                                         case UploadTestReturnEnum.CONTINUE:
                                             continue;
                                         case UploadTestReturnEnum.SKIP_RUN:
@@ -274,7 +274,7 @@ namespace DroHub.Tests.TestInfrastructure
                                     test(new Dictionary<string, dynamic> {
                                             ["error"] = e.Message
                                         },
-                                        i, chunk, stream.Length / chunks);
+                                        i, chunk, stream.Length / chunks, copy);
                                     return;
                                 }
                             }

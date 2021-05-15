@@ -399,7 +399,7 @@ namespace DroHub.Tests.TestInfrastructure
 
             using var create_page_response = await http_helper.Client.GetAsync(delete_media_objects_url);
             create_page_response.EnsureSuccessStatusCode();
-            var gallery_data = await getCrossSiteAntiForgeryToken(TestServerFixture.AdminUserEmail, fixture.AdminPassword);
+            var gallery_data = await getCrossSiteAntiForgeryTokenData(TestServerFixture.AdminUserEmail, fixture.AdminPassword);
             var data_dic = new Dictionary<string, string> {
                 ["MediaIdList"] = medial_id_list,
                 ["__RequestVerificationToken"] = gallery_data.CrossSiteForgeryToken
@@ -433,7 +433,7 @@ namespace DroHub.Tests.TestInfrastructure
             return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,dynamic>>(res);
         }
 
-        public static async Task<GalleryPageData> getCrossSiteAntiForgeryToken(string user_name, string password) {
+        public static async Task<GalleryPageData> getCrossSiteAntiForgeryTokenData(string user_name, string password) {
             var r = await getGalleryPage(user_name, password);
             r.CrossSiteForgeryToken = TestServerFixture
                 .getHtmlDOM(r.Content)
