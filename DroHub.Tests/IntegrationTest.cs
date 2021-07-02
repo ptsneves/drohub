@@ -616,6 +616,7 @@ namespace DroHub.Tests
         public async void TestDeleteMediaObjects() {
             var ran = false;
 
+            const int copies = 2;
             await _fixture.testUpload(1,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
@@ -624,16 +625,25 @@ namespace DroHub.Tests
                 (result, tries, chunk, sent_chunk_size, copy) =>
                     Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE),
                 async () => {
-                    var last_media_path = _fixture.DbContext.MediaObjects.ToList().Last();
+                    var last_media_paths = _fixture.DbContext.MediaObjects
+                        .ToList()
+                        .TakeLast(copies)
+                        .ToList();
+
 
                     await HttpClientHelper.deleteMediaObjects(_fixture,
-                        new List<string>
-                            {MediaObjectAndTagAPI.LocalStorageHelper.convertToFrontEndFilePath(last_media_path)});
-                    ran = true;
-                    Assert.NotEqual(_fixture.DbContext.MediaObjects.ToList().Last().MediaPath, last_media_path.MediaPath);
+                        last_media_paths
+                            .Select(MediaObjectAndTagAPI.LocalStorageHelper.convertToFrontEndFilePath)
+                            .ToList());
 
+                    ran = true;
+                    foreach (var media_path in last_media_paths) {
+                        Assert.NotEqual(_fixture.DbContext.MediaObjects.ToList().Last().MediaPath,
+                            media_path.MediaPath);
+                    }
                 },
-                1);
+                1,
+                copies: copies);
             Assert.True(ran);
         }
 
