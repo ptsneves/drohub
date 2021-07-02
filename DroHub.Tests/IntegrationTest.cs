@@ -610,7 +610,31 @@ namespace DroHub.Tests
                 await Assert.ThrowsAsync<HttpRequestException>(async () =>
                     await t);
             }
+        }
 
+        [Fact]
+        public async void TestDeleteMediaObjects() {
+            var ran = false;
+
+            await _fixture.testUpload(1,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                (result, tries, chunk, sent_chunk_size, copy) =>
+                    Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE),
+                async () => {
+                    var last_media_path = _fixture.DbContext.MediaObjects.ToList().Last();
+
+                    await HttpClientHelper.deleteMediaObjects(_fixture,
+                        new List<string>
+                            {MediaObjectAndTagAPI.LocalStorageHelper.convertToFrontEndFilePath(last_media_path)});
+                    ran = true;
+                    Assert.NotEqual(_fixture.DbContext.MediaObjects.ToList().Last().MediaPath, last_media_path.MediaPath);
+
+                },
+                1);
+            Assert.True(ran);
         }
 
         [InlineData("video.webm")]

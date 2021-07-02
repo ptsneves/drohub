@@ -74,6 +74,8 @@ namespace DroHub.Tests.TestInfrastructure
             public string CrossSiteForgeryToken { get; set; }
             public string Content { get; set; }
             public string LoginCookie { get; set; }
+
+            public HttpClientHelper HttpHelper { get; set; }
         }
 
         private static async Task<GalleryPageData> getGalleryPage(string user, string password) {
@@ -83,7 +85,8 @@ namespace DroHub.Tests.TestInfrastructure
             create_page_response.EnsureSuccessStatusCode();
             return new GalleryPageData() {
                 Content = await create_page_response.Content.ReadAsStringAsync(),
-                LoginCookie = http_helper.loginCookies
+                LoginCookie = http_helper.loginCookies,
+                HttpHelper =  http_helper
             };
         }
 
@@ -392,24 +395,28 @@ namespace DroHub.Tests.TestInfrastructure
                 tr.Close();
         }
 
-        public static async Task deleteMediaObjects(TestServerFixture fixture, string medial_id_list) {
-            var http_helper = await createLoggedInUser(TestServerFixture.AdminUserEmail, fixture.AdminPassword);
-            var content = await http_helper.Response.Content.ReadAsStringAsync();
-            var delete_media_objects_url = new Uri(TestServerFixture.SiteUri, $"DHub/DeviceRepository/DeleteMediaObjects");
+        // public static
 
-            using var create_page_response = await http_helper.Client.GetAsync(delete_media_objects_url);
-            create_page_response.EnsureSuccessStatusCode();
-            var gallery_data = await getCrossSiteAntiForgeryTokenData(TestServerFixture.AdminUserEmail, fixture.AdminPassword);
-            var data_dic = new Dictionary<string, string> {
-                ["MediaIdList"] = medial_id_list,
-                ["__RequestVerificationToken"] = gallery_data.CrossSiteForgeryToken
+
+        public static async Task deleteMediaObjects(TestServerFixture fixture, List<string> medial_id_list) {
+            var delete_media_objects_url = new Uri(TestServerFixture.SiteUri,
+            $"DHub/DeviceRepository/DeleteMediaObjects");
+
+            var gallery_data = await getGalleryDataData(TestServerFixture.AdminUserEmail, fixture.AdminPassword);
+            var data_dic = new List<KeyValuePair<string, string>> {
+                new KeyValuePair<string,string>("__RequestVerificationToken",  gallery_data.CrossSiteForgeryToken),
             };
-            var urlenc = new FormUrlEncodedContent(data_dic);
-            http_helper.Response?.Dispose();
-            http_helper.Response = await http_helper.Client.PostAsync(delete_media_objects_url, urlenc);
-            http_helper.Response.EnsureSuccessStatusCode();
 
-            http_helper.Dispose();
+            foreach (var media_id in medial_id_list) {
+                var key = $"MediaIdList[]";
+                data_dic.Add(new KeyValuePair<string,string>(key,  media_id));
+            }
+            var urlenc = new FormUrlEncodedContent(data_dic);
+
+            gallery_data.HttpHelper.Response = await gallery_data.HttpHelper.Client.PostAsync(delete_media_objects_url, urlenc);
+            gallery_data.HttpHelper.Response.EnsureSuccessStatusCode();
+
+            gallery_data.HttpHelper.Dispose();
         }
 
         public static async Task<Dictionary<string, dynamic>> uploadMedia(string user, string password,
