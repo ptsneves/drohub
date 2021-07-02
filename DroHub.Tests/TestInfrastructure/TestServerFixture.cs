@@ -205,13 +205,13 @@ namespace DroHub.Tests.TestInfrastructure
             string session_password,
             string upload_user,
             string upload_password,
-            Func<Dictionary<string, dynamic>, int, int, long, int, UploadTestReturnEnum> test,
+            Func<Dictionary<string, dynamic>, int, int, long, int, Task<UploadTestReturnEnum>> test,
             int runs = 1,
             string src = "video.webm",
             int chunks = 30,
             int copies = 1) {
             await testUpload(half_duration_multiplier, session_user, session_password, upload_user,
-                upload_password, test, () => { }, runs, src, chunks, copies);
+                upload_password, test, async () => { await Task.CompletedTask; }, runs, src, chunks, copies);
         }
 
         public async Task testUpload(int half_duration_multiplier,
@@ -219,8 +219,8 @@ namespace DroHub.Tests.TestInfrastructure
             string session_password,
             string upload_user,
             string upload_password,
-            Func<Dictionary<string,dynamic>, int, int, long, int, UploadTestReturnEnum> test,
-            Action onConnectionClose,
+            Func<Dictionary<string,dynamic>, int, int, long, int, Task<UploadTestReturnEnum>> test,
+            Func<Task> onConnectionClose,
             int runs = 1,
             string src = "video.webm",
             int chunks = 30,
@@ -258,7 +258,7 @@ namespace DroHub.Tests.TestInfrastructure
                                             RangeStartBytes = stream.Length / chunks * chunk
                                         });
 
-                                    switch (test(r, i, chunk, stream.Length / chunks, copy)) {
+                                    switch (await test(r, i, chunk, stream.Length / chunks, copy)) {
                                         case UploadTestReturnEnum.CONTINUE:
                                             continue;
                                         case UploadTestReturnEnum.SKIP_RUN:
@@ -271,7 +271,7 @@ namespace DroHub.Tests.TestInfrastructure
                                     }
                                 }
                                 catch (HttpRequestException e) {
-                                    test(new Dictionary<string, dynamic> {
+                                    await test(new Dictionary<string, dynamic> {
                                             ["error"] = e.Message
                                         },
                                         i, chunk, stream.Length / chunks, copy);
@@ -281,7 +281,7 @@ namespace DroHub.Tests.TestInfrastructure
                         }
                     }
 
-                    onConnectionClose();
+                    await onConnectionClose();
                 });
         }
 

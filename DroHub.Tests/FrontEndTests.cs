@@ -113,7 +113,7 @@ namespace DroHub.Tests {
                         throw new Exception(result["error"]);
 
                     if (result["result"] != "ok")
-                        return TestServerFixture.UploadTestReturnEnum.CONTINUE;
+                        return Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE);
 
                     var media_list = _fixture.DbContext.MediaObjects
                         .Select(m => MediaObjectAndTagAPI.LocalStorageHelper.convertToFrontEndFilePath(m))
@@ -127,7 +127,7 @@ namespace DroHub.Tests {
 
                     test(media_list, token_data, copy);
 
-                    return TestServerFixture.UploadTestReturnEnum.CONTINUE;
+                    return Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE);
                 },
                 copies: file_copies);
         }

@@ -648,7 +648,7 @@ namespace DroHub.Tests
                         ran = true;
                     }
 
-                    return TestServerFixture.UploadTestReturnEnum.CONTINUE;
+                    return Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE);
                 },
                 1,
                 video_src);
@@ -678,7 +678,7 @@ namespace DroHub.Tests
                     Assert.Equal(orig_sha256, uploaded_sha256);
                     ran = true;
 
-                    return TestServerFixture.UploadTestReturnEnum.CONTINUE;
+                    return Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE);
                 },
                 1,
                 "preview-drone-PI040416DA9H110281-1608225545000.jpeg",
@@ -734,7 +734,7 @@ namespace DroHub.Tests
                     Assert.True(result.TryGetValue("error", out var value));
                     Assert.Equal("Response status code does not indicate success: 413 (Request Entity Too Large).", value);
                     ran = true;
-                    return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
+                    return Task.FromResult(TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD);
                 },
                 1,
                 "video.webm",
@@ -754,7 +754,7 @@ namespace DroHub.Tests
                     Assert.True(result.TryGetValue("error", out var v));
                     Assert.Equal(v, AndroidApplicationController.CHUNK_TOO_SMALL);
                     ran = true;
-                    return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
+                    return Task.FromResult(TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD);
                 },
                 1,
                 "video.webm",
@@ -774,7 +774,7 @@ namespace DroHub.Tests
                     Assert.True(result.TryGetValue("error", out var v));
                     Assert.Equal(v, AndroidApplicationController.SIZE_TOO_SMALL);
                     ran = true;
-                    return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
+                    return Task.FromResult(TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD);
                 },
                 1,
                 "fake-0byte.webm",
@@ -802,7 +802,7 @@ namespace DroHub.Tests
                 Assert.True(result.TryGetValue("error", out var v));
                 Assert.Equal("Media does not correspond to any known flight", v);
                 ran = true;
-                return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
+                return Task.FromResult(TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD);
             });
             Assert.True(ran);
         }
@@ -842,7 +842,7 @@ namespace DroHub.Tests
                         Assert.True(result.TryGetValue("error", out var v));
                         Assert.Equal(v, "Response status code does not indicate success: 401 (Unauthorized).");
                         ran = true;
-                        return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
+                        return Task.FromResult(TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD);
                     }
                 );
             Assert.True(ran);
@@ -860,7 +860,7 @@ namespace DroHub.Tests
                 (result, attempt, chunk, sent_chunk_size, copy) => {
                     if (attempt == 0) {
                         ran1 = true;
-                        return TestServerFixture.UploadTestReturnEnum.SKIP_RUN;
+                        return Task.FromResult(TestServerFixture.UploadTestReturnEnum.SKIP_RUN);
                     }
 
                     ran2 = true;
@@ -868,7 +868,7 @@ namespace DroHub.Tests
                     Assert.Equal("send-next", v);
                     Assert.True(result.TryGetValue("begin", out var r));
                     Assert.Equal(sent_chunk_size*(chunk+1), r);
-                    return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
+                    return Task.FromResult(TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD);
                 }, 2);
 
             Assert.True(ran1);
@@ -888,7 +888,7 @@ namespace DroHub.Tests
                 switch (tries) {
                     case 0: {
                         ran1 = true;
-                        return TestServerFixture.UploadTestReturnEnum.CONTINUE;
+                        return Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE);
                     }
                     case 1: {
                         Assert.True(result.TryGetValue("error", out var v));
@@ -901,7 +901,7 @@ namespace DroHub.Tests
                         break;
                 }
 
-                return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
+                return Task.FromResult(TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD);
             }, 2);
             Assert.True(ran1);
             Assert.True(ran2);
@@ -919,7 +919,7 @@ namespace DroHub.Tests
                 Assert.True(result.TryGetValue("error", out var v));
                 Assert.Equal(v, "Format not allowed");
                 ran = true;
-                return TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD;
+                return Task.FromResult(TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD);
             }, 1, "video-janus.mjr");
             Assert.True(ran);
         }
