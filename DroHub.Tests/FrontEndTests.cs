@@ -122,7 +122,7 @@ namespace DroHub.Tests {
 
 
                     Assert.Equal(old_media_list.Count + file_copies , media_list.Count);
-                    var token_data = HttpClientHelper.getCrossSiteAntiForgeryTokenData(TestServerFixture.AdminUserEmail,
+                    var token_data = HttpClientHelper.getGalleryDataData(TestServerFixture.AdminUserEmail,
                         _fixture.AdminPassword).GetAwaiter().GetResult();
 
                     test(media_list, token_data, copy);
@@ -152,7 +152,7 @@ namespace DroHub.Tests {
         [Fact]
         public void TestGalleryTimeLine() {
             const string VUE_TEST_NAME = "GalleryTimeLine";
-            var token_data = HttpClientHelper.getCrossSiteAntiForgeryTokenData(TestServerFixture.AdminUserEmail,
+            var token_data = HttpClientHelper.getGalleryDataData(TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword).GetAwaiter().GetResult();
 
             writeNewTempTestData(VUE_TEST_NAME, o => {

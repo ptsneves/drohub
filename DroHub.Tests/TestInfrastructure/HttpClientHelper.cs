@@ -433,7 +433,7 @@ namespace DroHub.Tests.TestInfrastructure
             return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,dynamic>>(res);
         }
 
-        public static async Task<GalleryPageData> getCrossSiteAntiForgeryTokenData(string user_name, string password) {
+        public static async Task<GalleryPageData> getGalleryDataData(string user_name, string password) {
             var r = await getGalleryPage(user_name, password);
             r.CrossSiteForgeryToken = TestServerFixture
                 .getHtmlDOM(r.Content)
