@@ -457,35 +457,51 @@ namespace DroHub.Tests
         }
 
         [Fact]
-        public async void TestGalleryTestDataIsCorrect() {
-            await using var test_data_stream = File.OpenRead(
-                Path.Join(TestServerFixture.DroHubPath, TestServerFixture.FrontEndPathInRepo, "tests", "test-data.json"));
+        public async void TestGalleryAttributeDataIsCorrect() {
+            var ran = false;
 
-            JsonElement test_data = await JsonSerializer.DeserializeAsync<dynamic>(test_data_stream);
-            var props_data = test_data.GetProperty("GalleryTimeLine").GetProperty("propsData");
+            const int copies = 1;
+            await _fixture.testUpload(1,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                (result, tries, chunk, sent_chunk_size, copy) =>
+                    Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE),
+                async () => {
+                    await using var test_data_stream = File.OpenRead(
+                        Path.Join(TestServerFixture.DroHubPath, TestServerFixture.FrontEndPathInRepo, "tests", "test-data.json"));
 
-            var r = await HttpClientHelper.getGalleryDataData(TestServerFixture.AdminUserEmail, _fixture.AdminPassword);
-            var gallery_dom = TestServerFixture.getHtmlDOM(r.Content);
+                    JsonElement test_data = await JsonSerializer.DeserializeAsync<dynamic>(test_data_stream);
+                    var props_data = test_data.GetProperty("GalleryTimeLine").GetProperty("propsData");
 
-            var gallery_timeline_query = gallery_dom.QuerySelectorAll("gallery-timeline");
-            Assert.Equal(1, gallery_timeline_query.Length);
-            var attrs = gallery_timeline_query.SelectMany(e => e.Attributes).ToList();
+                    var r = await HttpClientHelper.getGalleryDataData(TestServerFixture.AdminUserEmail, _fixture.AdminPassword);
+                    var gallery_dom = TestServerFixture.getHtmlDOM(r.Content);
 
-            Assert.Equal(attrs.Count(), props_data.EnumerateObject().Count());
-            foreach (var attr in attrs) {
-                var is_bind = attr.Name.Contains("v-bind");
-                var vue_property_name = TestServerFixture.toCamelCase(attr.Name
-                    .Replace("v-bind", ""));
+                    var gallery_timeline_query = gallery_dom.QuerySelectorAll("gallery-timeline");
+                    Assert.Equal(1, gallery_timeline_query.Length);
+                    var attrs = gallery_timeline_query.SelectMany(e => e.Attributes).ToList();
 
-                Assert.Contains(props_data.EnumerateObject(), p => p.NameEquals(vue_property_name));
+                    Assert.Equal(attrs.Count(), props_data.EnumerateObject().Count());
+                    foreach (var attr in attrs) {
+                        var is_bind = attr.Name.Contains("v-bind");
+                        var vue_property_name = TestServerFixture.toCamelCase(attr.Name
+                            .Replace("v-bind", ""));
 
-                var prop = props_data.GetProperty(vue_property_name);
+                        Assert.Contains(props_data.EnumerateObject(), p => p.NameEquals(vue_property_name));
 
-                if (prop.ValueKind == JsonValueKind.String && prop.GetString() == "@@TEMPORARY@@")
-                    continue;
+                        var prop = props_data.GetProperty(vue_property_name);
 
-                Assert.Equal(attr.Value, is_bind ? prop.GetRawText() : prop.GetString());
-            }
+                        if (prop.ValueKind == JsonValueKind.String && prop.GetString() == "@@TEMPORARY@@")
+                            continue;
+
+                        Assert.Equal(attr.Value, is_bind ? prop.GetRawText() : prop.GetString());
+                        ran = true;
+                    }
+                },
+                1,
+                copies: copies);
+            Assert.True(ran);
         }
 
         [Fact]
@@ -637,8 +653,12 @@ namespace DroHub.Tests
                             .ToList());
 
                     ran = true;
+                    var new_list = _fixture.DbContext.MediaObjects.ToList();
+                    if (new_list.Count == 0)
+                        return;
+
                     foreach (var media_path in last_media_paths) {
-                        Assert.NotEqual(_fixture.DbContext.MediaObjects.ToList().Last().MediaPath,
+                        Assert.NotEqual(new_list.Last().MediaPath,
                             media_path.MediaPath);
                     }
                 },
