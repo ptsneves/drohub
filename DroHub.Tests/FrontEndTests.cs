@@ -88,7 +88,7 @@ namespace DroHub.Tests {
                 writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
                     temp_test_data.cookie = token_data.LoginCookie;
                     temp_test_data.tagsToAdd = new JArray(tag_list_truth);
-                    temp_test_data.mediaIdList = new JArray(media_list.First());
+                    temp_test_data.mediaIdList = new JArray(media_list.Last());
                     temp_test_data.useTimeStamp = false;
                     temp_test_data.propsData.crossSiteForgeryToken = token_data.CrossSiteForgeryToken;
                 });
