@@ -103,6 +103,21 @@ namespace DroHub.Tests {
             });
         }
 
+        [Fact]
+        public async void TestGalleryTimeLine() {
+            const string VUE_TEST_NAME = "GalleryTimeLine";
+            await testWithFile((media_list, token_data, copy) => {
+                writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
+                    temp_test_data.cookie = token_data.LoginCookie;
+                    temp_test_data.mediaIdList = new JArray(media_list);
+                    temp_test_data.propsData.crossSiteForgeryToken = token_data.CrossSiteForgeryToken;
+                });
+
+                runVueTestContainer(VUE_TEST_NAME, true, true);
+                return Task.CompletedTask;
+            });
+        }
+
         private async Task testWithFile(Func<List<string>, HttpClientHelper.GalleryPageData, int, Task> test, int
         file_copies = 1) {
             var old_media_list = _fixture.DbContext
@@ -150,19 +165,6 @@ namespace DroHub.Tests {
         [Fact]
         public void TestTimeLabel() {
             runVueTestContainer("TimeLabel", true, true);
-        }
-
-        [Fact]
-        public void TestGalleryTimeLine() {
-            const string VUE_TEST_NAME = "GalleryTimeLine";
-            var token_data = HttpClientHelper.getGalleryDataData(TestServerFixture.AdminUserEmail,
-                _fixture.AdminPassword).GetAwaiter().GetResult();
-
-            writeNewTempTestData(VUE_TEST_NAME, o => {
-                o.propsData.crossSiteForgeryToken = token_data.CrossSiteForgeryToken;
-            });
-
-            runVueTestContainer(VUE_TEST_NAME, true, true);
         }
     }
 }
