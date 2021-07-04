@@ -58,7 +58,7 @@ namespace DroHub.Tests {
 
             await testWithFile((media_list, token_data, copy) => {
                 if (copy == 0)
-                    return;
+                    return Task.CompletedTask;
 
                 writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
                     temp_test_data.cookie = token_data.LoginCookie;
@@ -76,6 +76,7 @@ namespace DroHub.Tests {
                 Assert.False(_fixture.DbContext.MediaObjects.Any(t =>
                     t.MediaPath ==  MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list
                         .Last())));
+                return Task.CompletedTask;
             }, 1);
         }
 
@@ -97,10 +98,12 @@ namespace DroHub.Tests {
                 Assert.Equal(1, _fixture.DbContext.MediaObjectTags.Count(
                     t => t.TagName == tag_list_truth[0]
                          && t.MediaPath == MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list.First())));
+
+                return Task.CompletedTask;
             });
         }
 
-        private async Task testWithFile(Action<List<string>, HttpClientHelper.GalleryPageData, int> test, int
+        private async Task testWithFile(Func<List<string>, HttpClientHelper.GalleryPageData, int, Task> test, int
         file_copies = 1) {
             var old_media_list = _fixture.DbContext
                 .MediaObjects
@@ -108,12 +111,12 @@ namespace DroHub.Tests {
 
             await _fixture.testUpload(1, TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
-                (result, run, chunk, chunk_size, copy) => {
+                async (result, run, chunk, chunk_size, copy) => {
                     if (result.ContainsKey("error"))
                         throw new Exception(result["error"]);
 
                     if (result["result"] != "ok")
-                        return Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE);
+                        return TestServerFixture.UploadTestReturnEnum.CONTINUE;
 
                     var media_list = _fixture.DbContext.MediaObjects
                         .Select(m => MediaObjectAndTagAPI.LocalStorageHelper.convertToFrontEndFilePath(m))
@@ -125,9 +128,9 @@ namespace DroHub.Tests {
                     var token_data = HttpClientHelper.getGalleryDataData(TestServerFixture.AdminUserEmail,
                         _fixture.AdminPassword).GetAwaiter().GetResult();
 
-                    test(media_list, token_data, copy);
+                    await test(media_list, token_data, copy);
 
-                    return Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE);
+                    return TestServerFixture.UploadTestReturnEnum.CONTINUE;
                 },
                 copies: file_copies);
         }
