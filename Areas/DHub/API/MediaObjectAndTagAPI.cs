@@ -159,7 +159,7 @@ namespace DroHub.Areas.DHub.API {
             private static bool doesPreviewFileExist(string media_path) {
                 return Directory
                     .EnumerateFiles(Path.GetDirectoryName(media_path))
-                    .Any(f => f.Contains(Path.GetFileNameWithoutExtension(media_path)));
+                    .Any(f => f == calculatePreviewFilePathOnHost(media_path));
             }
 
             public static bool doesPreviewExist(MediaObject mo) {
@@ -174,7 +174,7 @@ namespace DroHub.Areas.DHub.API {
                 return File.Exists(calculateFilePathOnHost(mo.MediaPath));
             }
 
-            private static string calculatePreviewFilePathOnHost(string file_path) {
+            public static string calculatePreviewFilePathOnHost(string file_path) {
                 var file_dir = Path.GetDirectoryName(file_path);
                 var file_name = Path.GetFileName(file_path);
 

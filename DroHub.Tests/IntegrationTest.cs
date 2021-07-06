@@ -696,9 +696,17 @@ namespace DroHub.Tests
                         var orig_sha256 = TestServerFixture.computeFileSHA256($"{TestServerFixture.TestAssetsPath}/{video_src}");
                         var uploaded_sha256 = TestServerFixture.computeFileSHA256(last_media_path.MediaPath);
                         Assert.Equal(orig_sha256, uploaded_sha256);
+
+                        //Check that preview file is not the uploaded one.
                         Assert.True(MediaObjectAndTagAPI
                             .LocalStorageHelper
                             .doesPreviewExist(last_media_path));
+
+                        var preview_file_path = MediaObjectAndTagAPI.LocalStorageHelper.
+                            calculatePreviewFilePathOnHost(last_media_path.MediaPath);
+                        var preview_sha256 = TestServerFixture.computeFileSHA256(preview_file_path);
+                        Assert.NotEqual(preview_sha256, uploaded_sha256);
+
                         ran = true;
                     }
 
