@@ -60,46 +60,45 @@ namespace DroHub.Areas.DHub.Controllers
 
         private class UploadModelValidator : ValidationAttribute {
             public override bool IsValid(object value) {
-                if (!(value is UploadModel))
+                if (!(value is UploadModel model))
                     return false;
-                var o = (UploadModel) value;
 
-                if (o.File.Length <= 0 || o.AssembledFileSize <= 0) {
+                if (model.File.Length <= 0 || model.AssembledFileSize <= 0) {
                     ErrorMessage = SIZE_TOO_SMALL;
                     return false;
                 }
 
-                if (o.File.Length > o.AssembledFileSize) {
+                if (model.File.Length > model.AssembledFileSize) {
                     ErrorMessage = "Chunk or file bigger than the reported assembled file size";
                     return false;
                 }
 
-                if (o.RangeStartBytes > o.AssembledFileSize) {
+                if (model.RangeStartBytes > model.AssembledFileSize) {
                     ErrorMessage = "Range is bigger than Assembled file size";
                     return false;
                 }
 
-                if (o.File.Length + o.RangeStartBytes > o.AssembledFileSize) {
+                if (model.File.Length + model.RangeStartBytes > model.AssembledFileSize) {
                     ErrorMessage = "Chunk would overflow assembled file size";
                     return false;
                 }
 
-                if (o.UnixCreationTimeMS <= 0) {
+                if (model.UnixCreationTimeMS <= 0) {
                     ErrorMessage = "CreationTime is invalid";
                     return false;
                 }
 
-                if (string.IsNullOrEmpty(o.DeviceSerialNumber)) {
+                if (string.IsNullOrEmpty(model.DeviceSerialNumber)) {
                     ErrorMessage = "No device serial number found";
                     return false;
                 }
 
-                if (!MediaObjectAndTagAPI.isAcceptableExtension(o.File.FileName)) {
+                if (!MediaObjectAndTagAPI.isAllowedExtension(model.File.FileName)) {
                     ErrorMessage = "Format not allowed";
                     return false;
                 }
 
-                if (o.File.Length < MINIMUM_CHUNK_SIZE_IN_BYTES && o.AssembledFileSize > MINIMUM_CHUNK_SIZE_IN_BYTES) {
+                if (model.File.Length < MINIMUM_CHUNK_SIZE_IN_BYTES && model.AssembledFileSize > MINIMUM_CHUNK_SIZE_IN_BYTES) {
                     ErrorMessage = CHUNK_TOO_SMALL;
                     return false;
                 }
