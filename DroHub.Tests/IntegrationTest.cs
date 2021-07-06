@@ -30,16 +30,6 @@ namespace DroHub.Tests
     {
         private readonly TestServerFixture _fixture;
 
-        private const int ALLOWED_USER_COUNT = 999;
-        private const string DEFAULT_ORGANIZATION = "UN";
-        private const string DEFAULT_DEVICE_NAME = "A Name";
-        private const string DEFAULT_BASE_TYPE = DroHubUser.SUBSCRIBER_POLICY_CLAIM;
-        private const string DEFAULT_DEVICE_SERIAL = "Aserial";
-        private const string DEFAULT_USER = "auser@drohub.xyz";
-        private const string DEFAULT_PASSWORD = "password1234";
-        private const int DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES = 999;
-        private const int DEFAULT_ALLOWED_USER_COUNT = 3;
-
         public IntegrationTest(TestServerFixture fixture) {
             _fixture = fixture;
         }
@@ -114,13 +104,13 @@ namespace DroHub.Tests
         [Theory]
         public async void TestCreateUserSimple(string user_base_role, string new_user_role, bool same_org, bool expect_success) {
             await using var agent_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, user_base_role,
-                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+                TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, user_base_role,
+                TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
 
-            var new_user_org = same_org ? DEFAULT_ORGANIZATION : DEFAULT_ORGANIZATION + "1";
-            var t = HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
-                DEFAULT_PASSWORD, DEFAULT_USER+"1", DEFAULT_PASSWORD,
-                DEFAULT_ORGANIZATION, new_user_role, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+            var new_user_org = same_org ? TestServerFixture.DEFAULT_ORGANIZATION : TestServerFixture.DEFAULT_ORGANIZATION + "1";
+            var t = HttpClientHelper.AddUserHelper.addUser(_fixture, TestServerFixture.DEFAULT_USER,
+                TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_USER+"1", TestServerFixture.DEFAULT_PASSWORD,
+                TestServerFixture.DEFAULT_ORGANIZATION, new_user_role, TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
 
             if (expect_success) {
                 await using var u = await t;
@@ -144,28 +134,28 @@ namespace DroHub.Tests
         [Fact]
         public async void TestCreateSubscriptionAllowedMinutesLimits() {
             await Assert.ThrowsAsync<InvalidOperationException>(async () => {
-                await using var u1 = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
-                    DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, (long)TimeSpan.MaxValue.TotalMinutes+1,
-                    DEFAULT_ALLOWED_USER_COUNT);
+                await using var u1 = await HttpClientHelper.AddUserHelper.addUser(_fixture, TestServerFixture.DEFAULT_USER,
+                    TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_BASE_TYPE, (long)TimeSpan.MaxValue.TotalMinutes+1,
+                    TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
             });
 
             await Assert.ThrowsAsync<InvalidOperationException>(async () => {
-                await using var u1 = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
-                    DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, 0,
-                    DEFAULT_ALLOWED_USER_COUNT);
+                await using var u1 = await HttpClientHelper.AddUserHelper.addUser(_fixture, TestServerFixture.DEFAULT_USER,
+                    TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_BASE_TYPE, 0,
+                    TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
             });
 
-            await using var u = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
-                DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, (long)TimeSpan.MaxValue.TotalMinutes,
-                DEFAULT_ALLOWED_USER_COUNT);
+            await using var u = await HttpClientHelper.AddUserHelper.addUser(_fixture, TestServerFixture.DEFAULT_USER,
+                TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_BASE_TYPE, (long)TimeSpan.MaxValue.TotalMinutes,
+                TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
 
         }
 
         [Fact]
         public async void TestCreateSubscriptionWithNoAllowedUsers() {
             await Assert.ThrowsAsync<InvalidOperationException>(async () => {
-                await using var u = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
-                    DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 0);
+                await using var u = await HttpClientHelper.AddUserHelper.addUser(_fixture, TestServerFixture.DEFAULT_USER,
+                    TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_BASE_TYPE, TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 0);
             });
         }
 
@@ -201,17 +191,17 @@ namespace DroHub.Tests
             // };
             //
             // await using var agent_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-            //     DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, agent_role,
-            //     DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+            //     TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, agent_role,
+            //     TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
             //
-            // var t = HttpClientHelper.sendInvitation(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
+            // var t = HttpClientHelper.sendInvitation(_fixture, TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD,
             //     new[] {mail_slurp_helper.EMAIL_ADDRESS});
             //
             // if (expect_success) {
             //     await t;
             //     var emails = await mail_slurp_helper.receiveEmail(timeout, match_options, 1);
             //     Assert.True(1 == emails.Count);
-            //     await HttpClientHelper.AddUserHelper.excludeUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
+            //     await HttpClientHelper.AddUserHelper.excludeUser(_fixture, TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD,
             //         mail_slurp_helper.EMAIL_ADDRESS);
             // }
             // else {
@@ -411,21 +401,21 @@ namespace DroHub.Tests
         public async void TestChangePermissions(bool same_org, string agent_role, string victim_original_role,
             string victim_target_role, bool expect_success) {
 
-            const string AGENT_USER_EMAIL = DEFAULT_USER;
-            const string VICTIM_USER_EMAIL = DEFAULT_USER + "1";
-            var victim_user_org = same_org ? DEFAULT_ORGANIZATION : DEFAULT_ORGANIZATION + "1";
+            var AGENT_USER_EMAIL = TestServerFixture.DEFAULT_USER;
+            var VICTIM_USER_EMAIL = TestServerFixture.DEFAULT_USER + "1";
+            var victim_user_org = same_org ? TestServerFixture.DEFAULT_ORGANIZATION : TestServerFixture.DEFAULT_ORGANIZATION + "1";
 
             await using var agent_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                AGENT_USER_EMAIL, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, agent_role,
-                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+                AGENT_USER_EMAIL, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, agent_role,
+                TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
 
 
             await using var victim_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                VICTIM_USER_EMAIL, DEFAULT_PASSWORD,
-                victim_user_org, victim_original_role, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES,
-                DEFAULT_ALLOWED_USER_COUNT);
+                VICTIM_USER_EMAIL, TestServerFixture.DEFAULT_PASSWORD,
+                victim_user_org, victim_original_role, TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES,
+                TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
 
-            var t = HttpClientHelper.changePermissions(AGENT_USER_EMAIL, DEFAULT_PASSWORD,
+            var t = HttpClientHelper.changePermissions(AGENT_USER_EMAIL, TestServerFixture.DEFAULT_PASSWORD,
                 VICTIM_USER_EMAIL, victim_target_role);
 
             var victim_user_id = _fixture.DbContext.Users
@@ -507,12 +497,12 @@ namespace DroHub.Tests
         [Fact]
         public async void TestExcludeSelfUserFails() {
             await using var agent_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM,
-                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+                TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM,
+                TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
 
             await Assert.ThrowsAsync<HttpRequestException>( async () =>
                 await HttpClientHelper.AddUserHelper
-                    .excludeUser(DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_USER)
+                    .excludeUser(TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_USER)
             );
         }
 
@@ -522,12 +512,12 @@ namespace DroHub.Tests
         [Theory]
         public async void TestExcludeUserInputValidationFails(string email_to_delete) {
             await using var agent_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM,
-                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+                TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM,
+                TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
 
             await Assert.ThrowsAsync<HttpRequestException>( async () =>
                 await HttpClientHelper.AddUserHelper
-                    .excludeUser(DEFAULT_USER, DEFAULT_PASSWORD, email_to_delete)
+                    .excludeUser(TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, email_to_delete)
             );
         }
 
@@ -535,12 +525,12 @@ namespace DroHub.Tests
         public async void TestDeleteDeviceWithOngoingFlightFails() {
 
             await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
-                _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+                _fixture.AdminPassword, TestServerFixture.DEFAULT_DEVICE_NAME, TestServerFixture.DEFAULT_DEVICE_SERIAL);
             var token = await HttpClientHelper.getApplicationToken(TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword);
-            var s = await HttpClientHelper.openWebSocket(TestServerFixture.AdminUserEmail, token["result"], DEFAULT_DEVICE_SERIAL);
+            var s = await HttpClientHelper.openWebSocket(TestServerFixture.AdminUserEmail, token["result"], TestServerFixture.DEFAULT_DEVICE_SERIAL);
             await Assert.ThrowsAsync<InvalidDataException>(async () => await HttpClientHelper.CreateDeviceHelper
-                .deleteDevice(DEFAULT_DEVICE_SERIAL, TestServerFixture.AdminUserEmail, _fixture.AdminPassword));
+                .deleteDevice(TestServerFixture.DEFAULT_DEVICE_SERIAL, TestServerFixture.AdminUserEmail, _fixture.AdminPassword));
 
             s.Close();
         }
@@ -603,22 +593,22 @@ namespace DroHub.Tests
         public async void TestExcludeUserPermissions(bool same_org, string agent_role, string victim_role,
             bool expect_success) {
             await using var agent_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, agent_role,
-                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+                TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, agent_role,
+                TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
 
-            var new_user_org = same_org ? DEFAULT_ORGANIZATION : DEFAULT_ORGANIZATION + "TestExcludeUserPermissions";
+            var new_user_org = same_org ? TestServerFixture.DEFAULT_ORGANIZATION : TestServerFixture.DEFAULT_ORGANIZATION + "TestExcludeUserPermissions";
             await using var to_be_excluded_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                DEFAULT_USER + "TestExcludeUserPermissions", DEFAULT_PASSWORD,
-                new_user_org, victim_role, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT,
+                TestServerFixture.DEFAULT_USER + "TestExcludeUserPermissions", TestServerFixture.DEFAULT_PASSWORD,
+                new_user_org, victim_role, TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, TestServerFixture.DEFAULT_ALLOWED_USER_COUNT,
                 !expect_success);
 
-            var t = HttpClientHelper.AddUserHelper.excludeUser(DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_USER + "TestExcludeUserPermissions");
+            var t = HttpClientHelper.AddUserHelper.excludeUser(TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_USER + "TestExcludeUserPermissions");
             if (expect_success) {
                 try {
                     await t;
                 }
                 catch (Exception) {
-                    await HttpClientHelper.AddUserHelper.excludeUser(_fixture, DEFAULT_USER + "TestExcludeUserPermissions");
+                    await HttpClientHelper.AddUserHelper.excludeUser(_fixture, TestServerFixture.DEFAULT_USER + "TestExcludeUserPermissions");
                     throw;
                 }
             }
@@ -754,21 +744,21 @@ namespace DroHub.Tests
             const int minutes = 1;
             var ran = false;
 
-            await TelemetryMock.stageThriftDrone(_fixture, true, minutes, DEFAULT_USER, DEFAULT_PASSWORD,
-                DEFAULT_ALLOWED_USER_COUNT, DEFAULT_ORGANIZATION, DEFAULT_DEVICE_SERIAL,
+            await TelemetryMock.stageThriftDrone(_fixture, true, minutes, TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD,
+                TestServerFixture.DEFAULT_ALLOWED_USER_COUNT, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_DEVICE_SERIAL,
                 async (drone_rpc, telemetry_mock, user_name, token) => {
                     await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
                         async () => {
                             Thread.Sleep(2000);
                             const string src = "video.webm";
                             await using var stream = new FileStream($"{TestServerFixture.TestAssetsPath}/{src}", FileMode.Open);
-                            var r = await HttpClientHelper.uploadMedia(DEFAULT_USER,
-                                DEFAULT_PASSWORD,
+                            var r = await HttpClientHelper.uploadMedia(TestServerFixture.DEFAULT_USER,
+                                TestServerFixture.DEFAULT_PASSWORD,
                                 new AndroidApplicationController.UploadModel {
                                     File = new FormFile(stream, 0, stream.Length / 30, src,
                                         $"{TestServerFixture.TestAssetsPath}/{src}"),
                                     IsPreview = false, //needs to be because preview files have different paths
-                                    DeviceSerialNumber = DEFAULT_DEVICE_SERIAL,
+                                    DeviceSerialNumber = TestServerFixture.DEFAULT_DEVICE_SERIAL,
                                     UnixCreationTimeMS = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                                     AssembledFileSize = stream.Length,
                                     RangeStartBytes = 0
@@ -779,7 +769,7 @@ namespace DroHub.Tests
 
                         }, user_name, token);
                 },
-                () => DroneRPC.generateTelemetry(DEFAULT_DEVICE_SERIAL,
+                () => DroneRPC.generateTelemetry(TestServerFixture.DEFAULT_DEVICE_SERIAL,
                     DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
             Assert.True(ran);
         }
@@ -921,13 +911,13 @@ namespace DroHub.Tests
         public async void TestUploadMediaNotSubscribedDeviceFails() {
             await using var u = await HttpClientHelper.AddUserHelper.addUser(_fixture, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-            DEFAULT_USER, DEFAULT_PASSWORD,
-                DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM, 99, 99);
+            TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD,
+                TestServerFixture.DEFAULT_ORGANIZATION, DroHubUser.SUBSCRIBER_POLICY_CLAIM, 99, 99);
 
             var ran = false;
             await _fixture.testUpload(1,
-                    DEFAULT_USER,
-                    DEFAULT_PASSWORD,
+                    TestServerFixture.DEFAULT_USER,
+                    TestServerFixture.DEFAULT_PASSWORD,
                     TestServerFixture.AdminUserEmail,
                     _fixture.AdminPassword,
                     (result, tries, chunk, sent_chunk_size, copy) => {
@@ -1020,24 +1010,24 @@ namespace DroHub.Tests
         public async void TestUpdateSubscriptionOnlyOnUserDelete() {
             {
                 await using var u1 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                    DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
-                    DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 3);
+                    TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_BASE_TYPE,
+                    TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 3);
                 await using var u2 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                    DEFAULT_USER+"1", DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
-                    DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 1);
+                    TestServerFixture.DEFAULT_USER+"1", TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_BASE_TYPE,
+                    TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 1);
                 await using var u3 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                    DEFAULT_USER+"2", DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
-                    DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 3);
+                    TestServerFixture.DEFAULT_USER+"2", TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_BASE_TYPE,
+                    TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 3);
             }
             {
                 await using var u1 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                    DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
-                    DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 1);
+                    TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_BASE_TYPE,
+                    TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 1);
 
                 await Assert.ThrowsAsync<InvalidOperationException>(async () => {
                     await using var u2 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                        DEFAULT_USER+"1", DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
-                        DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 1);
+                        TestServerFixture.DEFAULT_USER+"1", TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_BASE_TYPE,
+                        TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 1);
                 });
             }
         }
@@ -1045,32 +1035,32 @@ namespace DroHub.Tests
         [Fact]
         public async void TestCreateUserCountLimit() {
             await using var u1 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
-                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 2);
+                TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_BASE_TYPE,
+                TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 2);
 
             await using var u2 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_USER+"1",
-                DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
-                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 2);
+                TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_USER+"1",
+                TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_BASE_TYPE,
+                TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 2);
 
             await Assert.ThrowsAsync<InvalidOperationException>(async () => {
                 await using var u3 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                    DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_USER+"2",
-                    DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
-                    DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 2);
+                    TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_USER+"2",
+                    TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_BASE_TYPE,
+                    TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, 2);
             });
         }
 
         [Fact]
         public async void TestDoubleUserCreationFails() {
             await using var u1 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
-                DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+                TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_BASE_TYPE,
+                TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
 
             await Assert.ThrowsAsync<InvalidOperationException>(async () => {
                 await using var u2 = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                    DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE,
-                    DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+                    TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_BASE_TYPE,
+                    TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
             });
         }
 
@@ -1089,7 +1079,7 @@ namespace DroHub.Tests
             var token = (await HttpClientHelper.getApplicationToken(TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword))["result"];
             var device_info = await HttpClientHelper.queryDeviceInfo(TestServerFixture.AdminUserEmail, token,
-                DEFAULT_DEVICE_SERIAL);
+                TestServerFixture.DEFAULT_DEVICE_SERIAL);
 
             Assert.False(device_info.TryGetValue("result", out var _));
             Assert.True(device_info.TryGetValue("error", out var error));
@@ -1098,8 +1088,8 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestGetApplicationTokenWithInvalidUserFails() {
-            var deserialized_object = HttpClientHelper.getApplicationToken(DEFAULT_USER,
-                DEFAULT_PASSWORD);
+            var deserialized_object = HttpClientHelper.getApplicationToken(TestServerFixture.DEFAULT_USER,
+                TestServerFixture.DEFAULT_PASSWORD);
             await Assert.ThrowsAsync<InvalidCredentialException>(async () => await deserialized_object);
         }
 
@@ -1124,13 +1114,13 @@ namespace DroHub.Tests
         [InlineData(DroHubUser.PILOT_POLICY_CLAIM)]
         [Theory]
         public async void TestValidateToken(string user_role) {
-            await using var s = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
-                DEFAULT_ORGANIZATION, user_role, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+            await using var s = await HttpClientHelper.AddUserHelper.addUser(_fixture, TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD,
+                TestServerFixture.DEFAULT_ORGANIZATION, user_role, TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
 
-            var token = (await HttpClientHelper.getApplicationToken(DEFAULT_USER,
-                DEFAULT_PASSWORD))["result"];
+            var token = (await HttpClientHelper.getApplicationToken(TestServerFixture.DEFAULT_USER,
+                TestServerFixture.DEFAULT_PASSWORD))["result"];
 
-            var result = await HttpClientHelper.validateToken(DEFAULT_USER, token,
+            var result = await HttpClientHelper.validateToken(TestServerFixture.DEFAULT_USER, token,
                 _fixture.Configuration.GetValue<double>(AndroidApplicationController.APPSETTINGS_API_VERSION_KEY));
             Assert.True(result.TryGetValue("result", out var message));
             Assert.Equal("ok", message);
@@ -1139,33 +1129,33 @@ namespace DroHub.Tests
         [Fact]
         public async void TestCreateExistingDeviceFails() {
             await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
-                _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+                _fixture.AdminPassword, TestServerFixture.DEFAULT_DEVICE_NAME, TestServerFixture.DEFAULT_DEVICE_SERIAL);
 
-            await using var s = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
-            DEFAULT_ORGANIZATION,
-                DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+            await using var s = await HttpClientHelper.AddUserHelper.addUser(_fixture, TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD,
+            TestServerFixture.DEFAULT_ORGANIZATION,
+                TestServerFixture.DEFAULT_BASE_TYPE, TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
 
             await Assert.ThrowsAsync<InvalidDataException>(async () => {
-                await using var f = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
-                    DEFAULT_PASSWORD, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+                await using var f = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.DEFAULT_USER,
+                    TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_DEVICE_NAME, TestServerFixture.DEFAULT_DEVICE_SERIAL);
             });
         }
 
         [Fact]
         public async void TestQueryDeviceInfoWhenDeviceIsInOtherSubscriptionFails() {
             await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
-                _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+                _fixture.AdminPassword, TestServerFixture.DEFAULT_DEVICE_NAME, TestServerFixture.DEFAULT_DEVICE_SERIAL);
 
-            await using var s = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
-                DEFAULT_ORGANIZATION,
-                DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_ALLOWED_USER_COUNT);
+            await using var s = await HttpClientHelper.AddUserHelper.addUser(_fixture, TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD,
+                TestServerFixture.DEFAULT_ORGANIZATION,
+                TestServerFixture.DEFAULT_BASE_TYPE, TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
 
-            var token = (await HttpClientHelper.getApplicationToken(DEFAULT_USER,
-                DEFAULT_PASSWORD))["result"];
+            var token = (await HttpClientHelper.getApplicationToken(TestServerFixture.DEFAULT_USER,
+                TestServerFixture.DEFAULT_PASSWORD))["result"];
 
             await Assert.ThrowsAsync<HttpRequestException>(async () => {
-                await HttpClientHelper.queryDeviceInfo(DEFAULT_USER, token,
-                    DEFAULT_DEVICE_SERIAL);
+                await HttpClientHelper.queryDeviceInfo(TestServerFixture.DEFAULT_USER, token,
+                    TestServerFixture.DEFAULT_DEVICE_SERIAL);
             });
         }
 
@@ -1174,7 +1164,7 @@ namespace DroHub.Tests
             await Assert.ThrowsAsync<HttpRequestException>(async () => {
                 await HttpClientHelper.queryDeviceInfo("asd",
                     "sadsdd",
-                    DEFAULT_DEVICE_SERIAL);
+                    TestServerFixture.DEFAULT_DEVICE_SERIAL);
             });
         }
 
@@ -1192,7 +1182,7 @@ namespace DroHub.Tests
         public async void TestNODEVICECreateDeviceFails() {
             await Assert.ThrowsAsync<InvalidDataException>(async () => {
                 await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
-                    _fixture.AdminPassword, DEFAULT_DEVICE_NAME, "NODEVICE");
+                    _fixture.AdminPassword, TestServerFixture.DEFAULT_DEVICE_NAME, "NODEVICE");
             });
         }
 
@@ -1204,21 +1194,21 @@ namespace DroHub.Tests
         [Theory]
         public async void TestCreateAndDeleteDevicePermission(string user_base_type,
             string device_name, string device_serial, bool expect_created) {
-            await using var user_add = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
-                DEFAULT_PASSWORD,
-                DEFAULT_ORGANIZATION, user_base_type, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES,
-                DEFAULT_ALLOWED_USER_COUNT);
+            await using var user_add = await HttpClientHelper.AddUserHelper.addUser(_fixture, TestServerFixture.DEFAULT_USER,
+                TestServerFixture.DEFAULT_PASSWORD,
+                TestServerFixture.DEFAULT_ORGANIZATION, user_base_type, TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES,
+                TestServerFixture.DEFAULT_ALLOWED_USER_COUNT);
             {
                 if (expect_created) {
-                    await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
-                        DEFAULT_PASSWORD, device_name, device_serial);
+                    await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.DEFAULT_USER,
+                        TestServerFixture.DEFAULT_PASSWORD, device_name, device_serial);
 
-                    var devices_list = await HttpClientHelper.getDeviceList(DEFAULT_USER, DEFAULT_PASSWORD);
+                    var devices_list = await HttpClientHelper.getDeviceList(TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD);
                     Assert.NotNull(devices_list);
                     devices_list.Single(ds => ds.SerialNumber == device_serial);
-                    var token = (await HttpClientHelper.getApplicationToken(DEFAULT_USER,
-                        DEFAULT_PASSWORD))["result"];
-                    var device_info = (await HttpClientHelper.queryDeviceInfo(DEFAULT_USER, token,
+                    var token = (await HttpClientHelper.getApplicationToken(TestServerFixture.DEFAULT_USER,
+                        TestServerFixture.DEFAULT_PASSWORD))["result"];
+                    var device_info = (await HttpClientHelper.queryDeviceInfo(TestServerFixture.DEFAULT_USER, token,
                         device_serial));
                     Assert.Equal(device_name, (string)device_info["result"]["name"]);
                     Assert.Equal(device_serial, (string)device_info["result"]["serialNumber"]);
@@ -1226,12 +1216,12 @@ namespace DroHub.Tests
                 else {
                     await Assert.ThrowsAsync<InvalidCredentialException>(async () => {
                         await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture,
-                            DEFAULT_USER,
-                            DEFAULT_PASSWORD, device_name, device_serial);
+                            TestServerFixture.DEFAULT_USER,
+                            TestServerFixture.DEFAULT_PASSWORD, device_name, device_serial);
                     });
                 }
             }
-            Assert.Null(await HttpClientHelper.getDeviceList(DEFAULT_USER, DEFAULT_PASSWORD));
+            Assert.Null(await HttpClientHelper.getDeviceList(TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD));
         }
 
         [Fact]
@@ -1246,38 +1236,38 @@ namespace DroHub.Tests
             var password = _fixture.AdminPassword;
             var token = (await HttpClientHelper.getApplicationToken(user, password))["result"];
             await Assert.ThrowsAsync<WebSocketException>(async () =>
-                await HttpClientHelper.openWebSocket(user, token, DEFAULT_DEVICE_SERIAL));
+                await HttpClientHelper.openWebSocket(user, token, TestServerFixture.DEFAULT_DEVICE_SERIAL));
         }
 
         [Fact]
         public async void TestWebSocketWithDeviceNotBelongingToSubscriptionFails() {
             await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
-                _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+                _fixture.AdminPassword, TestServerFixture.DEFAULT_DEVICE_NAME, TestServerFixture.DEFAULT_DEVICE_SERIAL);
 
             await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture,
-                DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_ORGANIZATION,
+                TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION,
                 DroHubUser.SUBSCRIBER_POLICY_CLAIM, 10, 10);
 
-            var token = (await HttpClientHelper.getApplicationToken(DEFAULT_USER,
-                DEFAULT_PASSWORD))["result"];
+            var token = (await HttpClientHelper.getApplicationToken(TestServerFixture.DEFAULT_USER,
+                TestServerFixture.DEFAULT_PASSWORD))["result"];
 
             await Assert.ThrowsAsync<WebSocketException>(async () =>
-                await HttpClientHelper.openWebSocket(DEFAULT_USER, token, DEFAULT_DEVICE_SERIAL));
+                await HttpClientHelper.openWebSocket(TestServerFixture.DEFAULT_USER, token, TestServerFixture.DEFAULT_DEVICE_SERIAL));
         }
 
         [Fact]
         public async void TestWebSocketWithDeviceBelongingToSubscriptionSucceeds() {
             await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
-                _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+                _fixture.AdminPassword, TestServerFixture.DEFAULT_DEVICE_NAME, TestServerFixture.DEFAULT_DEVICE_SERIAL);
 
-            await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER, DEFAULT_PASSWORD,
+            await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture, TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD,
                 "Administrators", DroHubUser.SUBSCRIBER_POLICY_CLAIM, 10,
                 10);
 
-            var token = (await HttpClientHelper.getApplicationToken(DEFAULT_USER,
-                DEFAULT_PASSWORD))["result"];
+            var token = (await HttpClientHelper.getApplicationToken(TestServerFixture.DEFAULT_USER,
+                TestServerFixture.DEFAULT_PASSWORD))["result"];
 
-            var o = await HttpClientHelper.openWebSocket(DEFAULT_USER, token, DEFAULT_DEVICE_SERIAL);
+            var o = await HttpClientHelper.openWebSocket(TestServerFixture.DEFAULT_USER, token, TestServerFixture.DEFAULT_DEVICE_SERIAL);
             o.Close();
         }
 
@@ -1285,7 +1275,7 @@ namespace DroHub.Tests
         public async void TestWebSocketFailedAuthentication() {
             var exception_occured = false;
             try {
-                await HttpClientHelper.openWebSocket(DEFAULT_USER, DEFAULT_PASSWORD, _fixture
+                await HttpClientHelper.openWebSocket(TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD, _fixture
                     .AdminPassword);
             }
             catch (Exception e) {
@@ -1300,18 +1290,18 @@ namespace DroHub.Tests
             Assert.Null(await HttpClientHelper.getDeviceFlightStartTime(999999, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword));
             await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
-                _fixture.AdminPassword, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+                _fixture.AdminPassword, TestServerFixture.DEFAULT_DEVICE_NAME, TestServerFixture.DEFAULT_DEVICE_SERIAL);
 
             var token = (await HttpClientHelper.getApplicationToken(TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword))["result"];
 
-            var device_id = await HttpClientHelper.getDeviceId(DEFAULT_DEVICE_SERIAL,
+            var device_id = await HttpClientHelper.getDeviceId(TestServerFixture.DEFAULT_DEVICE_SERIAL,
                 TestServerFixture.AdminUserEmail, _fixture.AdminPassword);
             Assert.Null(await HttpClientHelper.getDeviceFlightStartTime(device_id, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword));
 
             var time_start = DateTimeOffset.UtcNow;
-            using var f = await HttpClientHelper.openWebSocket(TestServerFixture.AdminUserEmail, token, DEFAULT_DEVICE_SERIAL);
+            using var f = await HttpClientHelper.openWebSocket(TestServerFixture.AdminUserEmail, token, TestServerFixture.DEFAULT_DEVICE_SERIAL);
             await Task.Delay(TimeSpan.FromSeconds(5));
             var received = await HttpClientHelper.getDeviceFlightStartTime(device_id, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword);
@@ -1323,16 +1313,16 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestThriftConnectionDroppedAtTimeout() {
-            await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture, DEFAULT_USER,
-                DEFAULT_PASSWORD, DEFAULT_ORGANIZATION, DEFAULT_BASE_TYPE, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES,
-                ALLOWED_USER_COUNT);
+            await using var extra_user = await HttpClientHelper.AddUserHelper.addUser(_fixture, TestServerFixture.DEFAULT_USER,
+                TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_BASE_TYPE, TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES,
+                TestServerFixture.ALLOWED_USER_COUNT);
 
-            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, DEFAULT_USER,
-                DEFAULT_PASSWORD, DEFAULT_DEVICE_NAME, DEFAULT_DEVICE_SERIAL);
+            await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.DEFAULT_USER,
+                TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_DEVICE_NAME, TestServerFixture.DEFAULT_DEVICE_SERIAL);
 
-            var token = (await HttpClientHelper.getApplicationToken(DEFAULT_USER, DEFAULT_PASSWORD))["result"];
-            using var t_web_socket_client = HttpClientHelper.getTWebSocketClient(DEFAULT_USER, token,
-                DEFAULT_DEVICE_SERIAL);
+            var token = (await HttpClientHelper.getApplicationToken(TestServerFixture.DEFAULT_USER, TestServerFixture.DEFAULT_PASSWORD))["result"];
+            using var t_web_socket_client = HttpClientHelper.getTWebSocketClient(TestServerFixture.DEFAULT_USER, token,
+                TestServerFixture.DEFAULT_DEVICE_SERIAL);
 
             await t_web_socket_client.OpenAsync();
             Assert.True(t_web_socket_client.IsOpen);
@@ -1352,7 +1342,7 @@ namespace DroHub.Tests
 
             var half_duration_seconds = TimeSpan.FromMilliseconds(4000);
             var token = await HttpClientHelper.getApplicationToken(TestServerFixture.AdminUserEmail, _fixture.AdminPassword);
-            await HttpClientHelper.generateConnectionId(_fixture, 2 * half_duration_seconds, DEFAULT_DEVICE_SERIAL,
+            await HttpClientHelper.generateConnectionId(_fixture, 2 * half_duration_seconds, TestServerFixture.DEFAULT_DEVICE_SERIAL,
                 TestServerFixture.AdminUserEmail, _fixture.AdminPassword, l => {
 
                     var date_time_in_range = l.StartTime + 2 * half_duration_seconds;
@@ -1379,7 +1369,7 @@ namespace DroHub.Tests
                                   HttpClientHelper.getAndroidActionUrl(HttpClientHelper.UploadMediaActionName)),
                             TestServerFixture.getGradleArgument("FileTime",
                                 ((DateTimeOffset) date_time_in_range).ToUnixTimeMilliseconds().ToString()),
-                            TestServerFixture.getGradleArgument("SerialNumber", DEFAULT_DEVICE_SERIAL)
+                            TestServerFixture.getGradleArgument("SerialNumber", TestServerFixture.DEFAULT_DEVICE_SERIAL)
                         )
                         .Build()
                         .Start();
@@ -1395,9 +1385,9 @@ namespace DroHub.Tests
         public async void TestThriftDroneDataCorrectness() {
             var tasks = new List<Task>();
             for (var i = 0; i < 1; i++) {
-                var serial = DEFAULT_DEVICE_SERIAL + i;
-                var t = TelemetryMock.stageThriftDrone(_fixture, false, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES,
-                    DEFAULT_USER+i, DEFAULT_PASSWORD, DEFAULT_ALLOWED_USER_COUNT, DEFAULT_ORGANIZATION+i, serial,
+                var serial = TestServerFixture.DEFAULT_DEVICE_SERIAL + i;
+                var t = TelemetryMock.stageThriftDrone(_fixture, false, TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES,
+                    TestServerFixture.DEFAULT_USER+i, TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ALLOWED_USER_COUNT, TestServerFixture.DEFAULT_ORGANIZATION+i, serial,
                     async (drone_rpc, telemetry_mock, user_name, token) => {
                         await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
                             telemetry_mock.WaitForServer, user_name, token);
@@ -1437,9 +1427,9 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestTelemetryWithEmptySerialFails() {
-            var t = TelemetryMock.stageThriftDrone(_fixture, false, DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, DEFAULT_USER,
-                DEFAULT_PASSWORD, DEFAULT_ALLOWED_USER_COUNT,
-                DEFAULT_ORGANIZATION, DEFAULT_DEVICE_SERIAL, async (drone_rpc, telemetry_mock, user_name, token) => {
+            var t = TelemetryMock.stageThriftDrone(_fixture, false, TestServerFixture.DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES, TestServerFixture.DEFAULT_USER,
+                TestServerFixture.DEFAULT_PASSWORD, TestServerFixture.DEFAULT_ALLOWED_USER_COUNT,
+                TestServerFixture.DEFAULT_ORGANIZATION, TestServerFixture.DEFAULT_DEVICE_SERIAL, async (drone_rpc, telemetry_mock, user_name, token) => {
                     await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
                         telemetry_mock.WaitForServer, user_name, token);
 
@@ -1459,9 +1449,9 @@ namespace DroHub.Tests
             const int minutes = 1;
             var tasks = new List<Task>();
             for (var i = 0; i < 1; i++) {
-                var serial = DEFAULT_DEVICE_SERIAL + i;
-                var t = TelemetryMock.stageThriftDrone(_fixture, true, minutes, DEFAULT_USER+i, DEFAULT_PASSWORD,
-                    DEFAULT_ALLOWED_USER_COUNT, DEFAULT_ORGANIZATION+i, serial,
+                var serial = TestServerFixture.DEFAULT_DEVICE_SERIAL + i;
+                var t = TelemetryMock.stageThriftDrone(_fixture, true, minutes, TestServerFixture.DEFAULT_USER+i, TestServerFixture.DEFAULT_PASSWORD,
+                    TestServerFixture.DEFAULT_ALLOWED_USER_COUNT, TestServerFixture.DEFAULT_ORGANIZATION+i, serial,
                     async (drone_rpc, telemetry_mock, user_name, token) => {
                         var timer_start = DateTimeOffset.UtcNow;
                         await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
@@ -1495,14 +1485,14 @@ namespace DroHub.Tests
             var tasks = new List<Task>();
             for (var i = 0; i < 1; i++) {
                 var t = TelemetryMock.stageThriftDrone(_fixture, true, minutes, TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
-                DEFAULT_ALLOWED_USER_COUNT, "administrators", DEFAULT_DEVICE_SERIAL+i, async (drone_rpc, telemetry_mock, user_name, token) => {
+                TestServerFixture.DEFAULT_ALLOWED_USER_COUNT, "administrators", TestServerFixture.DEFAULT_DEVICE_SERIAL+i, async (drone_rpc, telemetry_mock, user_name, token) => {
                         await DroneDeviceHelper.mockDrone(_fixture, drone_rpc, telemetry_mock.SerialNumber,
                             async () => {
                                 var cts = new CancellationTokenSource(TimeSpan.FromMinutes(minutes + 0.5f * minutes));
                                 await drone_rpc.MonitorConnection(TimeSpan.FromSeconds(5), cts.Token);
                             }, user_name, token);
                     },
-                () => DroneRPC.generateTelemetry(DEFAULT_DEVICE_SERIAL,
+                () => DroneRPC.generateTelemetry(TestServerFixture.DEFAULT_DEVICE_SERIAL,
                     DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
                 );
                 tasks.Add(t);

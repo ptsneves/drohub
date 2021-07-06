@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using AngleSharp;
 using AngleSharp.Html.Parser;
 using DroHub.Areas.DHub.Controllers;
+using DroHub.Areas.Identity.Data;
 using DroHub.Data;
 using Ductus.FluentDocker.Services.Extensions;
 using JetBrains.Annotations;
@@ -47,6 +48,17 @@ namespace DroHub.Tests.TestInfrastructure
         public static string TestAssetsPath => Path.Join(DroHubTestsPath, "TestAssets");
 
         private static string PatchedDockerComposeFileName => Path.Join(DroHubPath, "docker-compose-test.yml");
+
+
+        public static readonly int ALLOWED_USER_COUNT = 999;
+        public static readonly string DEFAULT_ORGANIZATION = "UN";
+        public static readonly string DEFAULT_DEVICE_NAME = "A Name";
+        public static readonly string DEFAULT_BASE_TYPE = DroHubUser.SUBSCRIBER_POLICY_CLAIM;
+        public static readonly string DEFAULT_DEVICE_SERIAL = "Aserial";
+        public static readonly string DEFAULT_USER = "auser@drohub.xyz";
+        public static readonly string DEFAULT_PASSWORD = "password1234";
+        public static readonly int DEFAULT_ALLOWED_FLIGHT_TIME_MINUTES = 999;
+        public static readonly int DEFAULT_ALLOWED_USER_COUNT = 3;
 
         public IConfiguration Configuration { get; private set; }
 
