@@ -869,7 +869,7 @@ namespace DroHub.Tests
                 _fixture.AdminPassword,
                 new AndroidApplicationController.UploadModel {
                     File = new FormFile(stream, 0, 4096, src, $"{TestServerFixture.TestAssetsPath}/{src}"),
-                    IsPreview = true,
+                    IsPreview = false,
                     DeviceSerialNumber = "Aserial0",
                     UnixCreationTimeMS = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
                     AssembledFileSize = 4096,
@@ -877,6 +877,36 @@ namespace DroHub.Tests
                 });
             Assert.True(r.TryGetValue("error", out var v));
             Assert.Equal(v, "Device not found");
+        }
+
+        [Theory]
+        [InlineData("video.webm", false)]
+        [InlineData("preview-drone-PI040416DA9H110281-1608225545000.jpeg", true)]
+        public async void TestUploadPreview(string video_src, bool expect_success) {
+            var ran = false;
+
+            await _fixture.testUpload(1,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                (result, tries, chunk, sent_chunk_size, copy) => {
+                    if (expect_success) {
+                        Assert.True(result.TryGetValue("result", out var v));
+                        Assert.Equal("send-next", v);
+                        ran = true;
+                        return Task.FromResult(TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD);
+                    }
+                    else {
+                        Assert.True(result.TryGetValue("error", out var v));
+                        Assert.Equal(v, AndroidApplicationController.BAD_PREVIEW_FORMAT);
+                        ran = true;
+                        return Task.FromResult(TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD);
+                    }
+                },
+                1,
+                video_src, is_preview: true);
+            Assert.True(ran);
         }
 
         [Fact]

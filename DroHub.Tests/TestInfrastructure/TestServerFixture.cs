@@ -209,7 +209,8 @@ namespace DroHub.Tests.TestInfrastructure
             int runs = 1,
             string src = "video.webm",
             int chunks = 30,
-            int copies = 1) {
+            int copies = 1,
+            bool is_preview = false) {
             await testUpload(half_duration_multiplier, session_user, session_password, upload_user,
                 upload_password, test, async () => { await Task.CompletedTask; }, runs, src, chunks, copies);
         }
@@ -224,7 +225,8 @@ namespace DroHub.Tests.TestInfrastructure
             int runs = 1,
             string src = "video.webm",
             int chunks = 30,
-            int copies = 1) {
+            int copies = 1,
+            bool is_preview = false) {
 
             var half_duration_seconds = TimeSpan.FromMilliseconds(4000);
             await HttpClientHelper.generateConnectionId(this, 2 * half_duration_seconds, "Aserial0",
@@ -251,7 +253,7 @@ namespace DroHub.Tests.TestInfrastructure
                                             File = new FormFile(stream, stream.Length / chunks * chunk, amount_send,
                                                 src,
                                                 $"{TestAssetsPath}/{src}"),
-                                            IsPreview = false, //needs to be because preview files have different paths
+                                            IsPreview = is_preview,
                                             DeviceSerialNumber = "Aserial0",
                                             UnixCreationTimeMS = date_time_in_range.ToUnixTimeMilliseconds(),
                                             AssembledFileSize = stream.Length,

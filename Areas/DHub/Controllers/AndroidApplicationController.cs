@@ -22,6 +22,7 @@ namespace DroHub.Areas.DHub.Controllers
     {
         public const string CHUNK_TOO_SMALL = "Chunk too small";
         public const string SIZE_TOO_SMALL = "File length or assembled file size lt 0";
+        public const string BAD_PREVIEW_FORMAT = "Preview extension not allowed.";
 
         public class QueryDeviceModel {
             [Required]
@@ -95,6 +96,12 @@ namespace DroHub.Areas.DHub.Controllers
 
                 if (!MediaObjectAndTagAPI.isAllowedExtension(model.File.FileName)) {
                     ErrorMessage = "Format not allowed";
+                    return false;
+                }
+
+                if (model.IsPreview &&
+                    !MediaObjectAndTagAPI.isAllowedPreviewExtension(model.File.FileName)) {
+                    ErrorMessage = BAD_PREVIEW_FORMAT;
                     return false;
                 }
 
