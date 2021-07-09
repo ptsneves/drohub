@@ -20,9 +20,10 @@ namespace DroHub.Areas.DHub.Controllers
     [Route("api/[controller]/[action]")]
     public class AndroidApplicationController : ControllerBase
     {
-        public const string CHUNK_TOO_SMALL = "Chunk too small";
-        public const string SIZE_TOO_SMALL = "File length or assembled file size lt 0";
+        public const string CHUNK_TOO_SMALL = "Chunk too small.";
+        public const string SIZE_TOO_SMALL = "File length or assembled file size lt 0.";
         public const string BAD_PREVIEW_FORMAT = "Preview extension not allowed.";
+        public const string FORBIDDEN_PREVIEW = "Cannot generate previews for this file.";
 
         public class QueryDeviceModel {
             [Required]
@@ -99,10 +100,11 @@ namespace DroHub.Areas.DHub.Controllers
                     return false;
                 }
 
-                if (model.IsPreview &&
-                    !MediaObjectAndTagAPI.isAllowedPreviewExtension(model.File.FileName)) {
-                    ErrorMessage = BAD_PREVIEW_FORMAT;
-                    return false;
+                if (model.IsPreview) {
+                    if (!MediaObjectAndTagAPI.isAllowedPreviewExtension(model.File.FileName)) {
+                        ErrorMessage = BAD_PREVIEW_FORMAT;
+                        return false;
+                    }
                 }
 
                 if (model.File.Length < MINIMUM_CHUNK_SIZE_IN_BYTES && model.AssembledFileSize > MINIMUM_CHUNK_SIZE_IN_BYTES) {
@@ -216,6 +218,12 @@ namespace DroHub.Areas.DHub.Controllers
                     Path.GetExtension(input.File.FileName));
 
                 local_storage_helper.createDirectory();
+
+                if (input.IsPreview && local_storage_helper.isFrontEndFilenamePreviewOfVideo()) {
+                    return new JsonResult(new Dictionary<string, string> {
+                        ["error"] = FORBIDDEN_PREVIEW
+                    });
+                }
 
                 if (local_storage_helper.doesAssembledFileExist())
                     return new JsonResult(new Dictionary<string, string> {

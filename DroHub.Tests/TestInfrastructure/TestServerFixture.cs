@@ -212,19 +212,9 @@ namespace DroHub.Tests.TestInfrastructure
             STOP_UPLOAD
         }
 
-        public async Task testUpload(int half_duration_multiplier,
-            string session_user,
-            string session_password,
-            string upload_user,
-            string upload_password,
-            Func<Dictionary<string, dynamic>, int, int, long, int, Task<UploadTestReturnEnum>> test,
-            int runs = 1,
-            string src = "video.webm",
-            int chunks = 30,
-            int copies = 1,
-            bool is_preview = false) {
-            await testUpload(half_duration_multiplier, session_user, session_password, upload_user,
-                upload_password, test, async () => { await Task.CompletedTask; }, runs, src, chunks, copies);
+        public class FileToBeUploaded {
+            public string Source { get; set; }
+            public bool IsPreview { get; set; }
         }
 
         public async Task testUpload(int half_duration_multiplier,
@@ -232,64 +222,86 @@ namespace DroHub.Tests.TestInfrastructure
             string session_password,
             string upload_user,
             string upload_password,
-            Func<Dictionary<string,dynamic>, int, int, long, int, Task<UploadTestReturnEnum>> test,
-            Func<Task> onConnectionClose,
+            Func<Dictionary<string, dynamic>, int, int, long, int, string, Task<UploadTestReturnEnum>> test,
             int runs = 1,
             string src = "video.webm",
             int chunks = 30,
             int copies = 1,
-            bool is_preview = false) {
+            bool is_preview = false,
+            Func<Task> onConnectionClose = null) {
+            var src_list = new FileToBeUploaded {
+                Source = src,
+                IsPreview = is_preview
+            };
+            await testUpload(half_duration_multiplier, session_user, session_password, upload_user,
+                upload_password, test, onConnectionClose ?? (async () => { await Task.CompletedTask; }),new
+                []{src_list},
+                runs, chunks, copies);
+        }
+
+        public async Task testUpload(int half_duration_multiplier,
+            string session_user,
+            string session_password,
+            string upload_user,
+            string upload_password,
+            Func<Dictionary<string,dynamic>, int, int, long, int, string, Task<UploadTestReturnEnum>> test,
+            Func<Task> onConnectionClose,
+            IEnumerable<FileToBeUploaded> src_list,
+            int runs = 1,
+            int chunks = 30,
+            int copies = 1) {
 
             var half_duration_seconds = TimeSpan.FromMilliseconds(4000);
             await HttpClientHelper.generateConnectionId(this, 2 * half_duration_seconds, "Aserial0",
                 session_user,
                 session_password,
                 async connection => {
+                    foreach (var src in src_list) {
+                        for (var copy = 0; copy < copies; copy++) {
+                            //Otherwise the value is considered local time
+                            var date_time_in_range =
+                                connection.StartTime + half_duration_multiplier * half_duration_seconds * (copy + 1);
 
-                    for (var copy = 0; copy < copies; copy++) {
-                        //Otherwise the value is considered local time
-                        var date_time_in_range =
-                            connection.StartTime + half_duration_multiplier * half_duration_seconds * (copy+1);
+                            for (var i = 0; i < runs; i++) {
+                                await using var stream = new FileStream($"{TestAssetsPath}/{src.Source}",
+                                    FileMode.Open);
+                                for (var chunk = 0; chunk < chunks; chunk++) {
+                                    try {
+                                        var amount_send = stream.Length / chunks;
+                                        if (chunk == chunks - 1)
+                                            amount_send = stream.Length - stream.Length / chunks * chunk;
+                                        var r = await HttpClientHelper.uploadMedia(upload_user,
+                                            upload_password,
+                                            new AndroidApplicationController.UploadModel {
+                                                File = new FormFile(stream, stream.Length / chunks * chunk, amount_send,
+                                                    src.Source,
+                                                    $"{TestAssetsPath}/{src.Source}"),
+                                                IsPreview = src.IsPreview,
+                                                DeviceSerialNumber = "Aserial0",
+                                                UnixCreationTimeMS = date_time_in_range.ToUnixTimeMilliseconds(),
+                                                AssembledFileSize = stream.Length,
+                                                RangeStartBytes = stream.Length / chunks * chunk
+                                            });
 
-                        for (var i = 0; i < runs; i++) {
-                            await using var stream = new FileStream($"{TestServerFixture.TestAssetsPath}/{src}",
-                                FileMode.Open);
-                            for (var chunk = 0; chunk < chunks; chunk++) {
-                                try {
-                                    var amount_send = stream.Length / chunks;
-                                    if (chunk == chunks - 1)
-                                        amount_send = stream.Length - stream.Length / chunks * chunk;
-                                    var r = await HttpClientHelper.uploadMedia(upload_user,
-                                        upload_password,
-                                        new AndroidApplicationController.UploadModel {
-                                            File = new FormFile(stream, stream.Length / chunks * chunk, amount_send,
-                                                src,
-                                                $"{TestAssetsPath}/{src}"),
-                                            IsPreview = is_preview,
-                                            DeviceSerialNumber = "Aserial0",
-                                            UnixCreationTimeMS = date_time_in_range.ToUnixTimeMilliseconds(),
-                                            AssembledFileSize = stream.Length,
-                                            RangeStartBytes = stream.Length / chunks * chunk
-                                        });
-
-                                    switch (await test(r, i, chunk, stream.Length / chunks, copy)) {
-                                        case UploadTestReturnEnum.CONTINUE:
-                                            continue;
-                                        case UploadTestReturnEnum.SKIP_RUN:
-                                            chunk = chunks; //short circuit
-                                            break;
-                                        case UploadTestReturnEnum.STOP_UPLOAD:
-                                            return;
-                                        default:
-                                            throw new ArgumentOutOfRangeException();
+                                        switch (await test(r, i, chunk, stream.Length / chunks, copy, src.Source)) {
+                                            case UploadTestReturnEnum.CONTINUE:
+                                                continue;
+                                            case UploadTestReturnEnum.SKIP_RUN:
+                                                chunk = chunks; //short circuit
+                                                break;
+                                            case UploadTestReturnEnum.STOP_UPLOAD:
+                                                return;
+                                            default:
+                                                throw new ArgumentOutOfRangeException();
+                                        }
                                     }
-                                }
-                                catch (HttpRequestException e) {
-                                    await test(new Dictionary<string, dynamic> {
-                                            ["error"] = e.Message
-                                        },
-                                        i, chunk, stream.Length / chunks, copy);
-                                    return;
+                                    catch (HttpRequestException e) {
+                                        await test(new Dictionary<string, dynamic> {
+                                                ["error"] = e.Message
+                                            },
+                                            i, chunk, stream.Length / chunks, copy, src.Source);
+                                        return;
+                                    }
                                 }
                             }
                         }

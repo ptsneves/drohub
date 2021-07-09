@@ -126,7 +126,7 @@ namespace DroHub.Tests {
 
             await _fixture.testUpload(1, TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
-                async (result, run, chunk, chunk_size, copy) => {
+                async (result, run, chunk, chunk_size, copy,_) => {
                     if (result.ContainsKey("error"))
                         throw new Exception(result["error"]);
 

@@ -33,8 +33,18 @@ namespace DroHub.Areas.DHub.API {
         public const string DroneMediaRemovalTag = "Marked for Drone removal";
         public const string DelayedMediaRemovalTag = "To Remove after Drone Removal";
 
-        private static readonly string[] AllowedVideoFileExtensions = {".webm", ".mp4"};
-        private static readonly string[] AllowedFileExtensions = {".webm", ".mp4", ".jpeg"};
+        public enum MediaType {
+            VIDEO,
+            PICTURE,
+            ANY,
+        }
+
+        private static readonly Dictionary<MediaType, string[]> AllowedFileExtensions =
+            new Dictionary<MediaType, string[]> {
+            { MediaType.VIDEO, new[] {".webm", ".mp4"} },
+            { MediaType.PICTURE, new[] {".jpeg"} }
+        };
+
         private readonly DroHubContext _db_context;
         private readonly SubscriptionAPI _subscription_api;
         private readonly IAuthorizationService _authorization_service;
@@ -77,7 +87,7 @@ namespace DroHub.Areas.DHub.API {
                 Array.Resize(ref skip_filters, skip_filters.Length +1);
                 skip_filters[^1] = _CHUNK_FN_END_MAGIC;
 
-                foreach (var file_extension in AllowedVideoFileExtensions) {
+                foreach (var file_extension in AllowedFileExtensions[MediaType.VIDEO]) {
                     var paths = Directory.GetFiles(directory, $"*{file_extension}");
                     foreach (var path in paths) {
                         var expected_preview_path = calculatePreviewFilePathOnHost(path);
@@ -178,7 +188,7 @@ namespace DroHub.Areas.DHub.API {
                 var file_dir = Path.GetDirectoryName(file_path);
                 var file_name = Path.GetFileName(file_path);
 
-                foreach (var extension in AllowedVideoFileExtensions) {
+                foreach (var extension in AllowedFileExtensions[MediaType.VIDEO]) {
                     file_name = file_name.Replace(extension, VideoPreviewGenerator.FILE_EXTENSION);
                 }
 
@@ -236,6 +246,13 @@ namespace DroHub.Areas.DHub.API {
                 return $"{(_is_preview ? PreviewFileNamePrefix : string.Empty)}drone-{_device_serial}-{_unix_time_creation_ms}{_extension}";
             }
 
+            public bool isFrontEndFilenamePreviewOfVideo() {
+                var file_name = $"drone-{_device_serial}-{_unix_time_creation_ms}{_extension}";
+                var backend_path = Path.Join(calculateConnectionDirectory(_connection_id), file_name);
+                return AllowedFileExtensions[MediaType.VIDEO]
+                    .Any(extension => doesFileExist(Path.ChangeExtension(backend_path, extension)));
+            }
+
             public long calculateNextChunkOffset() {
                 var latest_chunk_file_name = getChunkedFilesList()
                     .OrderByDescending(calculateBytesOffsetFromFile)
@@ -285,7 +302,7 @@ namespace DroHub.Areas.DHub.API {
                 var preview_file_path = calculatePreviewFilePathOnHost(generated_file_path);
 
                 if (!File.Exists(preview_file_path)
-                        && AllowedVideoFileExtensions.Any(extension => generated_file_path.Contains(extension))) {
+                        && AllowedFileExtensions[MediaType.VIDEO].Any(extension => generated_file_path.Contains(extension))) {
 
                     await VideoPreviewGenerator.generatePreview(generated_file_path, preview_file_path);
                 }
@@ -392,6 +409,17 @@ namespace DroHub.Areas.DHub.API {
             VIDEO_STREAM,
             DOWNLOAD,
             JPEG,
+        }
+
+
+        public static bool isAllowedExtension(string media_id) {
+            return AllowedFileExtensions
+                .SelectMany(e => e.Value)
+                .Any(extension => media_id.ToLower().EndsWith(extension));
+        }
+
+        public static bool isAllowedPreviewExtension(string media_id) {
+            return AllowedFileExtensions[MediaType.PICTURE].Any(e => media_id.ToLower().EndsWith(e));
         }
 
         public async Task<FileStreamResult> getFileForDownload(string media_id, DownloadType t,
@@ -556,10 +584,6 @@ namespace DroHub.Areas.DHub.API {
             }
             if (save_changes)
                 await _db_context.SaveChangesAsync();
-        }
-
-        public static bool isAcceptableExtension(string media_path) {
-            return AllowedFileExtensions.Contains(Path.GetExtension(media_path).ToLower());
         }
 
         public static MediaObject generateMediaObject(string media_path, DateTimeOffset create_time, string org_name,

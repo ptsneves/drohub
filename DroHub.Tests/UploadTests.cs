@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -29,7 +30,7 @@ namespace DroHub.Tests {
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                (result, tries, chunk, sent_chunk_size, copy) => {
+                (result, tries, chunk, sent_chunk_size, copy, _) => {
                     Assert.Equal(last_chunk++, chunk);
                     if (chunk < CHUNKS-1) {
 
@@ -78,7 +79,7 @@ namespace DroHub.Tests {
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                (result, tries, chunk, sent_chunk_size, copy) => {
+                (result, tries, chunk, sent_chunk_size, copy, _) => {
                     Assert.Equal(last_chunk++, chunk);
                     Assert.True(result.TryGetValue("result", out var v));
                     Assert.Equal("ok", v);
@@ -141,7 +142,7 @@ namespace DroHub.Tests {
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                (result, tries, chunk, sent_chunk_size, copy) => {
+                (result, tries, chunk, sent_chunk_size, copy, _) => {
                     Assert.True(result.TryGetValue("error", out var value));
                     Assert.Equal("Response status code does not indicate success: 413 (Request Entity Too Large).", value);
                     ran = true;
@@ -161,7 +162,7 @@ namespace DroHub.Tests {
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                (result, tries, chunk, sent_chunk_size, copy) => {
+                (result, tries, chunk, sent_chunk_size, copy, _) => {
                     Assert.True(result.TryGetValue("error", out var v));
                     Assert.Equal(v, AndroidApplicationController.CHUNK_TOO_SMALL);
                     ran = true;
@@ -181,7 +182,7 @@ namespace DroHub.Tests {
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                (result, tries, chunk, sent_chunk_size, copy) => {
+                (result, tries, chunk, sent_chunk_size, copy, _) => {
                     Assert.True(result.TryGetValue("error", out var v));
                     Assert.Equal(v, AndroidApplicationController.SIZE_TOO_SMALL);
                     ran = true;
@@ -209,7 +210,7 @@ namespace DroHub.Tests {
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                (result, tries, chunk, sent_chunk_size, copy) => {
+                (result, tries, chunk, sent_chunk_size, copy, _) => {
                 Assert.True(result.TryGetValue("error", out var v));
                 Assert.Equal("Media does not correspond to any known flight", v);
                 ran = true;
@@ -239,7 +240,7 @@ namespace DroHub.Tests {
         [Theory]
         [InlineData("video.webm", false)]
         [InlineData("preview-drone-PI040416DA9H110281-1608225545000.jpeg", true)]
-        public async void TestUploadPreview(string video_src, bool expect_success) {
+        public async void TestUploadPreviewOnlyAllowsJpeg(string video_src, bool expect_success) {
             var ran = false;
 
             await _fixture.testUpload(1,
@@ -247,7 +248,7 @@ namespace DroHub.Tests {
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                (result, tries, chunk, sent_chunk_size, copy) => {
+                (result, tries, chunk, sent_chunk_size, copy, _) => {
                     if (expect_success) {
                         Assert.True(result.TryGetValue("result", out var v));
                         Assert.Equal("send-next", v);
@@ -267,6 +268,42 @@ namespace DroHub.Tests {
         }
 
         [Fact]
+        public async void TestUploadCannotUploadPreviewOfVideos() {
+            var ran = false;
+            var file_set = new[] {
+                new TestServerFixture.FileToBeUploaded {
+                    Source = "video.webm",
+                    IsPreview = false
+                },
+                new TestServerFixture.FileToBeUploaded {
+                    Source = "preview-drone-PI040416DA9H110281-1608225545000.jpeg",
+                    IsPreview = true
+                }
+            };
+
+            await _fixture.testUpload(1,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                (result, tries, chunk, sent_chunk_size, copy, file) => {
+                    if (file != file_set[1].Source)
+                        return Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE);
+
+                    Assert.True(result.TryGetValue("error", out var v));
+                    Assert.Equal(AndroidApplicationController.FORBIDDEN_PREVIEW, v);
+                    ran = true;
+                    return Task.FromResult(TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD);
+
+                },
+                () => Task.CompletedTask,
+                file_set);
+            Assert.True(ran);
+        }
+
+
+
+        [Fact]
         public async void TestUploadMediaNotSubscribedDeviceFails() {
             await using var u = await HttpClientHelper.AddUserHelper.addUser(_fixture, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
@@ -279,7 +316,7 @@ namespace DroHub.Tests {
                     TestServerFixture.DEFAULT_PASSWORD,
                     TestServerFixture.AdminUserEmail,
                     _fixture.AdminPassword,
-                    (result, tries, chunk, sent_chunk_size, copy) => {
+                    (result, tries, chunk, sent_chunk_size, copy, _) => {
                         Assert.True(result.TryGetValue("error", out var v));
                         Assert.Equal(v, "Response status code does not indicate success: 401 (Unauthorized).");
                         ran = true;
@@ -298,7 +335,7 @@ namespace DroHub.Tests {
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                (result, attempt, chunk, sent_chunk_size, copy) => {
+                (result, attempt, chunk, sent_chunk_size, copy, _) => {
                     if (attempt == 0) {
                         ran1 = true;
                         return Task.FromResult(TestServerFixture.UploadTestReturnEnum.SKIP_RUN);
@@ -325,7 +362,7 @@ namespace DroHub.Tests {
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                (result, tries, chunk, sent_chunk_size, copy) => {
+                (result, tries, chunk, sent_chunk_size, copy, _) => {
                 switch (tries) {
                     case 0: {
                         ran1 = true;
@@ -356,7 +393,7 @@ namespace DroHub.Tests {
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                (result, tries, chunk, sent_chunk_size, copy) => {
+                (result, tries, chunk, sent_chunk_size, copy, _) => {
                 Assert.True(result.TryGetValue("error", out var v));
                 Assert.Equal(v, "Format not allowed");
                 ran = true;

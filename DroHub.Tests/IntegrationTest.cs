@@ -456,9 +456,10 @@ namespace DroHub.Tests
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                (result, tries, chunk, sent_chunk_size, copy) =>
+                (result, tries, chunk, sent_chunk_size, copy, _) =>
                     Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE),
-                async () => {
+                1,
+                onConnectionClose: async () => {
                     await using var test_data_stream = File.OpenRead(
                         Path.Join(TestServerFixture.DroHubPath, TestServerFixture.FrontEndPathInRepo, "tests", "test-data.json"));
 
@@ -489,7 +490,6 @@ namespace DroHub.Tests
                         ran = true;
                     }
                 },
-                1,
                 copies: copies);
             Assert.True(ran);
         }
@@ -628,9 +628,9 @@ namespace DroHub.Tests
                 _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                (result, tries, chunk, sent_chunk_size, copy) =>
+                (result, tries, chunk, sent_chunk_size, copy, _) =>
                     Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE),
-                async () => {
+                onConnectionClose: async () => {
                     var last_media_paths = _fixture.DbContext.MediaObjects
                         .ToList()
                         .TakeLast(copies)
@@ -652,7 +652,6 @@ namespace DroHub.Tests
                             media_path.MediaPath);
                     }
                 },
-                1,
                 copies: copies);
             Assert.True(ran);
         }
