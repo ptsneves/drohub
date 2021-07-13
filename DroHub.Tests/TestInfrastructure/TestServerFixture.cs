@@ -17,6 +17,7 @@ using AngleSharp.Html.Parser;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.Identity.Data;
 using DroHub.Data;
+using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Services.Extensions;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -72,7 +73,7 @@ namespace DroHub.Tests.TestInfrastructure
                             .UseContainer()
                             .UseCompose()
                             .FromFile(getPatchedDockerComposeFile())
-                            .RemoveOrphans()
+                            // .RemoveOrphans()
                             .Wait("nginx", (service, i) => {
 
                                 while (true) {
@@ -313,8 +314,8 @@ namespace DroHub.Tests.TestInfrastructure
 
 
         public void Dispose() {
-            Docker.Dispose();
-            Containers.Dispose();
+            // Docker.Dispose();
+            // Containers.Dispose();
             File.Delete(PatchedDockerComposeFileName);
         }
     }
