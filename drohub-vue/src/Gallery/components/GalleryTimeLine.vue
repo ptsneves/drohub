@@ -210,10 +210,13 @@
                 type: String,
                 required: true,
             },
+            galleryModelJson: {
+                type: String,
+                required: true,
+            }
         },
         data() {
             return {
-                gallery_model: window.init_data,
                 last_filtered_model: {},
                 last_filtered_tags: [],
                 entries_visible: 0,
@@ -320,6 +323,12 @@
             getImageSrcURL(photo_id) {
                 return this.getPhotoUrl + photo_id;
             },
+            getFileList(model, unix_date, session_timestamp) {
+                return model[unix_date][session_timestamp]["SessionMedia"];
+            },
+            getSessionTimestamps(model, unix_date) {
+                return Object.keys(model[unix_date]).sort();
+            },
         },
         computed: {
             getDownloadsURL() {
@@ -341,21 +350,22 @@
                 this.entries_available = 0;
                 const selected_tags = this.$store.state.filtered_tags;
 
-                let new_model = JSON.parse(JSON.stringify(this.gallery_model));
+                const new_model = JSON.parse(this.galleryModelJson);
 
-                const unix_days = Object.keys(this.gallery_model).sort(function(a,b) {
+                const unix_days = Object.keys(new_model).sort(function(a,b) {
                     return Number(a) - Number(b);
                 }).reverse();
 
                 for (let unix_date of unix_days) {
-                    for(let session_timestamp in this.gallery_model[unix_date]) {
+                    for(let session_timestamp of this.getSessionTimestamps(new_model, unix_date)) {
                         let new_session_file_list = [];
-                        for (let media_index = 0; media_index < this.gallery_model[unix_date][session_timestamp]["SessionMedia"].length; media_index++) {
+                        const file_list = this.getFileList(new_model, unix_date, session_timestamp);
+                        for (let media_index = 0; media_index < file_list.length; media_index++) {
                             this.entries_available++;
                             if (this.entries_visible < this.max_entries_visible
-                                && hasInterSection(selected_tags, this.gallery_model[unix_date][session_timestamp]["SessionMedia"][media_index]["Tags"]) === true) {
+                                && hasInterSection(selected_tags, file_list[media_index]["Tags"]) === true) {
 
-                                new_session_file_list.push(this.gallery_model[unix_date][session_timestamp]["SessionMedia"][media_index]);
+                                new_session_file_list.push(file_list[media_index]);
                                 this.entries_visible++;
                             }
                         }

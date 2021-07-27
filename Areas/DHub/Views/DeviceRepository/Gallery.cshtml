@@ -46,6 +46,7 @@
                 get-live-stream-recording-video-url="@Url.Action("GetLiveStreamRecordingVideo", new {video_id = "_VAL_"}).Replace("_VAL_", "")"
                 get-photo-url="@Url.Action("GetPhoto", new {picture_id = "_VAL_"}).Replace("_VAL_", "")"
                 anti-forgery-token="@GetAntiXsrfRequestToken()"
+                gallery-model-json='@Html.Raw(JsonConvert.SerializeObject(@Model.FilesPerTimestamp, new JsonSerializerSettings() {ReferenceLoopHandling = ReferenceLoopHandling.Ignore}))'
             >
             </gallery-timeline>
         }
@@ -53,9 +54,6 @@
 </div>
 @section Scripts {
 <script type="text/javascript" src="~/vue/js/Gallery.js"></script>
-<script type="application/javascript">
-    window.init_data = JSON.parse('@Html.Raw(JsonConvert.SerializeObject(@Model.FilesPerTimestamp, new JsonSerializerSettings() {ReferenceLoopHandling = ReferenceLoopHandling.Ignore}))');
-</script>
 <partial name="_ValidationScriptsPartial" />
 }
 
