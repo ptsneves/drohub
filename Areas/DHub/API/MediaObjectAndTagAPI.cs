@@ -199,6 +199,9 @@ namespace DroHub.Areas.DHub.API {
                     file_name = file_name.Replace(extension, VideoPreviewGenerator.FILE_EXTENSION);
                 }
 
+                if (isVideo(file_path)) {
+                    file_name = $"video-{file_name}";
+                }
                 return !file_name.Contains(PreviewFileNamePrefix)
                     ? Path.Join(file_dir, $"{PreviewFileNamePrefix}{file_name}")
                     : file_path;
