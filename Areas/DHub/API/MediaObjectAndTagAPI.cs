@@ -166,6 +166,13 @@ namespace DroHub.Areas.DHub.API {
                 // r = getTechnicalMediaPath(r);
             }
 
+
+            public static string calculateFileNameOnHost(bool is_preview, string device_serial, long unix_time_creation_ms,
+                string extension) {
+
+                return $"{(is_preview ? PreviewFileNamePrefix : string.Empty)}drone-{device_serial}-{unix_time_creation_ms}{extension}";
+            }
+
             private static bool doesPreviewFileExist(string media_path) {
                 return Directory
                     .EnumerateFiles(Path.GetDirectoryName(media_path))
@@ -243,11 +250,11 @@ namespace DroHub.Areas.DHub.API {
             }
 
             private string calculateFileNameOnHost() {
-                return $"{(_is_preview ? PreviewFileNamePrefix : string.Empty)}drone-{_device_serial}-{_unix_time_creation_ms}{_extension}";
+                return calculateFileNameOnHost(_is_preview, _device_serial, _unix_time_creation_ms, _extension);
             }
 
             public bool isFrontEndFilenamePreviewOfVideo() {
-                var file_name = $"drone-{_device_serial}-{_unix_time_creation_ms}{_extension}";
+                var file_name = calculateFileNameOnHost(false, _device_serial, _unix_time_creation_ms, _extension);
                 var backend_path = Path.Join(calculateConnectionDirectory(_connection_id), file_name);
                 return AllowedFileExtensions[MediaType.VIDEO]
                     .Any(extension => doesFileExist(Path.ChangeExtension(backend_path, extension)));
