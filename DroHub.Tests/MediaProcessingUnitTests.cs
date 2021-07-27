@@ -40,7 +40,7 @@ namespace DroHub.Tests {
                 File.Copy(Path.Join(TestAssetsPath, "sample.mp4"), Path.Join(temp_path, "sample.mp4"));
                 File.Copy(Path.Join(TestAssetsPath, "video.webm"), Path.Join(temp_path, "video.webm"));
 
-                await MediaObjectAndTagAPI.LocalStorageHelper.generateVideoPreview(temp_path, NullLogger.Instance);
+                await MediaObjectAndTagAPI.LocalStorageHelper.generateVideoPreviewBatchForDirectory(temp_path, NullLogger.Instance);
                 Assert.True(File.Exists(Path.Join(temp_path, "preview-sample.jpeg")));
                 Assert.True(File.Exists(Path.Join(temp_path, "preview-video.jpeg")));
             }

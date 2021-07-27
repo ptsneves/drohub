@@ -79,7 +79,7 @@ namespace DroHub.Areas.DHub.API {
                 _extension = extension;
             }
 
-            public static async Task generateVideoPreview(string directory, ILogger logger,
+            public static async Task generateVideoPreviewBatchForDirectory(string directory, ILogger logger,
                 bool continue_on_failures = false, string[] skip_filters = null) {
 
                 skip_filters ??= new string[] { };
@@ -122,7 +122,7 @@ namespace DroHub.Areas.DHub.API {
 
                 var directories = Directory.GetDirectories(ConnectionBaseDir);
                 foreach (var directory in directories) {
-                    await generateVideoPreview(directory, logger, continue_on_failures, skip_filters);
+                    await generateVideoPreviewBatchForDirectory(directory, logger, continue_on_failures, skip_filters);
                 }
             }
 
