@@ -2,8 +2,10 @@ using System;
 using System.IO;
 using DroHub.Areas.DHub.API;
 using DroHub.Helpers;
+using MetadataExtractor;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+using Directory = System.IO.Directory;
 
 namespace DroHub.Tests {
     public class MJRPostProcessorUnitTests {
@@ -31,7 +33,7 @@ namespace DroHub.Tests {
         }
 
         [Fact]
-        public async void TestGeneratePreviews() {
+        public async void TestGenerateVideoPreviews() {
             var temp_path = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString());
             try {
                 Directory.CreateDirectory(temp_path);
@@ -41,6 +43,27 @@ namespace DroHub.Tests {
                 await MediaObjectAndTagAPI.LocalStorageHelper.generateVideoPreview(temp_path, NullLogger.Instance);
                 Assert.True(File.Exists(Path.Join(temp_path, "preview-sample.jpeg")));
                 Assert.True(File.Exists(Path.Join(temp_path, "preview-video.jpeg")));
+            }
+            finally {
+                Directory.Delete(temp_path, true);
+            }
+        }
+
+        [Fact]
+        public async void TestGenerateImagePreviews() {
+            var temp_path = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var src_image = Path.Join(temp_path, "20200222_123525.jpeg");
+            var dst_image = Path.Join(temp_path, "preview-20200222_123525.jpeg");
+            try {
+                Directory.CreateDirectory(temp_path);
+                File.Copy(Path.Join(TestAssetsPath, "20200222_123525.jpeg"), src_image);
+
+                await ImagePreviewGenerator.generatePreview(src_image, dst_image, 640, 480);
+                Assert.True(File.Exists(dst_image));
+
+                var metadata = ImageMetadataReader.ReadMetadata(dst_image);
+                Assert.Equal("480 pixels", metadata[0].Tags[2].Description);
+                Assert.Equal("640 pixels", metadata[0].Tags[3].Description);
             }
             finally {
                 Directory.Delete(temp_path, true);

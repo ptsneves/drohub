@@ -253,10 +253,10 @@ namespace DroHub.Areas.DHub.API {
                 return calculateFileNameOnHost(_is_preview, _device_serial, _unix_time_creation_ms, _extension);
             }
 
-            public bool isFrontEndFilenamePreviewOfVideo() {
+            public bool isFrontEndFileNamePreviewOfExistingFile() {
                 var file_name = calculateFileNameOnHost(false, _device_serial, _unix_time_creation_ms, _extension);
                 var backend_path = Path.Join(calculateConnectionDirectory(_connection_id), file_name);
-                return AllowedFileExtensions[MediaType.VIDEO]
+                return AllowedFileExtensions.SelectMany(e => e.Value)
                     .Any(extension => doesFileExist(Path.ChangeExtension(backend_path, extension)));
             }
 
@@ -308,10 +308,13 @@ namespace DroHub.Areas.DHub.API {
                 var generated_file_path = calculateAssembledFilePath();
                 var preview_file_path = calculatePreviewFilePath(generated_file_path);
 
-                if (!File.Exists(preview_file_path)
-                        && AllowedFileExtensions[MediaType.VIDEO].Any(extension => generated_file_path.Contains(extension))) {
-
-                    await VideoPreviewGenerator.generatePreview(generated_file_path, preview_file_path);
+                if (!File.Exists(preview_file_path)) {
+                    if (isVideo(generated_file_path)) {
+                        await VideoPreviewGenerator.generatePreview(generated_file_path, preview_file_path);
+                    }
+                    else if (isPicture(generated_file_path)) {
+                        await ImagePreviewGenerator.generatePreview(generated_file_path, preview_file_path, 640, 480);
+                    }
                 }
 
                 return generated_file_path;
@@ -418,6 +421,9 @@ namespace DroHub.Areas.DHub.API {
             JPEG,
         }
 
+        public static bool isVideo(string media_id) {
+            return AllowedFileExtensions[MediaType.VIDEO].Any(e => media_id.ToLower().EndsWith(e));
+        }
 
         public static bool isAllowedExtension(string media_id) {
             return AllowedFileExtensions
@@ -426,6 +432,10 @@ namespace DroHub.Areas.DHub.API {
         }
 
         public static bool isAllowedPreviewExtension(string media_id) {
+            return AllowedFileExtensions[MediaType.PICTURE].Any(e => media_id.ToLower().EndsWith(e));
+        }
+
+        public static bool isPicture(string media_id) {
             return AllowedFileExtensions[MediaType.PICTURE].Any(e => media_id.ToLower().EndsWith(e));
         }
 

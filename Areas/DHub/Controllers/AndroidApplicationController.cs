@@ -219,7 +219,7 @@ namespace DroHub.Areas.DHub.Controllers
 
                 local_storage_helper.createDirectory();
 
-                if (input.IsPreview && local_storage_helper.isFrontEndFilenamePreviewOfVideo()) {
+                if (input.IsPreview && local_storage_helper.isFrontEndFileNamePreviewOfExistingFile()) {
                     return new JsonResult(new Dictionary<string, string> {
                         ["error"] = FORBIDDEN_PREVIEW
                     });

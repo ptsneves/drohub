@@ -402,5 +402,42 @@ namespace DroHub.Tests {
             Assert.True(ran);
         }
 
+        [Fact]
+        public async void TestNotAllowedPreviewUploadAfterNonPreviewUpload() {
+            var ran = false;
+            var file_set = new[] {
+                new TestServerFixture.FileToBeUploaded {
+                    Source = "preview-drone-PI040416DA9H110281-1608225545000.jpeg",
+                    IsPreview = false
+                },
+                new TestServerFixture.FileToBeUploaded {
+                    Source = "preview-drone-PI040416DA9H110281-1608225545000.jpeg",
+                    IsPreview = true
+                }
+            };
+            int recorded_chunk = -1;
+            await _fixture.testUpload(1,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                (result, tries, chunk, sent_chunk_size, copy, file) => {
+                    if (chunk > recorded_chunk) {
+                        recorded_chunk = chunk;
+                        return Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE);
+                    }
+
+                    Assert.True(result.TryGetValue("error", out var v));
+                    Assert.Equal(AndroidApplicationController.FORBIDDEN_PREVIEW, v);
+                    ran = true;
+                    return Task.FromResult(TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD);
+
+                },
+                () => Task.CompletedTask,
+                file_set);
+            Assert.True(ran);
+        }
+
+
     }
 }
