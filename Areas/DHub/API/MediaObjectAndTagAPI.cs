@@ -90,7 +90,7 @@ namespace DroHub.Areas.DHub.API {
                 foreach (var file_extension in AllowedFileExtensions[MediaType.VIDEO]) {
                     var paths = Directory.GetFiles(directory, $"*{file_extension}");
                     foreach (var path in paths) {
-                        var expected_preview_path = calculatePreviewFilePathOnHost(path);
+                        var expected_preview_path = calculatePreviewFilePath(path);
                         if (skip_filters.Any(skip_filter => path.Contains(skip_filter))) {
                             logger.LogInformation("Skipping preview generation for {Path} due to it containing one of {Filters}",
                                 path, skip_filters);
@@ -152,7 +152,7 @@ namespace DroHub.Areas.DHub.API {
                 if (isFrontEndMediaObjectFilePath(media_object.MediaPath))
                     throw new MediaObjectAndTagException($"Cannot convert {media_object.MediaPath} to front end file path if already a frontend file path");
                 var r = anonymizeConnectionDirectory(media_object);
-                r = calculatePreviewFilePathOnHost(r);
+                r = calculatePreviewFilePath(r);
                 // r = FileNameTranslator.getUserFriendlyMediaPath(r, media_object.CaptureDateTimeUTC);
                 return r;
             }
@@ -169,7 +169,7 @@ namespace DroHub.Areas.DHub.API {
             private static bool doesPreviewFileExist(string media_path) {
                 return Directory
                     .EnumerateFiles(Path.GetDirectoryName(media_path))
-                    .Any(f => f == calculatePreviewFilePathOnHost(media_path));
+                    .Any(f => f == calculatePreviewFilePath(media_path));
             }
 
             public static bool doesPreviewExist(MediaObject mo) {
@@ -184,7 +184,7 @@ namespace DroHub.Areas.DHub.API {
                 return File.Exists(calculateFilePathOnHost(mo.MediaPath));
             }
 
-            public static string calculatePreviewFilePathOnHost(string file_path) {
+            public static string calculatePreviewFilePath(string file_path) {
                 var file_dir = Path.GetDirectoryName(file_path);
                 var file_name = Path.GetFileName(file_path);
 
@@ -299,7 +299,7 @@ namespace DroHub.Areas.DHub.API {
                         File.Delete(Path.Join(calculateConnectionDirectory(_connection_id), file_name)));
 
                 var generated_file_path = calculateAssembledFilePath();
-                var preview_file_path = calculatePreviewFilePathOnHost(generated_file_path);
+                var preview_file_path = calculatePreviewFilePath(generated_file_path);
 
                 if (!File.Exists(preview_file_path)
                         && AllowedFileExtensions[MediaType.VIDEO].Any(extension => generated_file_path.Contains(extension))) {

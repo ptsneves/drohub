@@ -53,7 +53,7 @@ namespace DroHub.Tests {
                             .doesPreviewExist(last_media_path));
 
                         var preview_file_path = MediaObjectAndTagAPI.LocalStorageHelper.
-                            calculatePreviewFilePathOnHost(last_media_path.MediaPath);
+                            calculatePreviewFilePath(last_media_path.MediaPath);
                         var preview_sha256 = TestServerFixture.computeFileSHA256(preview_file_path);
                         Assert.NotEqual(preview_sha256, uploaded_sha256);
 
