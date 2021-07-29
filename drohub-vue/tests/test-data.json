@@ -8,7 +8,7 @@
             "deleteMediaObjectsPostUrl": "/DHub/DeviceRepository/DeleteMediaObjects",
             "deleteTagsPostUrl": "/DHub/DeviceRepository/DeleteTag",
             "downloadMediasUrl": "/DHub/DeviceRepository/DownloadMedias",
-            "downloadVideoUrl": "/DHub/DeviceRepository/DownloadVideo?video_id=",
+            "downloadVideoUrl": "/DHub/DeviceRepository/DownloadFile?media_id=",
             "droneMediaRemovalTag": "Marked for Drone removal",
             "galleryModelJson": "@@TEMPORARY@@",
             "getLiveStreamRecordingVideoUrl": "/DHub/DeviceRepository/GetLiveStreamRecordingVideo?video_id=",

@@ -130,22 +130,34 @@ namespace DroHub.Areas.DHub.Controllers
             }
         }
 
-        public async Task<IActionResult> GetLiveStreamRecordingVideo([Required]string video_id) {
-            if (!ModelState.IsValid && !(video_id.EndsWith(".webm") || video_id.EndsWith(".mp4")))
+        public async Task<IActionResult> GetLiveStreamRecordingVideo(
+            [Required]
+            [MediaObjectAndTagAPI.MediaExtensionValidator(MediaType = MediaObjectAndTagAPI.MediaType.VIDEO)]
+            string video_id) {
+
+            if (!ModelState.IsValid)
                 return BadRequest();
-            return await getFile(video_id, MediaObjectAndTagAPI.DownloadType.VIDEO_STREAM);
+            return await getFile(video_id, MediaObjectAndTagAPI.DownloadType.STREAM);
         }
 
-        public async Task<IActionResult> DownloadVideo([Required]string video_id) {
-            if (!ModelState.IsValid && !(video_id.EndsWith(".webm") || video_id.EndsWith(".mp4")))
+        public async Task<IActionResult> DownloadFile(
+            [Required]
+            [MediaObjectAndTagAPI.MediaExtensionValidator(MediaType = MediaObjectAndTagAPI.MediaType.ANY)]
+            string media_id) {
+
+            if (!ModelState.IsValid)
                 return BadRequest();
-            return await getFile(video_id, MediaObjectAndTagAPI.DownloadType.DOWNLOAD);
+            return await getFile(media_id, MediaObjectAndTagAPI.DownloadType.DOWNLOAD);
         }
 
-        public async Task<IActionResult> GetPhoto([Required]string picture_id) {
-            if (!ModelState.IsValid || !picture_id.EndsWith(".jpeg"))
+        public async Task<IActionResult> GetPreview(
+            [Required]
+            [MediaObjectAndTagAPI.MediaExtensionValidator(MediaType = MediaObjectAndTagAPI.MediaType.ANY)]
+            string media_id) {
+
+            if (!ModelState.IsValid)
                 return BadRequest();
-            return await getFile(picture_id, MediaObjectAndTagAPI.DownloadType.JPEG);
+            return await getFile(media_id, MediaObjectAndTagAPI.DownloadType.PREVIEW);
         }
 
         public async Task<IActionResult> DownloadMedias([Required][FromQuery(Name="MediaIdList")]string[] MediaIdList) {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -55,6 +56,28 @@ namespace DroHub.Areas.DHub.API {
             _db_context = db_context;
             _authorization_service = authorization_service;
             _subscription_api = subscription_api;
+        }
+
+
+        public class MediaExtensionValidator : ValidationAttribute {
+            public MediaType MediaType { get; set; }
+
+            public MediaExtensionValidator() {
+                MediaType = MediaType.ANY;
+                ErrorMessage = "Media id is not in a recognizable format";
+            }
+
+            public override bool IsValid(object value) {
+                if (!(value is string media_id))
+                    return false;
+
+                return MediaType switch {
+                    MediaType.ANY => isAllowedExtension(media_id),
+                    MediaType.VIDEO => isVideo(media_id),
+                    MediaType.PICTURE => isPicture(media_id),
+                    _ => false
+                };
+            }
         }
 
         public class LocalStorageHelper {
@@ -419,9 +442,9 @@ namespace DroHub.Areas.DHub.API {
         }
 
         public enum DownloadType {
-            VIDEO_STREAM,
-            DOWNLOAD,
-            JPEG,
+            PREVIEW,
+            STREAM,
+            DOWNLOAD
         }
 
         public static bool isVideo(string media_id) {
@@ -448,10 +471,12 @@ namespace DroHub.Areas.DHub.API {
             media_id = LocalStorageHelper.convertToBackEndFilePath(media_id);
             var stream = await getFileForStreaming(media_id);
             var res = t switch {
-                DownloadType.VIDEO_STREAM => controller.File(stream, "video/webm"),
-                DownloadType.JPEG => controller.File(stream, "image/jpeg"),
-                DownloadType.DOWNLOAD => controller.File(stream, "application/octet-stream", Path.GetFileName(media_id)),
-                _ => throw new InvalidProgramException("Unreachable code")
+                DownloadType.STREAM when isVideo(media_id) => controller.File(stream, "video/webm"),
+                DownloadType.PREVIEW when isAllowedExtension(media_id) => controller.File(stream, "image/jpeg",
+                    Path.GetFileName(media_id)),
+                DownloadType.DOWNLOAD when isAllowedExtension(media_id) => controller.File(stream, "application/octet-stream",
+                    Path.GetFileName(media_id)),
+                _ => throw new MediaObjectAuthorizationException("User is not authorized to access this file")
             };
 
             res.EnableRangeProcessing = true;
