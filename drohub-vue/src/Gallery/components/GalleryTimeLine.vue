@@ -88,17 +88,17 @@
                                     v-bind:item-id="file.MediaPath"
                                     v-bind:preview-id="file.PreviewMediaPath"
                                     v-bind:is-enabled="isSelectionOn"
-                                    v-bind:is-item-selected="isItemSelected(file.PreviewMediaPath, file.MediaPath)"
+                                    v-bind:is-item-selected="isItemSelected(file)"
                                 />
                                 <inline-svg
-                                    v-if="isImage(file.PreviewMediaPath)"
+                                    v-if="showPhotoThumbnailIcon(file)"
                                     class="media-type-thumbnail"
                                     title="Photo"
                                     v-bind:src="require('../../../../wwwroot/images/assets/timeline-thumbnail-photo.svg')"
 
                                 />
                                 <inline-svg
-                                    v-if="isVideo(file.PreviewMediaPath)"
+                                    v-if="showRecordingThumbnailIcon(file)"
                                     title="Recording"
                                     class="media-type-thumbnail"
                                     v-bind:src="require('../../../../wwwroot/images/assets/timeline-thumbnail-recording.svg')"
@@ -106,7 +106,7 @@
                                 />
 
                                 <gallery-video-player
-                                    v-if="isVideo(file.PreviewMediaPath)"
+                                    v-if="showVideo(file)"
                                     v-bind:get-live-stream-recording-video-url="getLiveStreamRecordingVideoUrl"
                                     v-bind:download-video-url="downloadVideoUrl"
                                     v-bind:video-preview-id="file.PreviewMediaPath"
@@ -115,7 +115,7 @@
                                 />
                                 <img
                                     class="gallery-image"
-                                    v-else-if="isImage(file.PreviewMediaPath)"
+                                    v-else-if="showPhoto"
                                     v-bind:src="getImageSrcURL(file.PreviewMediaPath)"
                                     alt="Captured picture"
                                 />
@@ -309,7 +309,9 @@
             onCancelSelection() {
                 this.resetSelectionModel();
             },
-            isItemSelected(preview_item_id, item_id) {
+            isItemSelected(file) {
+                const preview_item_id = file.PreviewMediaPath;
+                const item_id = file.MediaPath;
                 return this.isSelectionOn
                     && (this.selection_model.selected_medias.indexOf(preview_item_id) > -1
                         || (item_id !== "" && this.selection_model.selected_medias.indexOf(item_id) > -1));
@@ -329,6 +331,18 @@
             getSessionTimestamps(model, unix_date) {
                 return Object.keys(model[unix_date]).sort();
             },
+            showPhotoThumbnailIcon(file) {
+                return this.isImage(file.MediaPath) || (file.MediaPath === '' && this.isImage(file.PreviewMediaPath));
+            },
+            showRecordingThumbnailIcon(file) {
+                return this.isVideo(file.MediaPath);
+            },
+            showVideo(file) {
+                return this.isVideo(file.MediaPath)
+            },
+            showPhoto(file) {
+                this.isImage(file.MediaPath) || (file.MediaPath === '' && this.isImage(file.PreviewMediaPath));
+            }
         },
         computed: {
             getDownloadsURL() {
