@@ -55,11 +55,14 @@ namespace DroHub.Tests {
         [Fact]
         public async void TestGalleryDeleteFilesModal() {
             const string VUE_TEST_NAME = "GalleryDeleteFilesModal";
+            var file_set = new[] {
+                new TestServerFixture.FileToBeUploaded {
+                    Source = "video.webm",
+                    IsPreview = false
+                },
+            };
 
-            await testWithFile((media_list, token_data, copy) => {
-                if (copy == 0)
-                    return Task.CompletedTask;
-
+            await testWithFile((media_list, token_data) => {
                 writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
                     temp_test_data.cookie = token_data.LoginCookie;
                     temp_test_data.mediaIdList = new JArray(media_list);
@@ -77,15 +80,20 @@ namespace DroHub.Tests {
                     t.MediaPath ==  MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list
                         .Last())));
                 return Task.CompletedTask;
-            }, 1);
+            }, file_set);
         }
 
         [Fact]
         public async void TestVueAddTags() {
             const string VUE_TEST_NAME = "GalleryAddTagModal";
             var tag_list_truth = new List<string> {"my new test tag", "tag2"};
-
-            await testWithFile((media_list, token_data, copy) => {
+            var file_set = new[] {
+                new TestServerFixture.FileToBeUploaded {
+                    Source = "video.webm",
+                    IsPreview = false
+                },
+            };
+            await testWithFile((media_list, token_data) => {
                 writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
                     temp_test_data.cookie = token_data.LoginCookie;
                     temp_test_data.tagsToAdd = new JArray(tag_list_truth);
@@ -100,13 +108,23 @@ namespace DroHub.Tests {
                          && t.MediaPath == MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list.First())));
 
                 return Task.CompletedTask;
-            });
+            }, file_set);
         }
 
         [Fact]
         public async void TestGalleryTimeLine() {
             const string VUE_TEST_NAME = "GalleryTimeLine";
-            await testWithFile((media_list, token_data, copy) => {
+            var file_set = new[] {
+                new TestServerFixture.FileToBeUploaded {
+                    Source = "video.webm",
+                    IsPreview = false
+                },
+                new TestServerFixture.FileToBeUploaded {
+                    Source = "20200222_123525.jpeg",
+                    IsPreview = false
+                }
+            };
+            await testWithFile((media_list, gallery_page_data) => {
                 writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
                     temp_test_data.cookie = token_data.LoginCookie;
                     temp_test_data.mediaIdList = new JArray(media_list);
@@ -115,39 +133,37 @@ namespace DroHub.Tests {
 
                 runVueTestContainer(VUE_TEST_NAME, true, true);
                 return Task.CompletedTask;
-            });
+            }, file_set);
         }
 
-        private async Task testWithFile(Func<List<string>, HttpClientHelper.GalleryPageData, int, Task> test, int
-        file_copies = 1) {
+        private async Task testWithFile(Func<List<string>, HttpClientHelper.GalleryPageData, Task> test,
+            IEnumerable<TestServerFixture.FileToBeUploaded> src_list, int file_copies = 1) {
             var old_media_list = _fixture.DbContext
                 .MediaObjects
                 .ToList();
 
+            var ran = false;
             await _fixture.testUpload(1, TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
                 TestServerFixture.AdminUserEmail, _fixture.AdminPassword,
-                async (result, run, chunk, chunk_size, copy,_) => {
-                    if (result.ContainsKey("error"))
-                        throw new Exception(result["error"]);
-
-                    if (result["result"] != "ok")
-                        return TestServerFixture.UploadTestReturnEnum.CONTINUE;
-
+                (result, run, chunk, chunk_size, copy,file) =>
+                    Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE),
+                async () => {
                     var media_list = _fixture.DbContext.MediaObjects
                         .Select(m => MediaObjectAndTagAPI.LocalStorageHelper.convertToFrontEndFilePath(m))
                         .ToList();
                     media_list.Reverse();
 
 
-                    Assert.Equal(old_media_list.Count + file_copies , media_list.Count);
-                    var token_data = HttpClientHelper.getGalleryDataData(TestServerFixture.AdminUserEmail,
-                        _fixture.AdminPassword).GetAwaiter().GetResult();
+                    Assert.Equal(old_media_list.Count + (file_copies * src_list.Count()) , media_list.Count);
+                    var gallery_page_data = await HttpClientHelper.getGalleryDataData(TestServerFixture.AdminUserEmail,
+                        _fixture.AdminPassword);
 
-                    await test(media_list, token_data, copy);
-
-                    return TestServerFixture.UploadTestReturnEnum.CONTINUE;
+                    await test(media_list, gallery_page_data);
+                    ran = true;
                 },
+                src_list,
                 copies: file_copies);
+            Assert.True(ran);
         }
 
         private static void writeNewTempTestData(string test_name, Action<dynamic> temp_data_func) {
