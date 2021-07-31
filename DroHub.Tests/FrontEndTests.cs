@@ -126,9 +126,29 @@ namespace DroHub.Tests {
             };
             await testWithFile((media_list, gallery_page_data) => {
                 writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
-                    temp_test_data.cookie = token_data.LoginCookie;
-                    temp_test_data.mediaIdList = new JArray(media_list);
-                    temp_test_data.propsData.crossSiteForgeryToken = token_data.CrossSiteForgeryToken;
+                    var media_list_data = media_list.Select(i => new JObject {
+                        {"sha256", TestServerFixture.computeFileSHA256(
+                            MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(i))},
+                        {"file", i}
+                    });
+
+                    var preview_media_list_data = media_list.Select(i => new JObject {
+                        {"sha256", TestServerFixture.computeFileSHA256(
+                            MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(
+                                MediaObjectAndTagAPI.LocalStorageHelper.calculatePreviewFilePath(i))
+                            )},
+                        {"file", MediaObjectAndTagAPI
+                            .LocalStorageHelper.calculatePreviewFilePath(i)}
+                    });
+
+                    temp_test_data.cookie = gallery_page_data.LoginCookie;
+                    temp_test_data.mediaIdList = new JArray(media_list_data);
+                    temp_test_data.previewMediaIdList = new JArray(preview_media_list_data);
+                    temp_test_data.propsData.crossSiteForgeryToken = gallery_page_data.CrossSiteForgeryToken;
+                    temp_test_data.propsData.galleryModelJson = TestServerFixture.getHtmlDOM(gallery_page_data.Content)
+                        .QuerySelector("gallery-timeline")
+                        .Attributes.First(e => e.Name == "gallery-model-json")
+                        .Value;
                 });
 
                 runVueTestContainer(VUE_TEST_NAME, true, true);

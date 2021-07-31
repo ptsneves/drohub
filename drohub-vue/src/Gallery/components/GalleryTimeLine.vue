@@ -78,6 +78,7 @@
                     <div class="container-fluid content-centered timeline-body">
                         <div class="row equal-row-height">
                             <div
+                                v-bind:file-id="file.PreviewMediaPath"
                                 class="col-lg-3 col-md-6 col-sm-12 gallery-item"
                                 v-bind:class="{'selectable-item': isSelectionOn}"
                                 v-for="(file, _) in session.SessionMedia"
