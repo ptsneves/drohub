@@ -250,18 +250,24 @@ namespace DroHub.Tests.TestInfrastructure
             IEnumerable<FileToBeUploaded> src_list,
             int runs = 1,
             int chunks = 30,
-            int copies = 1) {
+            int copies = 1,
+            int timestamp_srclist_spread_millis = 0) {
+
+            var _src_list = src_list.ToList();
 
             var half_duration_seconds = TimeSpan.FromMilliseconds(4000);
             await HttpClientHelper.generateConnectionId(this, 2 * half_duration_seconds, "Aserial0",
                 session_user,
                 session_password,
                 async connection => {
-                    foreach (var src in src_list) {
+                    for (var src_index = 0; src_index < _src_list.Count(); src_index++) {
+                        var src = _src_list[src_index];
                         for (var copy = 0; copy < copies; copy++) {
                             //Otherwise the value is considered local time
                             var date_time_in_range =
-                                connection.StartTime + half_duration_multiplier * half_duration_seconds * (copy + 1);
+                                connection.StartTime
+                                + half_duration_multiplier * half_duration_seconds * (copy + 1)
+                                + TimeSpan.FromMilliseconds(timestamp_srclist_spread_millis) * src_index;
 
                             for (var i = 0; i < runs; i++) {
                                 await using var stream = new FileStream($"{TestAssetsPath}/{src.Source}",

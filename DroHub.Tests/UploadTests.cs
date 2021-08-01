@@ -402,6 +402,57 @@ namespace DroHub.Tests {
             Assert.True(ran);
         }
 
+        [InlineData(false, 0)]
+        [InlineData(true, 10)]
+        [Theory]
+        public async void TestMultipleFilesWithSameTimestampNotAllowed(bool expect_success, int timestamp_spread_millis) {
+            var ran = false;
+            var file_set = new[] {
+                new TestServerFixture.FileToBeUploaded {
+                    Source = "20200222_123525.jpeg",
+                    IsPreview = false
+                },
+                new TestServerFixture.FileToBeUploaded {
+                    Source = "preview-drone-PI040416DA9H110281-1608225545000.jpeg",
+                    IsPreview = true
+                },
+            };
+            var old_media_list = _fixture.DbContext
+                .MediaObjects
+                .ToList();
+
+            await _fixture.testUpload(1,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                (result, tries, chunk, sent_chunk_size, copy, file) => {
+                    if (file == file_set[1].Source && !expect_success) {
+                            Assert.True(result.TryGetValue("error", out var v));
+                            Assert.Equal(AndroidApplicationController.FORBIDDEN_PREVIEW, v);
+                            ran = true;
+                            return Task.FromResult(TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD);
+                    }
+
+                    return Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE);
+                },
+                () => {
+                    var media_list = _fixture.DbContext.MediaObjects
+                        .ToList();
+                    if (expect_success)
+                        Assert.Equal(old_media_list.Count + (file_set.Count()) , media_list.Count);
+                    else {
+                        Assert.Equal(old_media_list.Count + (file_set.Count()-1) , media_list.Count);
+                    }
+
+                    ran = true;
+                    return Task.CompletedTask;
+                },
+                file_set,
+                timestamp_srclist_spread_millis: timestamp_spread_millis);
+            Assert.True(ran);
+        }
+
         [Fact]
         public async void TestNotAllowedPreviewUploadAfterNonPreviewUpload() {
             var ran = false;
