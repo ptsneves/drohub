@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
@@ -36,6 +37,15 @@ namespace DroHub.Areas.DHub.Controllers
         }
         #endregion
 
+        public class NonEmptyEnumerableValidator : ValidationAttribute {
+            public override bool IsValid(object value) {
+                if (!(value is IEnumerable enumerable))
+                    return false;
+
+                return enumerable.GetEnumerator().MoveNext();
+            }
+        }
+
         public async Task<IActionResult> Index()
         {
             return await Dashboard();
@@ -49,7 +59,7 @@ namespace DroHub.Areas.DHub.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteMediaObjects([Required]IEnumerable<string> MediaIdList) {
+        public async Task<IActionResult> DeleteMediaObjects([NonEmptyEnumerableValidator]IEnumerable<string> MediaIdList) {
             try {
                 if (!ModelState.IsValid)
                     return BadRequest();

@@ -657,6 +657,12 @@ namespace DroHub.Tests
         }
 
         [Fact]
+        public async void TestDeleteMediaObjectsEmptyFails() {
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                await HttpClientHelper.deleteMediaObjects(_fixture, new List<string>()));
+        }
+
+        [Fact]
         public async void TestUpdateSubscriptionOnlyOnUserDelete() {
             {
                 await using var u1 = await HttpClientHelper.AddUserHelper.addUser(_fixture,

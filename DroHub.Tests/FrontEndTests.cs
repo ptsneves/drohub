@@ -60,6 +60,10 @@ namespace DroHub.Tests {
                     Source = "video.webm",
                     IsPreview = false
                 },
+                new TestServerFixture.FileToBeUploaded {
+                    Source = "20200222_123525.jpeg",
+                    IsPreview = false
+                },
             };
 
             await testWithFile((media_list, token_data) => {
