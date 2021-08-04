@@ -78,16 +78,15 @@
                     <div class="container-fluid content-centered timeline-body">
                         <div class="row equal-row-height">
                             <div
-                                v-bind:file-id="file.PreviewMediaPath"
+                                v-bind:file-id="file.MediaPath"
                                 class="col-lg-3 col-md-6 col-sm-12 gallery-item"
                                 v-bind:class="{'selectable-item': isSelectionOn}"
                                 v-for="(file, _) in session.SessionMedia"
-                                v-bind:key="file.PreviewMediaPath"
+                                v-bind:key="file.MediaPath"
                             >
                                 <gallery-item-select
                                     v-on:update:selection-event="onGalleryItemSelected"
                                     v-bind:item-id="file.MediaPath"
-                                    v-bind:preview-id="file.PreviewMediaPath"
                                     v-bind:is-enabled="isSelectionOn"
                                     v-bind:is-item-selected="isItemSelected(file)"
                                 />
@@ -109,22 +108,22 @@
                                 <gallery-video-player
                                     v-if="showVideo(file)"
                                     v-bind:get-live-stream-recording-video-url="getLiveStreamRecordingVideoUrl"
-                                    v-bind:download-video-url="downloadVideoUrl"
-                                    v-bind:video-preview-id="file.PreviewMediaPath"
+                                    v-bind:download-video-url="downloadFileUrl"
+                                    v-bind:get-preview-url="getPreviewUrl"
                                     v-bind:allow-settings="allowSettings"
                                     v-bind:video-id="file.MediaPath"
                                 />
                                 <img
                                     class="gallery-image"
                                     v-else-if="showPhoto"
-                                    v-bind:src="getImageSrcURL(file.PreviewMediaPath)"
+                                    v-bind:src="getPreviewURL(file.MediaPath)"
                                     alt="Captured picture"
                                 />
                                 <media-tag-label
                                     v-show="show_tags"
                                     v-for="tag in file.Tags"
                                     v-bind:key="tag"
-                                    v-bind:media-id="file.PreviewMediaPath"
+                                    v-bind:media-id="file.MediaPath"
                                     v-bind:allow-delete="allowSettings"
                                     v-bind:delete-tags-post-url="deleteTagsPostUrl"
                                     v-bind:text="tag">
@@ -195,7 +194,7 @@
                 type: String,
                 required: true,
             },
-            downloadVideoUrl: {
+            downloadFileUrl: {
                 type: String,
                 required: true,
             },
@@ -207,7 +206,7 @@
                 type: String,
                 required: true,
             },
-            getPhotoUrl: {
+            getPreviewUrl: {
                 type: String,
                 required: true,
             },
@@ -311,11 +310,9 @@
                 this.resetSelectionModel();
             },
             isItemSelected(file) {
-                const preview_item_id = file.PreviewMediaPath;
                 const item_id = file.MediaPath;
                 return this.isSelectionOn
-                    && (this.selection_model.selected_medias.indexOf(preview_item_id) > -1
-                        || (item_id !== "" && this.selection_model.selected_medias.indexOf(item_id) > -1));
+                    && (item_id !== "" && this.selection_model.selected_medias.indexOf(item_id) > -1);
             },
             isVideo(file_path) {
                 return file_path.endsWith('.webm') || file_path.endsWith('.mp4');
@@ -323,8 +320,8 @@
             isImage(file_path) {
                 return file_path.endsWith('.jpeg') || file_path.endsWith('.png');
             },
-            getImageSrcURL(photo_id) {
-                return this.getPhotoUrl + photo_id;
+            getPreviewURL(photo_id) {
+                return this.getPreviewUrl + photo_id;
             },
             getFileList(model, unix_date, session_timestamp) {
                 return model[unix_date][session_timestamp]["SessionMedia"];
@@ -333,7 +330,7 @@
                 return Object.keys(model[unix_date]).sort();
             },
             showPhotoThumbnailIcon(file) {
-                return this.isImage(file.MediaPath) || (file.MediaPath === '' && this.isImage(file.PreviewMediaPath));
+                return this.isImage(file.MediaPath);
             },
             showRecordingThumbnailIcon(file) {
                 return this.isVideo(file.MediaPath);
@@ -342,7 +339,7 @@
                 return this.isVideo(file.MediaPath)
             },
             showPhoto(file) {
-                this.isImage(file.MediaPath) || (file.MediaPath === '' && this.isImage(file.PreviewMediaPath));
+                return this.isImage(file.MediaPath);
             }
         },
         computed: {

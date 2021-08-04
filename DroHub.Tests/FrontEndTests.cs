@@ -126,23 +126,33 @@ namespace DroHub.Tests {
                 new TestServerFixture.FileToBeUploaded {
                     Source = "20200222_123525.jpeg",
                     IsPreview = false
-                }
+                },
+                new TestServerFixture.FileToBeUploaded {
+                    Source = "preview-drone-PI040416DA9H110281-1608225545000.jpeg",
+                    IsPreview = true
+                },
             };
             await testWithFile((media_list, gallery_page_data) => {
                 writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
-                    var media_list_data = media_list.Select(i => new JObject {
+                    var media_list_data = media_list
+                        .Where(media =>
+                            File.Exists(MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media)))
+                        .Select(i => new JObject {
                         {"sha256", TestServerFixture.computeFileSHA256(
                             MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(i))},
                         {"file", i}
                     });
 
-                    var preview_media_list_data = media_list.Select(i => new JObject {
+                    var preview_media_list_data = media_list
+                        .Where(media =>
+                            MediaObjectAndTagAPI.LocalStorageHelper.doesPreviewFileExist(
+                                MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media)))
+                        .Select(i => new JObject {
                         {"sha256", TestServerFixture.computeFileSHA256(
                             MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(
                                 MediaObjectAndTagAPI.LocalStorageHelper.calculatePreviewFilePath(i))
                             )},
-                        {"file", MediaObjectAndTagAPI
-                            .LocalStorageHelper.calculatePreviewFilePath(i)}
+                        {"file", i}
                     });
 
                     temp_test_data.cookie = gallery_page_data.LoginCookie;
@@ -186,7 +196,8 @@ namespace DroHub.Tests {
                     ran = true;
                 },
                 src_list,
-                copies: file_copies);
+                copies: file_copies,
+                timestamp_srclist_spread_millis: 10);
             Assert.True(ran);
         }
 

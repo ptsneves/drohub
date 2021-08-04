@@ -179,6 +179,37 @@ namespace DroHub.Areas.DHub.Controllers
             }, new JsonSerializerOptions { PropertyNamingPolicy = null });
         }
 
+        public async Task<IActionResult> GetPreview(
+            [Required]
+            [MediaObjectAndTagAPI.MediaExtensionValidator(MediaType = MediaObjectAndTagAPI.MediaType.ANY)]
+            string media_id) {
+
+            try {
+                return await _media_object_and_tag_api.getFileForDownload(media_id,
+                    MediaObjectAndTagAPI.DownloadType.PREVIEW, this);
+            }
+            catch (Exception) {
+                return NotFound(new Dictionary<string, string> {
+                    ["error"] = "Request is invalid or not for a picture"
+                });
+            }
+        }
+
+        public async Task<IActionResult> DownloadFile([Required]
+            [MediaObjectAndTagAPI.MediaExtensionValidator(MediaType = MediaObjectAndTagAPI.MediaType.ANY)]
+            string media_id) {
+
+            try {
+                return await _media_object_and_tag_api.getFileForDownload(
+                        media_id, MediaObjectAndTagAPI.DownloadType.DOWNLOAD, this);
+            }
+            catch (Exception) {
+                return NotFound(new Dictionary<string, string> {
+                    ["error"] = "Request is invalid or not for a picture"
+                });
+            }
+        }
+
         public async Task<IActionResult> GetSubscriptionInfo() {
             var subscription = await _subscription_api.getSubscription();
             var model = new AccountManagementModel {

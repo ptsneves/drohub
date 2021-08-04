@@ -41,10 +41,10 @@
                 delete-media-objects-post-url="@Url.Action("DeleteMediaObjects")"
                 delete-tags-post-url="@Url.Action("DeleteTag")"
                 download-medias-url="@Url.Action("DownloadMedias")"
-                download-video-url="@Url.Action("DownloadFile", new {media_id = "_VAL_"}).Replace("_VAL_", "")"
+                download-file-url="@Url.Action("DownloadFile", new {media_id = "_VAL_"}).Replace("_VAL_", "")"
                 drone-media-removal-tag="@MediaObjectAndTagAPI.DroneMediaRemovalTag"
                 get-live-stream-recording-video-url="@Url.Action("GetLiveStreamRecordingVideo", new {video_id = "_VAL_"}).Replace("_VAL_", "")"
-                get-photo-url="@Url.Action("GetPreview", new {media_id = "_VAL_"}).Replace("_VAL_", "")"
+                get-preview-url="@Url.Action("GetPreview", new {media_id = "_VAL_"}).Replace("_VAL_", "")"
                 anti-forgery-token="@GetAntiXsrfRequestToken()"
                 gallery-model-json='@Html.Raw(JsonConvert.SerializeObject(@Model.FilesPerTimestamp, new JsonSerializerSettings() {ReferenceLoopHandling = ReferenceLoopHandling.Ignore}))'
             >

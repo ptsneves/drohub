@@ -2,7 +2,7 @@
     <vue-player
         v-if="videoId"
         ref="player"
-        v-bind:src="getSrcURL"
+        v-bind:src="getVideoSrcURL"
         v-bind:show-volume="false"
         v-bind:playsinline="true"
         video-playing-overlay="vue-video-player-overlay"
@@ -58,7 +58,7 @@
     <img
         v-else
         alt="video preview"
-        v-bind:src="videoPreviewId"
+        v-bind:src="getPreviewSrcURL"
     />
 </template>
 
@@ -80,12 +80,12 @@ export default {
             type: String,
             required: true,
         },
-        videoPreviewId: {
-            type: String,
-            required: true,
-        },
         allowSettings: {
             type: Boolean,
+            required: true,
+        },
+        getPreviewUrl: {
+            type: String,
             required: true,
         },
         getLiveStreamRecordingVideoUrl: {
@@ -104,9 +104,12 @@ export default {
         }
     },
     computed: {
-        getSrcURL() {
+        getVideoSrcURL() {
             return this.getLiveStreamRecordingVideoUrl + this.videoId;
         },
+        getPreviewSrcURL() {
+            return this.getPreviewUrl + this.videoId;
+        }
     }
 }
 </script>

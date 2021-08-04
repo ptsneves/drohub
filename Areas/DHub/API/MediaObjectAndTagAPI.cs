@@ -183,10 +183,7 @@ namespace DroHub.Areas.DHub.API {
             public static string convertToBackEndFilePath(string media_path) {
                 if (!isFrontEndMediaObjectFilePath(media_path))
                     throw new MediaObjectAndTagException($"Cannot convert to backend file path if not a frontend file path {media_path}");
-                var r = deAnonymizeConnectionDirectory(media_path);
-                var real_file_r = calculateFilePathOnHost(r);
-                return File.Exists(real_file_r) ? real_file_r : r;
-                // r = getTechnicalMediaPath(r);
+                return deAnonymizeConnectionDirectory(media_path);
             }
 
 
@@ -196,7 +193,7 @@ namespace DroHub.Areas.DHub.API {
                 return $"{(is_preview ? PreviewFileNamePrefix : string.Empty)}drone-{device_serial}-{unix_time_creation_ms}{extension}";
             }
 
-            private static bool doesPreviewFileExist(string media_path) {
+            public static bool doesPreviewFileExist(string media_path) {
                 return Directory
                     .EnumerateFiles(Path.GetDirectoryName(media_path))
                     .Any(f => f == calculatePreviewFilePath(media_path));
@@ -208,10 +205,6 @@ namespace DroHub.Areas.DHub.API {
 
             public static bool doesFileExist(string file_path) {
                 return (doesPreviewFileExist(file_path) || File.Exists(file_path)) && file_path.StartsWith(ConnectionBaseDir);
-            }
-
-            public static bool doesFileExist(MediaObject mo) {
-                return File.Exists(calculateFilePathOnHost(mo.MediaPath));
             }
 
             public static string calculatePreviewFilePath(string file_path) {
@@ -468,6 +461,9 @@ namespace DroHub.Areas.DHub.API {
         public async Task<FileStreamResult> getFileForDownload(string media_id, DownloadType t,
             ControllerBase controller) {
 
+            if (t == DownloadType.PREVIEW)
+                media_id = LocalStorageHelper.calculatePreviewFilePath(media_id);
+
             media_id = LocalStorageHelper.convertToBackEndFilePath(media_id);
             var stream = await getFileForStreaming(media_id);
             var res = t switch {
@@ -563,10 +559,7 @@ namespace DroHub.Areas.DHub.API {
 
 
                     var media_info_model = new GalleryModel.MediaInfo() {
-                            MediaPath = LocalStorageHelper.doesFileExist(media_file)
-                                ? LocalStorageHelper.convertToFrontEndFilePath(media_file) : string.Empty,
-
-                            PreviewMediaPath = LocalStorageHelper.convertToPreviewFrontEndFilePath(media_file),
+                            MediaPath = LocalStorageHelper.convertToFrontEndFilePath(media_file),
                             CaptureDateTime = media_start_time.ToUnixTimeMilliseconds(),
                             Tags = media_file.MediaObjectTags.Select(s => s.TagName),
                     };

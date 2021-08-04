@@ -107,6 +107,7 @@ describe('GalleryDeleteFilesModal.vue', () => {
             },
         });
 
+        expect(temp_test_data.mediaIdList.length).toBe(2);
         delete window.location
         window.location = {
             assign: jest.fn(),
@@ -126,8 +127,8 @@ describe('GalleryDeleteFilesModal.vue', () => {
                 return real_axios_post(url, query_string, {
                     adapter: require('axios/lib/adapters/http')
                 })
-                    .then((r) => {
-                        resolve(r)
+                    .then((response) => {
+                        resolve(response);
                     })
                     .catch((e) => reject(e));
             });
