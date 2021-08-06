@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using System.IO;
 using System;
 using DroHub.Areas.DHub.API;
+using DroHub.Areas.DHub.Helpers;
 using Serilog;
 using Microsoft.Extensions.Configuration;
 using DroHub.Data;
@@ -33,7 +34,7 @@ namespace DroHub
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
-            await MediaObjectAndTagAPI.LocalStorageHelper.generateVideoPreviewForConnectionDir(
+            await LocalStorageHelper.generateVideoPreviewForConnectionDir(
                 new SerilogLoggerProvider(Log.Logger).CreateLogger(nameof(Program)), true);
 
             try

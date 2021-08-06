@@ -12,6 +12,7 @@ using System.Text.Json;
 using System.Threading;
 using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Controllers;
+using DroHub.Areas.DHub.Helpers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
 using DroHub.Helpers;
@@ -639,7 +640,7 @@ namespace DroHub.Tests
 
                     await HttpClientHelper.deleteMediaObjects(_fixture,
                         last_media_paths
-                            .Select(MediaObjectAndTagAPI.LocalStorageHelper.convertToFrontEndFilePath)
+                            .Select(LocalStorageHelper.convertToFrontEndFilePath)
                             .ToList());
 
                     ran = true;

@@ -8,11 +8,11 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
+using DroHub.Areas.DHub.Helpers;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using static DroHub.Areas.DHub.API.MediaObjectAndTagAPI.LocalStorageHelper;
 
 namespace DroHub.Areas.DHub.Controllers
 {
@@ -64,7 +64,7 @@ namespace DroHub.Areas.DHub.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest();
                 foreach (var raw_media_path in MediaIdList) {
-                    var media_path = convertToBackEndFilePath(raw_media_path);
+                    var media_path = LocalStorageHelper.convertToBackEndFilePath(raw_media_path);
                     await _media_objectAnd_tag_api.deleteMediaObject(media_path);
                 }
 
@@ -100,7 +100,7 @@ namespace DroHub.Areas.DHub.Controllers
 
                 var file_list = new List<string>();
                 foreach (var media_id in media_ids) {
-                    var converted_media_id = convertToBackEndFilePath(media_id);
+                    var converted_media_id = LocalStorageHelper.convertToBackEndFilePath(media_id);
 
                     if (!await _media_objectAnd_tag_api.authorizeMediaObjectOperation(converted_media_id,
                             ResourceOperations.Read))
@@ -200,7 +200,7 @@ namespace DroHub.Areas.DHub.Controllers
                 }
 
                 foreach (var media_id in tags.MediaIdList) {
-                    var converted_media_id = convertToBackEndFilePath(media_id);
+                    var converted_media_id = LocalStorageHelper.convertToBackEndFilePath(media_id);
                     await _media_objectAnd_tag_api.addTags(converted_media_id, tags.TagList, null,
                         media_id == tags.MediaIdList.Last());
                 }
@@ -217,7 +217,7 @@ namespace DroHub.Areas.DHub.Controllers
             if (!ModelState.IsValid)
                 return BadRequest();
             try {
-                var converted_media_id = convertToBackEndFilePath(media_id);
+                var converted_media_id = LocalStorageHelper.convertToBackEndFilePath(media_id);
                 await _media_objectAnd_tag_api.removeTag(tag_name, converted_media_id);
                 return Ok();
             }

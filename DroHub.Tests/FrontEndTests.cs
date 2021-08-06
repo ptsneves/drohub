@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
+using DroHub.Areas.DHub.Helpers;
 using DroHub.Tests.TestInfrastructure;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
@@ -78,10 +79,10 @@ namespace DroHub.Tests {
                 Assert.Equal(1, _fixture.DbContext.MediaObjectTags.Count(t =>
                     t.TagName == "Marked for Drone removal"
                     && t.MediaPath ==
-                    MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list.First())));
+                    LocalStorageHelper.convertToBackEndFilePath(media_list.First())));
 
                 Assert.False(_fixture.DbContext.MediaObjects.Any(t =>
-                    t.MediaPath ==  MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list
+                    t.MediaPath ==  LocalStorageHelper.convertToBackEndFilePath(media_list
                         .Last())));
                 return Task.CompletedTask;
             }, file_set);
@@ -109,7 +110,7 @@ namespace DroHub.Tests {
                 runVueTestContainer(VUE_TEST_NAME, true, true);
                 Assert.Equal(1, _fixture.DbContext.MediaObjectTags.Count(
                     t => t.TagName == tag_list_truth[0]
-                         && t.MediaPath == MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media_list.First())));
+                         && t.MediaPath == LocalStorageHelper.convertToBackEndFilePath(media_list.First())));
 
                 return Task.CompletedTask;
             }, file_set);
@@ -136,21 +137,21 @@ namespace DroHub.Tests {
                 writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
                     var media_list_data = media_list
                         .Where(media =>
-                            File.Exists(MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media)))
+                            File.Exists(LocalStorageHelper.convertToBackEndFilePath(media)))
                         .Select(i => new JObject {
                         {"sha256", TestServerFixture.computeFileSHA256(
-                            MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(i))},
+                            LocalStorageHelper.convertToBackEndFilePath(i))},
                         {"file", i}
                     });
 
                     var preview_media_list_data = media_list
                         .Where(media =>
-                            MediaObjectAndTagAPI.LocalStorageHelper.doesPreviewFileExist(
-                                MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(media)))
+                            LocalStorageHelper.doesPreviewFileExist(
+                                LocalStorageHelper.convertToBackEndFilePath(media)))
                         .Select(i => new JObject {
                         {"sha256", TestServerFixture.computeFileSHA256(
-                            MediaObjectAndTagAPI.LocalStorageHelper.convertToBackEndFilePath(
-                                MediaObjectAndTagAPI.LocalStorageHelper.calculatePreviewFilePath(i))
+                            LocalStorageHelper.convertToBackEndFilePath(
+                                LocalStorageHelper.calculatePreviewFilePath(i))
                             )},
                         {"file", i}
                     });
@@ -183,7 +184,7 @@ namespace DroHub.Tests {
                     Task.FromResult(TestServerFixture.UploadTestReturnEnum.CONTINUE),
                 async () => {
                     var media_list = _fixture.DbContext.MediaObjects
-                        .Select(m => MediaObjectAndTagAPI.LocalStorageHelper.convertToFrontEndFilePath(m))
+                        .Select(m => LocalStorageHelper.convertToFrontEndFilePath(m))
                         .ToList();
                     media_list.Reverse();
 

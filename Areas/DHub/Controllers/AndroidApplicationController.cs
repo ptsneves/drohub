@@ -5,6 +5,7 @@ using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
+using DroHub.Areas.DHub.Helpers;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -240,7 +241,7 @@ namespace DroHub.Areas.DHub.Controllers
 
             try {
                 var connection = await _connection_api.getDeviceConnectionByTime(device, creation_time);
-                var local_storage_helper = new MediaObjectAndTagAPI.LocalStorageHelper(
+                var local_storage_helper = new LocalStorageHelper(
                     connection.Id,
                     input.RangeStartBytes,
                     input.IsPreview,

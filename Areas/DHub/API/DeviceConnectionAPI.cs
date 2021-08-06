@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using DroHub.Areas.DHub.Helpers;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
@@ -171,7 +172,7 @@ namespace DroHub.Areas.DHub.API {
             await _db_context.DeviceConnections.AddAsync(connection);
             await _db_context.SaveChangesAsync();
             Directory.CreateDirectory(
-                MediaObjectAndTagAPI.LocalStorageHelper.calculateConnectionDirectory(connection.Id));
+                LocalStorageHelper.calculateConnectionDirectory(connection.Id));
         }
 
         public async Task removeRPCSessionHandler(ThriftMessageHandler rpc_handler) {

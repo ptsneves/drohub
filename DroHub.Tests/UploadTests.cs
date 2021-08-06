@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Controllers;
+using DroHub.Areas.DHub.Helpers;
 using DroHub.Areas.Identity.Data;
 using DroHub.Tests.TestInfrastructure;
 using Microsoft.AspNetCore.Http;
@@ -48,11 +49,10 @@ namespace DroHub.Tests {
                         Assert.Equal(orig_sha256, uploaded_sha256);
 
                         //Check that preview file is not the uploaded one.
-                        Assert.True(MediaObjectAndTagAPI
-                            .LocalStorageHelper
+                        Assert.True(LocalStorageHelper
                             .doesPreviewExist(last_media_path));
 
-                        var preview_file_path = MediaObjectAndTagAPI.LocalStorageHelper.
+                        var preview_file_path = LocalStorageHelper.
                             calculatePreviewFilePath(last_media_path.MediaPath);
                         var preview_sha256 = TestServerFixture.computeFileSHA256(preview_file_path);
                         Assert.NotEqual(preview_sha256, uploaded_sha256);

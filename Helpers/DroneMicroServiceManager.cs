@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
+using DroHub.Areas.DHub.Helpers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.DHub.SignalRHubs;
 using DroHub.Helpers.Thrift;
@@ -411,7 +412,7 @@ namespace DroHub.Helpers
         public override async Task getServiceTask(CancellationToken ct, DeadManSwitch toggle) {
             _logger.LogDebug($"Starting Service {GetType()} {_authenticated_serial.Value}");
             var device = await _device_api.getDeviceBySerial(_authenticated_serial);
-            var media_dir = MediaObjectAndTagAPI.LocalStorageHelper.calculateConnectionDirectory(_device_connection.Id);
+            var media_dir = LocalStorageHelper.calculateConnectionDirectory(_device_connection.Id);
             try {
                 var video_room = await createVideoRoomForDevice(device, media_dir);
                 _send_video_request = new DroneSendLiveVideoRequest {
@@ -425,7 +426,7 @@ namespace DroHub.Helpers
             finally {
                 await destroyMountPointForDevice(device);
                 try {
-                    var r = await MJRPostProcessor.RunConvert(media_dir, true, MediaObjectAndTagAPI.PreviewFileNamePrefix, _logger);
+                    var r = await MJRPostProcessor.RunConvert(media_dir, true, LocalStorageHelper.PreviewFileNamePrefix, _logger);
                     if (r.media_type != MJRPostProcessor.ConvertResult.MediaType.VIDEO)
                         throw new InvalidDataException("We do not support non video mjr conversions");
                     const string tag = "live stream";
