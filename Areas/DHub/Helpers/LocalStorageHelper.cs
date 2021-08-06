@@ -104,16 +104,6 @@ namespace DroHub.Areas.DHub.Helpers {
             return r;
         }
 
-        public static string convertToPreviewFrontEndFilePath(MediaObject media_object) {
-            if (isFrontEndMediaObjectFilePath(media_object.MediaPath))
-                throw new MediaObjectAndTagException(
-                    $"Cannot convert {media_object.MediaPath} to front end file path if already a frontend file path");
-            var r = anonymizeConnectionDirectory(media_object);
-            r = calculatePreviewFilePath(r);
-            // r = FileNameTranslator.getUserFriendlyMediaPath(r, media_object.CaptureDateTimeUTC);
-            return r;
-        }
-
         public static string convertToBackEndFilePath(string media_path) {
             if (!isFrontEndMediaObjectFilePath(media_path))
                 throw new MediaObjectAndTagException(
