@@ -426,9 +426,14 @@ namespace DroHub.Helpers
             finally {
                 await destroyMountPointForDevice(device);
                 try {
-                    var r = await MJRPostProcessor.RunConvert(media_dir, true, LocalStorageHelper.PreviewFileNamePrefix, _logger);
+                    var r = await MJRPostProcessor.RunConvert(media_dir, true, _logger);
+
                     if (r.media_type != MJRPostProcessor.ConvertResult.MediaType.VIDEO)
                         throw new InvalidDataException("We do not support non video mjr conversions");
+
+                    await VideoPreviewGenerator.generatePreview(r.result_path,
+                        LocalStorageHelper.calculatePreviewFilePath(r.result_path));
+
                     const string tag = "live stream";
 
                     var mo = MediaObjectAndTagAPI.generateMediaObject(r.result_path, r.creation_date_utc,
