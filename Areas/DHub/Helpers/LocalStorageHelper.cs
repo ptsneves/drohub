@@ -112,7 +112,7 @@ namespace DroHub.Areas.DHub.Helpers {
         }
 
 
-        public static string calculateFileNameOnHost(bool is_preview, string device_serial, long unix_time_creation_ms,
+        private static string calculateFileNameOnHost(bool is_preview, string device_serial, long unix_time_creation_ms,
             string extension) {
 
             return
