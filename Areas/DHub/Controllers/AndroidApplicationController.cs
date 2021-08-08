@@ -269,10 +269,7 @@ namespace DroHub.Areas.DHub.Controllers
                     });
                 }
 
-                await using var chunked_file_stream = new FileStream(local_storage_helper.calculateChunkedFilePath(),
-                    FileMode.CreateNew);
-
-                await input.File.CopyToAsync(chunked_file_stream);
+                await local_storage_helper.saveChunk(input.File);
 
                 if (input.RangeStartBytes + input.File.Length == input.AssembledFileSize) {
                     var assembled_file_name = await local_storage_helper.generateAssembledFile();

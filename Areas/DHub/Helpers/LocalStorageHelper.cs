@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DroHub.Areas.DHub.API;
 using DroHub.Areas.DHub.Models;
 using DroHub.Helpers;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
 namespace DroHub.Areas.DHub.Helpers {
@@ -197,8 +198,13 @@ namespace DroHub.Areas.DHub.Helpers {
             return calculateConnectionFilePath(_connection_id, calculateFileNameOnHost());
         }
 
-        public string calculateChunkedFilePath() {
+        private string calculateChunkedFilePath() {
             return calculateConnectionFilePath(_connection_id, getChunkedFileNameOn());
+        }
+
+        public async Task saveChunk(IFormFile file) {
+            await using var chunk_file_stream = new FileStream(calculateChunkedFilePath(), FileMode.CreateNew);
+            await file.CopyToAsync(chunk_file_stream);
         }
 
         private long calculateBytesOffsetFromFile(string file_name) {
