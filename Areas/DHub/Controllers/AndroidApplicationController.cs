@@ -277,15 +277,14 @@ namespace DroHub.Areas.DHub.Controllers
                 if (input.RangeStartBytes + input.File.Length == input.AssembledFileSize) {
                     var assembled_file_name = await local_storage_helper.generateAssembledFile();
                     System.IO.File.SetCreationTimeUtc(assembled_file_name, creation_time.UtcDateTime);
-                    var mo = MediaObjectAndTagAPI.generateMediaObject(
+                    await _media_object_and_tag_api.addMediaObject(
                         assembled_file_name,
                         creation_time,
                         _subscription_api.getSubscriptionName().Value,
-                        connection.Id);
-
-                    await _media_object_and_tag_api.addMediaObject(mo,
-                        new List<string> {"onboard"},
+                        connection.Id,
+                        new []{"onboard"},
                         input.IsPreview);
+
 
                     return new JsonResult(new Dictionary<string, string> {
                         ["result"] = "ok"

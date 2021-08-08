@@ -353,17 +353,15 @@ namespace DroHub.Areas.DHub.API {
                 await _db_context.SaveChangesAsync();
         }
 
-        public static MediaObject generateMediaObject(string media_path, DateTimeOffset create_time, string org_name,
-            long device_connection_id) {
-            return new MediaObject {
+        public async Task addMediaObject(string media_path, DateTimeOffset create_time, string org_name,
+            long device_connection_id, IEnumerable<string> tags, bool is_preview) {
+
+            var media_object = new MediaObject {
                 SubscriptionOrganizationName = org_name,
                 DeviceConnectionId = device_connection_id,
                 MediaPath = media_path,
                 CaptureDateTimeUTC = create_time,
             };
-        }
-
-        public async Task addMediaObject(MediaObject media_object, List<string> tags, bool is_preview) {
 
             if (!media_object.MediaPath.Contains(LocalStorageHelper.calculateConnectionDirectory(media_object.DeviceConnectionId)))
                 throw new MediaObjectAndTagException("Cannot save media which is not in the connection directory");

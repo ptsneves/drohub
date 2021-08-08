@@ -434,13 +434,13 @@ namespace DroHub.Helpers
                     await VideoPreviewGenerator.generatePreview(r.result_path,
                         LocalStorageHelper.calculatePreviewFilePath(r.result_path));
 
-                    const string tag = "live stream";
-
-                    var mo = MediaObjectAndTagAPI.generateMediaObject(r.result_path, r.creation_date_utc,
-                        _device_connection.SubscriptionOrganizationName, _device_connection.Id);
-
-                    await _media_api.addMediaObject(mo,new List<string> {tag}, false);
-
+                    await _media_api.addMediaObject(r.result_path,
+                        r.creation_date_utc,
+                        _device_connection.SubscriptionOrganizationName,
+                        _device_connection.Id,
+                        new []{"live stream"},
+                        false
+                        );
                 }
                 catch (Exception e) {
                     _logger.LogError(e.Message);
