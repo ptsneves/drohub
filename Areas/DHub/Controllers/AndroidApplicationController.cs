@@ -273,7 +273,6 @@ namespace DroHub.Areas.DHub.Controllers
 
                 if (input.RangeStartBytes + input.File.Length == input.AssembledFileSize) {
                     var assembled_file_name = await local_storage_helper.generateAssembledFile();
-                    System.IO.File.SetCreationTimeUtc(assembled_file_name, creation_time.UtcDateTime);
                     await _media_object_and_tag_api.addMediaObject(
                         assembled_file_name,
                         creation_time,

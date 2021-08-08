@@ -281,7 +281,9 @@ namespace DroHub.Areas.DHub.Helpers {
                     await ImagePreviewGenerator.generatePreview(generated_file_path, preview_file_path, 640, 480);
                 }
             }
+            var creation_time = DateTimeOffset.FromUnixTimeMilliseconds(_unix_time_creation_ms);
 
+            File.SetCreationTimeUtc(generated_file_path, creation_time.UtcDateTime);
             return generated_file_path;
         }
     }
