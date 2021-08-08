@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace DroHub.Areas.DHub.Helpers {
     public class LocalStorageHelper {
         private const string ConnectionBaseDir = "/var/live-video-storage/";
-        public static readonly string PreviewFileNamePrefix = "preview-";
+        private const string _PreviewFileNamePrefix = "preview-";
         private const string _CHUNK_FN_BEGIN_MAGIC = "CHUNK_";
         private const string _CHUNK_FN_END_MAGIC = "_CHUNK";
 
@@ -116,7 +116,7 @@ namespace DroHub.Areas.DHub.Helpers {
             string extension) {
 
             return
-                $"{(is_preview ? PreviewFileNamePrefix : string.Empty)}drone-{device_serial}-{unix_time_creation_ms}{extension}";
+                $"{(is_preview ? _PreviewFileNamePrefix : string.Empty)}drone-{device_serial}-{unix_time_creation_ms}{extension}";
         }
 
         public static bool doesPreviewFileExist(string media_path) {
@@ -146,17 +146,17 @@ namespace DroHub.Areas.DHub.Helpers {
                 file_name = $"video-{file_name}";
             }
 
-            return !file_name.Contains(PreviewFileNamePrefix)
-                ? Path.Join(file_dir, $"{PreviewFileNamePrefix}{file_name}")
+            return !file_name.Contains(_PreviewFileNamePrefix)
+                ? Path.Join(file_dir, $"{_PreviewFileNamePrefix}{file_name}")
                 : file_path;
         }
 
         public static string stripPreviewPrefix(string file_path) {
-            return file_path.Replace(PreviewFileNamePrefix, "");
+            return file_path.Replace(_PreviewFileNamePrefix, "");
         }
 
         public static bool containsPreviewPrefix(string file_name) {
-            return file_name.Contains(PreviewFileNamePrefix);
+            return file_name.Contains(_PreviewFileNamePrefix);
         }
 
         private static string calculateConnectionFilePath(long connection_id, string file_name) {
