@@ -273,6 +273,8 @@ namespace DroHub.Areas.DHub.Helpers {
             var generated_file_path = calculateAssembledFilePath();
             var preview_file_path = calculatePreviewFilePath(generated_file_path);
 
+
+            var creation_time = DateTimeOffset.FromUnixTimeMilliseconds(_unix_time_creation_ms);
             if (!File.Exists(preview_file_path)) {
                 if (MediaObjectAndTagAPI.isVideo(generated_file_path)) {
                     await VideoPreviewGenerator.generatePreview(generated_file_path, preview_file_path);
@@ -280,8 +282,8 @@ namespace DroHub.Areas.DHub.Helpers {
                 else if (MediaObjectAndTagAPI.isPicture(generated_file_path)) {
                     await ImagePreviewGenerator.generatePreview(generated_file_path, preview_file_path, 640, 480);
                 }
+                File.SetCreationTimeUtc(preview_file_path, creation_time.UtcDateTime);
             }
-            var creation_time = DateTimeOffset.FromUnixTimeMilliseconds(_unix_time_creation_ms);
 
             File.SetCreationTimeUtc(generated_file_path, creation_time.UtcDateTime);
             return generated_file_path;
