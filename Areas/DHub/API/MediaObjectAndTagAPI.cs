@@ -228,7 +228,7 @@ namespace DroHub.Areas.DHub.API {
             if (op == ResourceOperations.Create)
                 return true;
 
-            if (!LocalStorageHelper.doesFileExist(media_path))
+            if (!LocalStorageHelper.isValidMediaPath(media_path))
                 return false;
 
             //For authorization purposes the preview is the same as the actual file

@@ -130,7 +130,7 @@ namespace DroHub.Areas.DHub.Helpers {
             return doesPreviewFileExist(mo.MediaPath);
         }
 
-        public static bool doesFileExist(string file_path) {
+        public static bool isValidMediaPath(string file_path) {
             return (doesPreviewFileExist(file_path) || File.Exists(file_path)) &&
                    file_path.StartsWith(ConnectionBaseDir);
         }
@@ -234,7 +234,7 @@ namespace DroHub.Areas.DHub.Helpers {
             var file_name = calculateFileNameOnHost(false, _device_serial, _unix_time_creation_ms, _extension);
             var backend_path = Path.Join(calculateConnectionDirectory(_connection_id), file_name);
             return MediaObjectAndTagAPI.AllowedFileExtensions.SelectMany(e => e.Value)
-                .Any(extension => doesFileExist(Path.ChangeExtension(backend_path, extension)));
+                .Any(extension => isValidMediaPath(Path.ChangeExtension(backend_path, extension)));
         }
 
         public long calculateNextChunkOffset() {
