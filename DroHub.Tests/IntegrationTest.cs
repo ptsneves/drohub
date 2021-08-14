@@ -620,6 +620,51 @@ namespace DroHub.Tests
         }
 
         [Fact]
+        public async void TestGetPreviewOfFile() {
+            var ran = false;
+
+            var file_set = new[] {
+                new TestServerFixture.FileToBeUploaded {
+                    Source = "video.webm",
+                    IsPreview = false
+                },
+                new TestServerFixture.FileToBeUploaded {
+                    Source = "20200222_123525.jpeg",
+                    IsPreview = false
+                },
+                new TestServerFixture.FileToBeUploaded {
+                    Source = "preview-drone-PI040416DA9H110281-1608225545000.jpeg",
+                    IsPreview = true
+                },
+            };
+
+            await _fixture.testUpload(1,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,
+                (result, tries, chunk, sent_chunk_size, copy, _) =>
+                    Task.FromResult(result.ContainsKey("error")
+                        ? TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD
+                        : TestServerFixture.UploadTestReturnEnum.CONTINUE),
+                async () => {
+                    Assert.Equal(file_set.Length, _fixture.DbContext.MediaObjects.Count());
+                    var last_media_paths = _fixture.DbContext.MediaObjects
+                        .Select(LocalStorageHelper.convertToFrontEndFilePath)
+                        .ToList();
+
+                    foreach (var file in last_media_paths) {
+                        await HttpClientHelper.getPreview(_fixture, file);
+                    }
+                    ran = true;
+                },
+                file_set,
+                timestamp_srclist_spread_millis:10
+                );
+            Assert.True(ran);
+        }
+
+        [Fact]
         public async void TestDeleteMediaObjects() {
             var ran = false;
 

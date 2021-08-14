@@ -153,7 +153,19 @@ namespace DroHub.Areas.DHub.Helpers {
         }
 
         public static string stripPreviewPrefix(string file_path) {
-            return file_path.Replace(_PreviewFileNamePrefix, "");
+            if (!Path.GetFileName(file_path).Contains("video-"))
+                return file_path.Replace(_PreviewFileNamePrefix, "");
+
+            foreach (var extension in MediaObjectAndTagAPI.AllowedFileExtensions[MediaObjectAndTagAPI.MediaType.VIDEO]) {
+                var attempt = file_path
+                    .Replace(VideoPreviewGenerator.FILE_EXTENSION, extension)
+                    .Replace($"{_PreviewFileNamePrefix}video-", "");
+                if (File.Exists(attempt))
+                    return attempt;
+            }
+
+            throw new InvalidProgramException("Unreachable situation");
+
         }
 
         public static bool containsPreviewPrefix(string file_name) {

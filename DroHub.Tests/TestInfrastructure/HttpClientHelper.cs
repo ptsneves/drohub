@@ -419,6 +419,24 @@ namespace DroHub.Tests.TestInfrastructure
             gallery_data.HttpHelper.Dispose();
         }
 
+        public static async Task getPreview(TestServerFixture fixture, string media_id) {
+            var delete_media_objects_url = new Uri(TestServerFixture.SiteUri,
+                "DHub/DeviceRepository/GetPreview");
+
+            var gallery_data = await getGalleryDataData(TestServerFixture.AdminUserEmail, fixture.AdminPassword);
+            var data_dic = new List<KeyValuePair<string, string>> {
+                new KeyValuePair<string,string>("__RequestVerificationToken",  gallery_data.CrossSiteForgeryToken),
+            };
+            var key = "media_id";
+            data_dic.Add(new KeyValuePair<string,string>(key,  media_id));
+            var urlenc = new FormUrlEncodedContent(data_dic);
+
+            gallery_data.HttpHelper.Response = await gallery_data.HttpHelper.Client.PostAsync(delete_media_objects_url, urlenc);
+            gallery_data.HttpHelper.Response.EnsureSuccessStatusCode();
+
+            gallery_data.HttpHelper.Dispose();
+        }
+
         public static async Task<Dictionary<string, dynamic>> uploadMedia(string user, string password,
             AndroidApplicationController.UploadModel upload_model) {
             var token =  (await getApplicationToken(user,
