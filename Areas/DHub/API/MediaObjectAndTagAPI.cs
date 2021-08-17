@@ -291,6 +291,7 @@ namespace DroHub.Areas.DHub.API {
                             MediaPath = LocalStorageHelper.convertToFrontEndFilePath(media_file),
                             CaptureDateTime = media_start_time.ToUnixTimeMilliseconds(),
                             Tags = media_file.MediaObjectTags.Select(s => s.TagName),
+                            OnlyPreviewAvailable = LocalStorageHelper.hasOnlyPreview(media_file),
                     };
 
                     files_per_timestamp[session_day_timestamp_datetime][session_start_timestamp.ToString()]
@@ -386,7 +387,6 @@ namespace DroHub.Areas.DHub.API {
                 return;
 
             await _db_context.AddAsync(media_object);
-
             if (tags != null)
                 await addTags(media_object.MediaPath, tags,  null, false, false);
 

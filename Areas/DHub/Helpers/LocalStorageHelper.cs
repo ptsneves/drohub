@@ -135,6 +135,10 @@ namespace DroHub.Areas.DHub.Helpers {
                    file_path.StartsWith(ConnectionBaseDir);
         }
 
+        public static bool hasOnlyPreview(MediaObject file_path) {
+            return doesPreviewFileExist(file_path.MediaPath) && !File.Exists(file_path.MediaPath);
+        }
+
         public static string calculatePreviewFilePath(string file_path) {
             var file_dir = Path.GetDirectoryName(file_path);
             var file_name = Path.GetFileName(file_path);

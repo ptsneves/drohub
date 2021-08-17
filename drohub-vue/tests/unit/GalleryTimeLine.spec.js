@@ -51,6 +51,11 @@ describe('GalleryTimeLine.vue', () => {
         const observe = jest.fn();
         const unobserve = jest.fn();
 
+        //For lightbox
+        const pauseStub = jest
+            .spyOn(window.HTMLMediaElement.prototype, 'pause')
+            .mockImplementation(() => {})
+
 
         //For waypoint plugin
         window.IntersectionObserver = jest.fn(() => ({
@@ -58,6 +63,7 @@ describe('GalleryTimeLine.vue', () => {
             unobserve,
         }))
     })
+
 
     it('Correct interface', () => {
         const wrapper = mount(GalleryTimeLine, { store, localVue, propsData});
@@ -96,5 +102,42 @@ describe('GalleryTimeLine.vue', () => {
                 }
             )
      ))
+    });
+
+    it('Correct lightbox data', () => {
+        const wrapper = mount(GalleryTimeLine, {store, localVue, propsData});
+        const lightbox_data = wrapper.vm.lightbox_data;
+        expect(lightbox_data.length).toBe(3);
+
+        //We use the preview list because there are cases of medias where only preview is available
+        expect(lightbox_data).toStrictEqual(
+            [
+                {
+                    "type": "video",
+                    "thumb": `/DHub/DeviceRepository/GetPreview?media_id=${preview_list[2].file}`,
+                    "sources": [
+                        {
+                            "src": `/DHub/DeviceRepository/GetLiveStreamRecordingVideo?video_id=${preview_list[2].file}`,
+                            "type": "video/webm"
+                        }
+                    ],
+                    "width": 640,
+                    "height": 480,
+                    "caption": "onboard"
+                },
+                {
+                    "type": "image",
+                    "thumb": `/DHub/DeviceRepository/GetPreview?media_id=${preview_list[1].file}`,
+                    "src": `/DHub/DeviceRepository/DownloadFile?media_id=${preview_list[1].file}`,
+                    "caption": "onboard"
+                },
+                {
+                    "type": "image",
+                    "thumb": `/DHub/DeviceRepository/GetPreview?media_id=${preview_list[0].file}`,
+                    "src": `/DHub/DeviceRepository/GetPreview?media_id=${preview_list[0].file}`,
+                    "caption": "onboard"
+                }
+            ]
+        );
     });
 })

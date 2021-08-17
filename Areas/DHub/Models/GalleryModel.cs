@@ -7,6 +7,7 @@ namespace DroHub.Areas.DHub.Models {
             public string MediaPath { get; internal set; }
             public long CaptureDateTime { get; internal set; }
             public IEnumerable<string> Tags { get; internal set; }
+            public bool OnlyPreviewAvailable { get; internal set; }
         }
 
         public class Session {

@@ -118,6 +118,7 @@
                                     v-else-if="showPhoto"
                                     v-bind:src="getPreviewURL(file.MediaPath)"
                                     alt="Captured picture"
+                                    @click="openGallery(1)"
                                 />
                                 <media-tag-label
                                     v-show="show_tags"
@@ -134,9 +135,16 @@
                 </div>
             </li>
         </ul>
+
         <div v-waypoint="{ active: true, callback: onWaypoint }">
             <span v-show="entries_visible < entries_available">There are more medias available. Keep scrolling or select a tag to load more videos.</span>
         </div>
+
+        <LightBox
+            ref="lightbox"
+            v-bind:media="lightbox_data"
+            v-bind:show-light-box="false">
+        </LightBox>
     </div>
 </template>
 
@@ -152,6 +160,8 @@
     import MediaTagLabel from "@/components/MediaTagLabel";
     import qs from 'qs';
     import Timestamp from './../../components/mixins/timestamp-mixin';
+    import LightBox from 'vue-it-bigger'
+    import('vue-it-bigger/dist/vue-it-bigger.min.css')
 
     export default {
         name: "GalleryTimeLine",
@@ -164,6 +174,7 @@
             GallerySettingsDropDown,
             TimeLabel,
             MediaTagLabel,
+            LightBox
         },
         props: {
             addTagsPostUrl: {
@@ -218,6 +229,7 @@
         data() {
             return {
                 last_filtered_model: {},
+                lightbox_data: [],
                 last_filtered_tags: [],
                 entries_visible: 0,
                 entries_available: 0,
@@ -230,6 +242,9 @@
             };
         },
         methods: {
+            openGallery(index) {
+                this.$refs.lightbox.showImage(index)
+            },
             transform(svg) {
                 let ids = svg.querySelectorAll('[id]');
 
@@ -320,8 +335,17 @@
             isImage(file_path) {
                 return file_path.endsWith('.jpeg') || file_path.endsWith('.png');
             },
-            getPreviewURL(photo_id) {
-                return this.getPreviewUrl + photo_id;
+            getPreviewURL(file_id) {
+                return this.getPreviewUrl + file_id;
+            },
+            getSrcURL(file) {
+                if (this.isVideo(file.MediaPath) && !file.OnlyPreviewAvailable)
+                    return this.getLiveStreamRecordingVideoUrl + file.MediaPath;
+
+                if (file.OnlyPreviewAvailable)
+                    return this.getPreviewURL(file.MediaPath);
+
+                return this.downloadFileUrl + file.MediaPath;
             },
             getFileList(model, unix_date, session_timestamp) {
                 return model[unix_date][session_timestamp]["SessionMedia"];
@@ -340,6 +364,32 @@
             },
             showPhoto(file) {
                 return this.isImage(file.MediaPath);
+            },
+            generateLightBoxItemFromMediaObject(media_object) {
+                if (this.isVideo(media_object.MediaPath) && !media_object.OnlyPreviewAvailable) {
+                    return {
+                        type: 'video',
+                        thumb: this.getPreviewURL(media_object.MediaPath),
+                        sources: [
+                            {
+                                src: this.getSrcURL(media_object),
+                                type: 'video/webm'
+                            }
+                        ],
+                        width: 640,
+                        height: 480,
+                        caption: media_object.Tags.join('; ')
+                    };
+                }
+                else {
+                    return {
+                        type: 'image',
+                        thumb: this.getPreviewURL(media_object.MediaPath),
+                        src: this.getSrcURL(media_object),
+                        caption: media_object.Tags.join('; ')
+                    };
+                }
+
             }
         },
         computed: {
@@ -363,6 +413,7 @@
                 const selected_tags = this.$store.state.filtered_tags;
 
                 const new_model = JSON.parse(this.galleryModelJson);
+                const new_lightbox_data = [];
 
                 const unix_days = Object.keys(new_model).sort(function(a,b) {
                     return Number(a) - Number(b);
@@ -374,6 +425,9 @@
                         const file_list = this.getFileList(new_model, unix_date, session_timestamp);
                         for (let media_index = 0; media_index < file_list.length; media_index++) {
                             this.entries_available++;
+                            new_lightbox_data.push(
+                                this.generateLightBoxItemFromMediaObject(file_list[media_index]));
+
                             if (this.entries_visible < this.max_entries_visible
                                 && hasInterSection(selected_tags, file_list[media_index]["Tags"]) === true) {
 
@@ -393,6 +447,7 @@
 
 
                 this.last_filtered_model = new_model;
+                this.lightbox_data = new_lightbox_data;
 
                 return Object.keys(new_model).sort(function(a,b) {
                     return Number(a) - Number(b);
