@@ -243,7 +243,8 @@
         },
         methods: {
             openGallery(index) {
-                this.$refs.lightbox.showImage(index)
+                if (!this.isSelectionOn)
+                    this.$refs.lightbox.showImage(index)
             },
             transform(svg) {
                 let ids = svg.querySelectorAll('[id]');

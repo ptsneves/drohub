@@ -140,4 +140,17 @@ describe('GalleryTimeLine.vue', () => {
             ]
         );
     });
+
+    it('Check lightbox is disabled when selection ongoing', async () => {
+        const wrapper = mount(GalleryTimeLine, {store, localVue, propsData});
+        wrapper.vm.onGallerySettingsSelection("dummy");
+        await wrapper.find('img.gallery-image[src]').trigger('click');
+        expect(wrapper.find('img.vib-image[src]').exists()).toBe(false)
+    });
+
+    it('Check lightbox is working', async () => {
+        const wrapper = mount(GalleryTimeLine, {store, localVue, propsData});
+        await wrapper.find('img.gallery-image[src]').trigger('click');
+        expect(wrapper.find('img.vib-image[src]').exists()).toBe(true)
+    });
 })
