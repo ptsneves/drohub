@@ -33,34 +33,20 @@
 package com.drohub;
 
 import android.Manifest;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
 import com.drohub.thrift.ThriftConnection;
-import com.google.android.material.snackbar.Snackbar;
 import com.parrot.drone.groundsdk.GroundSdk;
 import com.parrot.drone.groundsdk.ManagedGroundSdk;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.RemoteControl;
-import com.parrot.drone.groundsdk.device.peripheral.VirtualGamepad;
-import com.parrot.drone.groundsdk.device.peripheral.gamepad.ButtonsMappableAction;
 import com.parrot.drone.groundsdk.facility.AutoConnection;
-import com.parrot.drone.sdkcore.ulog.ULog;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -101,18 +87,6 @@ public abstract class GroundSdkHelperActivity extends AppCompatActivity {
     }
     private Drone _drone;
 
-    public void alertBox(String reason_to_finish) {
-        AlertDialog alertDialog = new AlertDialog.Builder(this).create();
-        alertDialog.setTitle("Alert");
-        alertDialog.setMessage(reason_to_finish);
-        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                (dialog, which) -> {
-                    dialog.dismiss();
-                    finish();
-                });
-        alertDialog.show();
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -120,9 +94,6 @@ public abstract class GroundSdkHelperActivity extends AppCompatActivity {
         _user_auth_token = getIntent().getStringExtra(EXTRA_USER_AUTH_TOKEN); //Can be null
 
         mGroundSdk = ManagedGroundSdk.obtainSession(this);
-        if (mGroundSdk == null) {
-            throw new NullPointerException("Could not obtain ground sdk session");
-        }
 
         Set<String> permissionsToRequest = new HashSet<>();
         for (String permission : PERMISSIONS_NEEDED) {
@@ -163,7 +134,7 @@ public abstract class GroundSdkHelperActivity extends AppCompatActivity {
                 return;
 
             if (auto_connection.getStatus() == AutoConnection.Status.STARTED &&
-                    (_drone == null || temp_drone.getUid() != _drone.getUid())) {
+                    (_drone == null || temp_drone.getUid().equals(_drone.getUid()))) {
                 _drone = temp_drone;
                 onDroneConnected(_drone, auto_connection.getRemoteControl());
             }

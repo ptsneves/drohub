@@ -22,13 +22,12 @@ public class ValidateTokenHelper {
     private final String _RESULT_KEY = "result";
     private final String _ERROR_KEY = "error";
 
-    public ValidateTokenHelper(IInfoDisplay display,
-                               @NonNull Listener listener,
+    public ValidateTokenHelper(@NonNull Listener listener,
                                String validate_token_url,
                                String user_email,
                                String user_auth_token,
                                double rpc_api_version) {
-        _api_helper = new APIHelper(display, user_email, user_auth_token);
+        _api_helper = new APIHelper(user_email, user_auth_token);
         _rpc_api_version = rpc_api_version;
         _listener = listener;
         _validate_token_url = validate_token_url;
@@ -40,7 +39,7 @@ public class ValidateTokenHelper {
             json_req.put("Version", _rpc_api_version);
         }
         catch (JSONException e) {
-            _api_helper._display.addTemporarily("Could not create validate token json query", 5000);
+            _listener.onValidateTokenError("Could not create validate token json query");
             return;
         }
 
@@ -81,6 +80,6 @@ public class ValidateTokenHelper {
     private void processRetry(VolleyError error, int retry_count) throws VolleyError {
         if (retry_count == 3)
             throw error;
-        _api_helper._display.addTemporarily("Too slow response. Retrying again", 5000);
+        _listener.onValidateTokenError("Too slow response. Retrying again");
     }
 }

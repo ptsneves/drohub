@@ -53,7 +53,7 @@ public class ValidateTokenTest {
 
 
         CompletableFuture<ValidateState> result_future = new CompletableFuture<>();
-        ValidateTokenHelper helper = new ValidateTokenHelper(t,
+        ValidateTokenHelper helper = new ValidateTokenHelper(
                 new ValidateTokenHelper.Listener() {
                     @Override
                     public void onValidToken() {

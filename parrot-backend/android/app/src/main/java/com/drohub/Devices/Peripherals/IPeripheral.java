@@ -1,10 +1,12 @@
 package com.drohub.Devices.Peripherals;
 
+import android.graphics.Bitmap;
 import androidx.annotation.NonNull;
 import com.drohub.Janus.PeerConnectionParameters;
 import com.drohub.Models.FileEntry;
+import com.drohub.utils.MarkableFileInputStream;
 
-import java.io.InputStream;
+import java.io.*;
 import java.util.List;
 
 
@@ -38,10 +40,25 @@ public interface IPeripheral<P>{
         String AlbumName = "DROHUB";
         String ThumbnailFormat = "JPEG";
         interface InputStreamListener {
-            void onAvailable(InputStream stream) throws IllegalAccessException;
+            void onAvailable(FileEntry f, InputStream stream) throws IllegalAccessException;
+            void onError(FileEntry f, Exception e);
+            void onProgress(FileEntry f, int progress_percent);
         }
 
         void setNewMediaListener(OnNewMediaListener listener);
+
+        static InputStream convertToInputStream(Bitmap bitmap,
+                                                    Bitmap.CompressFormat compress_format,
+                                                    int _thumbnail_quality) throws IOException {
+
+            File thumbnail_temp_file = File.createTempFile(AlbumName, AlbumName);
+            OutputStream tempo_file_stream = new FileOutputStream(thumbnail_temp_file);
+            bitmap.compress(compress_format, _thumbnail_quality, tempo_file_stream);
+            tempo_file_stream.flush();
+            tempo_file_stream.close();
+            thumbnail_temp_file.deleteOnExit();
+            return new MarkableFileInputStream(new FileInputStream(thumbnail_temp_file));
+        }
 
         static String getMimeType(FileEntry file_entry) {
             if (file_entry.resource_type == FileEntry.FileResourceType.IMAGE)
@@ -60,7 +77,7 @@ public interface IPeripheral<P>{
         }
 
         List<FileEntry> getAllMedia();
-        void getThumbnail(FileEntry file, InputStreamListener listener) throws IllegalAccessException;
+        void getThumbnail(FileEntry file, InputStreamListener listener);
         void getMedia(FileEntry file, InputStreamListener listener) throws IllegalAccessException;
     }
 }

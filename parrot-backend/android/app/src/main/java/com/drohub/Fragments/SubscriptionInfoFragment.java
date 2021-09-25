@@ -6,17 +6,16 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import com.drohub.DroHubHelper;
-import com.drohub.IInfoDisplay;
-import com.drohub.R;
-import com.drohub.SnackBarInfoDisplay;
+import com.drohub.*;
 import com.drohub.api.GetSubscriptionInfoHelper;
+import com.drohub.api.GetSubscriptionMediaInfoHelper;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
 
 
 public class SubscriptionInfoFragment extends BaseFragment {
+
     public SubscriptionInfoFragment() {
         super(R.layout.fragment_subscription_info);
     }
@@ -35,19 +34,14 @@ public class SubscriptionInfoFragment extends BaseFragment {
         final View root_view = getActivity().getWindow().getDecorView().findViewById(android.R.id.content);
         final IInfoDisplay error_display = new SnackBarInfoDisplay(root_view, 5000);
 
-        String sub_info_url;
-        try {
-            Context context = getContext();
-            if (context == null)
-                throw new RuntimeException();
-            sub_info_url = DroHubHelper.getURL(context, R.string.get_subscription_info_url);
-        } catch (URISyntaxException e) {
+        Context context = getContext();
+        if (context == null)
             throw new RuntimeException();
-        }
+
+        String sub_info_url = DroHubHelper.getURL(context, R.string.get_subscription_info_url);
 
         final GetSubscriptionInfoHelper sub_info_helper = new GetSubscriptionInfoHelper(
-                error_display,
-                this::updateData,
+                new GetSubscriptionMediaInfoHelperListener(error_display),
                 _user_email,
                 _user_auth_token,
                 sub_info_url
@@ -60,33 +54,47 @@ public class SubscriptionInfoFragment extends BaseFragment {
         return _view;
     }
 
-    public void updateData(JSONObject response) {
-        JSONObject result = response.optJSONObject("result");
-        if (result == null)
-            return;
+    private class GetSubscriptionMediaInfoHelperListener implements GetSubscriptionInfoHelper.Listener {
+        final IInfoDisplay _error_display;
 
-        String sub_name = result.optString("subscription_name");
-        if (sub_name.isEmpty())
-            return;
+        private GetSubscriptionMediaInfoHelperListener(IInfoDisplay error_display) {
+            _error_display = error_display;
+        }
 
-        JSONObject allowed_flight_time_obj = result.optJSONObject("allowed_flight_time");
-        if(allowed_flight_time_obj == null)
-            return;
-        double allowed_flight_time = allowed_flight_time_obj.optDouble("totalMinutes");
+        @Override
+        public void onSubscriptionInfoResponse(JSONObject response) {
+            JSONObject result = response.optJSONObject("result");
+            if (result == null)
+                return;
+
+            String sub_name = result.optString("subscription_name");
+            if (sub_name.isEmpty())
+                return;
+
+            JSONObject allowed_flight_time_obj = result.optJSONObject("allowed_flight_time");
+            if(allowed_flight_time_obj == null)
+                return;
+            double allowed_flight_time = allowed_flight_time_obj.optDouble("totalMinutes");
 
 
-        int allowed_users = result.optInt("allowed_users");
+            int allowed_users = result.optInt("allowed_users");
 
-        TextView subinfo_text_view = getFragmentViewById(R.id.flight_area_name);
-        subinfo_text_view.setText(sub_name);
+            TextView subinfo_text_view = getFragmentViewById(R.id.flight_area_name);
+            subinfo_text_view.setText(sub_name);
 
-        TextView user_id_text_view = getFragmentViewById(R.id.user_id);
-        user_id_text_view.setText(_user_email);
+            TextView user_id_text_view = getFragmentViewById(R.id.user_id);
+            user_id_text_view.setText(_user_email);
 
-        TextView allowed_flight_time_text_view = getFragmentViewById(R.id.allowed_flight_time);
-        allowed_flight_time_text_view.setText(String.format("%d minutes", (int)allowed_flight_time));
+            TextView allowed_flight_time_text_view = getFragmentViewById(R.id.allowed_flight_time);
+            allowed_flight_time_text_view.setText(String.format("%d minutes", (int)allowed_flight_time));
 
-        TextView allowed_user_text_view = getFragmentViewById(R.id.allowed_users);
-        allowed_user_text_view.setText(String.format("%d", allowed_users));
+            TextView allowed_user_text_view = getFragmentViewById(R.id.allowed_users);
+            allowed_user_text_view.setText(String.format("%d", allowed_users));
+        }
+
+        @Override
+        public void onSubscriptionInfoError(String error) {
+            _error_display.addTemporarily(error, 2000);
+        }
     }
 }

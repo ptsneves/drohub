@@ -40,24 +40,19 @@ public class DeviceFragment extends BaseFragment implements IDroneObserver, IRCO
         _view = super.onCreateView(inflater, container, savedInstanceState);
 
         String query_device_info_url;
-        try {
-            query_device_info_url = DroHubHelper.getURL(getContext(), R.string.query_device_info_url);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException();
-        }
+        query_device_info_url = DroHubHelper.getURL(getContext(), R.string.query_device_info_url);
 
         View root_view = getActivity().getWindow().getDecorView().findViewById(android.R.id.content);
 
         _error_display = new SnackBarInfoDisplay(root_view, 5000);
         _parrot_rc_helper = new ParrotRC(this.getActivity(), this);
         _parrot_drone_helper = new ParrotDrone(
-                _error_display,
                 query_device_info_url,
                 _user_email,
                 _user_auth_token,
                 this.getActivity(),
                 this,
-                this::onNewMediaStore
+                this
                 );
         return _view;
     }
@@ -75,13 +70,17 @@ public class DeviceFragment extends BaseFragment implements IDroneObserver, IRCO
     public void onNewRC(DroHubDevice rc) {
         if (rc.connection_state == DroHubDevice.ConnectionState.CONNECTED)
             _connected_rc = rc;
-
     }
 
     @Override
     public void onNewDrone(DroHubDevice drone) {
         if (drone.connection_state == DroHubDevice.ConnectionState.CONNECTED)
             _connected_drone = drone;
+    }
+
+    @Override
+    public void onError(Exception e) {
+        _error_display.addTemporarily(e.getMessage(), 3000);
     }
 
     @Override

@@ -1,71 +1,49 @@
 package com.drohub.api;
 
 import com.android.volley.VolleyError;
+import com.drohub.Devices.Peripherals.DroHubWeb.DroHubGalleryMediaStore;
 import com.drohub.Devices.Peripherals.IPeripheral;
-import com.drohub.IInfoDisplay;
 import com.drohub.Models.FileEntry;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 public class GetSubscriptionMediaInfoHelper extends APIHelper {
+
     public interface Listener {
         void onError(String error_message);
     }
 
-    public static class DroHubGalleryMediaStore implements IPeripheral.IMediaStoreProvider {
-        private List<FileEntry> _media = new ArrayList<>();
-        private IPeripheral.OnNewMediaListener _media_listener;
-
-        private void setNewMedia(List<FileEntry> new_media) {
-            _media = new_media;
-            _media_listener.onChange(_media);
-        }
-
-        @Override
-        public void setNewMediaListener(IPeripheral.OnNewMediaListener listener) {
-            _media_listener = listener;
-        }
-
-        @Override
-        public List<FileEntry> getAllMedia() {
-            return _media;
-        }
-
-        @Override
-        public void getThumbnail(FileEntry file, InputStreamListener listener) throws IllegalAccessException {
-            throw new IllegalAccessException("Not implemented");
-        }
-
-        @Override
-        public void getMedia(FileEntry file, InputStreamListener listener) throws IllegalAccessException {
-            throw new IllegalAccessException("Not implemented");
-        }
-    }
-
-    final private String _url;
+    final private String _get_subscription_info_url;
+    final private String _get_photo_url;
+    final private String _get_video_url;
     final private Listener _listener;
     final private IPeripheral.IMediaStoreProvider.ProviderListener _media_store_listener;
-
+    final DroHubGalleryMediaStore _drohub_media_store;
     public GetSubscriptionMediaInfoHelper(
-            IInfoDisplay display,
             Listener listener,
             String user_email,
             String user_auth_token,
-            String url,
-            IPeripheral.IMediaStoreProvider.ProviderListener media_store_listener) {
+            String get_subscription_info_url,
+            String get_photo_url,
+            String get_video_url,
+            IPeripheral.IMediaStoreProvider.ProviderListener drohub_media_store_listener) {
 
-        super(display, user_email, user_auth_token);
-        _url = url;
+        super(user_email, user_auth_token);
+        _get_subscription_info_url = get_subscription_info_url;
+        _get_photo_url = get_photo_url;
+        _get_video_url = get_video_url;
         _listener = listener;
-        _media_store_listener = media_store_listener;
+        _media_store_listener = drohub_media_store_listener;
+
+        _drohub_media_store = new DroHubGalleryMediaStore(_get_photo_url, _get_video_url, user_email, user_auth_token);
+        _media_store_listener.onNewMediaStore(_drohub_media_store);
     }
 
     public void get() {
-        super.get(_url, this::onRemoteData, this::onError, null);
+        super.get(_get_subscription_info_url, this::onRemoteData, this::onError, null);
     }
 
     private void onError(VolleyError error) {
@@ -74,8 +52,6 @@ public class GetSubscriptionMediaInfoHelper extends APIHelper {
 
     private void onRemoteData(JSONObject response) {
         ArrayList<FileEntry> media = new ArrayList<>();
-        DroHubGalleryMediaStore media_store = new DroHubGalleryMediaStore();
-        _media_store_listener.onNewMediaStore(media_store);
 
         JSONObject result = response.optJSONObject("result");
         if (result == null) {
@@ -110,7 +86,6 @@ public class GetSubscriptionMediaInfoHelper extends APIHelper {
                             continue;
 
                         String media_path = media_info.optString("MediaPath");
-                        String preview_media_path = media_info.optString("PreviewMediaPath");
 
                         JSONArray json_tags = session.optJSONArray("Tags");
                         ArrayList<String> tags = new ArrayList<>();
@@ -120,20 +95,20 @@ public class GetSubscriptionMediaInfoHelper extends APIHelper {
                             }
                         }
 
-                        if (preview_media_path.endsWith(".jpeg")) {
-                            media.add(new FileEntry(media_store,
+                        if (media_path.endsWith(".jpeg")) {
+                            media.add(new FileEntry(_drohub_media_store,
                                     media_path,
-                                    preview_media_path,
+                                    media_path,
                                     FileEntry.FileResourceType.IMAGE,
                                     media_info.optLong("CaptureDateTime", 0),
                                     device_serial,
                                     tags
                                     ));
                         }
-                        else if (preview_media_path.endsWith(".webm") || preview_media_path.endsWith(".mp4"))
-                            media.add(new FileEntry(media_store,
+                        else if (media_path.endsWith(".webm") || media_path.endsWith(".mp4"))
+                            media.add(new FileEntry(_drohub_media_store,
                                     media_path,
-                                    preview_media_path,
+                                    media_path,
                                     FileEntry.FileResourceType.VIDEO,
                                     media_info.optLong("CaptureDateTime", 0),
                                     device_serial,
@@ -142,6 +117,6 @@ public class GetSubscriptionMediaInfoHelper extends APIHelper {
                 }
             }
         }
-        media_store.setNewMedia(media);
+        _drohub_media_store.setNewMedia(media);
     }
 }

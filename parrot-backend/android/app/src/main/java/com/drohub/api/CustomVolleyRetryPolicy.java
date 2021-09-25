@@ -2,21 +2,19 @@ package com.drohub.api;
 
 import com.android.volley.RetryPolicy;
 import com.android.volley.VolleyError;
-import org.jetbrains.annotations.Nullable;
 
 public class CustomVolleyRetryPolicy implements RetryPolicy {
     public interface IRetryListener {
         void onRetry(VolleyError retry_error, int retry_count) throws VolleyError;
     }
 
-    @Nullable
     final private IRetryListener _retry_callback;
 
     final private int _timeout_ms;
 
     private int _retry_count;
 
-    CustomVolleyRetryPolicy(int timeout_ms, @Nullable IRetryListener retry_callback) {
+    CustomVolleyRetryPolicy(int timeout_ms, IRetryListener retry_callback) {
         _timeout_ms = timeout_ms;
         _retry_count = 0;
         _retry_callback = retry_callback;

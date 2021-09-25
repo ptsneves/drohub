@@ -2,7 +2,6 @@ package com.drohub.mock;
 
 import com.drohub.Devices.Peripherals.IPeripheral;
 import com.drohub.Models.FileEntry;
-import kotlin.NotImplementedError;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +24,7 @@ public class MediaStoreMock implements IPeripheral.IMediaStoreProvider {
 
     @Override
     public void setNewMediaListener(IPeripheral.OnNewMediaListener listener) {
-        throw new NotImplementedError("Ups");
+        throw new RuntimeException("Ups");
     }
 
     @Override
@@ -37,13 +36,13 @@ public class MediaStoreMock implements IPeripheral.IMediaStoreProvider {
     }
 
     @Override
-    public void getThumbnail(FileEntry file, InputStreamListener l) throws IllegalAccessException {
+    public void getThumbnail(FileEntry file, InputStreamListener l) {
         try {
             _input_file.reset();
-            l.onAvailable(_input_file);
+            l.onAvailable(file, _input_file);
         }
-        catch (IOException e) {
-            throw new IllegalAccessException(e.getMessage());
+        catch (IOException | IllegalAccessException e) {
+            l.onError(file, e);
         }
     }
 
@@ -51,7 +50,7 @@ public class MediaStoreMock implements IPeripheral.IMediaStoreProvider {
     public void getMedia(FileEntry file, InputStreamListener l) throws IllegalAccessException {
         try {
             _input_file.reset();
-            l.onAvailable(_input_file);
+            l.onAvailable(file, _input_file);
         }
         catch (IOException e) {
             throw new IllegalAccessException(e.getMessage());

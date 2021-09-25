@@ -90,17 +90,9 @@ public class MainActivity extends AppCompatActivity implements ValidateTokenHelp
                     REQUEST_CODE_PERMISSIONS_REQUEST);
         }
 
-        try {
-            _validate_token_url = DroHubHelper.getURL(getApplicationContext(), R.string.validate_token_url);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
+        _validate_token_url = DroHubHelper.getURL(getApplicationContext(), R.string.validate_token_url);
 
-        try {
-            _get_application_token_url = DroHubHelper.getURL(getApplicationContext(), R.string.get_application_token_url);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
+        _get_application_token_url = DroHubHelper.getURL(getApplicationContext(), R.string.get_application_token_url);
 
         _user_auth_token = _saved_accounts.getString(USER_AUTH_TOKEN_STORE_KEY, null);
         _user_email = _saved_accounts.getString(USER_EMAIL_STORE_KEY, null);
@@ -114,7 +106,7 @@ public class MainActivity extends AppCompatActivity implements ValidateTokenHelp
 
     private void validateAndLaunchLobbyActivity() {
         hideLoginGroup();
-        ValidateTokenHelper helper = new ValidateTokenHelper(_error_display,
+        ValidateTokenHelper helper = new ValidateTokenHelper(
                 this,
                 _validate_token_url,
                 _user_email,
@@ -189,7 +181,7 @@ public class MainActivity extends AppCompatActivity implements ValidateTokenHelp
 
         hideLoginGroup();
         setStatusText(status_view,"Retrieving token...", Color.BLACK);
-        APIHelper api_helper = new APIHelper(_error_display, _user_email, _user_auth_token);
+        APIHelper api_helper = new APIHelper(_user_email, _user_auth_token);
         api_helper.post(_get_application_token_url,
                 request,
                 response -> {

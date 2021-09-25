@@ -22,7 +22,7 @@ public abstract class InfoDisplayBase implements IInfoDisplay {
     }
 
     public synchronized void add(String msg) {
-        if (messages.contains(msg))
+        if (msg == null || messages.contains(msg))
             return;
         messages.push(msg);
         _cycle_index = 0;

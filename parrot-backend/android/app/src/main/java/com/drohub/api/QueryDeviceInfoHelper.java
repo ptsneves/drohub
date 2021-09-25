@@ -3,7 +3,6 @@ package com.drohub.api;
 import androidx.annotation.NonNull;
 import com.android.volley.Request;
 import com.android.volley.VolleyError;
-import com.drohub.IInfoDisplay;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -12,23 +11,22 @@ public class QueryDeviceInfoHelper extends APIHelper {
     public interface Listener {
         void onDeviceInfoResponse(JSONObject response);
         void onDeviceNotRegistered();
+        void onDeviceQueryInfoError(String error);
     }
 
     private final Listener _listener;
     private final String _serial;
     private final String _query_device_url;
 
-    public QueryDeviceInfoHelper(IInfoDisplay display,
-                                 @NonNull Listener listener,
+    public QueryDeviceInfoHelper(@NonNull Listener listener,
                                  String query_device_url,
                                  String user_email,
                                  String user_auth_token,
                                  String serial) {
-        super(display, user_email, user_auth_token);
+        super(user_email, user_auth_token);
         _listener = listener;
         _serial = serial;
         _query_device_url = query_device_url;
-
     }
 
     public void validateDeviceRegistered() {
@@ -37,7 +35,7 @@ public class QueryDeviceInfoHelper extends APIHelper {
             request.put("DeviceSerialNumber", _serial);
         }
         catch (JSONException e) {
-            _display.addTemporarily( "Could not create a json query", 5000);
+            _listener.onDeviceQueryInfoError("Could not create a json query");
             return;
         }
 
@@ -63,26 +61,26 @@ public class QueryDeviceInfoHelper extends APIHelper {
                 if (response.getString("error").equalsIgnoreCase("Device does not exist.")) {
                     _listener.onDeviceNotRegistered();
                 } else {
-                    _display.addTemporarily(response.getString("error"), 5000);
+                    _listener.onDeviceQueryInfoError(response.getString("error"));
                 }
             } catch (JSONException e) {
-                _display.addTemporarily("Error Could not Query device info.", 5000);
+                _listener.onDeviceQueryInfoError("Error Could not Query device info.");
             }
         }
     }
 
     private void processQueryDeviceInfoError(VolleyError error) {
         if(error.networkResponse == null)
-            _display.addTemporarily("No response. Are you connected to the internet?", 5000);
+            _listener.onDeviceQueryInfoError("No response. Are you connected to the internet?");
         else if (error.networkResponse.statusCode == 401)
-            _display.addTemporarily("Unauthorized. Is your subscription or drone valid?", 5000);
+            _listener.onDeviceQueryInfoError("Unauthorized. Is your subscription or drone valid?");
         else
-            _display.addTemporarily("Error Could not Query device info..", 5000);
+            _listener.onDeviceQueryInfoError("Error Could not Query device info..");
     }
 
     private void processQueryDeviceInfoRetry(VolleyError error, int retry_count) throws VolleyError {
         if (retry_count == 3)
             throw error;
-        _display.addTemporarily("Too slow response. Retrying again", 5000);
+        _listener.onDeviceQueryInfoError("Too slow response. Retrying again");
     }
 }

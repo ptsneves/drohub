@@ -1,13 +1,11 @@
 package com.drohub.Devices.Peripherals.Parrot;
 
-import androidx.annotation.NonNull;
 import com.drohub.Devices.Peripherals.IPeripheral;
 import com.drohub.thift.gen.GimbalCalibrationState;
 import com.drohub.thift.gen.GimbalState;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.peripheral.Gimbal;
 import com.parrot.drone.groundsdk.value.DoubleRange;
-import org.jetbrains.annotations.NotNull;
 
 public class ParrotGimbal implements IPeripheral<ParrotGimbal> {
     public interface AttitudeListener {

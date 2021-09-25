@@ -9,7 +9,6 @@ import com.parrot.drone.groundsdk.device.peripheral.StreamServer;
 import com.parrot.drone.groundsdk.device.peripheral.stream.CameraLive;
 import com.parrot.drone.groundsdk.internal.stream.GlRenderSink;
 import com.parrot.drone.groundsdk.stream.Stream;
-import org.jetbrains.annotations.NotNull;
 import org.webrtc.CapturerObserver;
 import org.webrtc.EglBase;
 import org.webrtc.SurfaceTextureHelper;
@@ -42,13 +41,13 @@ public class ParrotStreamServer implements IPeripheral<ParrotStreamServer>, IPer
         final ParrotStreamServer instance = this;
         return new ParrotPeripheralManager.PeripheralListener<StreamServer>() {
             @Override
-            public void onChange(@NonNull @NotNull StreamServer streamServer) {
+            public void onChange(StreamServer streamServer) {
                 if (_peripheral_l != null)
                     _peripheral_l.onChange(streamServer);
             }
 
             @Override
-            public boolean onFirstTimeAvailable(@NonNull @NotNull StreamServer streamServer) {
+            public boolean onFirstTimeAvailable(@NonNull StreamServer streamServer) {
                 if (_peripheral_l != null && !_listener_first_time_success) {
                     if (!_peripheral_l.onFirstTimeAvailable(streamServer))
                         return false;

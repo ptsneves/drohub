@@ -4,16 +4,18 @@ import android.graphics.Bitmap;
 import androidx.annotation.NonNull;
 import com.drohub.Devices.Peripherals.IPeripheral;
 import com.drohub.Models.FileEntry;
+import com.parrot.drone.groundsdk.Ref;
 import com.parrot.drone.groundsdk.device.Drone;
 import com.parrot.drone.groundsdk.device.peripheral.MediaStore;
 import com.parrot.drone.groundsdk.device.peripheral.media.MediaDestination;
+import com.parrot.drone.groundsdk.device.peripheral.media.MediaDownloader;
 import com.parrot.drone.groundsdk.device.peripheral.media.MediaItem;
+import com.parrot.drone.groundsdk.device.peripheral.media.MediaTaskStatus;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -45,7 +47,7 @@ public class ParrotMediaStore implements IPeripheral<ParrotMediaStore>, IPeriphe
     }
 
     @Override
-    public void getThumbnail(FileEntry file, InputStreamListener l) throws IllegalAccessException {
+    public void getThumbnail(FileEntry file, InputStreamListener l){
         _media_store_priv.getThumbnail(file, l);
     }
 
@@ -76,47 +78,64 @@ public class ParrotMediaStore implements IPeripheral<ParrotMediaStore>, IPeriphe
 
         @Override
         public void onChange(@NonNull MediaStore media_store) {
-
             if (_peripheral_listener != null)
                 _peripheral_listener.onChange(media_store);
         }
 
-        private void getThumbnail(FileEntry file, InputStreamListener l) throws IllegalAccessException {
+        private void getThumbnail(FileEntry file, InputStreamListener l) {
             if (_media_store == null)
-                throw new IllegalAccessException("Media store not available");
+                l.onError(file, new IllegalAccessException("Media store not available"));
 
             final AtomicBoolean ran = new AtomicBoolean(false);
-            _media_store.fetchThumbnailOf(findMediaItem(file), obj -> {
-                if (obj == null || ran.getAndSet(true))
-                    return;
+            try {
+                _media_store.fetchThumbnailOf(findMediaItem(file), bitmap -> {
+                    if (bitmap == null || ran.getAndSet(true))
+                        return;
 
-                try {
-                    File thumbnail_temp_file = File.createTempFile("ParrotMediaStore", file.serial_number);
-                    OutputStream tempo_file_stream = new FileOutputStream(thumbnail_temp_file);
-                    obj.compress(_thumbnail_format, _thumbnail_quality, tempo_file_stream);
-
-                    tempo_file_stream.flush();
-                    tempo_file_stream.close();
-                    thumbnail_temp_file.deleteOnExit();
-                    l.onAvailable(new FileInputStream(thumbnail_temp_file));
-                } catch (IOException | IllegalAccessException ignored) {
-                }
-            });
+                    try {
+                        l.onAvailable(file, IMediaStoreProvider.convertToInputStream(bitmap, _thumbnail_format,
+                                _thumbnail_quality));
+                    } catch (IOException | IllegalAccessException e) {
+                        l.onError(file, e);
+                    }
+                });
+            }
+            catch (IllegalAccessException e) {
+                l.onError(file, e);
+            }
         }
 
         private void getMedia(FileEntry file_entry, InputStreamListener l) throws IllegalAccessException {
             if (_media_store == null)
-                throw new IllegalAccessException("Media store not available");
+                l.onError(file_entry, new IllegalAccessException("Media store not available"));
 
             List media_item = findMediaItem(file_entry).getResources();
-            final AtomicBoolean ran = new AtomicBoolean(false);
-            _media_store.download(media_item, MediaDestination.platformMediaStore(AlbumName), obj -> {
-                if (obj == null || ran.getAndSet(true))
+            _media_store.download(media_item, MediaDestination.platformMediaStore(AlbumName), downloader -> {
+                if (downloader == null)
                     return;
+                switch (downloader.getStatus()) {
+                    case ERROR:
+                        l.onError(file_entry, new Exception("Failed to get media"));
+                        break;
+                    case COMPLETE:
 
-                try {
-                    l.onAvailable(new FileInputStream(obj.getDownloadedFile()));
-                } catch (IllegalAccessException | FileNotFoundException ignored) {
+                        break;
+                    case RUNNING:
+                        l.onProgress(file_entry, downloader.getCurrentFileProgress());
+                        break;
+                    case FILE_PROCESSED:
+                        System.out.println("File processed");
+                        File file = downloader.getDownloadedFile();
+                        if (file != null)
+                            try {
+                                l.onAvailable(file_entry, new FileInputStream(file));
+                            } catch (IllegalAccessException | FileNotFoundException e) {
+                                l.onError(file_entry, e);
+                            }
+                        else {
+                            l.onError(file_entry, new Exception("Unexpectedly failed to get media"));
+                        }
+                        break;
                 }
             });
         }

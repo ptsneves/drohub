@@ -53,22 +53,22 @@ public class MediaInfoCardFragment extends DeviceFragment {
         final IInfoDisplay error_display = new SnackBarInfoDisplay(root_view, 5000);
 
         String sub_info_url;
-        try {
-            Context context = getContext();
-            if (context == null)
-                throw new RuntimeException();
-            sub_info_url = DroHubHelper.getURL(context, R.string.get_subscription_media_info_url);
-        } catch (URISyntaxException e) {
+        String get_media_url;
+        String get_preview_url;
+        Context context = getContext();
+        if (context == null)
             throw new RuntimeException();
-        }
-
+        sub_info_url = DroHubHelper.getURL(context, R.string.get_subscription_media_info_url);
+        get_media_url = DroHubHelper.getURL(context, R.string.get_media_url);
+        get_preview_url = DroHubHelper.getURL(context, R.string.get_preview_url);
 
         final GetSubscriptionMediaInfoHelper media_info_helper = new GetSubscriptionMediaInfoHelper(
-                error_display,
                 error_message -> error_display.addTemporarily(error_message, 2000),
                 _user_email,
                 _user_auth_token,
                 sub_info_url,
+                get_media_url,
+                get_preview_url,
                 media_store -> media_store.setNewMediaListener(this::onNewRemoteMedia)
         );
         _view.setOnClickListener(v -> {

@@ -3,6 +3,7 @@ package com.drohub;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
@@ -50,8 +51,11 @@ public class DroHubHelper {
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
-    public static String getURL(Context context, int url_id) throws URISyntaxException {
-        URI drohub_url = new URI(context.getString(R.string.drohub_url));
-        return drohub_url.resolve(context.getString(url_id)).toString();
+    public static String getURL(Context context, int url_id) {
+        return Uri.parse(context.getString(R.string.drohub_url))
+                .buildUpon()
+                .appendEncodedPath(context.getString(url_id))
+                .build()
+                .toString();
     }
 }

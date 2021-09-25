@@ -5,6 +5,7 @@ import androidx.annotation.Nullable;
 import com.drohub.Devices.Peripherals.IPeripheral;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public class FileEntry {
     public enum FileResourceType {
@@ -40,9 +41,18 @@ public class FileEntry {
     }
 
     @Override
-    public boolean equals(@org.jetbrains.annotations.Nullable Object obj) {
+    public boolean equals(Object obj) {
         if (!(obj instanceof  FileEntry))
             return false;
-        return ((FileEntry) obj).creation_time_unix_ms == creation_time_unix_ms;
+        FileEntry file_entry_obj = (FileEntry) obj;
+        return file_entry_obj.creation_time_unix_ms == creation_time_unix_ms
+                && ! file_entry_obj.resource_id.isEmpty()
+                && ! resource_id.isEmpty();
+    }
+
+    private static Stream<FileEntry> intersectFileEntries(Stream<FileEntry> setA, Stream<FileEntry> setB) {
+        return setB.filter(fileB ->
+            setA.anyMatch(fileA -> fileA == fileB && !fileA.resource_id.isEmpty())
+        );
     }
 }

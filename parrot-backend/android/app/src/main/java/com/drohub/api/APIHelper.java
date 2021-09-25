@@ -1,5 +1,7 @@
 package com.drohub.api;
 
+import android.graphics.Bitmap;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.android.volley.Request;
 import com.android.volley.Response;
@@ -22,21 +24,17 @@ public class APIHelper {
         return params;
     }
 
-    protected final IInfoDisplay _display;
     protected final String _user_email;
     protected final String _user_auth_token;
     protected final VolleyHelper _volley;
 
-    public APIHelper(IInfoDisplay display, String user_email, String user_auth_token) {
-        _display = display;
+    public APIHelper(@NonNull String user_email, @NonNull String user_auth_token) {
         _user_auth_token = user_auth_token;
         _user_email = user_email;
-        if ( _user_email == null || _user_auth_token == null)
-            _display.addTemporarily( "User or token not set???", 5000);
         _volley = new VolleyHelper();
     }
 
-    private void execute(DroHubJSONObjectRequest request) {
+    private void execute(Request request) {
         request.setShouldCache(false);
         _volley.getRequestQueue().add(request);
     }
@@ -61,6 +59,19 @@ public class APIHelper {
                 error_listener,
                 retry_listener)
         );
+    }
+
+    public void get(String url,
+                    Response.Listener<Bitmap> listener,
+                    @Nullable Response.ErrorListener error_listener) {
+
+        execute(new DroHubImageRequest(
+                _user_email,
+                _user_auth_token,
+                url,
+                listener,
+                error_listener,
+                this::abortOnRetry));
     }
 
     public void post(String url,

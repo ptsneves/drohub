@@ -17,26 +17,24 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ParrotDrone implements IDrone{
-
     private final String PROVIDER_NAME = "ParrotDrone";
 
     final private GroundSdk _parrot_sdk;
     final private IDroneObserver _drone_observer;
     final private IPeripheral.IMediaStoreProvider.ProviderListener _media_store_provider_listener;
 
-    public ParrotDrone(IInfoDisplay display,
-                       String query_device_info_url,
+    public ParrotDrone(String query_device_info_url,
                        String user_mail,
                        String user_auth_token,
                        Activity activity,
-                       @NonNull IDroneObserver listener,
+                       @NonNull IDroneObserver drone_observer,
                        IPeripheral.IMediaStoreProvider.ProviderListener media_store_provider_listener) {
-        _drone_observer = listener;
+        _drone_observer = drone_observer;
         _media_store_provider_listener = media_store_provider_listener;
         _parrot_sdk = ManagedGroundSdk.obtainSession(activity);
 
         if (_parrot_sdk == null) {
-            throw new NullPointerException("Could not obtain ground sdk session");
+            drone_observer.onError(new NullPointerException("Could not obtain ground sdk session"));
         }
 
         _parrot_sdk.getFacility(AutoConnection.class, auto_connection -> {
@@ -53,22 +51,20 @@ public class ParrotDrone implements IDrone{
             if (drone == null)
                 return;
 
-            processParrotDrone(display,
-                    query_device_info_url,
+            processParrotDrone(query_device_info_url,
                     user_mail,
                     user_auth_token,
                     drone);
         });
     }
 
-    synchronized private void processParrotDrone(IInfoDisplay display,
-                                                 String query_device_info_url,
+    synchronized private void processParrotDrone(String query_device_info_url,
                                                  String user_mail,
                                                  String user_auth_token,
                                                  Drone drone) {
 
         QueryDeviceInfoHelper device_info_helper = new QueryDeviceInfoHelper(
-                display, new QueryDeviceInfoHelper.Listener() {
+                new QueryDeviceInfoHelper.Listener() {
                     @Override
                     public void onDeviceInfoResponse(JSONObject response) {
                         try {
@@ -118,7 +114,12 @@ public class ParrotDrone implements IDrone{
                             media_store.start();
                         }
                     }
-                },
+
+            @Override
+            public void onDeviceQueryInfoError(String error) {
+                _drone_observer.onError(new Exception(error));
+            }
+        },
                 query_device_info_url,
                 user_mail,
                 user_auth_token,

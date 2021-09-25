@@ -71,7 +71,6 @@ import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf.Sma
 import com.parrot.drone.groundsdk.device.pilotingitf.ReturnHomePilotingItf;
 import com.parrot.drone.groundsdk.facility.AutoConnection;
 import com.parrot.drone.groundsdk.facility.UserLocation;
-import org.jetbrains.annotations.NotNull;
 import org.webrtc.SurfaceViewRenderer;
 
 import java.io.IOException;
@@ -527,12 +526,12 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
         _gimbal = new ParrotGimbal(_drone);
         _gimbal.setPeripheralListener(new IPeripheral.IPeripheralListener<ParrotGimbal>() {
             @Override
-            public void onChange(@NonNull @NotNull ParrotGimbal parrot_gimbal) {
+            public void onChange(@NonNull ParrotGimbal parrot_gimbal) {
 
             }
 
             @Override
-            public boolean onFirstTimeAvailable(@NonNull @NotNull ParrotGimbal parrot_gimbal) {
+            public boolean onFirstTimeAvailable(@NonNull ParrotGimbal parrot_gimbal) {
                 if (!parrot_gimbal.supportsPitch())
                     return false;
 
@@ -599,21 +598,21 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
 
             new_media.forEach(file_entry -> {
                 try {
-                    UploadMediaHelper upload_media_helper = new UploadMediaHelper(e_v.getInfoDisplay(),
+                    UploadMediaHelper upload_media_helper = new UploadMediaHelper(
                             new UploadMediaHelper.Listener()
                             {
                                 @Override
-                                public void onSuccess() {
+                                public void onSuccess(FileEntry f) {
                                     e_v.getInfoDisplay().addTemporarily("Thumbnail uploaded", 5000);
                                 }
 
                                 @Override
-                                public void onUploadError(String error) {
+                                public void onUploadError(FileEntry f, String error) {
                                     e_v.getInfoDisplay().addTemporarily(error, 5000);
                                 }
 
                                 @Override
-                                public boolean onProgress(int percent) {
+                                public boolean onProgress(FileEntry f, int percent) {
                                     return true;
                                 }
 
@@ -626,7 +625,7 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
                     upload_media_helper.upload(
                             file_entry);
                 }
-                catch (IllegalAccessException | URISyntaxException e) {
+                catch (IllegalAccessException e) {
                     e_v.getInfoDisplay().addTemporarily("Failed to upload photo thumbnail", 5000);
                 }
             });
@@ -634,10 +633,10 @@ public class CopterHudActivity extends GroundSdkHelperActivity {
 
         _media_store.setPeripheralListener(new IPeripheral.IPeripheralListener<ParrotMediaStore>() {
             @Override
-            public void onChange(@NonNull @NotNull ParrotMediaStore parrotMediaStore) {}
+            public void onChange(@NonNull ParrotMediaStore parrotMediaStore) {}
 
             @Override
-            public boolean onFirstTimeAvailable(@NonNull @NotNull ParrotMediaStore parrotMediaStore) {
+            public boolean onFirstTimeAvailable(@NonNull ParrotMediaStore parrotMediaStore) {
                 e_v.getInfoDisplay().remove(startup_warning);
                 first_time_media.set(true);
                 return true;

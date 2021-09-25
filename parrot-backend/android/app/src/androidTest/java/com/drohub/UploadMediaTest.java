@@ -49,15 +49,19 @@ public class UploadMediaTest {
     final private Context test_context;
     final private String upload_media_url;
     final private String get_subscription_media_info_url;
+    final private String get_media_url;
+    final private String get_preview_url;
     final private String serial_number;
     final private String user_name;
     final private String user_auth_token;
     final private long file_time_utc;
 
-    public UploadMediaTest() throws URISyntaxException {
+    public UploadMediaTest() {
         app_context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         test_context = InstrumentationRegistry.getInstrumentation().getContext();
         upload_media_url = DroHubHelper.getURL(app_context, R.string.upload_media_url);
+        get_media_url = DroHubHelper.getURL(app_context, R.string.get_media_url);
+        get_preview_url = DroHubHelper.getURL(app_context, R.string.get_preview_url);
         get_subscription_media_info_url = DroHubHelper.getURL(app_context, R.string.get_subscription_media_info_url);
         user_name = InstrumentationRegistry.getArguments().getString("UserName");
         user_auth_token = InstrumentationRegistry.getArguments().getString("Token");
@@ -89,15 +93,15 @@ public class UploadMediaTest {
 
         CompletableFuture<ValidationStatus> result_future = new CompletableFuture<>();
         Stack<Integer> progress_states = new Stack();
-        UploadMediaHelper helper = new UploadMediaHelper(t,
+        UploadMediaHelper helper = new UploadMediaHelper(
                 new UploadMediaHelper.Listener() {
                     @Override
-                    public void onSuccess() {
+                    public void onSuccess(FileEntry f) {
                         result_future.complete(new ValidationStatus(UploadState.UPLOAD_SUCCESSFUL, ""));
                     }
 
                     @Override
-                    public void onUploadError(String error) {
+                    public void onUploadError(FileEntry f, String error) {
                         if (halt_on_progress)
                             result_future.complete(new ValidationStatus(UploadState.UPLOAD_HALTED, ""));
                         else {
@@ -106,7 +110,7 @@ public class UploadMediaTest {
                     }
 
                     @Override
-                    public boolean onProgress(int percent) {
+                    public boolean onProgress(FileEntry f, int percent) {
                         progress_states.push(percent);
                         return !halt_on_progress;
                     }
@@ -145,14 +149,13 @@ public class UploadMediaTest {
         Assert.assertEquals(UploadState.UPLOAD_SUCCESSFUL, r1.state);
 
         CompletableFuture<ValidationStatus> subscription_media_info_future = new CompletableFuture<>();
-        final InfoDisplayMock t = new InfoDisplayMock(100);
-        GetSubscriptionMediaInfoHelper subscription_media_info = new GetSubscriptionMediaInfoHelper(t,
-                error_message -> {
-                    subscription_media_info_future.complete(new ValidationStatus<>(GetMediaInfoState.ERROR, error_message));
-                },
+        GetSubscriptionMediaInfoHelper subscription_media_info = new GetSubscriptionMediaInfoHelper(
+                error_message -> subscription_media_info_future.complete(new ValidationStatus<>(GetMediaInfoState.ERROR, error_message)),
                 user_name,
                 user_auth_token,
                 get_subscription_media_info_url,
+                get_media_url,
+                get_preview_url,
                 drohub_media_store -> drohub_media_store.setNewMediaListener(media -> {
                     boolean found = false;
                     for (FileEntry fileEntry: media) {

@@ -37,12 +37,14 @@
     <string name="drohub_ws_url">ws://master:5000/ws</string>
     <string name="janus_websocket_uri">ws://master:8188</string>
     <string name="drohub_url">http://master:5000</string>
-    <string name="query_device_info_url">/api/AndroidApplication/QueryDeviceInfo</string>
-    <string name="get_subscription_info_url">/api/AndroidApplication/GetSubscriptionInfo</string>
-    <string name="validate_token_url">/api/AndroidApplication/ValidateToken</string>
-    <string name="get_subscription_media_info_url">/api/AndroidApplication/GetSubscriptionMediaInfo</string>
-    <string name="upload_media_url">/api/AndroidApplication/UploadMedia</string>
-    <string name="get_application_token_url">/api/GetToken/GetApplicationToken</string>
+    <string name="query_device_info_url">api/AndroidApplication/QueryDeviceInfo</string>
+    <string name="get_subscription_info_url">api/AndroidApplication/GetSubscriptionInfo</string>
+    <string name="validate_token_url">api/AndroidApplication/ValidateToken</string>
+    <string name="get_subscription_media_info_url">api/AndroidApplication/GetSubscriptionMediaInfo</string>
+    <string name="get_media_url">api/AndroidApplication/DownloadFile</string>
+    <string name="get_preview_url">api/AndroidApplication/GetPreview</string>
+    <string name="upload_media_url">api/AndroidApplication/UploadMedia</string>
+    <string name="get_application_token_url">api/GetToken/GetApplicationToken</string>
     <string name="rpc_api_version">1</string>
     <string-array name="ice_servers">
         <item>stun:stun.l.google.com</item>
