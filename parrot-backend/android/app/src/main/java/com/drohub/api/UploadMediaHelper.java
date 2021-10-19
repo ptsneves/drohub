@@ -77,7 +77,7 @@ public class UploadMediaHelper {
 
         }
 
-        UploadPriv(Listener listener) {
+        private UploadPriv(Listener listener) {
             _listener = listener;
         }
 
