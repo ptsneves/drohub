@@ -110,6 +110,7 @@ public class ParrotMediaStore implements IPeripheral<ParrotMediaStore>, IPeriphe
                 l.onError(file_entry, new IllegalAccessException("Media store not available"));
 
             List media_item = findMediaItem(file_entry).getResources();
+
             _media_store.download(media_item, MediaDestination.platformMediaStore(AlbumName), downloader -> {
                 if (downloader == null)
                     return;

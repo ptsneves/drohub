@@ -6,19 +6,21 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridView;
+import android.widget.ProgressBar;
 import com.drohub.Devices.Peripherals.IPeripheral;
 import com.drohub.DroHubHelper;
 import com.drohub.Fragments.DeviceFragment;
 import com.drohub.Models.FileEntry;
 import com.drohub.R;
 import com.drohub.api.GetSubscriptionMediaInfoHelper;
+import com.drohub.api.UploadMediaHelper;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class GalleryFragment extends DeviceFragment {
+public class GalleryFragment extends DeviceFragment implements UploadMediaHelper.Listener {
     private GetSubscriptionMediaInfoHelper _subscription_media_info_helper;
     private ImageAdapter _image_adapter;
     private IPeripheral.IMediaStoreProvider _drohub_media_store;
@@ -63,7 +65,9 @@ public class GalleryFragment extends DeviceFragment {
                                     _error_display,
                                     _user_email,
                                     _user_auth_token,
-                                    files_to_upload.collect(Collectors.toList()));
+                                    files_to_upload.collect(Collectors.toList()),
+                                    this
+                                    );
 
                             gallery_upload_media_helper.upload();
                         }
@@ -85,5 +89,27 @@ public class GalleryFragment extends DeviceFragment {
             _image_adapter.generateMediaList(_drohub_media_list, _drone_media_list);
             _subscription_media_info_helper.get();
         });
+    }
+
+    @Override
+    public void onSuccess(FileEntry f) {
+        _error_display.addTemporarily("File Downloaded", 1000);
+        ProgressBar progress_bar = getFragmentViewById(R.id.progress_bar);
+        progress_bar.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void onUploadError(FileEntry f, String error) {
+        _error_display.addTemporarily(error, 3000);
+        ProgressBar progress_bar = getFragmentViewById(R.id.progress_bar);
+        progress_bar.setVisibility(View.GONE);
+    }
+
+    @Override
+    public boolean onProgress(FileEntry f, int percent) {
+        ProgressBar progress_bar = getFragmentViewById(R.id.progress_bar);
+        progress_bar.setProgress(percent);
+        progress_bar.setVisibility(View.VISIBLE);
+        return true;
     }
 }

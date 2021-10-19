@@ -16,22 +16,26 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+
 class GalleryUploadMediaHelper implements UploadMediaHelper.Listener {
     final private AtomicBoolean _has_unmetered_network;
     final private IInfoDisplay _error_display;
     final private Context _context;
     final private Iterator<FileEntry> _files;
     final private UploadMediaHelper _upload_media_helper;
+    final private UploadMediaHelper.Listener _on_upload_listener;
 
     GalleryUploadMediaHelper(Context context,
                              IInfoDisplay error_display,
                              String user_email,
                              String user_auth_token,
-                             List<FileEntry> files) {
+                             List<FileEntry> files,
+                             UploadMediaHelper.Listener progress) {
         _context = context;
         _error_display = error_display;
         _has_unmetered_network = new AtomicBoolean(false);
         _files = files.iterator();
+        _on_upload_listener = progress;
 
         initializeNetworkMonitors();
         _upload_media_helper = new UploadMediaHelper(
@@ -59,18 +63,18 @@ class GalleryUploadMediaHelper implements UploadMediaHelper.Listener {
 
     @Override
     public void onSuccess(FileEntry f) {
-        _error_display.addTemporarily("File Downloaded", 1000);
+        _on_upload_listener.onSuccess(f);
         upload();
     }
 
     @Override
     public void onUploadError(FileEntry f, String error) {
-        _error_display.addTemporarily(error, 3000);
+        _on_upload_listener.onUploadError(f, error);
     }
 
     @Override
     public boolean onProgress(FileEntry f, int percent) {
-        return true;
+        return _on_upload_listener.onProgress(f, percent);
     }
 
     private void initializeNetworkMonitors() {

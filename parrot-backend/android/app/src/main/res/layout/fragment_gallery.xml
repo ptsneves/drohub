@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
              xmlns:tools="http://schemas.android.com/tools"
              android:layout_width="match_parent"
              android:layout_height="match_parent"
              tools:context=".Fragments.FlyCardFragment"
              android:clickable="true"
->
-
+              android:orientation="vertical">
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="match_parent"
+        android:visibility="gone"
+        android:layout_height="wrap_content"/>
     <GridView
         android:id="@+id/gridview"
               android:layout_width="match_parent"
@@ -16,6 +20,6 @@
               android:verticalSpacing="10dp"
               android:horizontalSpacing="10dp"
               android:stretchMode="columnWidth"
-              android:gravity="center" >
+              android:layout_gravity="bottom" >
     </GridView>
-</FrameLayout>
+</LinearLayout>
