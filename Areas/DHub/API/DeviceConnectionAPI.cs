@@ -97,7 +97,7 @@ namespace DroHub.Areas.DHub.API {
             return device_connection?.StartTime;
         }
 
-        public async Task<TTelemetry> doDeviceAction<TTelemetry>(Device device,
+        public async Task doDeviceAction<TTelemetry>(Device device,
             DeviceSessionExtensions.DeviceActionDelegate<TTelemetry> d) where TTelemetry : IDroneTelemetry {
 
             var rpc_session = getRPCSessionOrDefault(device);
@@ -105,7 +105,7 @@ namespace DroHub.Areas.DHub.API {
                 throw new DeviceConnectionException("The device requested is not connected to drohub");
 
             using var client = rpc_session.getClient<Drone.Client>(_logger);
-            return await client.Client.doDeviceAction(d);
+            await client.Client.doDeviceAction(d);
         }
 
         private DeviceAPI.DeviceSerial getDeviceSerialNumberFromCurrentConnectionClaim() {
@@ -148,9 +148,6 @@ namespace DroHub.Areas.DHub.API {
             return _connections.Keys.SingleOrDefault(k => k.SerialNumber.Value == device_serial.Value);
         }
 
-        private ThriftMessageHandler getRPCSessionOrDefault() {
-            var serial = getDeviceSerialNumberFromCurrentConnectionClaim();
-            return getRPCSessionOrDefault(serial);
         }
 
         public async Task addRPCSessionHandler(ThriftMessageHandler rpc_handler) {
