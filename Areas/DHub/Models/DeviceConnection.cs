@@ -24,5 +24,30 @@ namespace DroHub.Areas.DHub.Models {
         public ICollection<DroneFlyingState> flying_states { get; set; }
         public ICollection<DroneReply> drone_replies { get; set; }
         public ICollection<DroneLiveVideoStateResult> drone_video_states { get; set; }
+
+        public bool isTimePointInConnection(DateTimeOffset time) {
+            // Case where the connection is still ongoing
+            if (EndTime < StartTime) {
+                return time >= StartTime;
+            }
+            return time >= StartTime
+                   && time <= EndTime;
+        }
+
+        public bool contains(DeviceConnection other) {
+            if (other == null) {
+                return false;
+            }
+            var same_device_id = DeviceId == other.DeviceId;
+            if (!same_device_id)
+                return false;
+            // Case where the connection is still ongoing
+            if (EndTime < StartTime) {
+                return StartTime <= other.StartTime;
+            }
+
+            return StartTime <= other.StartTime
+                   && EndTime >= other.EndTime;
+        }
     }
 }

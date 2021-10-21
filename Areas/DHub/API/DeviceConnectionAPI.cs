@@ -92,7 +92,7 @@ namespace DroHub.Areas.DHub.API {
             return null;
         }
 
-        public static DateTimeOffset? getConnectionStartTimeOrDefault(Device device) {
+        public static DateTimeOffset? getActiveConnectionStartTimeOrDefault(Device device) {
             var device_connection = getActiveDeviceConnection(device);
             return device_connection?.StartTime;
         }
@@ -148,6 +148,30 @@ namespace DroHub.Areas.DHub.API {
             return _connections.Keys.SingleOrDefault(k => k.SerialNumber.Value == device_serial.Value);
         }
 
+        private async Task<bool> isUnique(DeviceConnection connection) {
+            var any_recorded = (await _db_context.DeviceConnections
+                .Where(dc => dc.DeviceId == connection.DeviceId)
+                .ToListAsync())
+                .Any(c =>
+                    c.contains(connection));
+            if (!any_recorded)
+                return true;
+
+            connection.Device ??= await _device_api.getDeviceById(connection.DeviceId);
+
+            var active_connection = getActiveDeviceConnection(connection.Device);
+            return active_connection == null;
+        }
+
+
+        public async Task saveDeviceConnection(DeviceConnection connection) {
+            if (!await isUnique(connection))
+                throw new DeviceConnectionException("Requested device connection already exists");
+
+            await _db_context.DeviceConnections.AddAsync(connection);
+            await _db_context.SaveChangesAsync();
+            var directory = LocalStorageHelper.calculateConnectionDirectory(connection.Id);
+            Directory.CreateDirectory(directory);
         }
 
         public async Task addRPCSessionHandler(ThriftMessageHandler rpc_handler) {
@@ -166,10 +190,7 @@ namespace DroHub.Areas.DHub.API {
                     "For some reason we tried to add an RPC handler which was already existing.");
             }
 
-            await _db_context.DeviceConnections.AddAsync(connection);
-            await _db_context.SaveChangesAsync();
-            Directory.CreateDirectory(
-                LocalStorageHelper.calculateConnectionDirectory(connection.Id));
+            await saveDeviceConnection(connection);
         }
 
         public async Task removeRPCSessionHandler(ThriftMessageHandler rpc_handler) {
@@ -210,19 +231,18 @@ namespace DroHub.Areas.DHub.API {
 
         public async Task<DeviceConnection> getDeviceConnectionByTime(Device device, DateTimeOffset time) {
             var device_connection = getActiveDeviceConnection(device);
-            if (device_connection != null && device_connection.StartTime <= time)
+            if (device_connection != null && device_connection.isTimePointInConnection(time))
                 return device_connection;
 
-            device_connection = await _db_context.DeviceConnections
-                .Where(dc =>
-                    device.Id == dc.DeviceId
-                    && time >= dc.StartTime
-                    && time <= dc.EndTime
-                )
-                .SingleOrDefaultAsync();
+            device_connection = (await _db_context.DeviceConnections
+                    .Where(dc =>
+                        device.Id == dc.DeviceId &&
+                        device.SubscriptionOrganizationName == dc.SubscriptionOrganizationName)
+                    .ToListAsync())
+                .SingleOrDefault(dc => dc.isTimePointInConnection(time));
 
             if (device_connection == null) {
-                throw new DeviceConnectionException("No device connection matching provided time");
+                throw new DeviceConnectionException("No device connection matching criteria");
             }
 
             return device_connection;

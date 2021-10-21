@@ -260,7 +260,7 @@ namespace DroHub.Areas.DHub.Controllers
                 if (device == null)
                     return Json(null);
 
-                var start_time_or_default = DeviceConnectionAPI.getConnectionStartTimeOrDefault(device);
+                var start_time_or_default = DeviceConnectionAPI.getActiveConnectionStartTimeOrDefault(device);
                 return start_time_or_default.HasValue ?
                     Json(((DateTimeOffset)start_time_or_default.Value.ToUniversalTime()).ToUnixTimeMilliseconds()) :
                     Json(null);

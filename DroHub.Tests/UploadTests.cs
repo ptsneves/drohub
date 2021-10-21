@@ -204,19 +204,25 @@ namespace DroHub.Tests {
 
         [Fact]
         public async void TestUploadMediaOutOfDeviceConnectionFails() {
-            var ran = false;
-            await _fixture.testUpload(4,
+            await using var dev = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture,
                 TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                TestServerFixture.AdminUserEmail,
+                TestServerFixture.DEFAULT_DEVICE_NAME,
+                TestServerFixture.DEFAULT_DEVICE_SERIAL) ;
+            var src = "video.webm";
+            await using var stream = new FileStream($"{TestServerFixture.TestAssetsPath}/{src}", FileMode.Open);
+            var r = await HttpClientHelper.uploadMedia(TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword,
-                (result, tries, chunk, sent_chunk_size, copy, _) => {
-                Assert.True(result.TryGetValue("error", out var v));
-                Assert.Equal("Media does not correspond to any known flight", v);
-                ran = true;
-                return Task.FromResult(TestServerFixture.UploadTestReturnEnum.STOP_UPLOAD);
-            });
-            Assert.True(ran);
+                new AndroidApplicationController.UploadModel {
+                    File = new FormFile(stream, 0, 4096, src, $"{TestServerFixture.TestAssetsPath}/{src}"),
+                    IsPreview = false,
+                    DeviceSerialNumber = TestServerFixture.DEFAULT_DEVICE_SERIAL,
+                    UnixCreationTimeMS = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
+                    AssembledFileSize = 4096,
+                    RangeStartBytes = 0
+                });
+            Assert.True(r.TryGetValue("error", out var v));
+            Assert.Equal("No device connection matching criteria", v);
         }
 
         [Fact]
