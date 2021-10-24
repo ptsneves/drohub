@@ -36,6 +36,16 @@ namespace DroHub.Areas.DHub.Controllers
             public Device Device { get; set; }
         }
 
+        public class DeviceConnectionCreateModel {
+            [Required]
+            public DateTimeOffset StartTime { get; set; }
+            [Required]
+            public DateTimeOffset EndTime { get; set; }
+
+            [Required]
+            public string DeviceSerial { get; set; }
+        }
+
         public class ValidateTokenModel {
             [Required]
             public double Version { get; set; }
@@ -146,6 +156,25 @@ namespace DroHub.Areas.DHub.Controllers
             _logger = logger;
             _device_connection_api = device_connection_api;
             _rpc_api_version = configuration.GetValue<double>(APPSETTINGS_API_VERSION_KEY);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateDeviceConnection([Required][FromBody] DeviceConnectionCreateModel model) {
+            var device = await _device_api.getDeviceBySerial(new DeviceAPI.DeviceSerial(model.DeviceSerial));
+
+            if (!await _device_api.authorizeDeviceActions(device, ResourceOperations.Update))
+                return new UnauthorizedResult();
+
+            var connection = new DeviceConnection {
+                StartTime = model.StartTime,
+                EndTime = model.EndTime,
+                DeviceId = device.Id,
+                SubscriptionOrganizationName = _subscription_api.getSubscriptionName().Value
+            };
+            await _device_connection_api.saveDeviceConnection(connection);
+            return new JsonResult(new Dictionary<string, DeviceConnection> {
+                ["result"] = connection,
+            }, new JsonSerializerOptions { PropertyNamingPolicy = null });
         }
 
         [HttpPost]
@@ -300,7 +329,7 @@ namespace DroHub.Areas.DHub.Controllers
             catch (DeviceConnectionException e) {
                 _logger.LogError(e.Message);
                 return new JsonResult(new Dictionary<string, string> {
-                    ["error"] = "Media does not correspond to any known flight"
+                    ["error"] = e.Message
                 });
             }
             catch (MediaObjectAndTagException e) {

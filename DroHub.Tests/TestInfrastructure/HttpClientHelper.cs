@@ -11,6 +11,7 @@ using System.Threading;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.DHub.Models;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 
 namespace DroHub.Tests.TestInfrastructure
 {
@@ -365,38 +366,48 @@ namespace DroHub.Tests.TestInfrastructure
             return ws_transport;
         }
 
-        public static async Task generateConnectionId(TestServerFixture fixture, TimeSpan duration, string serial,
+        public static async Task generateConnectionId(TestServerFixture fixture,
+            DateTimeOffset start_time,
+            DateTimeOffset end_time,
+            string serial,
             string user,
             string password,
-            Func<DeviceConnection, Task> connection_id_func,
-            bool run_while_still_active = false) {
-
-            if (duration > TimeSpan.FromSeconds(30))
-                throw new InvalidProgramException("Cannot generate device connection longer than 30 seconds because there would be a timeout without telemetry.");
-
+            Func<DeviceConnection, Task> connection_id_func) {
             await using var d = await CreateDeviceHelper.createDevice(fixture, user,
                 password, "Aname", serial);
 
             var token = (await getApplicationToken(user,
                 password))["result"];
 
-            using var tr = await openWebSocket(user, token, serial);
-            if (!run_while_still_active) {
-                Thread.Sleep(duration);
-                tr.Close();
-            }
+            var content_to_send = new AndroidApplicationController.DeviceConnectionCreateModel {
+                DeviceSerial = serial,
+                EndTime = start_time,
+                StartTime = end_time
+            };
+            var r = await retrieveFromAndroidApp(user, token,
+                "CreateDeviceConnection", content_to_send, true);
 
-            Thread.Sleep(duration);
-            var device_id = await getDeviceId(serial, user, password);
-            var ret = await getLastConnection(fixture, device_id);
+            var j_object = JObject.Parse(r);
+            if (j_object.ContainsKey("error"))
+                throw new InvalidCredentialException(j_object["error"].ToString());
 
-            await connection_id_func(ret);
-            if (tr.IsOpen)
-                tr.Close();
+            await connection_id_func(j_object["result"].ToObject<DeviceConnection>());
         }
 
-        // public static
-
+        public static async Task generateConnectionId(TestServerFixture fixture,
+            TimeSpan duration,
+            string serial,
+            string user,
+            string password,
+            Func<DeviceConnection, Task> connection_id_func) {
+            await generateConnectionId(fixture,
+                DateTimeOffset.UtcNow,
+                DateTimeOffset.Now + duration,
+                serial,
+                user,
+                password,
+                connection_id_func);
+        }
 
         public static async Task deleteMediaObjects(TestServerFixture fixture, List<string> medial_id_list) {
             var delete_media_objects_url = new Uri(TestServerFixture.SiteUri,

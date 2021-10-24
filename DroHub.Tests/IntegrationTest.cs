@@ -974,6 +974,26 @@ namespace DroHub.Tests
         }
 
         [Fact]
+        public async ValueTask TestGenerateConnectionId() {
+            var ran = false;
+            var start_time = DateTimeOffset.UtcNow;
+            var end_time = start_time + TimeSpan.FromSeconds(1);
+            await HttpClientHelper.generateConnectionId(_fixture,
+                start_time,
+                end_time,
+                TestServerFixture.DEFAULT_DEVICE_SERIAL,
+                TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword,  connection => {
+                    Assert.Equal( start_time, connection.StartTime);
+                    Assert.Equal(end_time, connection.EndTime);
+                    Assert.NotEqual(0, connection.Id);
+                    ran = true;
+                    return Task.CompletedTask;
+                });
+            Assert.True(ran);
+        }
+
+        [Fact]
         public async void TestWebSocketFailedAuthentication() {
             var exception_occured = false;
             try {
