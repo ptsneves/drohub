@@ -13,7 +13,7 @@ namespace DroHub.Helpers {
                 throw new InvalidDataException($"{dst} already exists");
             if (Path.GetExtension(dst) != FILE_EXTENSION)
                 throw new InvalidDataException($"Provided destination extension must be {FILE_EXTENSION}");
-            var convert_args = $"{src} -resize {width_px}x{height_px} {dst}";
+            var convert_args = $"{src} -thumbnail {width_px}x{height_px} {dst}";
             await RunProcess.runProcess(_IMG2MAGICKCONVERT_BIN, convert_args);
         }
     }
