@@ -220,7 +220,7 @@ namespace DroHub.Areas.DHub.Controllers
             }
             catch (Exception) {
                 return NotFound(new Dictionary<string, string> {
-                    ["error"] = "Request is invalid or not for a picture"
+                    ["error"] = "Request is invalid or not for a preview"
                 });
             }
         }
