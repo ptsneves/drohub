@@ -243,6 +243,11 @@ namespace DroHub.Areas.Identity.Pages.Account
                     BaseActingType = Input.ActingType
                 };
 
+                if (await _user_manager.Users.AnyAsync(u => u.Email == user.Email)) {
+                    ModelState.AddModelError(string.Empty, "Cannot add duplicate users.");
+                    throw new UserCreateException();
+                }
+
                 var result = await _user_manager.CreateAsync(user, Input.Password);
                 if (!result.Succeeded) {
                     foreach (var error in result.Errors) {
