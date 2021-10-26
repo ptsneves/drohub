@@ -829,6 +829,16 @@ namespace DroHub.Tests
         }
 
         [Fact]
+        public async Task TestCreateDeviceHasValidCreationDate() {
+            await using var _ = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
+                _fixture.AdminPassword, TestServerFixture.DEFAULT_DEVICE_NAME, TestServerFixture.DEFAULT_DEVICE_SERIAL);
+            var device = (await HttpClientHelper
+                    .getDeviceList(TestServerFixture.AdminUserEmail, _fixture.AdminPassword))
+                .Single(d => d.SerialNumber == TestServerFixture.DEFAULT_DEVICE_SERIAL);
+            Assert.NotEqual( DateTimeOffset.MinValue, device.CreationDate);
+        }
+
+        [Fact]
         public async void TestCreateExistingDeviceFails() {
             await using var d = await HttpClientHelper.CreateDeviceHelper.createDevice(_fixture, TestServerFixture.AdminUserEmail,
                 _fixture.AdminPassword, TestServerFixture.DEFAULT_DEVICE_NAME, TestServerFixture.DEFAULT_DEVICE_SERIAL);

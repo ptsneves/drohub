@@ -274,6 +274,7 @@ namespace DroHub.Tests.TestInfrastructure
                 var create_device_url = new Uri(TestServerFixture.SiteUri, "DHub/Devices/GetDevicesList");
                 http_helper.Response?.Dispose();
                 http_helper.Response = await http_helper.Client.GetAsync(create_device_url);
+                http_helper.Response.EnsureSuccessStatusCode();
                 var stringified = await http_helper.Response.Content.ReadAsStringAsync();
                 return Newtonsoft.Json.JsonConvert.DeserializeObject<List<Device>>(stringified);
             }

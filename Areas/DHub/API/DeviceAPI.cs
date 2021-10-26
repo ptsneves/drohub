@@ -218,7 +218,7 @@ namespace DroHub.Areas.DHub.API {
                 throw new InvalidDataException("Cannot create device that already exists");
 
             device.SubscriptionOrganizationName = _subscription_api.getSubscriptionName().Value;
-
+            device.CreationDate = DateTimeOffset.UtcNow;
             await _db_context.Devices.AddAsync(device);
             await _db_context.SaveChangesAsync();
         }
