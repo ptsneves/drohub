@@ -33,6 +33,7 @@ namespace DroHub.Tests {
                 .ReuseIfExists()
                 .AsUser("1000:1000")
                 .Command(command)
+                .UseNetwork("host")
                 .UseImage("ptsneves/airborneprojects:vue-test")
                 .Mount(TestServerFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
                 .Build()
@@ -208,6 +209,7 @@ namespace DroHub.Tests {
 
             dynamic temp_test_data = new Dictionary<string,ExpandoObject>();
             temp_test_data[test_name] = new ExpandoObject();
+            temp_test_data[test_name].siteURI = TestServerFixture.SiteUri.ToString();
             temp_test_data[test_name].propsData = new ExpandoObject();
             temp_data_func(temp_test_data[test_name]);
             var output = JsonConvert.SerializeObject(temp_test_data, Formatting.Indented);

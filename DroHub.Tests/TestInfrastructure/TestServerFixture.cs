@@ -34,11 +34,11 @@ namespace DroHub.Tests.TestInfrastructure
         public ICompositeService DeployedContainers { get; }
         private IHostService Docker { get; }
         public const string AdminUserEmail = "admin@drohub.xyz";
-        public static Uri SiteUri => new Uri("https://master/");
-        public static Uri ThriftUri => new Uri("wss://master/ws");
-        public static Uri JanusUri => new Uri("https://master/janus");
+        public static Uri SiteUri => new Uri("https://localhost");
+        public static Uri ThriftUri => new Uri("wss://localhost/ws");
+        public static Uri JanusUri => new Uri("https://localhost/janus");
 
-        public static Uri TelemetryHubUri => new Uri("https://master:443/telemetryhub");
+        public static Uri TelemetryHubUri => new Uri("https://localhost:443/telemetryhub");
         public string TargetLiveStreamStoragePath { get; }
         public string AdminPassword { get; private set; }
         private static string DroHubTestsPath => Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory + "../../../");

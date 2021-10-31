@@ -78,12 +78,13 @@ describe('GalleryTimeLine.vue', () => {
         const image_urls = wrapper.findAll('img.gallery-image[src]').wrappers.map(wrapper =>
             wrapper.attributes('src'));
 
-        return Promise.all(image_urls.map(image_url => axios.get("https://master"+image_url, {
+        return Promise.all(image_urls.map(image_url => axios.get(
+            new URL(image_url, temp_test_data.siteURI).href, {
                 adapter: require('axios/lib/adapters/http'),
                 responseType: 'arraybuffer'
             })
             .then((response) => {
-                if ( "https://master"+response.request.path != response.config.url)
+                if ( new URL(response.request.path, temp_test_data.siteURI).href !== response.config.url)
                     console.error(`Response redirected us to ${response.request.path} which is not expected`);
 
                 const file_data = preview_list.find(e => image_url.endsWith(e.file))

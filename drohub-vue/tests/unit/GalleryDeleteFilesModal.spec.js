@@ -9,6 +9,8 @@ const test_data = require('test-data.json').GalleryDeleteFilesModal;
 const temp_test_data = require('temporary-test-data.json').GalleryDeleteFilesModal;
 let propsData = test_data.propsData;
 propsData.antiForgeryToken = temp_test_data.propsData.crossSiteForgeryToken;
+propsData.addTagsPostUrl = new URL(propsData.addTagsPostUrl, temp_test_data.siteURI).href
+propsData.deleteMediaObjectsPostUrl = new URL(propsData.deleteMediaObjectsPostUrl, temp_test_data.siteURI).href
 
 describe('GalleryDeleteFilesModal.vue', () => {
     it('Correct interface', () => {
