@@ -4,7 +4,6 @@ RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
     apt update && apt install -y --no-install-recommends nodejs npm yarn
 
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-focal AS result-env-base
-RUN apt-get update
 
 FROM build-env-base as build-env
 WORKDIR /app
@@ -29,7 +28,7 @@ COPY . ./
 RUN dotnet publish -c Release -o out -p:InformationalVersion=$(cat .git/$(cat .git/HEAD | cut -d' ' -f2)) ./DroHub.csproj
 
 FROM result-env-base
-RUN apt-get install -y janus-tools ffmpeg
+RUN apt-get update && apt-get install -y janus-tools ffmpeg imagemagick
 # Build runtime image
 RUN mkdir -p /opt/keys/
 WORKDIR /app
