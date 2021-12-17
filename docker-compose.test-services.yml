@@ -1,0 +1,13 @@
+version: "3"
+services:
+  android-test:
+    build:
+      context: docker/docker-android
+    image: "ptsneves/airborneprojects:android-test"
+    restart: "no"
+    network_mode: host
+  vue-test:
+    build:
+      context: docker/docker-vue-test
+    image: "ptsneves/airborneprojects:vue-test"
+    restart: "no"

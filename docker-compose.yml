@@ -1,18 +1,5 @@
 version: "3"
 services:
-    android-test:
-        build:
-            context: docker/docker-android
-        image: "ptsneves/airborneprojects:android-test"
-        entrypoint: ["echo", "Service android-test disabled"]
-        restart: "no"
-        network_mode: host
-    vue-test:
-        build:
-            context: docker/docker-vue-test
-        image: "ptsneves/airborneprojects:vue-test"
-        entrypoint: [ "echo", "Service android-test disabled" ]
-        restart: "no"
     janus:
         build:
             context: ./docker/docker-janus
@@ -31,6 +18,23 @@ services:
             context: .
             dockerfile: docker/docker-dotnet/Dockerfile
         image: "ptsneves/airborneprojects:release-master"
+        environment:
+#           The following variables are to be overriden by .env file
+#           The reason for the DHUB_ prefix is that code looks for it and
+#           automatically forwards environmental variables with such prefix
+#           to the configurations and overrides them.
+#           In our case it means that the configuration in appsettings.json
+#           Conf.ConnectionStrings.DroHubConnectionMySQL gets overwritten
+#           As the configurations in appsettings for secrets mostly have @@ENV@@
+#           placeholder we need to forcefully overwrite these configurations or
+#           things will not work properly.
+            DHUB_ConnectionStrings__DroHubConnectionMySQL: 'Server=localhost;port=3306;database=master'
+            DHUB_ConnectionStrings__MysqlUser: "${DHUB_ConnectionStrings__MysqlUser?}"
+            DHUB_ConnectionStrings__MysqlPassword: "${DHUB_ConnectionStrings__MysqlPassword?}"
+            DHUB_MailJetEmailSender__APIKey: "${DHUB_MailJetEmailSender__APIKey?}"
+            DHUB_MailJetEmailSender__APISecret: "${DHUB_MailJetEmailSender__APISecret?}"
+            DHUB_RepositoriesConfiguration__GoogleMapsAPIKey: "${DHUB_RepositoriesConfiguration__GoogleMapsAPIKey?}"
+            DHUB_JanusServiceOptions__AdminKey: "${DHUB_JanusServiceOptions__AdminKey?}"
         network_mode: host
         ports:
             - "5000:5000"
@@ -50,17 +54,16 @@ services:
         ports:
             - "3306:3306"
         environment:
-          - "MYSQL_DATABASE=master"
-          - "MYSQL_RANDOM_ROOT_PASSWORD=yes"
-          - "MYSQL_USER=sa"
-          - "MYSQL_PASSWORD=XXXXX"
+          MYSQL_DATABASE: "master"
+          MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+#         Mandatory secrets
+          MYSQL_USER: "${DHUB_ConnectionStrings__MysqlUser?}"
+          MYSQL_PASSWORD: "${DHUB_ConnectionStrings__MysqlPassword?}"
         # volumes:
             # mysql-volume:/var/lib/mysql
     letsencrypt:
          environment:
              - DOMAIN=localhost
-             
-             
          build:
              context: ./docker/docker-letsencrypt
          image: ptsneves/airborneprojects:letsencrypt
@@ -78,9 +81,9 @@ services:
                  max-file: "5"
                  max-size: "100m"
          environment:
-             - DOMAIN_NAME=drohub.xyz
-             - SSL_CERTIFICATE_PATH=/etc/letsencrypt/live/drohub.xyz/fullchain.pem
-             - SSL_CERTIFICATE_KEY_PATH=/etc/letsencrypt/live/drohub.xyz/privkey.pem
+             - DOMAIN_NAME
+             - SSL_CERTIFICATE_PATH=/etc/letsencrypt/live/${DOMAIN_NAME?}/fullchain.pem
+             - SSL_CERTIFICATE_KEY_PATH=/etc/letsencrypt/live/${DOMAIN_NAME?}/privkey.pem
 volumes:
     certificates-volume:
         driver: local

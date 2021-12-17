@@ -65,6 +65,8 @@
 
   <ItemGroup>
     <PackageReference Include="ApacheThrift" Version="0.13.0.1" />
+    <PackageReference Include="ConfigurationScanner" Version="2.0.0" />
+    <PackageReference Include="DotNetEnv" Version="2.2.0" />
     <PackageReference Include="Google.Protobuf" Version="3.6.1" />
     <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
     <PackageReference Include="JetBrains.dotTrace.CommandLineTools.Linux" Version="2019.3.20191207.71700" />
@@ -119,6 +121,12 @@
     <Folder Include="Areas\DHub\Pages" />
     <Folder Include="Areas\Identity\Services\" />
     <Folder Include="wwwroot\images\logo" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update=".env" CopyToPublishDirectory="Never" />
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+    <Content Update="appsettings.json" CopyToPublishDirectory="Always" />
   </ItemGroup>
 
   <ItemGroup>

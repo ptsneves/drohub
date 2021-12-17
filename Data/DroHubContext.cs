@@ -4,9 +4,11 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
+using DroHub.ProgramExtensions;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.Extensions.Configuration;
 
 namespace DroHub.Data
 {
@@ -16,6 +18,20 @@ namespace DroHub.Data
             var exists = predicate != null ? dbSet.Any(predicate) : dbSet.Any();
             if (!exists)
                 await dbSet.AddAsync(entity);
+        }
+
+        public static string GetDroHubConnectionString(this IConfiguration configuration) {
+            var db_provider = configuration.GetValue<string>(IConfigurationBuilderExtension.DATABASE_PROVIDER_KEY);
+            var db_user = configuration.GetValue<string>("ConnectionStrings:MysqlUser");
+            if (db_user == null)
+                throw new InvalidOperationException("MysqlUser is not set");
+
+            var db_password = configuration.GetSection("ConnectionStrings")?["MysqlPassword"];
+            if (db_password == null)
+                throw new InvalidOperationException("MysqlPassword is not set");
+
+            return configuration.GetConnectionString(db_provider)
+                   + $";uid={db_user};password={db_password}";
         }
     }
 

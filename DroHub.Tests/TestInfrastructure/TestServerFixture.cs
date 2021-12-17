@@ -14,9 +14,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using AngleSharp;
 using AngleSharp.Html.Parser;
+using ConfigurationScanner;
 using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.Identity.Data;
 using DroHub.Data;
+using DroHub.ProgramExtensions;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Services.Extensions;
 using JetBrains.Annotations;
@@ -73,6 +75,7 @@ namespace DroHub.Tests.TestInfrastructure
                             .UseContainer()
                             .UseCompose()
                             .FromFile(getPatchedDockerComposeFile())
+                            .FromFile(Path.Join(DroHubPath, "docker-compose.test-services.yml"))
                             // .RemoveOrphans()
                             .Wait("nginx", (service, i) => {
 
@@ -147,20 +150,17 @@ namespace DroHub.Tests.TestInfrastructure
             var json_stream = new MemoryStream();
             json_stream.Write(Encoding.UTF8.GetBytes(json_string));
             json_stream.Seek(0, SeekOrigin.Begin);
-            var builder = new ConfigurationBuilder()
-                .AddJsonStream(json_stream);
+            var builder = new ConfigurationBuilder().AddDroHub();
 
-            Configuration = builder.Build();
+            Configuration = builder.Build()
+                .ThrowOnConfiguredForbiddenToken();
+
             RPCAPIVersion = Configuration.GetValue<double>(AndroidApplicationController.APPSETTINGS_API_VERSION_KEY);
         }
 
         private void initializeDBContext() {
-            var db_provider = Configuration.GetValue<string>(Program.DATABASE_PROVIDER_KEY);
-            var db_connection_string = Configuration
-                .GetConnectionString(db_provider);
-
             var options = new DbContextOptionsBuilder<DroHubContext>()
-                .UseMySql(db_connection_string)
+                .UseMySql(Configuration.GetDroHubConnectionString())
                 .Options;
             DbContext = new DroHubContext(options);
         }

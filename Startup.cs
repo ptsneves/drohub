@@ -1,8 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using ConfigurationScanner;
 using DroHub.Areas.DHub.API;
+using DroHub.Areas.DHub.Helpers;
 using DroHub.Areas.DHub.Helpers.ResourceAuthorizationHandlers;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.DHub.SignalRHubs;
@@ -24,6 +27,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Extensions.Logging;
 
 namespace DroHub
 {
@@ -32,16 +38,17 @@ namespace DroHub
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            (Configuration as IConfigurationRoot)
+                .ThrowOnConfiguredForbiddenToken();
         }
 
-        public IConfiguration Configuration { get; }
+        private IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
-        {
+        public void ConfigureServices(IServiceCollection services) {
+            services.AddRouting();
             services.AddDbContext<DroHubContext>(options => {
-                var db_provider = Configuration.GetValue<string>(Program.DATABASE_PROVIDER_KEY);
-                options.UseMySql(Configuration.GetConnectionString(db_provider));
+                options.UseMySql(Configuration.GetDroHubConnectionString());
             });
 
             services.Configure<ForwardedHeadersOptions>(options =>
@@ -138,8 +145,40 @@ namespace DroHub
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app,
+            IWebHostEnvironment env,
+            DroHubContext db_context,
+            SignInManager<DroHubUser> sign_in_manager,
+            ILogger<DroHubContext> logger)
         {
+            if (!Configuration.GetValue<bool>("AutoMigration")) {
+                db_context.Database.Migrate();
+                logger.LogWarning("Ran migrate database");
+            }
+
+            foreach(var u in db_context.Users.ToList()) {
+
+                var t = DroHubUser.refreshClaims(sign_in_manager, u);
+                t.Wait();
+                if (t.Result == IdentityResult.Failed()) {
+                    logger.LogError("failed to refresh claims");
+                }
+            }
+
+            logger.LogWarning("Ran user claims migration");
+
+            {
+                var t = ProgramExtensions.InitializeAdminUserHelper
+                    .createAdminUser(logger, sign_in_manager, db_context);
+                t.Wait();
+            }
+
+            {
+                var t = LocalStorageHelper.generateVideoPreviewForConnectionDir(
+                    logger, true);
+                t.Wait();
+                logger.LogWarning("Generated video previews");
+            }
 
             if (env.IsDevelopment())
             {

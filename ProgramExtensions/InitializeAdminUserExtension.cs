@@ -4,39 +4,18 @@ using System.Threading.Tasks;
 using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
 using DroHub.Data;
-using DroHub.IdentityClaims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.AspNetCore.Hosting
-{
-    public static partial class IWebHostExtensions
-    {
-        public static async Task<IWebHost> InitializeAdminUser<T>(this IWebHost webHost) where T : DroHubContext
-        {
-            using (var scope = webHost.Services.CreateScope())
-            {
-                var services = scope.ServiceProvider;
-                var db = services.GetRequiredService<T>();
-                var logger = services.GetRequiredService<ILogger<T>>();
-                var sign_in_manager = services.GetRequiredService<SignInManager<DroHubUser>>();
-                await InitializeAdminUserHelper.createAdminUser(logger, sign_in_manager, db);
-            }
-            return webHost;
-        }
-    }
-}
-
-namespace DroHub.IdentityClaims
+namespace DroHub.ProgramExtensions
 {
     public static class InitializeAdminUserHelper
     {
         private const string _ADMIN_USER_NAME = "admin@drohub.xyz";
         private const string _ADMIN_ORGANIZATION = "Administrators";
 
-        internal static async Task<string> createAdminUser(ILogger logger, SignInManager<DroHubUser> signin_manager,
+        public static async Task createAdminUser(ILogger logger, SignInManager<DroHubUser> signin_manager,
             DroHubContext db_context) {
             var user_manager = signin_manager.UserManager;
             var new_user = false;
@@ -92,8 +71,6 @@ namespace DroHub.IdentityClaims
             var refresh_result = await DroHubUser.refreshClaims(signin_manager, user);
             if (refresh_result == IdentityResult.Failed())
                 throw new InvalidProgramException("Could not remove admin claims");
-
-            return user.Id;
         }
 
         //Taken https://stackoverflow.com/a/38997554/227990
