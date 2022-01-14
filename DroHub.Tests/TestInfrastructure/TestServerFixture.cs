@@ -101,10 +101,18 @@ namespace DroHub.Tests.TestInfrastructure
             var web_container = DeployedContainers.Containers.First(c => c.Name == "web");
             using (var logs = Docker.Host.Logs(web_container.Id))
             {
-                AdminPassword = logs
-                    .ReadToEnd()
-                    .First(line => line.Contains("GENERATED ROOT PASSWORD"))
-                    .Split(null).Last();
+                try {
+                    AdminPassword = logs
+                        .ReadToEnd()
+                        .First(line => line.Contains("GENERATED ROOT PASSWORD"))
+                        .Split(null).Last();
+                }
+                catch (InvalidOperationException) {
+
+                    throw new InvalidProgramException(
+                        $"If for some reason the logs were regenerated the GENERATED ROOT PASSWORD string"
+                        + "will disappear and this will fail");
+                }
             }
 
             initializeConfiguration(web_container);
