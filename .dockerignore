@@ -14,3 +14,4 @@ parrot-backend
 drohub-vue/node_modules/
 wwwwroot/vue
 .android
+.docker-android-home
