@@ -6,10 +6,6 @@ RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-focal AS result-env-base
 
 FROM build-env-base as build-env
-WORKDIR /app
-# Copy csproj and restore as distinct layers
-COPY *.csproj ./
-RUN dotnet restore --disable-parallel
 
 # Copy everything else and build
 WORKDIR /app/drohub-vue
