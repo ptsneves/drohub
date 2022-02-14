@@ -11,3 +11,4 @@ parrot-backend/android/app/release/
 .docker-android-home/
 parrot-backend/android/.run/
 drohub-vue/tests/temporary-test-data.json
+docker-compose-test.yml
