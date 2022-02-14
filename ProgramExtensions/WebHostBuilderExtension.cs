@@ -28,7 +28,8 @@ namespace DroHub.ProgramExtensions {
                     .ReadFrom.Configuration(context.Configuration)
                     .Enrich.FromLogContext())
                 .ConfigureAppConfiguration(builder => builder.AddDroHub())
-                .WipeEnvironmentalVariables()
+                // TODO: Find out why this does not work
+                // .WipeEnvironmentalVariables()
                 .UseStartup<Startup>();
         }
 
