@@ -24,7 +24,9 @@ namespace DroHub.ProgramExtensions {
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseKestrel()
                 .UseUrls("http://*:5000/")
-                .UseSerilog()
+                .UseSerilog((context, configuration) => configuration
+                    .ReadFrom.Configuration(context.Configuration)
+                    .Enrich.FromLogContext())
                 .ConfigureAppConfiguration(builder => builder.AddDroHub())
                 .WipeEnvironmentalVariables()
                 .UseStartup<Startup>();

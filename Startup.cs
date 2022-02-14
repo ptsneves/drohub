@@ -28,13 +28,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Serilog;
-using Serilog.Extensions.Logging;
 
 namespace DroHub
 {
     public class Startup
     {
+        public const string STARTUP_COMPLETE_MAGIC = "Initialized successfully";
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -215,6 +214,8 @@ namespace DroHub
                 endpoints.MapWebSocketManager("/ws");
                 endpoints.MapRazorPages();
             });
+
+            logger.LogInformation(STARTUP_COMPLETE_MAGIC);
         }
     }
 }

@@ -34,7 +34,7 @@ namespace DroHub.Tests.TestInfrastructure
     public class TestServerFixture : IDisposable
     {
         public ICompositeService DeployedContainers { get; }
-        private IHostService Docker { get; }
+        public IHostService Docker { get; }
         public const string AdminUserEmail = "admin@drohub.xyz";
         public static Uri SiteUri => new Uri("https://localhost");
         public static Uri ThriftUri => new Uri("wss://localhost/ws");

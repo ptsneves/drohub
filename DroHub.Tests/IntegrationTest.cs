@@ -17,6 +17,7 @@ using DroHub.Areas.DHub.Models;
 using DroHub.Areas.Identity.Data;
 using DroHub.Helpers;
 using Ductus.FluentDocker.Builders;
+using Ductus.FluentDocker.Commands;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Model.Builders;
 using Microsoft.AspNetCore.Http;
@@ -33,6 +34,15 @@ namespace DroHub.Tests
 
         public IntegrationTest(TestServerFixture fixture) {
             _fixture = fixture;
+        }
+
+        [Fact]
+        public async void TestLoggingAvailable() {
+            var web_container = _fixture.DeployedContainers.Containers.First(c => c.Name == "web");
+            using var logs = _fixture.Docker.Host.Logs(web_container.Id);
+            Assert.NotNull(logs
+                .ReadToEnd()
+                .SingleOrDefault(line => line.Contains(Startup.STARTUP_COMPLETE_MAGIC)));
         }
 
         [Fact]
