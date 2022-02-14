@@ -76,7 +76,7 @@ namespace DroHub.Tests.TestInfrastructure
                             .UseCompose()
                             .FromFile(getPatchedDockerComposeFile())
                             .FromFile(Path.Join(DroHubPath, "docker-compose.test-services.yml"))
-                            // .RemoveOrphans()
+                            .RemoveOrphans()
                             .Wait("nginx", (service, i) => {
 
                                 while (true) {
@@ -92,7 +92,8 @@ namespace DroHub.Tests.TestInfrastructure
                                     Thread.Sleep(1000);
                                 }
                             } )
-                            // .ForceBuild()
+                            .ForceBuild()
+                            .ForceRecreate()
                             .Build()
                             .Start();
 
