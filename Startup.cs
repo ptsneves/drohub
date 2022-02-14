@@ -150,7 +150,7 @@ namespace DroHub
             SignInManager<DroHubUser> sign_in_manager,
             ILogger<DroHubContext> logger)
         {
-            if (!Configuration.GetValue<bool>("AutoMigration")) {
+            if (Configuration.GetValue<bool>("AutoMigration")) {
                 db_context.Database.Migrate();
                 logger.LogWarning("Ran migrate database");
             }
