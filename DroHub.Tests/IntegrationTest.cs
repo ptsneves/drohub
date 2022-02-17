@@ -28,6 +28,7 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace DroHub.Tests
 {
+    [Collection("Docker")]
     public class IntegrationTest : IClassFixture<TestServerFixture>
     {
         private readonly TestServerFixture _fixture;

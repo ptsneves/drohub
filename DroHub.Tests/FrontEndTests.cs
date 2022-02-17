@@ -16,6 +16,7 @@ using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace DroHub.Tests {
+    [Collection("Docker")]
     public class FrontEndTests : IClassFixture<TestServerFixture> {
         private readonly TestServerFixture _fixture;
 

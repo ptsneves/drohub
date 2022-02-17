@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Http;
 using Xunit;
 
 namespace DroHub.Tests {
+    [Collection("Docker")]
     public class UploadTests : IClassFixture<TestServerFixture> {
         private readonly TestServerFixture _fixture;
         public UploadTests(TestServerFixture fixture) {
