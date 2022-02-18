@@ -329,8 +329,9 @@ namespace DroHub.Tests.TestInfrastructure
 
 
         public void Dispose() {
-            // Docker.Dispose();
-            // Containers.Dispose();
+            Docker.Dispose();
+            DeployedContainers.Stop();
+            DeployedContainers.Remove(true);
             File.Delete(PatchedDockerComposeFileName);
         }
     }
