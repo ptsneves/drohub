@@ -1,0 +1,7 @@
+image: Ubuntu2004
+
+test_script:
+- dotnet test
+
+build: off
+
