@@ -65,12 +65,12 @@ namespace DroHub.Helpers {
             public MediaType media_type;
         }
 
-        private static async Task<ConvertResult> RunMJRConvert(string mjr_src, bool preserve_after_conversion) {
+        private static async Task<ConvertResult> RunMJRConvert(string mjr_src, string dest_path, bool preserve_after_conversion) {
             var mjr_src_fn = Path.GetFileName(mjr_src);
             var mjr_header = await getMJRHeader(mjr_src);
             var first_frame_utc = DateTimeOffset.FromUnixTimeMilliseconds(mjr_header.FirstFrameTimeUsUnix/1000);
             var dst_fn = Path.ChangeExtension(mjr_src_fn, getMRJOutputContainer(mjr_header));
-            var tmp_dst = Path.Join(Path.GetTempPath(), dst_fn);
+            var tmp_dst = Path.Join(dest_path, dst_fn);
 
 
             using var _ = await RunProcess.runProcess(_JANUS_PP_REC_BIN, $"{mjr_src} {tmp_dst}");
@@ -96,70 +96,83 @@ namespace DroHub.Helpers {
         public static async Task<ConvertResult> RunConvert(string mjr_src_dir, bool preserve_after_conversion,
             [CanBeNull] ILogger logger) {
 
-
             var mjr_files = getMJRFiles(mjr_src_dir);
             var conversion_results = new List<ConvertResult>();
-            foreach (var mjr_file in mjr_files) {
-                try {
-                    conversion_results.Add(await RunMJRConvert(mjr_file, preserve_after_conversion));
-                }
-                catch (Exception) {
-                    // ignored
-                }
-            }
+            var temp_path = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(temp_path);
+            try {
 
-            var video_result = conversion_results.Single(c => c.media_type == ConvertResult.MediaType.VIDEO);
-            var final_dst = Path.Join(mjr_src_dir, Path.GetFileName(video_result.result_path));
-
-            var ffmpeg_input_args = "-err_detect ignore_err";
-            var ffmpeg_adelay_args = "";
-            var ffmpeg_amix_args = "";
-            var ffmpeg_map_args = "";
-            long i = 0;
-            foreach (var conversion_result in conversion_results) {
-                ffmpeg_input_args += $" -i {conversion_result.result_path} -skip_frame nokey";
-                switch (conversion_result.media_type) {
-                    case ConvertResult.MediaType.VIDEO:
-                        ffmpeg_map_args += $" -map {i}:v -c:v copy ";
-                        break;
-                    case ConvertResult.MediaType.AUDIO: {
-                        var delay_ms = Math.Max(0, (conversion_result.creation_date_utc - video_result.creation_date_utc)
-                            .TotalMilliseconds);
-
-                        ffmpeg_adelay_args += $"[{i}]adelay={delay_ms}|{delay_ms}[s{i}];";
-                        ffmpeg_amix_args += $"[s{i}]";
-                        break;
+                foreach (var mjr_file in mjr_files) {
+                    try {
+                        conversion_results.Add(await RunMJRConvert(mjr_file, temp_path, preserve_after_conversion));
                     }
-                    case ConvertResult.MediaType.DATA:
-                        break;
-                    default:
-                        throw new NotImplementedException();
+                    catch (Exception) {
+                        // ignored
+                    }
                 }
-                i++;
+
+                var video_result = conversion_results.Single(c => c.media_type == ConvertResult.MediaType.VIDEO);
+                var final_dst = Path.Join(mjr_src_dir, Path.GetFileName(video_result.result_path));
+
+                var ffmpeg_input_args = "-err_detect ignore_err";
+                var ffmpeg_adelay_args = "";
+                var ffmpeg_amix_args = "";
+                var ffmpeg_map_args = "";
+                long i = 0;
+                foreach (var conversion_result in conversion_results) {
+                    ffmpeg_input_args += $" -i {conversion_result.result_path} -skip_frame nokey";
+                    switch (conversion_result.media_type) {
+                        case ConvertResult.MediaType.VIDEO:
+                            ffmpeg_map_args += $" -map {i}:v -c:v copy ";
+                            break;
+                        case ConvertResult.MediaType.AUDIO: {
+                            var delay_ms = Math.Max(0,
+                                (conversion_result.creation_date_utc - video_result.creation_date_utc)
+                                .TotalMilliseconds);
+
+                            ffmpeg_adelay_args += $"[{i}]adelay={delay_ms}|{delay_ms}[s{i}];";
+                            ffmpeg_amix_args += $"[s{i}]";
+                            break;
+                        }
+                        case ConvertResult.MediaType.DATA:
+                            break;
+                        default:
+                            throw new NotImplementedException();
+                    }
+
+                    i++;
+                }
+
+                ffmpeg_amix_args += $"amix={i - 1}[mixout]";
+                ffmpeg_map_args += "-map [mixout]";
+
+                if (File.Exists(final_dst))
+                    throw new InvalidProgramException(
+                        $"Destination {final_dst} already exists. This should not happen. Keeping the original mjr");
+
+                var ffmpeg_arguments =
+                    $"{ffmpeg_input_args} -filter_complex {ffmpeg_adelay_args}{ffmpeg_amix_args} {ffmpeg_map_args} {final_dst}";
+
+                using var __ = await RunProcess.runProcess(_FFMPEG_BIN, ffmpeg_arguments);
+
+
+                if (!File.Exists(final_dst))
+                    throw new InvalidDataException($"Expected {final_dst} but it does not exist.\n {__.StandardError}");
+                File.SetCreationTime(final_dst, video_result.creation_date_utc.UtcDateTime);
+                logger?.LogInformation($"Conversion result available at {final_dst}");
+
+                return new ConvertResult {
+                    result_path = final_dst,
+                    creation_date_utc = video_result.creation_date_utc,
+                    media_type = ConvertResult.MediaType.VIDEO
+                };
             }
-
-            ffmpeg_amix_args += $"amix={i - 1}[mixout]";
-            ffmpeg_map_args += "-map [mixout]";
-
-            if (File.Exists(final_dst))
-                throw new InvalidProgramException($"Destination {final_dst} already exists. This should not happen. Keeping the original mjr");
-
-            var ffmpeg_arguments =
-                $"{ffmpeg_input_args} -filter_complex {ffmpeg_adelay_args}{ffmpeg_amix_args} {ffmpeg_map_args} {final_dst}";
-
-            using var __ = await RunProcess.runProcess(_FFMPEG_BIN, ffmpeg_arguments);
-
-
-            if (!File.Exists(final_dst))
-                throw new InvalidDataException($"Expected {final_dst} but it does not exist.\n {__.StandardError}");
-            File.SetCreationTime(final_dst, video_result.creation_date_utc.UtcDateTime);
-            logger?.LogInformation($"Conversion result available at {final_dst}");
-
-            return new ConvertResult {
-                result_path = final_dst,
-                creation_date_utc = video_result.creation_date_utc,
-                media_type = ConvertResult.MediaType.VIDEO
-            };
+            finally {
+                foreach (var r in conversion_results) {
+                    File.Delete(r.result_path);
+                }
+                Directory.Delete(temp_path);
+            }
         }
     }
 }
