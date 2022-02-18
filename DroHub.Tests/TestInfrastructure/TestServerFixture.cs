@@ -85,7 +85,7 @@ namespace DroHub.Tests.TestInfrastructure
                                             (sender, cert, chain, sslPolicyErrors) => true
                                     };
                                     using var client = new HttpClient(handlerHttp);
-                                    var response = client.GetAsync(SiteUri).Result;
+                                    var response = client.GetAsync(SiteUri + "/Identity/Account/Login").Result;
 
                                     if (response.IsSuccessStatusCode)
                                         return 0;
