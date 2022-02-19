@@ -77,25 +77,29 @@ namespace DroHub.Tests.TestInfrastructure
                             .FromFile(getPatchedDockerComposeFile())
                             .FromFile(Path.Join(DroHubPath, "docker-compose.test-services.yml"))
                             .RemoveOrphans()
-                            .Wait("nginx", (service, i) => {
-
-                                while (true) {
-                                    using var handlerHttp = new HttpClientHandler {
-                                        ServerCertificateCustomValidationCallback =
-                                            (sender, cert, chain, sslPolicyErrors) => true
-                                    };
-                                    using var client = new HttpClient(handlerHttp);
-                                    var response = client.GetAsync(SiteUri + "/Identity/Account/Login").Result;
-
-                                    if (response.IsSuccessStatusCode)
-                                        return 0;
-                                    Thread.Sleep(1000);
-                                }
-                            } )
-                            .ForceBuild()
                             .ForceRecreate()
                             .Build()
                             .Start();
+
+            var counter = 0;
+            while (true) {
+                using var handlerHttp = new HttpClientHandler {
+                    ServerCertificateCustomValidationCallback =
+                        (sender, cert, chain, sslPolicyErrors) => true
+                };
+                using var client = new HttpClient(handlerHttp);
+                var task = Task.Run(() => client.GetAsync(SiteUri + "Identity/Account/Login"));
+                task.Wait(TimeSpan.FromMinutes(1));
+                var response = task.Result;
+
+                if (response.IsSuccessStatusCode)
+                    break;
+                if (counter > 60) {
+                    throw new TimeoutException("Could not reach asp.net drohub backend");
+                }
+                Thread.Sleep(1000);
+                counter++;
+            }
 
             var hosts = new Hosts().Discover();
             Docker = hosts.First(x => x.IsNative);
