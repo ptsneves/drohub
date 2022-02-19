@@ -115,7 +115,7 @@ namespace DroHub.Tests.TestInfrastructure
                 catch (InvalidOperationException) {
 
                     throw new InvalidProgramException(
-                        $"If for some reason the logs were regenerated the GENERATED ROOT PASSWORD string"
+                        $"If for some reason the logs were regenerated the GENERATED ROOT PASSWORD string "
                         + "will disappear and this will fail");
                 }
             }
