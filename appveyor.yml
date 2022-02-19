@@ -4,7 +4,13 @@ install:
   git submodule update --init --recursive
 
 test_script:
-- dotnet test
+  # There are some credentials that need to be populated. In this case
+  # there is a dummy .test-env file that contains placeholder values.
+  # Do not use them in production.
+  # The shell magic before the dotnet command, takes the K=V lines in the
+  # .test-env file and exports them as environment variables that drohub
+  # needs and reads.
+- (export $(grep -v '^#' .test-env | xargs) && dotnet test
 
 build: off
 
