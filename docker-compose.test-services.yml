@@ -11,3 +11,7 @@ services:
       context: docker/docker-vue-test
     image: "ptsneves/airborneprojects:vue-test"
     restart: "no"
+volumes:
+  # To speedup iterative builds
+  yarn:
+    driver: local

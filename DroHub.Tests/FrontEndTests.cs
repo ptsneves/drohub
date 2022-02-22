@@ -37,6 +37,8 @@ namespace DroHub.Tests {
                 .UseNetwork("host")
                 .UseImage("ptsneves/airborneprojects:vue-test")
                 .Mount(TestServerFixture.DroHubPath, DOCKER_REPO_MOUNT_PATH, MountType.ReadWrite)
+                .MountVolume("yarn", "/.yarn", MountType.ReadWrite)
+                .MountVolume("yarn", "/tmp/destdir/drohub-vue/node_modules", MountType.ReadWrite)
                 .Build()
                 .Start();
             test_containers.WaitForStopped();
