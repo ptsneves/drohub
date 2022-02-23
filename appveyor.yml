@@ -3,7 +3,7 @@ image: Ubuntu2004
 shallow_clone: true
 
 install:
-  git submodule update --init --recursive
+  - git submodule update --init --recursive
 
 test_script:
   # There are some credentials that need to be populated. In this case
