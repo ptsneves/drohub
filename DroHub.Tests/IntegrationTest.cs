@@ -39,7 +39,7 @@ namespace DroHub.Tests
 
         [Fact]
         public async void TestLoggingAvailable() {
-            var web_container = _fixture.DeployedContainers.Containers.First(c => c.Name == "web");
+            var web_container = _fixture.DeployedContainers.Containers.First(c => c.Name == "drohub-web");
             using var logs = _fixture.Docker.Host.Logs(web_container.Id);
             Assert.NotNull(logs
                 .ReadToEnd()

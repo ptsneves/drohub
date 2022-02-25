@@ -83,17 +83,23 @@ namespace DroHub.Tests.TestInfrastructure
 
             var counter = 0;
             while (true) {
-                using var handlerHttp = new HttpClientHandler {
-                    ServerCertificateCustomValidationCallback =
-                        (sender, cert, chain, sslPolicyErrors) => true
-                };
-                using var client = new HttpClient(handlerHttp);
-                var task = Task.Run(() => client.GetAsync(SiteUri + "Identity/Account/Login"));
-                task.Wait(TimeSpan.FromMinutes(1));
-                var response = task.Result;
+                var task = Task.Run(() => {
+                    using var handlerHttp = new HttpClientHandler {
+                        ServerCertificateCustomValidationCallback =
+                            (sender, cert, chain, sslPolicyErrors) => true
+                    };
+                    return new HttpClient(handlerHttp).GetAsync(SiteUri + "Identity/Account/Login");
+                });
+                try {
+                    task.Wait(TimeSpan.FromMinutes(2));
+                    var response = task.Result;
+                    if (response.IsSuccessStatusCode)
+                        break;
+                }
+                catch (AggregateException) {
+                    // can happen if nginx is still setting up
+                }
 
-                if (response.IsSuccessStatusCode)
-                    break;
                 if (counter > 60) {
                     throw new TimeoutException("Could not reach asp.net drohub backend");
                 }
@@ -103,7 +109,7 @@ namespace DroHub.Tests.TestInfrastructure
 
             var hosts = new Hosts().Discover();
             Docker = hosts.First(x => x.IsNative);
-            var web_container = DeployedContainers.Containers.First(c => c.Name == "web");
+            var web_container = DeployedContainers.Containers.First(c => c.Name == "drohub-web");
             using (var logs = Docker.Host.Logs(web_container.Id))
             {
                 try {

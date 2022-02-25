@@ -4,9 +4,10 @@ services:
         build:
             context: ./docker/docker-janus
         image: "ptsneves/airborneprojects:janus"
+        # We need host mode to expose the ports for the sfu, otherwise video will not
+        # work. Declaring a huge range of ports is not really feasible as it takes a long
+        # time with docker
         network_mode: host
-        ports:
-            - "8088:8088"
         volumes:
             - live-video-storage:/var/live-video-storage
         logging:
@@ -14,6 +15,12 @@ services:
                 max-file: "5"
                 max-size: "100m"
     web:
+        container_name: drohub-web
+        extra_hosts:
+          # new trick so that nginx has access to janus which has network_host mode
+          # see https://stackoverflow.com/a/24326540/227990
+          # this makes a dependency on docker 18.03+
+          - "host.docker.internal:host-gateway"
         build:
             context: .
             dockerfile: docker/docker-dotnet/Dockerfile
@@ -28,14 +35,14 @@ services:
 #           As the configurations in appsettings for secrets mostly have @@ENV@@
 #           placeholder we need to forcefully overwrite these configurations or
 #           things will not work properly.
-            DHUB_ConnectionStrings__DroHubConnectionMySQL: 'Server=localhost;port=3306;database=master'
+            DHUB_ConnectionStrings__DroHubConnectionMySQL: 'Server=drohub-database;port=3306;database=master'
             DHUB_ConnectionStrings__MysqlUser: "${DHUB_ConnectionStrings__MysqlUser?}"
             DHUB_ConnectionStrings__MysqlPassword: "${DHUB_ConnectionStrings__MysqlPassword?}"
             DHUB_MailJetEmailSender__APIKey: "${DHUB_MailJetEmailSender__APIKey?}"
             DHUB_MailJetEmailSender__APISecret: "${DHUB_MailJetEmailSender__APISecret?}"
             DHUB_RepositoriesConfiguration__GoogleMapsAPIKey: "${DHUB_RepositoriesConfiguration__GoogleMapsAPIKey?}"
             DHUB_JanusServiceOptions__AdminKey: "${DHUB_JanusServiceOptions__AdminKey?}"
-        network_mode: host
+            DHUB_JanusServiceOptions__Address: "http://host.docker.internal"
         ports:
             - "5000:5000"
         depends_on:
@@ -49,8 +56,8 @@ services:
                 max-file: "5"
                 max-size: "100m"
     database:
+        container_name: drohub-database
         image: mysql:latest
-        network_mode: host
         ports:
             - "3306:3306"
         environment:
@@ -70,7 +77,14 @@ services:
          volumes:
              - certificates-volume:/etc/letsencrypt
     nginx:
-         network_mode: host
+         extra_hosts:
+         # new trick so that nginx has access to janus which has network_host mode
+         # see https://stackoverflow.com/a/24326540/227990
+         # this makes a dependency on docker 18.03+
+            - "host.docker.internal:host-gateway"
+         ports:
+             -   "443:443"
+             -   "80:80"
          build:
              context: ./docker/docker-nginx
          image: ptsneves/airborneprojects:nginx
@@ -84,6 +98,9 @@ services:
              - DOMAIN_NAME
              - SSL_CERTIFICATE_PATH=/etc/letsencrypt/live/${DOMAIN_NAME?}/fullchain.pem
              - SSL_CERTIFICATE_KEY_PATH=/etc/letsencrypt/live/${DOMAIN_NAME?}/privkey.pem
+             - TIMEOUT_SECONDS=100
+             - DEPENDENCY_FQDN=drohub-web
+             - DEPENDENCY_PORT=5000
 volumes:
     certificates-volume:
         driver: local

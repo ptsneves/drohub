@@ -339,7 +339,7 @@ namespace DroHub.Tests.TestInfrastructure
             public static async Task deleteDevice(string serial_number, string user,
                 string password, bool delete_flight_sessions = true) {
                 var devices_list = await getDeviceList(user, password);
-                int device_id = devices_list.First(d => d.SerialNumber == serial_number).Id;
+                int device_id = devices_list.Single(d => d.SerialNumber == serial_number).Id;
                 await deleteDevice(device_id, user, password, delete_flight_sessions);
             }
 
