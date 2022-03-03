@@ -4,6 +4,25 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
+
+  <PropertyGroup>
+      <TestAssetsDir>$(MSBuildProjectDirectory)/TestAssets</TestAssetsDir>
+      <TestAssetsURL>https://drohub-public.s3.eu-north-1.amazonaws.com/TestAssets.zip</TestAssetsURL>
+      <DownloadDest>$(MSBuildProjectDirectory)/.download</DownloadDest>
+  </PropertyGroup>
+  <Target Name="TestAssetsDownload" AfterTargets="AfterBuild" Condition="!Exists('$(TestAssetDir)')">
+    <Warning Text="$(TestAssetsDir) does not exist. Downloading.." />
+    <DownloadFile
+        SourceUrl="$(TestAssetsURL)"
+        DestinationFolder="$(DownloadDest)">
+      <Output TaskParameter="DownloadedFile" ItemName="TestAssets" />
+    </DownloadFile>
+    <Warning Text="@(TestAssets) downloaded." />
+    <Unzip
+        SourceFiles="@(TestAssets)"
+        DestinationFolder="$(TestAssetsDir)" />
+    <Warning Text="@(TestAssets) extracted to $(TestAssetsDir)." />
+  </Target>
   <ItemGroup>
     <PackageReference Include="AngleSharp" Version="0.13.0" />
     <PackageReference Include="MetadataExtractor" Version="2.6.0" />
