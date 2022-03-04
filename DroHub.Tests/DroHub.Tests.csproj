@@ -10,7 +10,7 @@
       <TestAssetsURL>https://drohub-public.s3.eu-north-1.amazonaws.com/TestAssets.zip</TestAssetsURL>
       <DownloadDest>$(MSBuildProjectDirectory)/.download</DownloadDest>
   </PropertyGroup>
-  <Target Name="TestAssetsDownload" AfterTargets="AfterBuild" Condition="!Exists('$(TestAssetDir)')">
+  <Target Name="TestAssetsDownload" AfterTargets="AfterBuild" Condition="!Exists('$(TestAssetsDir)')">
     <Warning Text="$(TestAssetsDir) does not exist. Downloading.." />
     <DownloadFile
         SourceUrl="$(TestAssetsURL)"
