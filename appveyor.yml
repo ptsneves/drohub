@@ -12,7 +12,7 @@ test_script:
   # The shell magic before the dotnet command, takes the K=V lines in the
   # .test-env file and exports them as environment variables that drohub
   # needs and reads.
-- (export $(grep -v '^#' .test-env | xargs) && dotnet test -v d)
+- (export $(grep -v '^#' .test-env | xargs) && dotnet test -v n)
 
 build: off
 
