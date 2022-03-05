@@ -19,6 +19,7 @@ using DroHub.Areas.DHub.Controllers;
 using DroHub.Areas.Identity.Data;
 using DroHub.Data;
 using DroHub.ProgramExtensions;
+using Ductus.FluentDocker.Common;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Services.Extensions;
 using JetBrains.Annotations;
@@ -337,11 +338,26 @@ namespace DroHub.Tests.TestInfrastructure
                 });
         }
 
+        private IEnumerable<IVolumeService> GetVolumes() {
+            return DeployedContainers.Containers.SelectMany(c => {
+                try {
+                    return c.State == ServiceRunningState.Running ? c.GetVolumes() : new List<IVolumeService>();
+                }
+                catch (FluentDockerException) {
+                    return new List<IVolumeService>();
+                }
+            });
+        }
 
         public void Dispose() {
+            var volumes = GetVolumes().ToList();
             Docker.Dispose();
             DeployedContainers.Stop();
             DeployedContainers.Remove(true);
+
+            foreach (var volumeService in volumes) {
+                volumeService.Remove();
+            }
             File.Delete(PatchedDockerComposeFileName);
         }
     }
