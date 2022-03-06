@@ -66,8 +66,8 @@ services:
 #         Mandatory secrets
           MYSQL_USER: "${DHUB_ConnectionStrings__MysqlUser?}"
           MYSQL_PASSWORD: "${DHUB_ConnectionStrings__MysqlPassword?}"
-        # volumes:
-            # mysql-volume:/var/lib/mysql
+        volumes:
+             - mysql-volume:/var/lib/mysql
     letsencrypt:
          environment:
              - DOMAIN=localhost
