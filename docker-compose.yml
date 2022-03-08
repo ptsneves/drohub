@@ -9,7 +9,7 @@ services:
         # time with docker
         network_mode: host
         volumes:
-            - live-video-storage:/var/live-video-storage
+          - ${VIDEO_STORAGE_VOL_NAME:-live-video-storage}:/var/live-video-storage
         logging:
             options:
                 max-file: "5"
@@ -50,7 +50,7 @@ services:
             - "janus"
         restart: on-failure
         volumes:
-            - live-video-storage:/var/live-video-storage
+            - ${VIDEO_STORAGE_VOL_NAME:-live-video-storage}:/var/live-video-storage
         logging:
             options:
                 max-file: "5"

@@ -15,3 +15,9 @@ volumes:
   # To speedup iterative builds
   yarn:
     driver: local
+  live-video-storage-test:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${VIDEO_TEST_STORAGE?}
+      o: bind,uid=1000

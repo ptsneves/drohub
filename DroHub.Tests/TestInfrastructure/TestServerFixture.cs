@@ -42,7 +42,9 @@ namespace DroHub.Tests.TestInfrastructure
         public static Uri JanusUri => new Uri("https://localhost/janus");
 
         public static Uri TelemetryHubUri => new Uri("https://localhost:443/telemetryhub");
-        public string TargetLiveStreamStoragePath { get; }
+
+        private static string TestVideoStoragePath =>
+            Path.GetFullPath(Path.Join(DroHubTestsPath, ".live-video-storage-test"));
         public string AdminPassword { get; private set; }
         private static string DroHubTestsPath => Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory + "../../../");
         public static string DroHubPath => Path.GetFullPath(Path.Join(DroHubTestsPath, "../"));
@@ -73,6 +75,7 @@ namespace DroHub.Tests.TestInfrastructure
         private IContainerService WebContainer { get; }
 
         public TestServerFixture() {
+            setupTestVideoStorage();
             DeployedContainers = new Builder()
                             .UseContainer()
                             .UseCompose()
@@ -137,6 +140,17 @@ namespace DroHub.Tests.TestInfrastructure
             TargetLiveStreamStoragePath = live_video_mount.Destination + Path.DirectorySeparatorChar;
             Console.WriteLine("Ready to start");
         }
+
+        private static void setupTestVideoStorage() {
+            if (Directory.Exists(TestVideoStoragePath)) {
+                throw new Exception("Did not expect Target LiveStream Storage path to exist. Refusing to run");
+            }
+
+            Directory.CreateDirectory(TestVideoStoragePath);
+            Environment.SetEnvironmentVariable("VIDEO_TEST_STORAGE", TestVideoStoragePath);
+            Environment.SetEnvironmentVariable("VIDEO_STORAGE_VOL_NAME", "live-video-storage-test");
+        }
+
 
         private string getPatchedDockerComposeFile() {
             var docker_compose_file = Path.Join(DroHubPath, "docker-compose.yml");
@@ -364,6 +378,8 @@ namespace DroHub.Tests.TestInfrastructure
                 volumeService.Remove();
             }
             File.Delete(PatchedDockerComposeFileName);
+
+            Directory.Delete(TestVideoStoragePath, true);
         }
     }
 }
