@@ -133,11 +133,6 @@ namespace DroHub.Tests.TestInfrastructure
 
             initializeConfiguration();
             initializeDBContext();
-
-            var live_video_mount = WebContainer
-                .GetConfiguration().Mounts
-                .Single(m => m.Source.Contains("live-video-storage"));
-            TargetLiveStreamStoragePath = live_video_mount.Destination + Path.DirectorySeparatorChar;
             Console.WriteLine("Ready to start");
         }
 
