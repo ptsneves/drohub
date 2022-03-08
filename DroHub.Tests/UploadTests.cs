@@ -45,8 +45,8 @@ namespace DroHub.Tests {
                         Assert.True(result.TryGetValue("result", out var v));
                         Assert.Equal("ok", v);
                         var last_media_path = _fixture.DbContext.MediaObjects.ToList().Last();
-                        var orig_sha256 = TestServerFixture.computeFileSHA256($"{TestServerFixture.TestAssetsPath}/{video_src}");
-                        var uploaded_sha256 = TestServerFixture.computeFileSHA256(last_media_path.MediaPath);
+                        var orig_sha256 = _fixture.computeFileSHA256($"{TestServerFixture.TestAssetsPath}/{video_src}");
+                        var uploaded_sha256 = _fixture.computeFileSHA256(last_media_path.MediaPath);
                         Assert.Equal(orig_sha256, uploaded_sha256);
 
                         //Check that preview file is not the uploaded one.
@@ -55,7 +55,7 @@ namespace DroHub.Tests {
 
                         var preview_file_path = LocalStorageHelper.
                             calculatePreviewFilePath(last_media_path.MediaPath);
-                        var preview_sha256 = TestServerFixture.computeFileSHA256(preview_file_path);
+                        var preview_sha256 = _fixture.computeFileSHA256(preview_file_path);
                         Assert.NotEqual(preview_sha256, uploaded_sha256);
 
                         ran = true;
@@ -85,9 +85,9 @@ namespace DroHub.Tests {
                     Assert.True(result.TryGetValue("result", out var v));
                     Assert.Equal("ok", v);
                     var last_media_path = _fixture.DbContext.MediaObjects.ToList().Last();
-                    var orig_sha256 = TestServerFixture.computeFileSHA256(
+                    var orig_sha256 = _fixture.computeFileSHA256(
                         $"{TestServerFixture.TestAssetsPath}/preview-drone-PI040416DA9H110281-1608225545000.jpeg");
-                    var uploaded_sha256 = TestServerFixture.computeFileSHA256(last_media_path.MediaPath);
+                    var uploaded_sha256 = _fixture.computeFileSHA256(last_media_path.MediaPath);
                     Assert.Equal(orig_sha256, uploaded_sha256);
                     ran = true;
 

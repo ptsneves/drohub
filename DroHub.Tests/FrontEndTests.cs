@@ -143,7 +143,7 @@ namespace DroHub.Tests {
                         .Where(media =>
                             File.Exists(LocalStorageHelper.convertToBackEndFilePath(media)))
                         .Select(i => new JObject {
-                        {"sha256", TestServerFixture.computeFileSHA256(
+                        {"sha256", _fixture.computeFileSHA256(
                             LocalStorageHelper.convertToBackEndFilePath(i))},
                         {"file", i}
                     });
@@ -153,7 +153,7 @@ namespace DroHub.Tests {
                             LocalStorageHelper.doesPreviewFileExist(
                                 LocalStorageHelper.convertToBackEndFilePath(media)))
                         .Select(i => new JObject {
-                        {"sha256", TestServerFixture.computeFileSHA256(
+                        {"sha256", _fixture.computeFileSHA256(
                             LocalStorageHelper.convertToBackEndFilePath(
                                 LocalStorageHelper.calculatePreviewFilePath(i))
                             )},
