@@ -44,7 +44,11 @@ namespace DroHub.Tests {
                     else {
                         Assert.True(result.TryGetValue("result", out var v));
                         Assert.Equal("ok", v);
-                        var last_media_path = _fixture.DbContext.MediaObjects.ToList().Last();
+                        var last_media_path = _fixture.DbContext.MediaObjects
+                            .ToList()
+                            .Last();
+
+                        last_media_path.MediaPath = _fixture.translateVideoStoragePath(last_media_path.MediaPath);
                         var orig_sha256 = _fixture.computeFileSHA256($"{TestServerFixture.TestAssetsPath}/{video_src}");
                         var uploaded_sha256 = _fixture.computeFileSHA256(last_media_path.MediaPath);
                         Assert.Equal(orig_sha256, uploaded_sha256);

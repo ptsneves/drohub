@@ -228,8 +228,12 @@ namespace DroHub.Tests.TestInfrastructure
                 .GetAttribute(attribute);
         }
 
+        public string translateVideoStoragePath(string path) {
+            return path.Replace("/var/live-video-storage", TestVideoStoragePath);
+        }
+
         public string computeFileSHA256(string filePath) {
-            filePath = filePath.Replace("/var/live-video-storage", TestVideoStoragePath);
+            filePath = translateVideoStoragePath(filePath);
             using var file_stream = File.OpenRead(filePath);
             return Convert.ToBase64String(SHA256.Create().ComputeHash(file_stream));
         }
