@@ -351,6 +351,10 @@ namespace DroHub.Tests.TestInfrastructure
         }
 
         public void Dispose() {
+
+            // Required due to test runner permissions not being the same as the created files
+            var r = WebContainer.Execute("/bin/sh -c \"rm -rf /var/live-video-storage/*\"");
+
             var volumes = GetVolumes().ToList();
             Docker.Dispose();
             DeployedContainers.Stop();
