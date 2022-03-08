@@ -70,8 +70,9 @@ namespace DroHub.Tests.TestInfrastructure
 
         public DroHubContext DbContext { get; private set; }
 
-        public TestServerFixture() {
+        private IContainerService WebContainer { get; }
 
+        public TestServerFixture() {
             DeployedContainers = new Builder()
                             .UseContainer()
                             .UseCompose()
@@ -110,8 +111,8 @@ namespace DroHub.Tests.TestInfrastructure
 
             var hosts = new Hosts().Discover();
             Docker = hosts.First(x => x.IsNative);
-            var web_container = DeployedContainers.Containers.First(c => c.Name == "drohub-web");
-            using (var logs = Docker.Host.Logs(web_container.Id))
+            WebContainer = DeployedContainers.Containers.First(c => c.Name == "drohub-web");
+            using (var logs = Docker.Host.Logs(WebContainer.Id))
             {
                 try {
                     AdminPassword = logs
@@ -127,10 +128,10 @@ namespace DroHub.Tests.TestInfrastructure
                 }
             }
 
-            initializeConfiguration(web_container);
+            initializeConfiguration();
             initializeDBContext();
 
-            var live_video_mount = web_container
+            var live_video_mount = WebContainer
                 .GetConfiguration().Mounts
                 .Single(m => m.Source.Contains("live-video-storage"));
             TargetLiveStreamStoragePath = live_video_mount.Destination + Path.DirectorySeparatorChar;
@@ -153,8 +154,8 @@ namespace DroHub.Tests.TestInfrastructure
             return patched_file;
         }
 
-        private void initializeConfiguration(IContainerService web_container) {
-            var app_settings_result = web_container.Execute("cat /app/appsettings.json");
+        private void initializeConfiguration() {
+            var app_settings_result = WebContainer.Execute("cat /app/appsettings.json");
             string json_string;
             if (!app_settings_result.Success) {
                 if (File.Exists(DroHubPath + "appsettings.Development.json")) {
