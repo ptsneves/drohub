@@ -14,6 +14,7 @@
   <Target Name="CheckRequiredBinaries" BeforeTargets="Build">
     <Exec Command="/usr/bin/ffmpeg --help" EchoOff="true"/>
     <Exec Command="/usr/bin/janus-pp-rec --help"  EchoOff="true"/>
+    <Exec Command="/usr/bin/convert --help"  EchoOff="true"/>
   </Target>
   <Target Name="TestAssetsDownload" AfterTargets="AfterBuild" Condition="!Exists('$(TestAssetsDir)')">
     <Warning Text="$(TestAssetsDir) does not exist. Downloading.." />
