@@ -141,7 +141,10 @@ namespace DroHub.Tests {
                 writeNewTempTestData(VUE_TEST_NAME, temp_test_data => {
                     var media_list_data = media_list
                         .Where(media =>
-                            File.Exists(LocalStorageHelper.convertToBackEndFilePath(media)))
+                            File.Exists(
+                                _fixture.translateVideoStoragePath(
+                                LocalStorageHelper.convertToBackEndFilePath(media)
+                                )))
                         .Select(i => new JObject {
                         {"sha256", _fixture.computeFileSHA256(
                             LocalStorageHelper.convertToBackEndFilePath(i))},
@@ -151,7 +154,8 @@ namespace DroHub.Tests {
                     var preview_media_list_data = media_list
                         .Where(media =>
                             LocalStorageHelper.doesPreviewFileExist(
-                                LocalStorageHelper.convertToBackEndFilePath(media)))
+                                _fixture.translateVideoStoragePath(
+                                LocalStorageHelper.convertToBackEndFilePath(media))))
                         .Select(i => new JObject {
                         {"sha256", _fixture.computeFileSHA256(
                             LocalStorageHelper.convertToBackEndFilePath(
