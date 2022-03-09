@@ -4,7 +4,8 @@ clone_depth: 1
 
 install:
   - git submodule update --init --recursive
-
+  - sudo apt-get update
+  - sudo apt-get install -y ffmpeg janus-tools
 test_script:
   # There are some credentials that need to be populated. In this case
   # there is a dummy .test-env file that contains placeholder values.
